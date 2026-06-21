@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Citas - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/appointments.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+                <div class="appointments-layout">
+                    <div class="page-header">
+                        <div class="header-title">
+                            <h1>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.75rem;height:1.75rem;color:#06b6d4;flex-shrink:0;">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                                Mis Citas
+                            </h1>
+                            <p>Gestiona todas tus citas agendadas</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary" id="createAppointmentBtn" onclick="openAppointmentModal()">
+                                <i class="lni lni-plus"></i>
+                                <span>Nueva Cita</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Tabs ── -->
+                    <div class="orders-tabs-bar">
+                        <button type="button" class="orders-tab active" data-tab="mis-citas">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Mis Citas
+                        </button>
+                        <button type="button" class="orders-tab" data-tab="punto-venta">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <path d="M8 21h8M12 17v4"/>
+                            </svg>
+                            Punto de Venta
+                        </button>
+                    </div>
+
+                    <!-- ══ TAB: MIS CITAS ══ -->
+                    <div id="tab-mis-citas" class="orders-tab-panel active">
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon cyan">
+                                <i class="lni lni-calendar"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalAppointments">0</div>
+                                <div class="stat-label">Citas para hoy</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="lni lni-checkmark-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="confirmedAppointments">0</div>
+                                <div class="stat-label">Citas Confirmadas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="lni lni-timer"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="pendingAppointments">0</div>
+                                <div class="stat-label">Citas Canceladas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="lni lni-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalClients">0</div>
+                                <div class="stat-label">Total de citas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.4rem;height:1.4rem;">
+                                    <line x1="12" y1="1" x2="12" y2="23"/>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="apptTotalRevenue">$0.00</div>
+                                <div class="stat-label">Venta acumulada</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <div class="filters">
+                            
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedStatus">Todos los Estados</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span>Todos los Estados</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot confirmed"></span>
+                                            <span>Confirmadas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot pending"></span>
+                                            <span>Pendientes</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot cancelled"></span>
+                                            <span>Canceladas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot completed"></span>
+                                            <span>Completadas</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedAgent">Todos los Agentes</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedAgent')">
+                                            <span>Todos los Agentes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 180px; min-width: 160px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedDate">Todas las Fechas</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Todas las Fechas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Hoy</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Mañana</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Esta Semana</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="search-box">
+                                <i class="lni lni-search-alt"></i>
+                                <input type="text" id="searchInput" placeholder="Buscar por cliente o servicio...">
+                            </div>
+                        </div>
+
+                        <div class="view-controls">
+                            <button class="view-btn active" data-view="list">
+                                <i class="lni lni-list"></i>
+                            </button>
+                            <button class="view-btn" data-view="calendar">
+                                <i class="lni lni-calendar"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="appointments-container" id="appointmentsListView">
+                        <div class="table-wrapper">
+                            <table class="appointments-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Teléfono</th>
+                                        <th>Servicio</th>
+                                        <th>Trabajador</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Agente</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointmentsList">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-container" id="calendarView" style="display: none;">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" id="prevMonth">
+                                <i class="lni lni-chevron-left"></i>
+                            </button>
+                            <h3 id="calendarMonth">Febrero 2026</h3>
+                            <button class="calendar-nav-btn" id="nextMonth">
+                                <i class="lni lni-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">
+                            <i class="lni lni-calendar"></i>
+                        </div>
+                        <h3>No hay citas agendadas</h3>
+                        <p>Comienza creando tu primera cita o sincroniza con tus agentes</p>
+                        <button class="btn-primary" onclick="document.getElementById('createAppointmentBtn').click()">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Primera Cita</span>
+                        </button>
+                    </div>
+                    </div><!-- /tab-mis-citas -->
+
+                    <!-- ══ TAB: PUNTO DE VENTA ══ -->
+                    <div id="tab-punto-venta" class="orders-tab-panel">
+                        <div class="pos-layout">
+
+                            <!-- Catálogo -->
+                            <div class="pos-catalog">
+                                <div class="pos-catalog-header">
+                                    <h2>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                        </svg>
+                                        Catálogo
+                                    </h2>
+                                    <div class="pos-search-wrap">
+                                        <i class="lni lni-search-alt"></i>
+                                        <input type="text" id="posProductSearch" placeholder="Buscar producto...">
+                                    </div>
+                                </div>
+                                <div class="pos-products-grid" id="posProductsGrid">
+                                    <div class="pos-empty-catalog">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:2.5rem;height:2.5rem;color:#d1d5db;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                                        <span>Agrega productos en <strong>Mi Negocio → Servicios / Productos</strong> para verlos aquí.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ticket de cobro — adaptado para citas/servicios -->
+                            <div class="pos-ticket">
+                                <div class="pos-ticket-header">
+                                    <h2>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                        Cobro de servicio
+                                    </h2>
+                                    <button class="pos-clear-btn" id="posClearBtn" title="Limpiar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Cliente -->
+                                <div class="pos-customer-row">
+                                    <input type="text" class="pos-input" id="posCustomerName" placeholder="Nombre del cliente">
+                                    <input type="text" class="pos-input" id="posCustomerPhone" placeholder="Teléfono (opcional)">
+                                </div>
+
+                                <!-- Trabajador -->
+                                <div class="appt-pos-field">
+                                    <label class="pos-label">Trabajador</label>
+                                    <select class="pos-input" id="apptPosWorker">
+                                        <option value="">Sin asignar</option>
+                                    </select>
+                                </div>
+
+                                <!-- Tipo: ahora / agendar -->
+                                <div class="pos-type-row">
+                                    <button class="pos-type-btn active" data-appt-type="walkin">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v5l3 3"/><path d="M9.5 17.5 7 21M14.5 17.5 17 21"/><path d="M9 12H6M18 12h-3"/></svg>
+                                        Ahora mismo
+                                    </button>
+                                    <button class="pos-type-btn" data-appt-type="scheduled">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        Agendar
+                                    </button>
+                                </div>
+
+                                <!-- Fecha/hora — solo si es "Agendar" -->
+                                <div class="appt-pos-datetime" id="apptPosDatetime" style="display:none;">
+                                    <div style="display:flex;gap:.5rem;">
+                                        <input type="date" class="pos-input" id="apptPosDate" style="flex:1;">
+                                        <input type="time" class="pos-input" id="apptPosTime" style="flex:1;">
+                                    </div>
+                                </div>
+
+                                <!-- Servicios seleccionados -->
+                                <div class="pos-items-list" id="posItemsList">
+                                    <div class="pos-items-empty" id="posItemsEmpty">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:2.5rem;height:2.5rem;color:#d1d5db;">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                        </svg>
+                                        <span>Selecciona un servicio del catálogo</span>
+                                    </div>
+                                </div>
+
+                                <!-- Totales -->
+                                <div class="pos-totals">
+                                    <div class="pos-totals-row"><span>Subtotal</span><span id="posSubtotal">$0.00</span></div>
+                                    <div class="pos-totals-row discount-row" id="posDiscountRow" style="display:none;"><span>Descuento</span><span id="posDiscountAmt" class="discount-val">-$0.00</span></div>
+                                    <div class="pos-totals-row total-row"><span>Total</span><span id="posTotal">$0.00</span></div>
+                                </div>
+
+                                <!-- Método de pago -->
+                                <div class="pos-payment-row">
+                                    <label class="pos-label">Pago</label>
+                                    <div class="pos-payment-btns">
+                                        <button class="pos-pay-btn active" data-pay="efectivo">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                                            Efectivo
+                                        </button>
+                                        <button class="pos-pay-btn" data-pay="tarjeta">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                            Tarjeta
+                                        </button>
+                                        <button class="pos-pay-btn" data-pay="transferencia">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+                                            Transferencia
+                                        </button>
+                                        <button class="pos-pay-btn" data-pay="pendiente">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                            Pendiente
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Cambio (solo efectivo) -->
+                                <div class="pos-change-row" id="posChangeRow">
+                                    <label class="pos-label">Cliente paga</label>
+                                    <div class="pos-change-input-wrap">
+                                        <span class="pos-currency">$</span>
+                                        <input type="text" inputmode="decimal" class="pos-input pos-change-input" id="posClientPays" placeholder="0.00">
+                                    </div>
+                                    <div class="pos-change-display" id="posChangeDisplay">
+                                        Cambio: <strong id="posChange">$0.00</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Notas -->
+                                <textarea class="pos-input pos-notes" id="posNotes" placeholder="Observaciones (alergias, preferencias, etc.)" rows="2"></textarea>
+
+                                <!-- Botón -->
+                                <button class="pos-submit-btn" id="posSubmitBtn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                    Registrar Cobro
+                                </button>
+                            </div>
+
+                        </div><!-- /pos-layout -->
+                    </div><!-- /tab-punto-venta -->
+
+                    </div><!-- /appointments-layout -->
+
+    <div class="modal" id="appointmentModal">
+        <div class="modal-overlay" onclick="closeAppointmentModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="lni lni-calendar"></i> Detalles de la Cita</h3>
+                <button class="modal-close" onclick="closeAppointmentModal()">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <form class="appointment-form">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/appointments.js"></script>
+    <script src="/static/js/orders.js"></script>
+    <script>
+    /* ══════════════════════════════════════════════════
+       APPOINTMENTS PAGE — Tab switching + POS de Citas
+    ══════════════════════════════════════════════════ */
+
+    // ── Tab switching ───────────────────────────────
+    document.querySelectorAll('.orders-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            document.querySelectorAll('.orders-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.orders-tab-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.getElementById('tab-' + target);
+            if (panel) panel.classList.add('active');
+            if (target === 'punto-venta') apptPosInit();
+        });
+    });
+
+    // ── Estado del POS de citas ─────────────────────
+    const apptPos = {
+        items:    [],
+        type:     'walkin',   // walkin | scheduled
+        payment:  'efectivo',
+        worker:   '',
+        date:     '',
+        time:     '',
+        notes:    '',
+    };
+
+    let _apptPosLoaded = false;
+
+    async function apptPosInit() {
+        await posLoadProducts();   // carga el catálogo (de orders.js)
+        if (!_apptPosLoaded) {
+            apptPosLoadWorkers();
+            _apptPosLoaded = true;
+        }
+        // Fecha por defecto = hoy
+        const today = new Date().toISOString().split('T')[0];
+        const timeNow = new Date().toTimeString().slice(0,5);
+        const dateEl = document.getElementById('apptPosDate');
+        const timeEl = document.getElementById('apptPosTime');
+        if (dateEl && !dateEl.value) dateEl.value = today;
+        if (timeEl && !timeEl.value) timeEl.value = timeNow;
+    }
+
+    // ── Venta acumulada de citas ────────────────────
+    async function fetchApptRevenue() {
+        try {
+            const resp = await fetch('/api/appointments', { credentials: 'include' });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const appointments = data.appointments || data || [];
+            const total = appointments.reduce((sum, a) => {
+                const amount = parseFloat(
+                    a.totalAmount || a.total || a.amount ||
+                    a.TotalAmount || a.Total || a.Amount || 0
+                );
+                return sum + amount;
+            }, 0);
+            const el = document.getElementById('apptTotalRevenue');
+            if (el) el.textContent = '$' + total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } catch(_) {}
+    }
+
+    // Ejecutar al cargar y cada vez que se cambie de tab a "mis-citas"
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchApptRevenue();
+        apptPosBindEvents();
+    });
+
+    // ── Cargar trabajadores ─────────────────────────
+    async function apptPosLoadWorkers() {
+        try {
+            const resp = await fetch('/api/my-business', { credentials: 'include' });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const branch  = data.activeBranch || data.defaultBranch;
+            const workers = branch?.workers || branch?.Workers || [];
+            const sel = document.getElementById('apptPosWorker');
+            if (!sel) return;
+            workers.forEach(w => {
+                const name = w.name || w.Name || '';
+                if (!name) return;
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                sel.appendChild(opt);
+            });
+        } catch(_) {}
+    }
+
+    // ── Eventos del ticket ──────────────────────────
+    function apptPosBindEvents() {
+
+        // Tipo: ahora mismo / agendar
+        document.querySelectorAll('[data-appt-type]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-appt-type]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                apptPos.type = btn.dataset.apptType;
+                const dt = document.getElementById('apptPosDatetime');
+                if (dt) dt.style.display = apptPos.type === 'scheduled' ? '' : 'none';
+            });
+        });
+
+        // Método de pago
+        document.querySelectorAll('.pos-pay-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pos-pay-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                apptPos.payment = btn.dataset.pay;
+                const changeRow = document.getElementById('posChangeRow');
+                if (changeRow) changeRow.style.display = apptPos.payment === 'efectivo' ? '' : 'none';
+            });
+        });
+
+        // Cambio
+        document.getElementById('posClientPays')?.addEventListener('input', apptPosCalcChange);
+
+        // Limpiar
+        document.getElementById('posClearBtn')?.addEventListener('click', apptPosClear);
+
+        // Crear cobro
+        document.getElementById('posSubmitBtn')?.addEventListener('click', apptPosSubmit);
+    }
+
+    function apptPosCalcChange() {
+        const total = apptPos.items.reduce((s, i) => s + i.price * i.qty, 0);
+        const pays  = parseFloat(document.getElementById('posClientPays')?.value || 0);
+        const change = pays > 0 ? Math.max(0, pays - total) : 0;
+        const el = document.getElementById('posChange');
+        if (el) el.textContent = '$' + change.toFixed(2);
+    }
+
+    function apptPosClear() {
+        apptPos.items = [];
+        posState.items = [];  // sincronizar con orders.js
+        posRenderItems();
+        posTotals();
+        const fields = ['posCustomerName','posCustomerPhone','posNotes','posClientPays'];
+        fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('apptPosWorker').value = '';
+        document.querySelectorAll('[data-appt-type]').forEach((b,i) => b.classList.toggle('active', i===0));
+        apptPos.type = 'walkin';
+        const dt = document.getElementById('apptPosDatetime');
+        if (dt) dt.style.display = 'none';
+    }
+
+    async function apptPosSubmit() {
+        // Sincronizar items desde posState (manejado por orders.js)
+        apptPos.items = posState.items;
+
+        if (apptPos.items.length === 0) {
+            if (typeof sileo !== 'undefined') sileo.warning('Selecciona al menos un servicio.');
+            else alert('Selecciona al menos un servicio.');
+            return;
+        }
+        const customerName = document.getElementById('posCustomerName')?.value.trim() || 'Cliente';
+        const btn = document.getElementById('posSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<svg style="width:1rem;height:1rem;animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Registrando...';
+
+        const dateVal = document.getElementById('apptPosDate')?.value || new Date().toISOString().split('T')[0];
+        const timeVal = document.getElementById('apptPosTime')?.value || new Date().toTimeString().slice(0,5);
+        const worker  = document.getElementById('apptPosWorker')?.value || '';
+
+        const payload = {
+            customerName,
+            customerPhone: document.getElementById('posCustomerPhone')?.value.trim() || '',
+            service:       apptPos.items.map(i => i.name).join(', '),
+            worker,
+            appointmentDate: apptPos.type === 'scheduled' ? dateVal : new Date().toISOString().split('T')[0],
+            appointmentTime: apptPos.type === 'scheduled' ? timeVal : new Date().toTimeString().slice(0,5),
+            paymentMethod:   apptPos.payment,
+            notes:           document.getElementById('posNotes')?.value.trim() || '',
+            totalAmount:     apptPos.items.reduce((s, i) => s + i.price * i.qty, 0),
+            items:           apptPos.items.map(i => ({ name: i.name, price: i.price, quantity: i.qty })),
+            status:          apptPos.type === 'scheduled' ? 'pending' : 'confirmed',
+            source:          'pos',
+        };
+
+        try {
+            const resp = await fetch('/api/appointments', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!resp.ok) throw new Error();
+            if (typeof sileo !== 'undefined') sileo.success('¡Cobro registrado exitosamente!');
+            else alert('¡Cobro registrado!');
+            apptPosClear();
+            fetchApptRevenue();
+            if (typeof loadAppointments === 'function') loadAppointments();
+        } catch(_) {
+            if (typeof sileo !== 'undefined') sileo.error('Error al registrar. Inténtalo de nuevo.');
+            else alert('Error al registrar.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Registrar Cobro`;
+        }
+    }
+    </script>
+    
+    <script>
+        // Lógica para abrir/cerrar los custom dropdowns
+        document.querySelectorAll('.custom-dropdown-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', function(e) {
+                // Cerrar otros abiertos
+                document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(other => {
+                    if (other !== this) other.classList.remove('active');
+                });
+                this.classList.toggle('active');
+                e.stopPropagation();
+            });
+        });
+
+        // Lógica para seleccionar opción
+        function selectFilterOption(element, labelId) {
+            // Actualizar texto visual
+            const text = element.querySelector('span:last-child').innerText;
+            document.getElementById(labelId).innerText = text;
+            
+            // Gestionar clase 'selected'
+            const parent = element.closest('.dropdown-options');
+            parent.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        // Cerrar al hacer click fuera
+        document.addEventListener('click', () => {
+             document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(d => d.classList.remove('active'));
+        });
+    </script>
+</body>
+</html>

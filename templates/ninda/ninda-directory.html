@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ninda — Descubre negocios locales</title>
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0f0f0f;
+      --paper: #ffffff;
+      --cream: #f5f5f5;
+      --accent: #C62828;
+      --accent2: #7B1E2B;
+      --muted: #888;
+      --border: #e0dbd2;
+      --card-bg: #ffffff;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── NAVBAR ── */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--ink);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .nav-right { display: flex; gap: 1rem; align-items: center; }
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    .nav-link:hover { color: var(--ink); }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 5rem 2rem 4rem;
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      animation: fadeUp .5s ease both;
+    }
+    .hero-eyebrow i { font-size: 0.75rem; }
+    .hero h1 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      animation: fadeUp .5s .08s ease both;
+    }
+    .hero h1 em { color: var(--accent); font-style: normal; }
+    .hero p {
+      margin-top: 1.2rem;
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 300;
+      line-height: 1.65;
+      animation: fadeUp .5s .16s ease both;
+    }
+
+    /* ── LOCATION HERO BAR ── */
+    .location-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      margin-top: 2rem;
+      animation: fadeUp .5s .2s ease both;
+    }
+    .location-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: .95rem;
+      font-weight: 500;
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+      white-space: nowrap;
+    }
+    .location-pill:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(198,40,40,.07); }
+    .location-pill svg { color: var(--accent); flex-shrink: 0; }
+    .location-pill .loc-text { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+    .location-pill .loc-change { font-size: .78rem; color: var(--muted); margin-left: 4px; }
+    .location-pill.detecting { color: var(--muted); }
+
+    /* ── SEARCH ── */
+    .search-wrap {
+      max-width: 560px;
+      margin: 1.25rem auto 0;
+      position: relative;
+      animation: fadeUp .5s .28s ease both;
+    }
+    .search-wrap svg {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 14px 16px 14px 46px;
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 1rem;
+      background: var(--card-bg);
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #searchInput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(198,40,40,0.08);
+    }
+    #searchInput::placeholder { color: var(--muted); }
+
+    /* ── FILTERS ── */
+    .filters {
+      max-width: 1200px;
+      margin: 2.5rem auto 0;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      animation: fadeUp .5s .3s ease both;
+    }
+    .filter-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 14px 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      background: var(--card-bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filter-btn i {
+      font-size: 1.4rem;
+      line-height: 1;
+      transition: color .2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    @media (max-width: 700px) {
+      .filters {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    @media (max-width: 420px) {
+      .filters {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* ── GRID ── */
+    .stores-section {
+      max-width: 1200px;
+      margin: 2.5rem auto 6rem;
+      padding: 0 2rem;
+    }
+    .section-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .section-count { font-size: 0.875rem; color: var(--muted); }
+
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ── STORE CARD — estilo galería ── */
+    .store-card {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      aspect-ratio: 3/4;
+      background: var(--cream);
+      transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s;
+      animation: cardIn .5s ease both;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .store-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      box-shadow: 0 16px 40px rgba(0,0,0,.13);
+    }
+
+    /* Imagen de fondo que llena toda la card */
+    .card-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .5s ease;
+    }
+    .store-card:hover .card-bg { transform: scale(1.05); }
+
+    .card-bg-placeholder {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 4rem;
+      background: linear-gradient(145deg, #f0f0f0 0%, #e4e4e4 100%);
+    }
+
+    /* Degradado inferior para legibilidad del texto */
+    .card-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 30%,
+        rgba(10,10,10,.55) 65%,
+        rgba(10,10,10,.85) 100%
+      );
+    }
+
+    /* Logo circular flotante centrado arriba */
+    .card-logo {
+      position: absolute;
+      top: 18px; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,.9);
+      background: #fff;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    }
+    .card-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Info en la parte inferior dentro de la card */
+    .card-body {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1rem 1.1rem 1.1rem;
+      color: #fff;
+    }
+    .card-type-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.2);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      text-transform: capitalize;
+      margin-bottom: 5px;
+    }
+    .card-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-location {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,.75);
+      display: flex; align-items: center; gap: 3px;
+      margin-bottom: 8px;
+    }
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-meta {
+      font-size: 0.73rem;
+      color: rgba(255,255,255,.7);
+    }
+    .card-payments { display: flex; gap: 4px; }
+    .pay-chip {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 5px;
+    }
+    .pay-chip.stripe { background: rgba(80,70,229,.25); color: #c4bfff; border: 1px solid rgba(80,70,229,.4); }
+    .pay-chip.spei   { background: rgba(5,150,105,.25);  color: #6ee7c0; border: 1px solid rgba(5,150,105,.4); }
+
+    @media (max-width: 500px) {
+      .stores-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+      .store-card { border-radius: 20px; }
+    }
+
+    /* ── EMPTY & LOADING ── */
+    .state-box {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 5rem 2rem;
+      color: var(--muted);
+    }
+    .state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .state-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .state-sub { font-size: 0.9rem; }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--cream) 25%, #ece7de 50%, var(--cream) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.25rem 2.5rem; }
+      .stores-section { padding: 0 1.25rem; }
+      .filters { padding: 0 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+{{template "ninda/navbar-ninda.html" .}}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <circle cx="6" cy="6" r="5" fill="#C62828"/>
+    </svg>
+    Negocios locales · Pago seguro · Confirmación por WhatsApp
+  </div>
+  <h1>Compra en tus <em>negocios</em><br>favoritos</h1>
+  <p>Descubre productos y servicios de negocios locales.<br>Paga con tarjeta y recibe confirmación directo en WhatsApp.</p>
+
+  <!-- Pill de ubicación -->
+  <div class="location-bar">
+    <div class="location-pill detecting" id="locationPill">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0">
+        <path d="M12 22s-8-5-8-12a8 8 0 0 1 16 0c0 7-8 12-8 12z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <!-- Vista normal -->
+      <span id="locDisplay" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <span class="loc-text" id="locationText">Detectando ubicación...</span>
+        <span class="loc-change" id="locationChange"></span>
+      </span>
+      <!-- Modo edición -->
+      <span id="locEdit" style="display:none;align-items:center;gap:6px;">
+        <input id="locationInput" type="text" placeholder="Escribe tu dirección o ciudad..." autocomplete="off" />
+        <button class="loc-confirm-btn" id="locConfirmBtn">Buscar</button>
+        <button class="loc-cancel-btn" id="locCancelBtn">✕</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input id="searchInput" type="text" placeholder="Buscar negocios, servicios..." />
+  </div>
+</section>
+
+<!-- FILTERS -->
+<div class="filters" id="filters">
+  <button class="filter-btn active" data-type="">
+    <i class="lni lni-grid-alt"></i>
+    Todos
+  </button>
+  <button class="filter-btn" data-type="salon">
+    <i class="lni lni-cut"></i>
+    Salones
+  </button>
+  <button class="filter-btn" data-type="pizzeria">
+    <i class="lni lni-pizza"></i>
+    Pizzerías
+  </button>
+  <button class="filter-btn" data-type="clinica">
+    <i class="lni lni-hospital"></i>
+    Clínicas
+  </button>
+  <button class="filter-btn" data-type="restaurante">
+    <i class="lni lni-restaurant"></i>
+    Restaurantes
+  </button>
+  <button class="filter-btn" data-type="tienda">
+    <i class="lni lni-shop"></i>
+    Tiendas
+  </button>
+  <button class="filter-btn" data-type="spa">
+    <i class="lni lni-leaf"></i>
+    Spa & Bienestar
+  </button>
+</div>
+
+<!-- GRID -->
+<section class="stores-section">
+  <div class="section-header">
+    <span class="section-title">Negocios disponibles</span>
+    <span class="section-count" id="storeCount">Cargando...</span>
+  </div>
+  <div class="stores-grid" id="storesGrid">
+    <!-- Skeleton loaders -->
+    <div class="store-card skeleton" style="pointer-events:none;background:none;box-shadow:none;"></div>
+    <div class="store-card skeleton" style="pointer-events:none;background:none;box-shadow:none;"></div>
+    <div class="store-card skeleton" style="pointer-events:none;background:none;box-shadow:none;"></div>
+    <div class="store-card skeleton" style="pointer-events:none;background:none;box-shadow:none;"></div>
+  </div>
+</section>
+
+<script>
+  const EMOJIS = { salon:'💇', pizzeria:'🍕', clinica:'🏥', restaurante:'🍽️', spa:'🧘', tienda:'🛍️', default:'🏪' };
+
+  let allStores = [];
+  let activeType = '';
+  let searchQuery = '';
+  let searchTimer;
+  let userCity    = ''; // ciudad para filtrar negocios
+  let userAddress = ''; // dirección completa para mostrar en el pill
+
+  // ── Geolocalización ────────────────────────────────────────────────────────
+  const pill          = document.getElementById('locationPill');
+  const locText       = document.getElementById('locationText');
+  const locChange     = document.getElementById('locationChange');
+  const locDisplay    = document.getElementById('locDisplay');
+  const locEdit       = document.getElementById('locEdit');
+  const locationInput = document.getElementById('locationInput');
+  const locConfirmBtn = document.getElementById('locConfirmBtn');
+  const locCancelBtn  = document.getElementById('locCancelBtn');
+
+  function openEditMode() {
+    locDisplay.style.display = 'none';
+    locEdit.style.display    = 'flex';
+    pill.classList.add('editing');
+    locationInput.value = userAddress || '';
+    locationInput.focus();
+    locationInput.select();
+  }
+
+  function closeEditMode() {
+    locEdit.style.display    = 'none';
+    locDisplay.style.display = 'flex';
+    pill.classList.remove('editing');
+  }
+
+  async function confirmCity() {
+    const val = locationInput.value.trim();
+    if (!val) return;
+    locConfirmBtn.textContent = '...';
+    locConfirmBtn.disabled = true;
+    // Forward geocoding para obtener la ciudad real
+    try {
+      const res  = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=1&accept-language=es`);
+      const data = await res.json();
+      if (data[0]) {
+        const a    = data[0].address || {};
+        const city = a.city || a.town || a.village || a.county || val;
+        setLocation(val, city);
+        try { localStorage.setItem('ninda_address', val);
+              localStorage.setItem('ninda_city', city); } catch {}
+      } else {
+        // Si no encuentra nada, usar el texto como ciudad directamente
+        setLocation(val, val);
+        try { localStorage.setItem('ninda_address', val);
+              localStorage.setItem('ninda_city', val); } catch {}
+      }
+    } catch {
+      setLocation(val, val);
+    }
+    locConfirmBtn.textContent = 'Buscar';
+    locConfirmBtn.disabled = false;
+    closeEditMode();
+  }
+
+  locConfirmBtn.addEventListener('click', confirmCity);
+  locCancelBtn.addEventListener('click', closeEditMode);
+  locationInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmCity();
+    if (e.key === 'Escape') closeEditMode();
+  });
+
+  // Muestra dirección completa en el pill, filtra por ciudad
+  function setLocation(address, city) {
+    userAddress = address;
+    userCity    = city;
+    // Truncar si es muy larga para el pill
+    const display = address.length > 40 ? address.slice(0, 38) + '…' : address;
+    locText.textContent   = display;
+    locChange.textContent = '· cambiar';
+    pill.classList.remove('detecting');
+    document.querySelector('.section-title').textContent = `Negocios en ${city}`;
+    renderStores();
+  }
+
+  function clearLocation() {
+    userAddress = '';
+    userCity    = '';
+    locText.textContent   = 'Todas las ciudades';
+    locChange.textContent = '· cambiar';
+    pill.classList.remove('detecting');
+    document.querySelector('.section-title').textContent = 'Negocios disponibles';
+    renderStores();
+  }
+
+  // Devuelve { address, city } con la dirección completa y la ciudad por separado
+  async function reverseGeocode(lat, lng) {
+    try {
+      const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es`);
+      const data = await res.json();
+      const a    = data.address || {};
+
+      // Dirección completa: calle número, colonia, ciudad
+      const street = [a.road, a.house_number].filter(Boolean).join(' ');
+      const suburb = a.suburb || a.neighbourhood || a.residential || '';
+      const city   = a.city || a.town || a.village || a.county || '';
+      const parts  = [street, suburb, city].filter(Boolean);
+      const address = parts.join(', ') || city;
+
+      return { address: address || null, city: city || null };
+    } catch { return null; }
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) { clearLocation(); return; }
+    locText.textContent = 'Detectando ubicación...';
+    pill.classList.add('detecting');
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const result = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        if (result?.city) {
+          setLocation(result.address || result.city, result.city);
+          try { localStorage.setItem('ninda_address', result.address || result.city);
+                localStorage.setItem('ninda_city', result.city); } catch {}
+        } else { clearLocation(); }
+      },
+      () => { clearLocation(); },
+      { timeout: 8000 }
+    );
+  }
+
+  // Al cargar: intentar dirección guardada primero, luego geoloc
+  (function initLocation() {
+    try {
+      const savedAddr = localStorage.getItem('ninda_address');
+      const savedCity = localStorage.getItem('ninda_city');
+      if (savedAddr && savedCity) { setLocation(savedAddr, savedCity); return; }
+    } catch {}
+    requestLocation();
+  })();
+
+  // ── Init stores ────────────────────────────────────────────────────────────
+  fetchStores();
+
+  document.getElementById('filters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeType = btn.dataset.type;
+    renderStores();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderStores();
+    }, 250);
+  });
+
+  async function fetchStores() {
+    try {
+      const res = await fetch('/api/ninda/stores');
+      const data = await res.json();
+      allStores = data.stores || [];
+      renderStores();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('storesGrid').innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">⚠️</div>
+          <div class="state-title">Error cargando negocios</div>
+          <div class="state-sub">Intenta recargar la página</div>
+        </div>`;
+    }
+  }
+
+  function renderStores() {
+    let stores = allStores;
+
+    // Filtro por ciudad detectada (insensible a mayúsculas/acentos)
+    if (userCity) {
+      const cityNorm = normalize(userCity);
+      stores = stores.filter(s => {
+        const sc = normalize([s.city, s.state].join(' '));
+        return sc.includes(cityNorm) || cityNorm.includes(normalize(s.city || ''));
+      });
+    }
+
+    if (activeType) stores = stores.filter(s => (s.businessType || '').toLowerCase() === activeType);
+    if (searchQuery) {
+      stores = stores.filter(s => {
+        const hay = normalize([s.name, s.businessType, s.city, s.state, s.description].join(' '));
+        return hay.includes(normalize(searchQuery));
+      });
+    }
+
+    document.getElementById('storeCount').textContent = `${stores.length} negocio${stores.length !== 1 ? 's' : ''}`;
+
+    if (stores.length === 0) {
+      document.getElementById('storesGrid').innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">🔍</div>
+          <div class="state-title">No encontramos negocios${userCity ? ` en ${userCity}` : ''}</div>
+          <div class="state-sub">Prueba con otra búsqueda o <button onclick="clearLocation()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:inherit;padding:0;text-decoration:underline;">ver todas las ciudades</button></div>
+        </div>`;
+      return;
+    }
+
+    document.getElementById('storesGrid').innerHTML = stores.map((s, i) => {
+      const emoji = EMOJIS[s.businessType?.toLowerCase()] || EMOJIS.default;
+      const city = [s.city, s.state].filter(Boolean).join(', ');
+      const payments = [
+        s.hasStripe ? '<span class="pay-chip stripe">Tarjeta</span>' : '',
+        s.hasSPEI   ? '<span class="pay-chip spei">SPEI</span>'    : '',
+      ].filter(Boolean).join('');
+
+      // Imagen de fondo (banner > primera imagen de servicio > placeholder)
+      const bgHTML = s.coverImage
+        ? `<img class="card-bg" src="${s.coverImage}" alt="${s.name}" loading="lazy" />`
+        : `<div class="card-bg-placeholder">${emoji}</div>`;
+
+      // Logo circular (logoUrl > emoji)
+      const logoInner = s.logoUrl
+        ? `<img src="${s.logoUrl}" alt="${s.name}" />`
+        : `<span>${emoji}</span>`;
+
+      return `
+        <a class="store-card" href="/ninda/${s.id}" style="animation-delay:${i * 0.04}s">
+          ${bgHTML}
+          <div class="card-gradient"></div>
+          <div class="card-logo">${logoInner}</div>
+          <div class="card-body">
+            ${s.businessType ? `<span class="card-type-badge">${s.businessType}</span>` : ''}
+            <div class="card-name">${s.name}</div>
+            ${city ? `<div class="card-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 22s-8-5-8-12a8 8 0 0 1 16 0c0 7-8 12-8 12z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              ${city}
+            </div>` : ''}
+            <div class="card-footer">
+              <span class="card-meta">${s.servicesCount} producto${s.servicesCount !== 1 ? 's' : ''}</span>
+              <div class="card-payments">${payments}</div>
+            </div>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  // Normalizar texto para comparaciones insensibles a tildes/mayúsculas
+  function normalize(str) {
+    return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+</script>
+</body>
+</html>

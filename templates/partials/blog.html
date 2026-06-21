@@ -1,0 +1,378 @@
+{{define "blog.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - {{.title}}</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/partials/blog.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="blog-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="hero-title">
+                <span class="highlight">Blog</span> y Recursos
+            </h1>
+            <p class="hero-subtitle">
+                Aprende sobre chatbots, inteligencia artificial y automatización para tu negocio.
+            </p>
+        </div>
+    </section>
+
+    <!-- Featured Post -->
+    <section class="featured-post-section">
+        <div class="container">
+            <div class="featured-post">
+                <div class="featured-image">
+                    <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80" alt="IA transformando servicio al cliente">
+                    <div class="featured-badge">
+                        <i class="lni lni-star"></i>
+                        Destacado
+                    </div>
+                </div>
+                <div class="featured-content">
+                    <div class="post-meta">
+                        <span class="post-category">
+                            <i class="lni lni-tag"></i>
+                            Inteligencia Artificial
+                        </span>
+                        <span class="post-date">
+                            <i class="lni lni-calendar"></i>
+                            10 Enero 2025
+                        </span>
+                    </div>
+                    <h2 class="featured-title">
+                        Cómo la IA está transformando el servicio al cliente en 2025
+                    </h2>
+                    <p class="featured-excerpt">
+                        Descubre las últimas tendencias en chatbots con IA y cómo están revolucionando la manera en que las empresas interactúan con sus clientes. Desde respuestas personalizadas hasta análisis predictivo.
+                    </p>
+                    <div class="featured-footer">
+                        <div class="author-info">
+                            <div class="author-avatar">
+                                <i class="lni lni-user"></i>
+                            </div>
+                            <div>
+                                <div class="author-name">Eduardo Martínez</div>
+                                <div class="author-role">CEO Attomos</div>
+                            </div>
+                        </div>
+                        <button class="read-more-btn">
+                            Leer artículo
+                            <i class="lni lni-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Categories -->
+    <section class="blog-categories-section">
+        <div class="container">
+            <div class="category-filters">
+                <button class="category-btn active" data-category="all">
+                    <i class="lni lni-grid"></i>
+                    Todos
+                </button>
+                <button class="category-btn" data-category="ai">
+                    <i class="lni lni-brain"></i>
+                    IA
+                </button>
+                <button class="category-btn" data-category="automation">
+                    <i class="lni lni-cog"></i>
+                    Automatización
+                </button>
+                <button class="category-btn" data-category="business">
+                    <i class="lni lni-briefcase"></i>
+                    Negocios
+                </button>
+                <button class="category-btn" data-category="tutorials">
+                    <i class="lni lni-book"></i>
+                    Tutoriales
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Grid -->
+    <section class="blog-grid-section">
+        <div class="container">
+            <div class="blog-grid">
+                <!-- Blog Post 1 -->
+                <article class="blog-card" data-category="tutorials">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1611746872915-64382b5c76da?w=600&q=80" alt="Tutorial chatbot WhatsApp">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                Tutoriales
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                8 Enero 2025
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            Guía completa: Crea tu primer chatbot para WhatsApp
+                        </h3>
+                        <p class="blog-excerpt">
+                            Aprende paso a paso cómo configurar y lanzar tu primer chatbot en WhatsApp Business sin necesidad de programar.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                5 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Blog Post 2 -->
+                <article class="blog-card" data-category="business">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80" alt="ROI chatbots">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                Negocios
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                5 Enero 2025
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            10 formas de calcular el ROI de tu chatbot
+                        </h3>
+                        <p class="blog-excerpt">
+                            Descubre las métricas clave para medir el retorno de inversión de tu chatbot y justificar la inversión ante tu equipo.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                7 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Blog Post 3 -->
+                <article class="blog-card" data-category="ai">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&q=80" alt="IA conversacional">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                IA
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                3 Enero 2025
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            El futuro de la IA conversacional: Tendencias 2025
+                        </h3>
+                        <p class="blog-excerpt">
+                            Explora las tecnologías emergentes que están dando forma al futuro de los chatbots y la IA conversacional.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                6 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Blog Post 4 -->
+                <article class="blog-card" data-category="automation">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80" alt="Automatización ventas">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                Automatización
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                1 Enero 2025
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            Automatiza tu embudo de ventas con chatbots inteligentes
+                        </h3>
+                        <p class="blog-excerpt">
+                            Aprende cómo los chatbots pueden capturar leads, calificarlos y nutrir prospectos automáticamente.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                8 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Blog Post 5 -->
+                <article class="blog-card" data-category="tutorials">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80" alt="Integraciones chatbot">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                Tutoriales
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                28 Diciembre 2024
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            Integra tu chatbot con tu CRM favorito
+                        </h3>
+                        <p class="blog-excerpt">
+                            Tutorial paso a paso para conectar tu chatbot con Salesforce, HubSpot y otros CRMs populares.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                10 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Blog Post 6 -->
+                <article class="blog-card" data-category="business">
+                    <div class="blog-image">
+                        <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80" alt="Casos de éxito">
+                    </div>
+                    <div class="blog-content">
+                        <div class="post-meta">
+                            <span class="post-category">
+                                <i class="lni lni-tag"></i>
+                                Negocios
+                            </span>
+                            <span class="post-date">
+                                <i class="lni lni-calendar"></i>
+                                25 Diciembre 2024
+                            </span>
+                        </div>
+                        <h3 class="blog-title">
+                            Casos de éxito: Empresas que revolucionaron su atención
+                        </h3>
+                        <p class="blog-excerpt">
+                            Conoce cómo empresas reales han implementado chatbots para mejorar su servicio al cliente y aumentar ventas.
+                        </p>
+                        <div class="blog-footer">
+                            <div class="read-time">
+                                <i class="lni lni-timer"></i>
+                                12 min lectura
+                            </div>
+                            <button class="blog-link">
+                                Leer más
+                                <i class="lni lni-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="pagination-btn" disabled>
+                    <i class="lni lni-chevron-left"></i>
+                </button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">
+                    <i class="lni lni-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-icon">
+                    <i class="lni lni-envelope"></i>
+                </div>
+                <h2 class="newsletter-title">Suscríbete a nuestro newsletter</h2>
+                <p class="newsletter-subtitle">
+                    Recibe los mejores artículos sobre IA, automatización y chatbots directamente en tu inbox.
+                </p>
+                <form class="newsletter-form">
+                    <input type="email" class="newsletter-input" placeholder="tu@email.com" required>
+                    <button type="submit" class="newsletter-btn">
+                        <i class="lni lni-telegram-original"></i>
+                        Suscribirme
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+    </div>
+
+    <!-- JavaScript - CORREGIDO: Usar blog.js en lugar de agents.js -->
+    <script src="/static/js/partials/blog.js"></script>
+</body>
+</html>
+{{end}}

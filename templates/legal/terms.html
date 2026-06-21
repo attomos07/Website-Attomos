@@ -1,0 +1,720 @@
+{{define "terms.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/legal/legal.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="legal-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="legal-hero-title">
+                <span class="highlight">Términos</span> y Condiciones
+            </h1>
+            <p class="legal-hero-subtitle">
+                Términos legales que rigen el uso de la plataforma Attomos.
+            </p>
+            <div class="legal-meta">
+                <div class="legal-meta-item">
+                    <i class="lni lni-calendar"></i>
+                    Última actualización: 12 de febrero de 2025
+                </div>
+                <div class="legal-meta-item">
+                    <i class="lni lni-files"></i>
+                    Versión 1.0
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="legal-content-section">
+        <div class="legal-container">
+                <!-- Table of Contents -->
+                <div class="table-of-contents">
+                    <h2 class="toc-title">
+                        <i class="lni lni-list"></i>
+                        Tabla de Contenidos
+                    </h2>
+                    <ul class="toc-list">
+                        <li><a href="#seccion-1"><i class="lni lni-chevron-right"></i>1. Aceptación de los Términos</a></li>
+                        <li><a href="#seccion-2"><i class="lni lni-chevron-right"></i>2. Definiciones</a></li>
+                        <li><a href="#seccion-3"><i class="lni lni-chevron-right"></i>3. Descripción del Servicio</a></li>
+                        <li><a href="#seccion-4"><i class="lni lni-chevron-right"></i>4. Registro y Cuenta de Usuario</a></li>
+                        <li><a href="#seccion-5"><i class="lni lni-chevron-right"></i>5. Uso Permitido del Servicio</a></li>
+                        <li><a href="#seccion-6"><i class="lni lni-chevron-right"></i>6. Propiedad Intelectual</a></li>
+                        <li><a href="#seccion-7"><i class="lni lni-chevron-right"></i>7. Planes, Facturación y Pagos</a></li>
+                        <li><a href="#seccion-8"><i class="lni lni-chevron-right"></i>8. Privacidad y Protección de Datos</a></li>
+                        <li><a href="#seccion-9"><i class="lni lni-chevron-right"></i>9. Limitación de Responsabilidad</a></li>
+                        <li><a href="#seccion-10"><i class="lni lni-chevron-right"></i>10. Indemnización</a></li>
+                        <li><a href="#seccion-11"><i class="lni lni-chevron-right"></i>11. Modificaciones a los Términos</a></li>
+                        <li><a href="#seccion-12"><i class="lni lni-chevron-right"></i>12. Terminación del Servicio</a></li>
+                        <li><a href="#seccion-13"><i class="lni lni-chevron-right"></i>13. Fuerza Mayor</a></li>
+                        <li><a href="#seccion-14"><i class="lni lni-chevron-right"></i>14. Disposiciones Generales</a></li>
+                        <li><a href="#seccion-15"><i class="lni lni-chevron-right"></i>15. Jurisdicción y Ley Aplicable</a></li>
+                    </ul>
+                </div>
+
+                <!-- Section 1 -->
+                <div class="legal-section" id="seccion-1">
+                    <h2 class="section-title">
+                        <span class="section-number">1</span>
+                        Aceptación de los Términos
+                    </h2>
+                    <p>Bienvenido a <strong>Attomos</strong>. Al acceder y utilizar nuestra plataforma, usted acepta estar sujeto a estos Términos y Condiciones, así como a nuestro Aviso de Privacidad.</p>
+                    
+                    <div class="highlight-box important">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Importante
+                        </div>
+                        <p>Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestros servicios.</p>
+                    </div>
+
+                    <p>Estos términos constituyen un acuerdo legal vinculante entre usted (el "Usuario" o "Cliente") y Attomos Industries SAS (en adelante "Attomos", "nosotros", "nuestro" o "la empresa").</p>
+                    
+                    <p><strong>Capacidad legal:</strong> Al aceptar estos términos, usted declara ser mayor de 18 años y tener la capacidad legal necesaria para contratar en su nombre o en representación de una empresa u organización.</p>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="legal-section" id="seccion-2">
+                    <h2 class="section-title">
+                        <span class="section-number">2</span>
+                        Definiciones
+                    </h2>
+                    <p>Para efectos de estos Términos y Condiciones, los siguientes términos tendrán el significado que se indica:</p>
+                    <ul>
+                        <li><strong>"Plataforma" o "Servicio":</strong> Se refiere a la plataforma web Attomos, accesible en attomos.ai, incluyendo todas sus funcionalidades, herramientas y servicios asociados.</li>
+                        <li><strong>"Agente" o "Chatbot":</strong> Programa de inteligencia artificial creado y configurado por el Usuario a través de la Plataforma para automatizar conversaciones y procesos.</li>
+                        <li><strong>"Usuario" o "Cliente":</strong> Persona física o moral que se registra y utiliza los servicios de Attomos.</li>
+                        <li><strong>"Cuenta":</strong> Perfil único del Usuario dentro de la Plataforma, creado mediante el proceso de registro.</li>
+                        <li><strong>"Contenido del Usuario":</strong> Toda información, datos, textos, mensajes, configuraciones y archivos que el Usuario introduce, carga o genera en la Plataforma.</li>
+                        <li><strong>"Suscripción":</strong> Plan de servicios contratado por el Usuario (Gratuito, Protón, Neutrón o Electrón).</li>
+                        <li><strong>"Terceros Integrados":</strong> Servicios externos como Google Calendar, Google Sheets, Meta WhatsApp Business API, Stripe, y Chatwoot que se integran con la Plataforma.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="legal-section" id="seccion-3">
+                    <h2 class="section-title">
+                        <span class="section-number">3</span>
+                        Descripción del Servicio
+                    </h2>
+                    <p>Attomos proporciona una plataforma SaaS (Software as a Service) que permite a los usuarios crear, configurar y operar agentes de inteligencia artificial para automatizar la atención al cliente y procesos de negocio.</p>
+
+                    <h3 class="subsection-title">3.1 Tecnologías Propias de Conexión con WhatsApp</h3>
+                    <p>Attomos ha desarrollado dos sistemas propios de integración con WhatsApp:</p>
+                    <ul>
+                        <li><strong>Atomic Bot:</strong> Sistema de conexión con WhatsApp Web mediante código QR. Ideal para empresas que inician o tienen necesidades básicas de automatización. No requiere verificación empresarial de Meta.</li>
+                        <li><strong>Orbital Bot:</strong> Sistema de integración directa con Meta WhatsApp Business API. Diseñado para empresas que requieren funcionalidades empresariales avanzadas, mayor volumen de mensajes y cuentas verificadas.</li>
+                    </ul>
+
+                    <h3 class="subsection-title">3.2 Funcionalidades Principales</h3>
+                    <ul>
+                        <li>Automatización de conversaciones en múltiples plataformas de mensajería (WhatsApp, Messenger, Instagram, Telegram)</li>
+                        <li>Gestión de citas y calendario mediante integración con Google Calendar</li>
+                        <li>Procesamiento de lenguaje natural mediante IA de Google Gemini</li>
+                        <li>Almacenamiento y gestión de datos en Google Sheets</li>
+                        <li>Sistema CRM integrado con Chatwoot (planes de pago)</li>
+                        <li>Catálogo de productos y servicios</li>
+                        <li>Gestión de horarios de atención personalizados</li>
+                        <li>Configuración de personalidad y tono del agente</li>
+                        <li>Panel de control y analytics (planes de pago)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">3.3 Planes de Servicio</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Descripción</th>
+                                <th>Características Principales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Gratuito</strong></td>
+                                <td>Prueba de 30 días sin costo</td>
+                                <td>1 agente, WhatsApp Web (QR), mensajes ilimitados, IA Gemini</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Protón</strong></td>
+                                <td>Plan para servicios</td>
+                                <td>Agentes ilimitados, Meta WhatsApp API, Chatwoot CRM</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Neutrón</strong></td>
+                                <td>Plan para e-commerce</td>
+                                <td>Todo Protón + POS, inventario, página web y app móvil</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Electrón</strong></td>
+                                <td>Plan Enterprise con voz IA</td>
+                                <td>Todo Neutrón + llamadas con IA, voz natural, IVR inteligente</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Nota
+                        </div>
+                        <p>Las características específicas de cada plan pueden cambiar. Consulte la página de planes actualizada para información detallada.</p>
+                    </div>
+                </div>
+
+                <!-- Section 4 -->
+                <div class="legal-section" id="seccion-4">
+                    <h2 class="section-title">
+                        <span class="section-number">4</span>
+                        Registro y Cuenta de Usuario
+                    </h2>
+                    
+                    <h3 class="subsection-title">4.1 Proceso de Registro</h3>
+                    <p>Para utilizar la Plataforma, debe completar el proceso de registro proporcionando información veraz y actualizada:</p>
+                    <ul>
+                        <li>Nombre del negocio</li>
+                        <li>Correo electrónico válido</li>
+                        <li>Número de teléfono/WhatsApp</li>
+                        <li>Contraseña segura</li>
+                        <li>Giro y tamaño del negocio</li>
+                    </ul>
+
+                    <h3 class="subsection-title">4.2 Responsabilidades del Usuario</h3>
+                    <p>Al crear una cuenta, usted se compromete a:</p>
+                    <ul>
+                        <li>Proporcionar información veraz, precisa y completa</li>
+                        <li>Mantener actualizada su información de contacto</li>
+                        <li>Mantener la confidencialidad de su contraseña</li>
+                        <li>No compartir su cuenta con terceros</li>
+                        <li>Notificar inmediatamente cualquier uso no autorizado de su cuenta</li>
+                        <li>Ser responsable de todas las actividades realizadas bajo su cuenta</li>
+                    </ul>
+
+                    <h3 class="subsection-title">4.3 Suspensión y Terminación de Cuenta</h3>
+                    <p>Nos reservamos el derecho de suspender o cancelar su cuenta si:</p>
+                    <ul>
+                        <li>Viola estos Términos y Condiciones</li>
+                        <li>Utiliza el servicio para actividades ilegales o no autorizadas</li>
+                        <li>Proporciona información falsa o engañosa</li>
+                        <li>No paga las tarifas correspondientes a su suscripción</li>
+                        <li>Realiza actividades que puedan dañar la Plataforma o a otros usuarios</li>
+                    </ul>
+
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Eliminación de cuenta
+                        </div>
+                        <p>Puede eliminar su cuenta en cualquier momento desde la configuración de su perfil. Esta acción es irreversible y resultará en la pérdida permanente de todos sus datos, agentes y configuraciones.</p>
+                    </div>
+                </div>
+
+                <!-- Section 5 -->
+                <div class="legal-section" id="seccion-5">
+                    <h2 class="section-title">
+                        <span class="section-number">5</span>
+                        Uso Permitido del Servicio
+                    </h2>
+                    
+                    <h3 class="subsection-title">5.1 Usos Autorizados</h3>
+                    <p>Puede utilizar Attomos para:</p>
+                    <ul>
+                        <li>Automatizar la atención al cliente de su negocio</li>
+                        <li>Gestionar citas y reservaciones</li>
+                        <li>Proporcionar información sobre productos y servicios</li>
+                        <li>Procesar pedidos y ventas (planes aplicables)</li>
+                        <li>Recopilar leads y datos de clientes potenciales</li>
+                        <li>Brindar soporte técnico automatizado</li>
+                        <li>Enviar notificaciones y recordatorios a clientes</li>
+                    </ul>
+
+                    <h3 class="subsection-title">5.2 Usos Prohibidos</h3>
+                    <p>Está estrictamente prohibido utilizar Attomos para:</p>
+                    <ul>
+                        <li><strong>Actividades ilegales:</strong> Cualquier uso que viole leyes locales, nacionales o internacionales</li>
+                        <li><strong>Spam y phishing:</strong> Envío masivo de mensajes no solicitados o intentos de fraude</li>
+                        <li><strong>Contenido ilícito:</strong> Difusión de pornografía, contenido violento, discurso de odio o material que incite a la violencia</li>
+                        <li><strong>Violación de derechos:</strong> Infracción de derechos de autor, marcas comerciales o propiedad intelectual de terceros</li>
+                        <li><strong>Malware y virus:</strong> Distribución de software malicioso o código dañino</li>
+                        <li><strong>Suplantación:</strong> Hacerse pasar por otra persona, empresa o entidad</li>
+                        <li><strong>Acoso:</strong> Hostigamiento, intimidación o amenazas a otras personas</li>
+                        <li><strong>Minería de datos:</strong> Extracción no autorizada de datos de la Plataforma o de otros usuarios</li>
+                        <li><strong>Ingeniería inversa:</strong> Intentar descompilar, modificar o copiar el código fuente de la Plataforma</li>
+                        <li><strong>Sobrecarga del sistema:</strong> Realizar acciones que puedan sobrecargar o interrumpir el funcionamiento de la Plataforma</li>
+                        <li><strong>Reventa no autorizada:</strong> Revender o redistribuir el servicio sin autorización expresa</li>
+                    </ul>
+
+                    <div class="highlight-box important">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-shield"></i>
+                            Monitoreo
+                        </div>
+                        <p>Nos reservamos el derecho de monitorear el uso de la Plataforma para garantizar el cumplimiento de estos términos. Cualquier violación puede resultar en la suspensión inmediata de la cuenta sin previo aviso y sin derecho a reembolso.</p>
+                    </div>
+                </div>
+
+                <!-- Section 6 -->
+                <div class="legal-section" id="seccion-6">
+                    <h2 class="section-title">
+                        <span class="section-number">6</span>
+                        Propiedad Intelectual
+                    </h2>
+                    
+                    <h3 class="subsection-title">6.1 Derechos de Attomos</h3>
+                    <p>Todos los derechos de propiedad intelectual sobre la Plataforma, incluyendo pero no limitado a:</p>
+                    <ul>
+                        <li>Código fuente y software</li>
+                        <li>Diseño e interfaz de usuario</li>
+                        <li>Logotipos y marcas comerciales</li>
+                        <li>Contenido y documentación</li>
+                        <li>Algoritmos y metodologías</li>
+                    </ul>
+                    <p>Son propiedad exclusiva de Attomos Industries SAS y están protegidos por las leyes de propiedad intelectual de México y tratados internacionales.</p>
+
+                    <h3 class="subsection-title">6.2 Licencia de Uso</h3>
+                    <p>Al suscribirse a Attomos, le otorgamos una licencia limitada, no exclusiva, no transferible y revocable para:</p>
+                    <ul>
+                        <li>Acceder y usar la Plataforma según su plan contratado</li>
+                        <li>Crear y configurar agentes de IA para su uso comercial legítimo</li>
+                        <li>Utilizar las funcionalidades disponibles en su nivel de suscripción</li>
+                    </ul>
+
+                    <p><strong>Esta licencia NO incluye el derecho a:</strong></p>
+                    <ul>
+                        <li>Copiar, modificar o crear trabajos derivados de la Plataforma</li>
+                        <li>Distribuir, vender o sublicenciar el software</li>
+                        <li>Realizar ingeniería inversa del código fuente</li>
+                        <li>Remover avisos de propiedad intelectual o derechos de autor</li>
+                    </ul>
+
+                    <h3 class="subsection-title">6.3 Contenido del Usuario</h3>
+                    <p>Usted conserva todos los derechos sobre el Contenido del Usuario que introduce en la Plataforma. Al utilizar el servicio, nos otorga una licencia mundial, no exclusiva, libre de regalías para:</p>
+                    <ul>
+                        <li>Almacenar y procesar su contenido para proporcionar el servicio</li>
+                        <li>Realizar copias de seguridad de su información</li>
+                        <li>Mostrar su contenido dentro de la Plataforma según su configuración</li>
+                    </ul>
+
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-shield"></i>
+                            Importante
+                        </div>
+                        <p>No utilizamos su Contenido del Usuario para entrenar modelos de IA propios ni lo compartimos con terceros sin su consentimiento, excepto según lo establecido en nuestro Aviso de Privacidad.</p>
+                    </div>
+                </div>
+
+                <!-- Section 7 -->
+                <div class="legal-section" id="seccion-7">
+                    <h2 class="section-title">
+                        <span class="section-number">7</span>
+                        Planes, Facturación y Pagos
+                    </h2>
+                    
+                    <h3 class="subsection-title">7.1 Planes de Suscripción</h3>
+                    <p>Attomos ofrece diferentes planes de suscripción con características y precios variables. Los detalles actualizados de cada plan están disponibles en nuestra página de planes.</p>
+
+                    <h3 class="subsection-title">7.2 Plan Gratuito</h3>
+                    <ul>
+                        <li><strong>Duración:</strong> 30 días desde la fecha de registro</li>
+                        <li>No requiere información de pago</li>
+                        <li>Funcionalidades limitadas según especificaciones del plan</li>
+                        <li>Finaliza automáticamente después de 30 días a menos que actualice a un plan de pago</li>
+                    </ul>
+
+                    <h3 class="subsection-title">7.3 Planes de Pago</h3>
+                    <p>Los planes Protón, Neutrón y Electrón requieren pago mediante tarjeta de crédito/débito a través de Stripe.</p>
+
+                    <p><strong>Ciclos de Facturación:</strong></p>
+                    <ul>
+                        <li><strong>Mensual:</strong> Se factura cada mes desde la fecha de suscripción</li>
+                        <li><strong>Anual:</strong> Se factura una vez al año con descuento aplicado</li>
+                    </ul>
+
+                    <p><strong>Procesamiento de Pagos:</strong></p>
+                    <ul>
+                        <li>Todos los pagos se procesan de forma segura a través de Stripe</li>
+                        <li>No almacenamos información completa de tarjetas de crédito en nuestros servidores</li>
+                        <li>Los cargos se realizan automáticamente al inicio de cada período de facturación</li>
+                        <li>Recibirá un recibo por correo electrónico por cada transacción exitosa</li>
+                    </ul>
+
+                    <p><strong>Moneda y Precios:</strong></p>
+                    <ul>
+                        <li>Todos los precios se muestran en Pesos Mexicanos (MXN) salvo indicación contraria</li>
+                        <li>Los precios no incluyen IVA (16%) que se agregará al momento del pago</li>
+                        <li>Nos reservamos el derecho de modificar los precios con 30 días de anticipación</li>
+                        <li>Los cambios de precio no afectan suscripciones activas hasta su renovación</li>
+                    </ul>
+
+                    <h3 class="subsection-title">7.4 Renovación Automática</h3>
+                    <div class="highlight-box important">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Importante
+                        </div>
+                        <p>Las suscripciones de pago se renuevan automáticamente al final de cada período de facturación. Se cargará automáticamente a su método de pago registrado.</p>
+                    </div>
+
+                    <h3 class="subsection-title">7.5 Cambios de Plan</h3>
+                    <ul>
+                        <li><strong>Upgrade:</strong> Puede actualizar a un plan superior en cualquier momento. Se aplicará un cargo prorrateado y el nuevo plan entrará en vigor inmediatamente</li>
+                        <li><strong>Downgrade:</strong> Puede cambiar a un plan inferior. El cambio entrará en vigor al inicio del siguiente período de facturación</li>
+                        <li>Los cambios de plan pueden afectar las funcionalidades disponibles</li>
+                    </ul>
+
+                    <h3 class="subsection-title">7.6 Cancelación y Reembolsos</h3>
+                    <p>Puede cancelar su suscripción en cualquier momento desde la configuración de facturación:</p>
+                    <ul>
+                        <li>La cancelación entrará en vigor al final del período de facturación actual</li>
+                        <li>Tendrá acceso al servicio hasta que finalice el período pagado</li>
+                        <li>No se realizan reembolsos por cancelaciones anticipadas</li>
+                        <li>No se realizan reembolsos proporcionales por tiempo no utilizado</li>
+                    </ul>
+
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Excepción de reembolso
+                        </div>
+                        <p>Podemos considerar reembolsos en casos excepcionales de error de facturación o fallas técnicas significativas. Las solicitudes deben realizarse dentro de los 7 días siguientes al cargo.</p>
+                    </div>
+
+                    <h3 class="subsection-title">7.7 Falta de Pago</h3>
+                    <p>Si un pago es rechazado o falla:</p>
+                    <ul>
+                        <li>Se le notificará por correo electrónico</li>
+                        <li>Intentaremos procesar el pago nuevamente en 3 y 7 días</li>
+                        <li>Si el pago continúa fallando, su cuenta puede ser suspendida</li>
+                        <li>Después de 14 días de impago, su cuenta y datos pueden ser eliminados</li>
+                        <li>Puede reactivar su cuenta actualizando su método de pago y liquidando los montos adeudados</li>
+                    </ul>
+                </div>
+
+                <!-- Section 8 -->
+                <div class="legal-section" id="seccion-8">
+                    <h2 class="section-title">
+                        <span class="section-number">8</span>
+                        Privacidad y Protección de Datos
+                    </h2>
+                    <p>La recopilación, uso y protección de sus datos personales se rige por nuestro Aviso de Privacidad, el cual forma parte integral de estos Términos y Condiciones.</p>
+
+                    <h3 class="subsection-title">8.1 Resumen de Prácticas de Privacidad</h3>
+                    <ul>
+                        <li>Recopilamos solo los datos necesarios para proporcionar el servicio</li>
+                        <li>Utilizamos encriptación SSL/TLS para proteger la transmisión de datos</li>
+                        <li>Las contraseñas se almacenan encriptadas mediante bcrypt</li>
+                        <li>No vendemos ni compartimos sus datos con fines de marketing</li>
+                        <li>Compartimos datos solo con terceros necesarios para el servicio (Google, Meta, Stripe, Chatwoot)</li>
+                        <li>Cumplimos con la Ley Federal de Protección de Datos Personales (LFPDPPP) de México</li>
+                    </ul>
+
+                    <h3 class="subsection-title">8.2 Datos Procesados por Terceros</h3>
+                    <p>Al utilizar Attomos, acepta que ciertos datos sean procesados por servicios de terceros:</p>
+                    <ul>
+                        <li><strong>Google Gemini AI:</strong> Procesa las conversaciones de sus agentes para generar respuestas inteligentes</li>
+                        <li><strong>Meta WhatsApp API:</strong> Procesa mensajes enviados y recibidos a través de WhatsApp</li>
+                        <li><strong>Stripe:</strong> Procesa información de pago</li>
+                        <li><strong>Google Calendar/Sheets:</strong> Almacena citas y datos según su configuración</li>
+                        <li><strong>Chatwoot:</strong> Almacena conversaciones en su sistema CRM</li>
+                    </ul>
+                    <p>Cada uno de estos terceros tiene sus propias políticas de privacidad que le recomendamos revisar.</p>
+
+                    <h3 class="subsection-title">8.3 Retención de Datos</h3>
+                    <p>Conservamos sus datos según nuestra política de retención detallada en el Aviso de Privacidad. En resumen:</p>
+                    <ul>
+                        <li><strong>Datos de cuenta activa:</strong> Mientras la cuenta esté activa</li>
+                        <li><strong>Después de eliminación:</strong> 30 días (respaldo de seguridad)</li>
+                        <li><strong>Datos de facturación:</strong> 5 años (requisito fiscal)</li>
+                        <li><strong>Logs de seguridad:</strong> 6 meses</li>
+                    </ul>
+                </div>
+
+                <!-- Section 9 -->
+                <div class="legal-section" id="seccion-9">
+                    <h2 class="section-title">
+                        <span class="section-number">9</span>
+                        Limitación de Responsabilidad
+                    </h2>
+                    
+                    <h3 class="subsection-title">9.1 Disponibilidad del Servicio</h3>
+                    <p>Nos esforzamos por mantener la Plataforma disponible 24/7, sin embargo:</p>
+                    <ul>
+                        <li>No garantizamos disponibilidad ininterrumpida del servicio</li>
+                        <li>Pueden ocurrir interrupciones por mantenimiento programado (notificado con anticipación)</li>
+                        <li>Pueden ocurrir interrupciones por causas fuera de nuestro control (fallas de terceros, problemas de infraestructura)</li>
+                        <li>No somos responsables por daños derivados de interrupciones del servicio</li>
+                    </ul>
+
+                    <h3 class="subsection-title">9.2 Contenido Generado por IA</h3>
+                    <div class="highlight-box important">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Importante sobre IA
+                        </div>
+                        <p>Los agentes de Attomos utilizan inteligencia artificial que puede generar respuestas imprecisas, inapropiadas o incorrectas. Usted es responsable de:</p>
+                        <ul>
+                            <li>Supervisar las conversaciones de sus agentes</li>
+                            <li>Configurar apropiadamente las instrucciones y personalidad del agente</li>
+                            <li>Validar información crítica generada por IA</li>
+                            <li>Intervenir manualmente cuando sea necesario</li>
+                            <li>No confiar exclusivamente en la IA para decisiones críticas de negocio o médicas</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="subsection-title">9.3 Servicios de Terceros</h3>
+                    <p>No somos responsables por:</p>
+                    <ul>
+                        <li>Interrupciones o fallas en servicios de terceros (WhatsApp, Google, Stripe)</li>
+                        <li>Cambios en políticas o términos de servicios de terceros</li>
+                        <li>Pérdida de datos en servicios de terceros</li>
+                        <li>Costos adicionales cobrados por terceros (ej. cargos de Meta WhatsApp API)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">9.4 Exclusión de Garantías</h3>
+                    <p>El servicio se proporciona "TAL CUAL" y "SEGÚN DISPONIBILIDAD" sin garantías de ningún tipo, ya sean expresas o implícitas, incluyendo pero no limitado a:</p>
+                    <ul>
+                        <li>Garantías de comerciabilidad</li>
+                        <li>Idoneidad para un propósito particular</li>
+                        <li>No infracción de derechos de terceros</li>
+                        <li>Precisión o confiabilidad del servicio</li>
+                    </ul>
+
+                    <h3 class="subsection-title">9.5 Limitación de Daños</h3>
+                    <p>En la máxima medida permitida por la ley, Attomos no será responsable por:</p>
+                    <ul>
+                        <li>Daños indirectos, incidentales, especiales, consecuentes o punitivos</li>
+                        <li>Pérdida de beneficios, ingresos, datos o uso</li>
+                        <li>Interrupción del negocio</li>
+                        <li>Costos de obtención de productos o servicios sustitutos</li>
+                    </ul>
+                    <p><strong>En cualquier caso, nuestra responsabilidad total no excederá el monto pagado por usted en los últimos 12 meses por el servicio.</strong></p>
+                </div>
+
+                <!-- Section 10 -->
+                <div class="legal-section" id="seccion-10">
+                    <h2 class="section-title">
+                        <span class="section-number">10</span>
+                        Indemnización
+                    </h2>
+                    <p>Usted acepta indemnizar, defender y mantener indemne a Attomos, sus directores, empleados, agentes y afiliados de cualquier reclamo, responsabilidad, daño, pérdida y gasto (incluyendo honorarios legales razonables) que surja de o esté relacionado con:</p>
+                    <ul>
+                        <li>Su uso o mal uso de la Plataforma</li>
+                        <li>Violación de estos Términos y Condiciones</li>
+                        <li>Violación de derechos de terceros, incluyendo propiedad intelectual</li>
+                        <li>Contenido del Usuario que publique o transmita</li>
+                        <li>Actividades realizadas a través de su cuenta</li>
+                        <li>Uso de los agentes creados por usted</li>
+                        <li>Violación de leyes o regulaciones aplicables</li>
+                    </ul>
+                </div>
+
+                <!-- Section 11 -->
+                <div class="legal-section" id="seccion-11">
+                    <h2 class="section-title">
+                        <span class="section-number">11</span>
+                        Modificaciones a los Términos
+                    </h2>
+                    <p>Nos reservamos el derecho de modificar estos Términos y Condiciones en cualquier momento. Los cambios pueden realizarse por:</p>
+                    <ul>
+                        <li>Cambios en la legislación aplicable</li>
+                        <li>Introducción de nuevas funcionalidades</li>
+                        <li>Mejoras en la seguridad</li>
+                        <li>Aclaraciones o correcciones</li>
+                    </ul>
+
+                    <h3 class="subsection-title">11.1 Notificación de Cambios</h3>
+                    <p>Le notificaremos sobre cambios materiales a través de:</p>
+                    <ul>
+                        <li>Correo electrónico a su dirección registrada</li>
+                        <li>Aviso destacado en la Plataforma</li>
+                        <li>Notificación al iniciar sesión</li>
+                    </ul>
+
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Plazo de objeción
+                        </div>
+                        <p>Tendrá 15 días calendario desde la notificación para objetar los cambios. Si no está de acuerdo con las modificaciones, puede cancelar su cuenta. El uso continuado después de los 15 días constituye aceptación de los nuevos términos.</p>
+                    </div>
+                </div>
+
+                <!-- Section 12 -->
+                <div class="legal-section" id="seccion-12">
+                    <h2 class="section-title">
+                        <span class="section-number">12</span>
+                        Terminación del Servicio
+                    </h2>
+                    
+                    <h3 class="subsection-title">12.1 Terminación por el Usuario</h3>
+                    <p>Puede terminar su relación con Attomos en cualquier momento:</p>
+                    <ul>
+                        <li>Cancelando su suscripción desde la configuración de facturación</li>
+                        <li>Eliminando su cuenta permanentemente</li>
+                        <li>Contactándonos por correo electrónico solicitando la terminación</li>
+                    </ul>
+
+                    <h3 class="subsection-title">12.2 Terminación por Attomos</h3>
+                    <p>Podemos suspender o terminar su acceso inmediatamente, sin previo aviso, si:</p>
+                    <ul>
+                        <li>Viola estos Términos y Condiciones</li>
+                        <li>Utiliza el servicio para actividades ilegales</li>
+                        <li>Su cuenta permanece inactiva por más de 2 años</li>
+                        <li>No paga las tarifas correspondientes</li>
+                        <li>Representa un riesgo de seguridad para la Plataforma o usuarios</li>
+                    </ul>
+
+                    <h3 class="subsection-title">12.3 Efectos de la Terminación</h3>
+                    <p>Al terminar su cuenta:</p>
+                    <ul>
+                        <li>Perderá acceso inmediato a la Plataforma</li>
+                        <li>Sus agentes dejarán de funcionar</li>
+                        <li>Sus datos serán eliminados después de 30 días (período de respaldo)</li>
+                        <li>No se realizarán reembolsos por tiempo no utilizado</li>
+                        <li>Las obligaciones de pago pendientes seguirán vigentes</li>
+                    </ul>
+
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Recuperación de datos
+                        </div>
+                        <p>Tiene 30 días después de la terminación para solicitar una copia de sus datos antes de que sean eliminados permanentemente.</p>
+                    </div>
+                </div>
+
+                <!-- Section 13 -->
+                <div class="legal-section" id="seccion-13">
+                    <h2 class="section-title">
+                        <span class="section-number">13</span>
+                        Fuerza Mayor
+                    </h2>
+                    <p>No seremos responsables por incumplimiento de estos términos debido a causas fuera de nuestro control razonable, incluyendo pero no limitado a:</p>
+                    <ul>
+                        <li>Desastres naturales (terremotos, inundaciones, huracanes)</li>
+                        <li>Guerras, disturbios civiles o actos de terrorismo</li>
+                        <li>Ataques cibernéticos o hackeos masivos</li>
+                        <li>Fallas en infraestructura de internet o telecomunicaciones</li>
+                        <li>Fallas de proveedores de servicios de terceros críticos</li>
+                        <li>Cambios en legislación que imposibiliten la prestación del servicio</li>
+                        <li>Pandemias o emergencias de salud pública</li>
+                        <li>Huelgas o conflictos laborales</li>
+                    </ul>
+                    <p>Durante eventos de fuerza mayor, suspenderemos temporalmente nuestras obligaciones hasta que las circunstancias lo permitan.</p>
+                </div>
+
+                <!-- Section 14 -->
+                <div class="legal-section" id="seccion-14">
+                    <h2 class="section-title">
+                        <span class="section-number">14</span>
+                        Disposiciones Generales
+                    </h2>
+                    
+                    <h3 class="subsection-title">14.1 Acuerdo Completo</h3>
+                    <p>Estos Términos y Condiciones, junto con el Aviso de Privacidad, constituyen el acuerdo completo entre usted y Attomos respecto al uso de la Plataforma, reemplazando cualquier acuerdo previo.</p>
+
+                    <h3 class="subsection-title">14.2 Divisibilidad</h3>
+                    <p>Si alguna disposición de estos términos es considerada inválida o inaplicable, dicha disposición será modificada e interpretada para cumplir con los objetivos de la disposición original en la mayor medida posible, y las demás disposiciones continuarán en pleno vigor y efecto.</p>
+
+                    <h3 class="subsection-title">14.3 Renuncia</h3>
+                    <p>La falta de ejercicio o aplicación de cualquier derecho o disposición de estos términos no constituirá una renuncia a tal derecho o disposición.</p>
+
+                    <h3 class="subsection-title">14.4 Cesión</h3>
+                    <p>Usted no puede ceder ni transferir estos términos o sus derechos bajo estos términos sin nuestro consentimiento previo por escrito. Podemos ceder nuestros derechos en cualquier momento sin restricción.</p>
+
+                    <h3 class="subsection-title">14.5 Relación entre las Partes</h3>
+                    <p>Nada en estos términos creará una relación de asociación, joint venture, empleo o agencia entre usted y Attomos. Usted no tiene autoridad para obligar a Attomos de ninguna manera.</p>
+
+                    <h3 class="subsection-title">14.6 Idioma</h3>
+                    <p>Estos Términos y Condiciones se redactan en español. Cualquier traducción es proporcionada únicamente para conveniencia. En caso de conflicto, prevalecerá la versión en español.</p>
+
+                    <h3 class="subsection-title">14.7 Supervivencia</h3>
+                    <p>Las disposiciones que por su naturaleza deben sobrevivir a la terminación de estos términos (incluyendo propiedad intelectual, limitación de responsabilidad, indemnización y resolución de disputas) continuarán en vigor después de la terminación.</p>
+                </div>
+
+                <!-- Section 15 -->
+                <div class="legal-section" id="seccion-15">
+                    <h2 class="section-title">
+                        <span class="section-number">15</span>
+                        Jurisdicción y Ley Aplicable
+                    </h2>
+                    
+                    <h3 class="subsection-title">15.1 Legislación Aplicable</h3>
+                    <p>Estos Términos y Condiciones se regirán e interpretarán de acuerdo con las leyes de los Estados Unidos Mexicanos, sin dar efecto a ningún principio de conflictos de leyes.</p>
+
+                    <h3 class="subsection-title">15.2 Jurisdicción</h3>
+                    <p>Para cualquier controversia, demanda o reclamación que surja de o esté relacionada con estos Términos y Condiciones o la prestación del servicio, las partes se someten expresamente a la jurisdicción exclusiva de los tribunales competentes de Hermosillo, Sonora, México, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros o por cualquier otra causa.</p>
+
+                    <h3 class="subsection-title">15.3 Resolución de Disputas</h3>
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Recomendación
+                        </div>
+                        <p>Antes de iniciar cualquier procedimiento legal, le alentamos a contactarnos para intentar resolver cualquier disputa de manera amistosa. La mayoría de las preocupaciones pueden resolverse rápidamente mediante comunicación directa.</p>
+                    </div>
+
+                    <p><strong>Pasos recomendados para resolver disputas:</strong></p>
+                    <ol>
+                        <li>Contactar a nuestro equipo de soporte en soporte@attomos.mx</li>
+                        <li>Proporcionar detalles completos de su inquietud o reclamación</li>
+                        <li>Permitirnos 15 días hábiles para investigar y responder</li>
+                        <li>Participar en negociaciones de buena fe para llegar a una resolución</li>
+                    </ol>
+                    <p>Solo si la resolución amistosa no es posible, se podrán iniciar procedimientos legales en la jurisdicción establecida.</p>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="contact-section">
+                    <h2 class="contact-section-title">¿Preguntas sobre estos Términos?</h2>
+                    <p class="contact-section-text">Si tiene preguntas, comentarios o necesita aclaraciones sobre estos Términos y Condiciones, puede contactarnos:</p>
+                    <div class="contact-methods">
+                        <a href="mailto:soporte@attomos.mx" class="contact-method">
+                            <i class="lni lni-envelope"></i>
+                            soporte@attomos.mx
+                        </a>
+                        <a href="https://wa.me/528123092839" target="_blank" class="contact-method">
+                            <i class="lni lni-whatsapp"></i>
+                            +52 81 2309 2839
+                        </a>
+                    </div>
+                    <p style="margin-top: 24px; font-size: 14px; opacity: 0.9;">
+                        <strong>Horario de atención:</strong> Lunes a Viernes, 9:00 AM - 6:00 PM (Hora del Pacífico)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Back to top button -->
+    <button class="back-to-top" id="backToTop">
+        <i class="lni lni-chevron-up"></i>
+    </button>
+
+    <!-- JavaScript -->
+    <script src="/static/js/legal/legal.js"></script>
+</body>
+</html>
+{{end}}

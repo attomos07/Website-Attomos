@@ -1,0 +1,562 @@
+{{define "ninda/register-ninda.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro — Ninda</title>
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #C62828; --red2: #7B1E2B;
+      --ink: #0f0f0f; --muted: #6b7280;
+      --border: #e5e7eb; --bg: #f9fafb;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Topbar mínimo */
+    .top { height: 52px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; gap: .5rem; }
+    .top-logo { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-decoration: none; }
+    .top-logo span { color: var(--red); }
+    .top-beta { background: var(--red); color: #fff; font-size: .58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
+
+    .page { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 2.5rem 1rem 4rem; }
+    .card {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.25rem;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+
+    /* Stepper */
+    .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 2rem; }
+    .step-node {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--border); background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72rem; font-weight: 700; color: var(--muted);
+      flex-shrink: 0; transition: all .25s; position: relative; z-index: 1;
+    }
+    .step-node.done   { border-color: var(--red); background: var(--red); color: #fff; }
+    .step-node.active { border-color: var(--red); color: var(--red); }
+    .step-line { flex: 1; height: 2px; background: var(--border); transition: background .25s; }
+    .step-line.done { background: var(--red); }
+
+    /* Steps content */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    .step-title { font-size: 1.35rem; font-weight: 800; margin-bottom: .35rem; }
+    .step-sub   { font-size: .88rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+
+    /* Tipo de cuenta (Step 1) */
+    .account-opts { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.5rem; }
+    .account-opt {
+      display: flex; align-items: center; gap: 1rem;
+      border: 2px solid var(--border); border-radius: 14px;
+      padding: 1.1rem 1.25rem; cursor: pointer; transition: all .2s;
+      position: relative;
+    }
+    .account-opt:hover { border-color: var(--red); }
+    .account-opt.selected { border-color: var(--red); background: #fef2f2; }
+    .account-opt input[type=radio] { position: absolute; opacity: 0; }
+    .opt-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .opt-icon.attomos i { color: #1d4ed8; }
+    .opt-icon.indep   i { color: #16a34a; }
+    .opt-icon.driver  i { color: #d97706; }
+    .opt-icon.attomos { background: #eff6ff; }
+    .opt-icon.indep   { background: #f0fdf4; }
+    .opt-icon.driver  { background: #fef3c7; }
+    .opt-title { font-size: .95rem; font-weight: 700; }
+    .opt-desc  { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+    .opt-check {
+      margin-left: auto; width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border); flex-shrink: 0; transition: all .2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .account-opt.selected .opt-check { border-color: var(--red); background: var(--red); }
+    .account-opt.selected .opt-check::after { content: '✓'; color: #fff; font-size: .7rem; font-weight: 900; }
+
+    /* Formulario genérico */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: .3rem; }
+    .field label { font-size: .78rem; font-weight: 600; color: #374151; }
+    .field input, .field select, .field textarea {
+      padding: .6rem .85rem; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: .875rem; font-family: var(--font);
+      color: var(--ink); outline: none; transition: border-color .2s;
+      background: #fff;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--red); }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .field .hint { font-size: .72rem; color: var(--muted); }
+
+    /* Upload doc */
+    .doc-upload {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 1rem; text-align: center; cursor: pointer;
+      transition: border-color .2s; position: relative;
+    }
+    .doc-upload:hover { border-color: var(--red); }
+    .doc-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .doc-upload i { font-size: 1.5rem; color: var(--muted); margin-bottom: .3rem; }
+    .doc-upload .doc-label { font-size: .82rem; color: var(--muted); }
+    .doc-upload .doc-hint  { font-size: .72rem; color: #d1d5db; }
+    .doc-upload.has-file { border-color: #16a34a; background: #f0fdf4; }
+    .doc-upload.has-file i { color: #16a34a; }
+
+    /* Sección separador */
+    .section-sep {
+      font-size: .7rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      border-bottom: 1px solid var(--border); padding-bottom: .5rem;
+      margin: 1.25rem 0 .85rem;
+    }
+
+    /* Vehículo pills */
+    .vehicle-opts { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .85rem; }
+    .v-pill {
+      padding: .4rem .9rem; border: 1.5px solid var(--border);
+      border-radius: 999px; font-size: .82rem; font-weight: 500;
+      cursor: pointer; transition: all .15s; background: #fff;
+      display: inline-flex; align-items: center; gap: .35rem;
+    }
+    .v-pill:hover { border-color: var(--red); color: var(--red); }
+    .v-pill.selected { border-color: var(--red); background: var(--red); color: #fff; }
+
+    /* Botones */
+    .btn-row { display: flex; gap: .75rem; margin-top: 1.5rem; }
+    .btn-back {
+      padding: .65rem 1.25rem; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: .88rem; font-weight: 600;
+      background: #fff; color: var(--muted); cursor: pointer;
+      font-family: var(--font); transition: all .2s;
+    }
+    .btn-back:hover { border-color: var(--ink); color: var(--ink); }
+    .btn-next {
+      flex: 1; padding: .7rem 1.25rem;
+      background: var(--red); color: #fff; border: none;
+      border-radius: 10px; font-size: .9rem; font-weight: 700;
+      cursor: pointer; font-family: var(--font); transition: background .2s;
+      display: flex; align-items: center; justify-content: center; gap: .4rem;
+    }
+    .btn-next:hover { background: var(--red2); }
+    .btn-next:disabled { background: #e5e7eb; color: #aaa; cursor: not-allowed; }
+
+    .login-link { text-align: center; margin-top: 1.25rem; font-size: .83rem; color: var(--muted); }
+    .login-link a { color: var(--red); font-weight: 600; text-decoration: none; }
+    .login-link a:hover { text-decoration: underline; }
+
+    /* Attomos connect */
+    .attomos-box {
+      background: #eff6ff; border: 1.5px solid #bfdbfe;
+      border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
+      display: flex; align-items: flex-start; gap: .75rem;
+    }
+    .attomos-box i { font-size: 1.2rem; color: #1d4ed8; margin-top: 1px; }
+    .attomos-box p { font-size: .83rem; color: #1e40af; line-height: 1.5; }
+    .attomos-box strong { font-weight: 700; }
+
+    /* Success */
+    .success-screen { text-align: center; padding: 1rem 0; }
+    .success-emoji { font-size: 3.5rem; margin-bottom: 1rem; animation: bounceS .6s ease infinite alternate; color:#16a34a; }
+    @keyframes bounceS { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+    .success-title { font-size: 1.4rem; font-weight: 800; margin-bottom: .5rem; }
+    .success-sub   { font-size: .88rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem; }
+    .btn-go { display: inline-block; padding: .75rem 2rem; background: var(--red); color: #fff; border-radius: 11px; text-decoration: none; font-weight: 700; font-size: .92rem; transition: background .2s; }
+    .btn-go:hover { background: var(--red2); }
+  </style>
+</head>
+<body>
+
+<div class="top">
+  <a href="/ninda" class="top-logo">Nin<span>da</span></a>
+  <span class="top-beta">Beta</span>
+</div>
+
+<div class="page">
+  <div class="card">
+
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step-node active" id="sn1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-node" id="sn2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-node" id="sn3">3</div>
+    </div>
+
+    <!-- ── STEP 1: Tipo de cuenta ──────────────────────────────── -->
+    <div class="step-panel active" id="step1">
+      <div class="step-title">Crea tu cuenta</div>
+      <div class="step-sub">Elige cómo quieres registrarte en Ninda.</div>
+
+      <div class="account-opts">
+
+        <label class="account-opt" id="optAttomos">
+          <input type="radio" name="accountType" value="attomos" onchange="selectType('attomos')" />
+          <div class="opt-icon attomos"><i class="lni lni-link"></i></div>
+          <div>
+            <div class="opt-title">Vincular con Attomos</div>
+            <div class="opt-desc">Ya tengo cuenta en Attomos. Usar mis credenciales existentes.</div>
+          </div>
+          <div class="opt-check" id="chkAttomos"></div>
+        </label>
+
+        <label class="account-opt" id="optIndep">
+          <input type="radio" name="accountType" value="independiente" onchange="selectType('independiente')" />
+          <div class="opt-icon indep"><i class="lni lni-shopping-basket"></i></div>
+          <div>
+            <div class="opt-title">Cuenta de comprador</div>
+            <div class="opt-desc">Registrarme como cliente independiente para hacer pedidos.</div>
+          </div>
+          <div class="opt-check" id="chkIndep"></div>
+        </label>
+
+        <label class="account-opt" id="optDriver">
+          <input type="radio" name="accountType" value="repartidor" onchange="selectType('repartidor')" />
+          <div class="opt-icon driver"><i class="lni lni-delivery"></i></div>
+          <div>
+            <div class="opt-title">Soy repartidor</div>
+            <div class="opt-desc">Quiero entregar pedidos. Necesitarás subir documentos.</div>
+          </div>
+          <div class="opt-check" id="chkDriver"></div>
+        </label>
+
+      </div>
+
+      <button class="btn-next" id="btnNext1" disabled onclick="goStep(2)">
+        Continuar <i class="lni lni-arrow-right"></i>
+      </button>
+
+      <div class="login-link">¿Ya tienes cuenta? <a href="/ninda/login">Inicia sesión</a></div>
+    </div>
+
+    <!-- ── STEP 2: Datos personales ───────────────────────────── -->
+    <div class="step-panel" id="step2">
+      <div class="step-title" id="s2Title">Tus datos</div>
+      <div class="step-sub"  id="s2Sub">Completa tu información personal.</div>
+
+      <!-- Bloque Attomos (solo si eligió attomos) -->
+      <div id="blkAttomos" style="display:none">
+        <div class="attomos-box">
+          <i class="lni lni-link"></i>
+          <p><strong>Vinculación con Attomos</strong><br>Ingresa tu email y contraseña de Attomos. Tu cuenta quedará vinculada automáticamente.</p>
+        </div>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Email de Attomos</label>
+            <input type="email" id="attEmail" placeholder="tu@correo.com" />
+          </div>
+          <div class="field full">
+            <label>Contraseña de Attomos</label>
+            <input type="password" id="attPass" placeholder="••••••••" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque datos independiente/repartidor -->
+      <div id="blkPersonal">
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre(s)</label>
+            <input type="text" id="firstName" placeholder="Juan" />
+          </div>
+          <div class="field">
+            <label>Apellidos</label>
+            <input type="text" id="lastName" placeholder="Ramírez" />
+          </div>
+          <div class="field full">
+            <label>Correo electrónico</label>
+            <input type="email" id="email" placeholder="juan@correo.com" />
+          </div>
+          <div class="field">
+            <label>Teléfono</label>
+            <input type="tel" id="phone" placeholder="+52 662 123 4567" />
+          </div>
+          <div class="field">
+            <label>Fecha de nacimiento</label>
+            <input type="date" id="birthdate" />
+          </div>
+          <div class="field full">
+            <label>Contraseña</label>
+            <input type="password" id="password" placeholder="Mínimo 8 caracteres" />
+          </div>
+          <div class="field full">
+            <label>Confirmar contraseña</label>
+            <input type="password" id="password2" placeholder="Repite tu contraseña" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos adicionales repartidor -->
+      <div id="blkDriver" style="display:none">
+        <div class="section-sep">Documentos de identidad</div>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Número de INE / Credencial de elector</label>
+            <input type="text" id="ineNum" placeholder="Ej: RMRJN850412HDFMRS02" />
+          </div>
+          <div class="field">
+            <label>INE (frente)</label>
+            <div class="doc-upload" id="drvIneFrente">
+              <input type="file" accept="image/*,application/pdf" onchange="markFile(this,'drvIneFrente')" />
+              <i class="lni lni-id-card"></i>
+              <div class="doc-label">Subir foto</div>
+              <div class="doc-hint">JPG, PNG o PDF</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>INE (reverso)</label>
+            <div class="doc-upload" id="drvIneReverso">
+              <input type="file" accept="image/*,application/pdf" onchange="markFile(this,'drvIneReverso')" />
+              <i class="lni lni-id-card"></i>
+              <div class="doc-label">Subir foto</div>
+              <div class="doc-hint">JPG, PNG o PDF</div>
+            </div>
+          </div>
+          <div class="field full">
+            <label>Número de licencia de conducir</label>
+            <input type="text" id="licNum" placeholder="Ej: H12345678" />
+          </div>
+          <div class="field">
+            <label>Licencia (foto)</label>
+            <div class="doc-upload" id="drvLic">
+              <input type="file" accept="image/*,application/pdf" onchange="markFile(this,'drvLic')" />
+              <i class="lni lni-licence"></i>
+              <div class="doc-label">Subir foto</div>
+              <div class="doc-hint">JPG, PNG o PDF</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Vigencia de licencia</label>
+            <input type="date" id="licExp" />
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(1)"><i class="lni lni-arrow-left"></i> Atrás</button>
+        <button class="btn-next" onclick="goStep(3)">Continuar <i class="lni lni-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Vehículo (solo repartidor) / Confirmación ─── -->
+    <div class="step-panel" id="step3">
+      <div class="step-title" id="s3Title">Confirmar</div>
+      <div class="step-sub"  id="s3Sub">Revisa y completa tu registro.</div>
+
+      <!-- Bloque vehículo (repartidor) -->
+      <div id="blkVehicle" style="display:none">
+        <div class="section-sep">Tu vehículo de reparto</div>
+
+        <div class="field" style="margin-bottom:.85rem">
+          <label>Tipo de vehículo</label>
+          <div class="vehicle-opts" id="vehicleOpts">
+            <div class="v-pill" onclick="selectVehicle('moto')"><i class="lni lni-scooter"></i> Moto</div>
+            <div class="v-pill" onclick="selectVehicle('auto')"><i class="lni lni-car-alt"></i> Auto</div>
+            <div class="v-pill" onclick="selectVehicle('bicicleta')"><i class="lni lni-bicycle"></i> Bicicleta</div>
+            <div class="v-pill" onclick="selectVehicle('camioneta')"><i class="lni lni-car"></i> Camioneta</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Marca</label>
+            <input type="text" id="vMarca" placeholder="Ej: Honda" />
+          </div>
+          <div class="field">
+            <label>Modelo</label>
+            <input type="text" id="vModelo" placeholder="Ej: CB190" />
+          </div>
+          <div class="field">
+            <label>Año</label>
+            <input type="number" id="vAnio" placeholder="Ej: 2022" min="2000" max="2026" />
+          </div>
+          <div class="field">
+            <label>Color</label>
+            <input type="text" id="vColor" placeholder="Ej: Rojo" />
+          </div>
+          <div class="field full">
+            <label>Placas</label>
+            <input type="text" id="vPlacas" placeholder="Ej: ABC-123-D" />
+          </div>
+          <div class="field">
+            <label>Foto del vehículo</label>
+            <div class="doc-upload" id="drvVehicle">
+              <input type="file" accept="image/*" onchange="markFile(this,'drvVehicle')" />
+              <i class="lni lni-car-alt"></i>
+              <div class="doc-label">Subir foto</div>
+              <div class="doc-hint">JPG o PNG</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tarjeta de circulación</label>
+            <div class="doc-upload" id="drvCirculacion">
+              <input type="file" accept="image/*,application/pdf" onchange="markFile(this,'drvCirculacion')" />
+              <i class="lni lni-files"></i>
+              <div class="doc-label">Subir doc</div>
+              <div class="doc-hint">JPG, PNG o PDF</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Términos -->
+      <div id="blkTerms">
+        <div class="section-sep">Términos y condiciones</div>
+        <label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-size:.83rem;color:#374151;line-height:1.5">
+          <input type="checkbox" id="chkTerms" style="margin-top:2px;accent-color:var(--red)" onchange="checkTerms()" />
+          Acepto los <a href="#" style="color:var(--red)">Términos de servicio</a> y la <a href="#" style="color:var(--red)">Política de privacidad</a> de Ninda.
+        </label>
+        <label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-size:.83rem;color:#374151;line-height:1.5;margin-top:.65rem" id="labelDriver18" >
+          <input type="checkbox" id="chk18" style="margin-top:2px;accent-color:var(--red)" onchange="checkTerms()" />
+          Confirmo que soy mayor de 18 años y que los documentos subidos son auténticos.
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(2)"><i class="lni lni-arrow-left"></i> Atrás</button>
+        <button class="btn-next" id="btnFinal" disabled onclick="submitRegister()">
+          <i class="lni lni-checkmark-circle"></i> Crear cuenta
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SUCCESS ─────────────────────────────────────────────── -->
+    <div class="step-panel" id="stepSuccess">
+      <div class="success-screen">
+        <div class="success-emoji" id="successEmoji"><i class="lni lni-checkmark-circle" style="color:#16a34a"></i></div>
+        <div class="success-title" id="successTitle">¡Cuenta creada!</div>
+        <div class="success-sub"  id="successSub">Tu cuenta en Ninda está lista. Ya puedes empezar a explorar negocios locales.</div>
+        <a href="/ninda" class="btn-go" id="successBtn">Ir a Ninda</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let accountType = null;
+let vehicleType = null;
+let currentStep = 1;
+
+function selectType(type) {
+  accountType = type;
+  ['attomos','indep','driver'].forEach(t => {
+    const el = document.getElementById('opt' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.classList.remove('selected');
+  });
+  const map = { attomos: 'Attomos', independiente: 'Indep', repartidor: 'Driver' };
+  const el = document.getElementById('opt' + map[type]);
+  if (el) el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+}
+
+function goStep(n) {
+  // Salir del paso actual
+  document.getElementById('step' + currentStep)?.classList.remove('active');
+  updateStepper(currentStep, 'done');
+  // Entrar al nuevo paso
+  currentStep = n;
+  if (n === 2) configStep2();
+  if (n === 3) configStep3();
+  document.getElementById('step' + n)?.classList.add('active');
+  updateStepper(n, 'active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStepper(step, state) {
+  for (let i = 1; i <= 3; i++) {
+    const node = document.getElementById('sn' + i);
+    node.classList.remove('active','done');
+    if (i < step) node.classList.add('done');
+    if (i === step) node.classList.add(state);
+    if (i < 3) {
+      const line = document.getElementById('sl' + i);
+      line.classList.toggle('done', i < step);
+    }
+  }
+}
+
+function configStep2() {
+  const isAttomos = accountType === 'attomos';
+  const isDriver  = accountType === 'repartidor';
+  document.getElementById('blkAttomos').style.display  = isAttomos ? 'block' : 'none';
+  document.getElementById('blkPersonal').style.display = isAttomos ? 'none'  : 'block';
+  document.getElementById('blkDriver').style.display   = isDriver  ? 'block' : 'none';
+  const titles = { attomos: 'Vincula tu cuenta', independiente: 'Tus datos personales', repartidor: 'Datos del repartidor' };
+  const subs   = { attomos: 'Ingresa tus credenciales de Attomos para vincular tu cuenta.',
+                   independiente: 'Completa tu información para crear tu cuenta de comprador.',
+                   repartidor: 'Completa tus datos y sube los documentos requeridos.' };
+  document.getElementById('s2Title').textContent = titles[accountType] || 'Tus datos';
+  document.getElementById('s2Sub').textContent   = subs[accountType]   || '';
+}
+
+function configStep3() {
+  const isDriver = accountType === 'repartidor';
+  document.getElementById('blkVehicle').style.display  = isDriver ? 'block' : 'none';
+  document.getElementById('labelDriver18').style.display = isDriver ? 'flex' : 'none';
+  document.getElementById('s3Title').textContent = isDriver ? 'Tu vehículo' : 'Confirmar registro';
+  document.getElementById('s3Sub').textContent   = isDriver
+    ? 'Agrega la información de tu vehículo de reparto.'
+    : 'Acepta los términos para finalizar tu registro.';
+}
+
+function selectVehicle(type) {
+  vehicleType = type;
+  document.querySelectorAll('.v-pill').forEach(el => {
+    el.classList.toggle('selected', el.textContent.toLowerCase().includes(type));
+  });
+}
+
+function markFile(input, containerId) {
+  const box = document.getElementById(containerId);
+  if (input.files && input.files.length > 0) {
+    box.classList.add('has-file');
+    box.querySelector('.doc-label').textContent = input.files[0].name;
+  } else {
+    box.classList.remove('has-file');
+    box.querySelector('.doc-label').textContent = 'Subir foto';
+  }
+}
+
+function checkTerms() {
+  const terms  = document.getElementById('chkTerms').checked;
+  const age    = document.getElementById('chk18').checked;
+  const isDriver = accountType === 'repartidor';
+  document.getElementById('btnFinal').disabled = isDriver ? !(terms && age) : !terms;
+}
+
+function submitRegister() {
+  // Guardar sesión demo en localStorage
+  const name = document.getElementById('firstName')?.value ||
+               document.getElementById('attEmail')?.value || 'Usuario';
+  localStorage.setItem('nindaUser', JSON.stringify({
+    name, email: document.getElementById('email')?.value || '',
+    role: accountType === 'repartidor' ? 'driver' : 'buyer',
+  }));
+
+  // Mostrar success
+  document.getElementById('step3').classList.remove('active');
+  document.getElementById('stepSuccess').classList.add('active');
+  updateStepper(3, 'done');
+
+  if (accountType === 'repartidor') {
+    document.getElementById('successEmoji').innerHTML = '<i class="lni lni-delivery" style="color:#C62828"></i>';
+    document.getElementById('successTitle').textContent = '¡Solicitud enviada!';
+    document.getElementById('successSub').textContent   = 'Revisaremos tus documentos en 24-48 horas. Te notificaremos por correo cuando tu cuenta esté activa.';
+    document.getElementById('successBtn').textContent   = 'Entendido';
+  }
+}
+</script>
+</body>
+</html>
+{{end}}

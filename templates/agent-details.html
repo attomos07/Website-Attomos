@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Agente - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/agent-details.css">
+     <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="details-layout">
+                    <!-- Back Button -->
+                    <a href="/my-agents" class="back-button">
+                        <i class="lni lni-chevron-left"></i>
+                        <span>Volver a Agentes</span>
+                    </a>
+
+                    <!-- Agent Header -->
+                    <div class="agent-header" id="agentHeader">
+                        <div class="agent-header-content">
+                            <div class="agent-avatar-large">
+                                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                                    <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                                    <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                                    <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                                    <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                            </div>
+                            <div class="agent-header-info">
+                                <h1 class="agent-name" id="agentName">Cargando...</h1>
+                                <div class="agent-meta">
+                                    <span class="agent-id" id="agentId">ID: --</span>
+                                    <span class="agent-platform">
+                                        <i class="lni lni-whatsapp"></i>
+                                        WhatsApp
+                                    </span>
+                                    <div class="status-badge" id="agentStatus">
+                                        <span class="status-dot"></span>
+                                        <span>Cargando</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="agent-actions">
+                            <button class="btn-primary" onclick="editAgent()">
+                                <i class="lni lni-pencil"></i>
+                                <span>Editar</span>
+                            </button>
+                            <button class="btn-secondary" onclick="toggleAgentStatus()">
+                                <i class="lni lni-pause" id="toggleIcon"></i>
+                                <span id="toggleText">Pausar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Content Grid -->
+                    <div class="details-grid no-qr" id="detailsGrid">
+                        <!-- Left Column: WhatsApp Connection -->
+                        <div class="details-section qr-section" id="qrSection" style="display:none">
+                            <div class="section-header">
+                                <h2 class="section-title">
+                                    <i class="lni lni-whatsapp"></i>
+                                    Conexión WhatsApp
+                                </h2>
+                            </div>
+                            <div class="qr-container" id="qrContainer">
+                                <div class="qr-loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando código QR...</p>
+                                </div>
+                            </div>
+                            <div class="qr-instructions">
+                                <h3>Cómo conectar:</h3>
+                                <ol>
+                                    <li>Abre WhatsApp en tu teléfono</li>
+                                    <li>Toca <strong>Menú</strong> o <strong>Configuración</strong></li>
+                                    <li>Toca <strong>Dispositivos vinculados</strong></li>
+                                    <li>Toca <strong>Vincular un dispositivo</strong></li>
+                                    <li>Apunta tu teléfono a esta pantalla para escanear el código QR</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Agent Information -->
+                        <div class="details-column-right">
+                            <!-- Basic Info -->
+                            <div class="details-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-information"></i>
+                                        Información Básica
+                                    </h2>
+                                </div>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <label>Nombre del Agente</label>
+                                        <div class="info-value" id="infoName">--</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Número de Teléfono</label>
+                                        <div class="info-value" id="infoPhone">--</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Tipo de Negocio</label>
+                                        <div class="info-value" id="infoBusinessType">--</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Puerto</label>
+                                        <div class="info-value" id="infoPort">--</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Configuration -->
+                            <div class="details-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-cog"></i>
+                                        Configuración
+                                    </h2>
+                                </div>
+                                <div class="config-grid">
+                                    <div class="config-item">
+                                        <label>Tono</label>
+                                        <div class="config-value" id="configTone">--</div>
+                                    </div>
+                                    <div class="config-item">
+                                        <label>Idiomas</label>
+                                        <div class="config-value" id="configLanguages">--</div>
+                                    </div>
+                                    <div class="config-item full-width">
+                                        <label>Mensaje de Bienvenida</label>
+                                        <div class="config-value message" id="configWelcome">--</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Schedule -->
+                            <div class="details-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-calendar"></i>
+                                        Horario de Atención
+                                    </h2>
+                                </div>
+                                <div class="schedule-grid" id="scheduleGrid">
+                                    <!-- Schedule will be populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Services -->
+                            <div class="details-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-briefcase"></i>
+                                        Servicios
+                                    </h2>
+                                </div>
+                                <div class="services-list" id="servicesList">
+                                    <!-- Services will be populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Workers -->
+                            <div class="details-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-users"></i>
+                                        Personal
+                                    </h2>
+                                </div>
+                                <div class="workers-list" id="workersList">
+                                    <!-- Workers will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/agent-details.js"></script>
+</body>
+</html>

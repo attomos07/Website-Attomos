@@ -1,0 +1,301 @@
+{{define "agents.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentes IA - {{.title}}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/partials/agents.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="agents-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="hero-title">
+                Descubre Nuestros <span class="highlight">Agentes IA</span>
+            </h1>
+            <p class="hero-subtitle">
+                Agentes especializados para cada industria. Elige el que mejor se adapte a tu negocio.
+            </p>
+        </div>
+    </section>
+
+    <!-- Filtros de Agentes -->
+    <section class="agents-filter-section">
+        <div class="container">
+            <div class="filter-controls">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="lni lni-grid"></i>
+                    Todos
+                </button>
+                <button class="filter-btn" data-filter="health">
+                    <i class="lni lni-hospital"></i>
+                    Salud
+                </button>
+                <button class="filter-btn" data-filter="beauty">
+                    <i class="lni lni-cut"></i>
+                    Belleza
+                </button>
+                <button class="filter-btn" data-filter="food">
+                    <i class="lni lni-restaurant"></i>
+                    Comida
+                </button>
+                <button class="filter-btn" data-filter="commerce">
+                    <i class="lni lni-shop"></i>
+                    Comercio
+                </button>
+                <button class="filter-btn" data-filter="auto">
+                    <i class="lni lni-car"></i>
+                    Automotriz
+                </button>
+                <button class="filter-btn" data-filter="other">
+                    <i class="lni lni-briefcase"></i>
+                    Otros
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Grid de Agentes -->
+    <section class="agents-grid-section">
+        <div class="container">
+            <div class="agents-grid">
+
+                <!-- Clínica Dental -->
+                <div class="agent-card" data-category="health">
+                    <div class="agent-icon">
+                        <i class="lni lni-hospital"></i>
+                    </div>
+                    <h3 class="agent-name">Clínica Dental</h3>
+                    <p class="agent-description">
+                        Automatiza citas, recordatorios y consultas odontológicas básicas las 24 horas.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> Agendamiento</div>
+                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> Recordatorios</div>
+                        <div class="feature-tag"><i class="lni lni-chat"></i> Consultas</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Clínica Dental')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Peluquería / Estética -->
+                <div class="agent-card" data-category="beauty">
+                    <div class="agent-icon">
+                        <i class="lni lni-cut"></i>
+                    </div>
+                    <h3 class="agent-name">Peluquería / Estética</h3>
+                    <p class="agent-description">
+                        Gestiona tu salón con reservas automatizadas, recordatorios y promociones personalizadas.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-bookmark"></i> Reservas</div>
+                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> Recordatorios</div>
+                        <div class="feature-tag"><i class="lni lni-offer"></i> Promociones</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Peluquería / Estética')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Restaurante -->
+                <div class="agent-card" data-category="food">
+                    <div class="agent-icon">
+                        <i class="lni lni-restaurant"></i>
+                    </div>
+                    <h3 class="agent-name">Restaurante</h3>
+                    <p class="agent-description">
+                        Recibe pedidos, gestiona reservas de mesa y responde sobre el menú automáticamente.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> Reservas</div>
+                        <div class="feature-tag"><i class="lni lni-menu"></i> Menú Digital</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Restaurante')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Pizzería -->
+                <div class="agent-card" data-category="food">
+                    <div class="agent-icon">
+                        <i class="lni lni-pizza"></i>
+                    </div>
+                    <h3 class="agent-name">Pizzería</h3>
+                    <p class="agent-description">
+                        Toma pedidos por WhatsApp, gestiona combos y coordina entregas a domicilio sin esfuerzo.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-shopping-basket"></i> Pedidos</div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
+                        <div class="feature-tag"><i class="lni lni-offer"></i> Combos</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Pizzería')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Panadería / Repostería -->
+                <div class="agent-card" data-category="food">
+                    <div class="agent-icon">
+                        <i class="lni lni-cake"></i>
+                    </div>
+                    <h3 class="agent-name">Panadería / Repostería</h3>
+                    <p class="agent-description">
+                        Muestra tu catálogo, recibe pedidos de pasteles personalizados y gestiona apartos con anticipación.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-book"></i> Catálogo</div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> Apartos</div>
+                        <div class="feature-tag"><i class="lni lni-whatsapp"></i> Pedidos</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Panadería / Repostería')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Ensaladas -->
+                <div class="agent-card" data-category="food">
+                    <div class="agent-icon">
+                        <i class="lni lni-leaf"></i>
+                    </div>
+                    <h3 class="agent-name">Ensaladas / Saludable</h3>
+                    <p class="agent-description">
+                        Gestiona pedidos de comida saludable, opciones del menú del día y entregas a domicilio.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
+                        <div class="feature-tag"><i class="lni lni-menu"></i> Menú del Día</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Ensaladas / Saludable')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Mariscos / Pescadería -->
+                <div class="agent-card" data-category="food">
+                    <div class="agent-icon">
+                        <i class="lni lni-fish"></i>
+                    </div>
+                    <h3 class="agent-name">Mariscos / Pescadería</h3>
+                    <p class="agent-description">
+                        Comparte el menú del día, recibe pedidos y coordina entregas o apartos de producto fresco.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> Apartos</div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Mariscos / Pescadería')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Librería -->
+                <div class="agent-card" data-category="commerce">
+                    <div class="agent-icon">
+                        <i class="lni lni-book"></i>
+                    </div>
+                    <h3 class="agent-name">Librería / Papelería</h3>
+                    <p class="agent-description">
+                        Consulta de inventario, apartado de artículos y atención a clientes sin llamadas.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-search-alt"></i> Inventario</div>
+                        <div class="feature-tag"><i class="lni lni-bookmark"></i> Apartos</div>
+                        <div class="feature-tag"><i class="lni lni-chat"></i> Atención</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Librería / Papelería')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Automotriz -->
+                <div class="agent-card" data-category="auto">
+                    <div class="agent-icon">
+                        <i class="lni lni-car"></i>
+                    </div>
+                    <h3 class="agent-name">Automotriz</h3>
+                    <p class="agent-description">
+                        Agenda servicios de taller, consulta de refacciones y seguimiento de órdenes de trabajo.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> Citas</div>
+                        <div class="feature-tag"><i class="lni lni-package"></i> Refacciones</div>
+                        <div class="feature-tag"><i class="lni lni-checkmark"></i> Seguimiento</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Automotriz')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+                <!-- Gubernamental -->
+                <div class="agent-card" data-category="other">
+                    <div class="agent-icon">
+                        <i class="lni lni-government"></i>
+                    </div>
+                    <h3 class="agent-name">Institución Pública</h3>
+                    <p class="agent-description">
+                        Informa a ciudadanos sobre trámites, horarios y requisitos sin saturar líneas telefónicas.
+                    </p>
+                    <div class="agent-features">
+                        <div class="feature-tag"><i class="lni lni-question-circle"></i> Trámites</div>
+                        <div class="feature-tag"><i class="lni lni-timer"></i> Horarios</div>
+                        <div class="feature-tag"><i class="lni lni-files"></i> Requisitos</div>
+                    </div>
+                    <button class="agent-btn" onclick="openWhatsApp('Institución Pública')">
+                        <i class="lni lni-whatsapp"></i> Me interesa
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="agents-cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">¿No encuentras el agente perfecto?</h2>
+                <p class="cta-subtitle">
+                    Creamos agentes personalizados para tu industria. Contáctanos y cuéntanos sobre tu negocio.
+                </p>
+                <button class="cta-btn" onclick="openWhatsApp()">
+                    <i class="lni lni-whatsapp"></i>
+                    Solicitar Agente Personalizado
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/partials/agents.js"></script>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,534 @@
+{{define "privacy.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/legal/legal.css">
+    <style>
+        /* Estilos adicionales para tablas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .data-table thead {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+        .data-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 15px;
+            color: #4b5563;
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table tbody tr:hover {
+            background: rgba(6, 182, 212, 0.03);
+        }
+    </style>
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <section class="legal-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="legal-hero-title">
+                <span class="highlight">Aviso</span> de Privacidad
+            </h1>
+            <p class="legal-hero-subtitle">
+                Protección clara y transparente de tus datos personales.
+            </p>
+            <div class="legal-meta">
+                <div class="legal-meta-item">
+                    <i class="lni lni-calendar"></i>
+                    Última actualización: 12 de febrero de 2025
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="legal-content-section">
+        <div class="legal-container">
+                <div class="highlight-box info">
+                    <div class="highlight-box-title">
+                        <i class="lni lni-shield"></i>
+                        Protección de Datos
+                    </div>
+                    <p>Cumplimos con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) de México y utilizamos las mejores prácticas de seguridad para proteger tu información.</p>
+                </div>
+
+                <!-- Sección 1 -->
+                <div class="legal-section" id="seccion-1">
+                    <h2 class="section-title">
+                        <span class="section-number">1</span>
+                        Identidad y Domicilio del Responsable
+                    </h2>
+                    <p><strong>Attomos Industries SAS</strong> (en adelante "Attomos", "nosotros" o "la empresa"), con domicilio en Hermosillo, Sonora, México, es el responsable del tratamiento de sus datos personales de conformidad con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.</p>
+                </div>
+
+                <!-- Sección 2 -->
+                <div class="legal-section" id="seccion-2">
+                    <h2 class="section-title">
+                        <span class="section-number">2</span>
+                        Datos Personales que Recabamos
+                    </h2>
+                    <p>Para la prestación de nuestros servicios de automatización mediante agentes de inteligencia artificial, recabamos las siguientes categorías de datos personales:</p>
+
+                    <h3 class="subsection-title">2.1 Datos de Identificación y Contacto</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Dato</th>
+                                <th>Finalidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Nombre del negocio</strong></td>
+                                <td>Identificación y personalización del servicio</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Correo electrónico</strong></td>
+                                <td>Comunicación, notificaciones y soporte técnico</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Número de teléfono/WhatsApp</strong></td>
+                                <td>Configuración de agentes, comunicación y soporte</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contraseña (encriptada)</strong></td>
+                                <td>Autenticación y seguridad de la cuenta</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 class="subsection-title">2.2 Datos del Negocio</h3>
+                    <ul>
+                        <li>Giro o tipo de negocio</li>
+                        <li>Tamaño de la empresa</li>
+                        <li>Descripción de servicios o productos</li>
+                        <li>Horarios de atención</li>
+                        <li>Días festivos e inhábiles</li>
+                        <li>Catálogo de servicios y productos</li>
+                        <li>Información de trabajadores o personal (nombres, horarios)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.3 Datos de Ubicación</h3>
+                    <ul>
+                        <li>Dirección física completa del negocio</li>
+                        <li>Código postal</li>
+                        <li>Ciudad, estado y país</li>
+                        <li>Referencias de ubicación (entre calles, número exterior/interior)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.4 Datos de Redes Sociales</h3>
+                    <ul>
+                        <li>URLs de perfiles en Facebook, Instagram, Twitter/X, LinkedIn</li>
+                        <li>Información pública compartida en dichas plataformas</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.5 Datos de Facturación y Pago</h3>
+                    <ul>
+                        <li>Información de tarjeta de crédito/débito (procesada por Stripe)</li>
+                        <li>Historial de transacciones</li>
+                        <li>Datos fiscales (opcional, para facturación)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.6 Datos de Uso y Técnicos</h3>
+                    <ul>
+                        <li>Configuración de agentes de IA creados</li>
+                        <li>Conversaciones y mensajes procesados por los agentes</li>
+                        <li>Citas agendadas y su historial</li>
+                        <li>Logs de sistema y seguridad</li>
+                        <li>Dirección IP, cookies y datos de navegación</li>
+                        <li>Información del dispositivo y navegador</li>
+                    </ul>
+
+                    <div class="highlight-box important">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Importante
+                        </div>
+                        <p>No recabamos datos personales sensibles como origen racial o étnico, estado de salud, información genética, creencias religiosas, filosóficas y morales, afiliación sindical, opiniones políticas o preferencia sexual.</p>
+                    </div>
+                </div>
+
+                <!-- Sección 3 -->
+                <div class="legal-section" id="seccion-3">
+                    <h2 class="section-title">
+                        <span class="section-number">3</span>
+                        Finalidades del Tratamiento de Datos
+                    </h2>
+                    
+                    <h3 class="subsection-title">3.1 Finalidades Primarias (necesarias para el servicio)</h3>
+                    <ul>
+                        <li><strong>Prestación del servicio:</strong> Crear, configurar y operar agentes de inteligencia artificial personalizados para su negocio</li>
+                        <li><strong>Gestión de cuenta:</strong> Crear y administrar su cuenta de usuario en la plataforma</li>
+                        <li><strong>Comunicación:</strong> Enviar notificaciones importantes sobre el servicio, cambios en términos, actualizaciones de seguridad</li>
+                        <li><strong>Soporte técnico:</strong> Brindar asistencia y resolver problemas técnicos</li>
+                        <li><strong>Procesamiento de pagos:</strong> Gestionar suscripciones, facturación y cobros</li>
+                        <li><strong>Seguridad:</strong> Proteger su cuenta, prevenir fraudes y garantizar el uso adecuado del servicio</li>
+                        <li><strong>Cumplimiento legal:</strong> Cumplir con obligaciones legales y fiscales</li>
+                    </ul>
+
+                    <h3 class="subsection-title">3.2 Finalidades Secundarias (opcionales)</h3>
+                    <ul>
+                        <li><strong>Mejora del servicio:</strong> Analizar el uso de la plataforma para mejorar funcionalidades</li>
+                        <li><strong>Personalización:</strong> Ofrecer recomendaciones y contenido relevante</li>
+                        <li><strong>Marketing:</strong> Enviar información sobre nuevas características, promociones y eventos</li>
+                        <li><strong>Investigación y desarrollo:</strong> Desarrollar nuevos productos y servicios</li>
+                        <li><strong>Estadísticas:</strong> Generar análisis agregados y anónimos sobre el uso del servicio</li>
+                    </ul>
+
+                    <div class="highlight-box info">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Su derecho a oponerse
+                        </div>
+                        <p>Usted puede manifestar su negativa para el tratamiento de sus datos personales para las finalidades secundarias en cualquier momento, sin que esto afecte la prestación del servicio. Para ejercer este derecho, contacte a <strong>privacidad@attomos.mx</strong></p>
+                    </div>
+                </div>
+
+                <!-- Sección 4 -->
+                <div class="legal-section" id="seccion-4">
+                    <h2 class="section-title">
+                        <span class="section-number">4</span>
+                        Compartición de Datos con Terceros
+                    </h2>
+                    <p>Attomos comparte sus datos personales únicamente con los siguientes terceros, necesarios para la prestación del servicio:</p>
+
+                    <h3 class="subsection-title">4.1 Proveedores de Tecnología Propios</h3>
+                    <ul>
+                        <li><strong>Atomic Bot:</strong> Sistema de conexión con WhatsApp Web mediante código QR. Los datos se procesan directamente en nuestros servidores seguros.</li>
+                        <li><strong>Orbital Bot:</strong> Sistema de integración con Meta WhatsApp Business API para empresas verificadas. Proporciona funcionalidades empresariales avanzadas.</li>
+                    </ul>
+
+                    <h3 class="subsection-title">4.2 Terceros con quienes compartimos datos</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tercero</th>
+                                <th>Datos Compartidos</th>
+                                <th>Finalidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Google LLC</strong></td>
+                                <td>Email, datos de calendario, datos en hojas de cálculo</td>
+                                <td>Integración con Google Calendar y Google Sheets</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Meta Platforms (WhatsApp)</strong></td>
+                                <td>Número de teléfono, mensajes, información de contacto</td>
+                                <td>Operación de Orbital Bot mediante WhatsApp Business API</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stripe, Inc.</strong></td>
+                                <td>Datos de pago, email, nombre</td>
+                                <td>Procesamiento de pagos y suscripciones</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chatwoot</strong></td>
+                                <td>Conversaciones, datos de contacto</td>
+                                <td>Sistema de gestión de conversaciones (CRM)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Google Gemini AI</strong></td>
+                                <td>Consultas y conversaciones procesadas</td>
+                                <td>Procesamiento de lenguaje natural e inteligencia artificial</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Importante
+                        </div>
+                        <p>Todos estos terceros cuentan con sus propias políticas de privacidad y se han comprometido contractualmente a proteger sus datos personales conforme a estándares internacionales de seguridad.</p>
+                    </div>
+
+                    <h3 class="subsection-title">4.3 Transferencias Internacionales</h3>
+                    <p>Algunos de los terceros mencionados se encuentran ubicados en países distintos a México, principalmente en Estados Unidos de América. Estas transferencias se realizan con base en:</p>
+                    <ul>
+                        <li>Consentimiento expreso al aceptar estos términos</li>
+                        <li>Cláusulas contractuales estándar de protección de datos</li>
+                        <li>Certificaciones internacionales de privacidad</li>
+                    </ul>
+                    <p><strong>No vendemos, alquilamos ni compartimos sus datos personales con terceros para fines de marketing sin su consentimiento explícito.</strong></p>
+                </div>
+
+                <!-- Sección 5 - Derechos ARCO -->
+                <div class="legal-section" id="seccion-5">
+                    <h2 class="section-title">
+                        <span class="section-number">5</span>
+                        Derechos ARCO
+                    </h2>
+                    <p>Como titular de datos personales, usted tiene derecho a:</p>
+                    <ul>
+                        <li><strong>Acceder</strong> a sus datos personales que poseemos y conocer los detalles del tratamiento</li>
+                        <li><strong>Rectificar</strong> sus datos en caso de que sean inexactos o estén incompletos</li>
+                        <li><strong>Cancelar</strong> sus datos cuando considere que no están siendo utilizados conforme a los principios y deberes establecidos en la ley</li>
+                        <li><strong>Oponerse</strong> al tratamiento de sus datos para fines específicos</li>
+                    </ul>
+
+                    <h3 class="subsection-title">5.1 ¿Cómo ejercer sus derechos ARCO?</h3>
+                    <p>Para ejercer cualquiera de sus derechos ARCO, puede:</p>
+                    <ul>
+                        <li>Enviar un correo electrónico a <strong>privacidad@attomos.mx</strong> con asunto "Derechos ARCO"</li>
+                        <li>Contactarnos por WhatsApp al <strong>+52 81 2309 2839</strong></li>
+                        <li>Utilizar la función de "Eliminar Cuenta" en la configuración de su perfil (para ejercer el derecho de cancelación)</li>
+                    </ul>
+
+                    <p><strong>Su solicitud deberá contener:</strong></p>
+                    <ul>
+                        <li>Nombre completo del titular</li>
+                        <li>Correo electrónico registrado en la plataforma</li>
+                        <li>Descripción clara del derecho que desea ejercer</li>
+                        <li>Documentos que acrediten su identidad (INE, pasaporte)</li>
+                    </ul>
+
+                    <p><strong>Plazo de respuesta:</strong> Responderemos a su solicitud en un plazo máximo de 20 días hábiles contados desde la fecha de recepción. En caso de ser procedente, haremos efectivo el derecho solicitado en un plazo de 15 días hábiles adicionales.</p>
+                </div>
+
+                <!-- Sección 6 - Revocación -->
+                <div class="legal-section" id="seccion-6">
+                    <h2 class="section-title">
+                        <span class="section-number">6</span>
+                        Revocación del Consentimiento
+                    </h2>
+                    <p>Usted puede revocar su consentimiento para el tratamiento de sus datos personales en cualquier momento. Para ello, puede:</p>
+                    <ul>
+                        <li>Enviar un correo a <strong>privacidad@attomos.mx</strong> solicitando la revocación</li>
+                        <li>Eliminar su cuenta desde la configuración de su perfil</li>
+                        <li>Contactarnos por WhatsApp al <strong>+52 81 2309 2839</strong></li>
+                    </ul>
+
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-warning"></i>
+                            Importante
+                        </div>
+                        <p>La revocación del consentimiento puede implicar que no podamos continuar prestándole nuestros servicios, ya que el tratamiento de ciertos datos es esencial para la operación de la plataforma.</p>
+                    </div>
+                </div>
+
+                <!-- Sección 7 - Retención de Datos -->
+                <div class="legal-section" id="seccion-7">
+                    <h2 class="section-title">
+                        <span class="section-number">7</span>
+                        Política de Retención de Datos
+                    </h2>
+                    <p>Conservamos sus datos personales durante los siguientes períodos:</p>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Datos</th>
+                                <th>Período de Retención</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Datos de cuenta activa</strong></td>
+                                <td>Mientras la cuenta permanezca activa</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Datos después de eliminación voluntaria</strong></td>
+                                <td>30 días (período de respaldo de seguridad)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Datos de cuentas inactivas</strong></td>
+                                <td>2 años desde la última actividad, luego notificación y eliminación tras 30 días adicionales</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Datos de facturación y transacciones</strong></td>
+                                <td>5 años (cumplimiento de obligaciones fiscales mexicanas)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Logs de seguridad y acceso</strong></td>
+                                <td>6 meses</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Conversaciones procesadas por agentes</strong></td>
+                                <td>Mientras la cuenta esté activa + 30 días tras eliminación</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>Nota:</strong> Podemos conservar ciertos datos de forma anónima y agregada para fines estadísticos, sin que sea posible identificarle personalmente.</p>
+                </div>
+
+                <!-- Sección 8 - Medidas de Seguridad -->
+                <div class="legal-section" id="seccion-8">
+                    <h2 class="section-title">
+                        <span class="section-number">8</span>
+                        Medidas de Seguridad
+                    </h2>
+                    <p>Implementamos medidas de seguridad administrativas, técnicas y físicas para proteger sus datos personales contra daño, pérdida, alteración, destrucción o uso no autorizado:</p>
+
+                    <h3 class="subsection-title">8.1 Medidas Técnicas</h3>
+                    <ul>
+                        <li><strong>Encriptación:</strong> Todas las contraseñas se almacenan encriptadas mediante algoritmos seguros (bcrypt)</li>
+                        <li><strong>HTTPS/SSL:</strong> Toda la comunicación entre su navegador y nuestros servidores está encriptada</li>
+                        <li><strong>Firewalls:</strong> Protección perimetral de nuestros servidores</li>
+                        <li><strong>Autenticación:</strong> Sistema de autenticación seguro con gestión de sesiones</li>
+                        <li><strong>Respaldos:</strong> Copias de seguridad regulares y encriptadas</li>
+                    </ul>
+
+                    <h3 class="subsection-title">8.2 Medidas Administrativas</h3>
+                    <ul>
+                        <li>Acceso limitado a datos personales solo al personal autorizado</li>
+                        <li>Capacitación continua en protección de datos</li>
+                        <li>Políticas internas de seguridad de la información</li>
+                        <li>Auditorías periódicas de seguridad</li>
+                    </ul>
+
+                    <h3 class="subsection-title">8.3 Responsabilidad del Usuario</h3>
+                    <p>Usted es responsable de:</p>
+                    <ul>
+                        <li>Mantener la confidencialidad de su contraseña</li>
+                        <li>No compartir sus credenciales de acceso</li>
+                        <li>Notificarnos inmediatamente si detecta uso no autorizado de su cuenta</li>
+                        <li>Cerrar sesión al terminar de usar el servicio en dispositivos compartidos</li>
+                    </ul>
+                </div>
+
+                <!-- Sección 9 - Cookies -->
+                <div class="legal-section" id="seccion-9">
+                    <h2 class="section-title">
+                        <span class="section-number">9</span>
+                        Cookies y Tecnologías de Rastreo
+                    </h2>
+                    <p>Utilizamos cookies y tecnologías similares para mejorar su experiencia en nuestra plataforma. Las cookies son pequeños archivos de texto que se almacenan en su dispositivo.</p>
+
+                    <h3 class="subsection-title">9.1 Tipos de cookies que utilizamos</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Propósito</th>
+                                <th>Duración</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Cookies esenciales</strong></td>
+                                <td>Funcionamiento básico de la plataforma, autenticación</td>
+                                <td>Sesión o hasta cerrar sesión</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cookies de preferencias</strong></td>
+                                <td>Recordar sus configuraciones y preferencias</td>
+                                <td>30 días a 1 año</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cookies analíticas</strong></td>
+                                <td>Entender cómo se usa la plataforma, mejorar el servicio</td>
+                                <td>Hasta 2 años</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 class="subsection-title">9.2 Control de cookies</h3>
+                    <p>Puede configurar su navegador para rechazar cookies o eliminarlas en cualquier momento. Sin embargo, esto puede afectar la funcionalidad de la plataforma.</p>
+                    <p><strong>Nota:</strong> Las cookies esenciales son necesarias para el funcionamiento de la plataforma y no pueden deshabilitarse sin afectar el servicio.</p>
+                </div>
+
+                <!-- Sección 10 - Menores -->
+                <div class="legal-section" id="seccion-10">
+                    <h2 class="section-title">
+                        <span class="section-number">10</span>
+                        Menores de Edad
+                    </h2>
+                    <p>Nuestros servicios están dirigidos a personas mayores de 18 años. No recabamos intencionalmente datos personales de menores de edad.</p>
+                    <p>Si usted es menor de 18 años, no debe registrarse ni proporcionar datos personales en nuestra plataforma.</p>
+                    <p>Si tenemos conocimiento de que hemos recabado datos de un menor de edad sin la autorización correspondiente, tomaremos medidas inmediatas para eliminar dicha información de nuestros servidores.</p>
+                    <p>Si usted es padre, madre o tutor y cree que un menor bajo su custodia ha proporcionado datos personales, contáctenos inmediatamente.</p>
+                </div>
+
+                <!-- Sección 11 - Cambios -->
+                <div class="legal-section" id="seccion-11">
+                    <h2 class="section-title">
+                        <span class="section-number">11</span>
+                        Cambios al Aviso de Privacidad
+                    </h2>
+                    <p>Nos reservamos el derecho de modificar este Aviso de Privacidad en cualquier momento para reflejar cambios en nuestras prácticas de tratamiento de datos, cambios legales o mejoras en nuestros servicios.</p>
+                    <p>Cualquier cambio será notificado a través de:</p>
+                    <ul>
+                        <li>Publicación en nuestra plataforma con la nueva fecha de actualización</li>
+                        <li>Correo electrónico a su dirección registrada (para cambios sustanciales)</li>
+                        <li>Notificación dentro de la plataforma al iniciar sesión</li>
+                    </ul>
+                    <p><strong>Recomendación:</strong> Le sugerimos revisar periódicamente este Aviso de Privacidad para estar informado sobre cómo protegemos su información.</p>
+                    <p>Si continúa utilizando nuestros servicios después de que los cambios entren en vigor, esto constituirá su aceptación de los mismos. Si no está de acuerdo con los cambios, puede ejercer sus derechos ARCO o eliminar su cuenta.</p>
+                </div>
+
+                <!-- Sección 12 - Legislación -->
+                <div class="legal-section" id="seccion-12">
+                    <h2 class="section-title">
+                        <span class="section-number">12</span>
+                        Legislación Aplicable y Jurisdicción
+                    </h2>
+                    <p>Este Aviso de Privacidad se rige por la legislación mexicana, particularmente:</p>
+                    <ul>
+                        <li>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</li>
+                        <li>Reglamento de la LFPDPPP</li>
+                        <li>Lineamientos del Aviso de Privacidad emitidos por el INAI</li>
+                    </ul>
+                    <p>Para cualquier controversia relacionada con la interpretación o aplicación de este Aviso de Privacidad, las partes se someten a la jurisdicción de los tribunales competentes en Hermosillo, Sonora, México, renunciando expresamente a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.</p>
+                    <p><strong>INAI:</strong> El Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales es la autoridad en México encargada de la protección de datos. Puede consultar más información en <a href="https://www.inai.org.mx" target="_blank">www.inai.org.mx</a></p>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="contact-section">
+                    <h2 class="contact-section-title">¿Dudas sobre Privacidad?</h2>
+                    <p class="contact-section-text">Si tiene preguntas, comentarios o desea ejercer sus derechos ARCO, puede contactarnos:</p>
+                    <div class="contact-methods">
+                        <a href="mailto:privacidad@attomos.mx" class="contact-method">
+                            <i class="lni lni-envelope"></i>
+                            privacidad@attomos.mx
+                        </a>
+                        <a href="https://wa.me/528123092839" target="_blank" class="contact-method">
+                            <i class="lni lni-whatsapp"></i>
+                            +52 81 2309 2839
+                        </a>
+                    </div>
+                    <p style="margin-top: 24px; font-size: 14px; opacity: 0.9;">
+                        <strong>Horario de atención:</strong> Lunes a Viernes, 9:00 AM - 6:00 PM (Hora del Pacífico)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{template "partials/footer.html" .}}
+
+    <button class="back-to-top" id="backToTop">
+        <i class="lni lni-chevron-up"></i>
+    </button>
+
+    <script src="/static/js/legal/legal.js"></script>
+</body>
+</html>
+{{end}}

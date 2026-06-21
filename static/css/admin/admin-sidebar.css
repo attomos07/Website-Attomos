@@ -1,0 +1,296 @@
+/* ==========================================
+   ADMIN SIDEBAR — Tema Azul Marino
+   ========================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.sidebar-container {
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  border-radius: 50px;
+  padding: 16px 12px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  overflow: visible;
+}
+
+.sidebar-container:hover {
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================
+   BOTONES E ICONOS
+   ========================================== */
+.icon-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  background: #f0f4ff;
+  transform: scale(1.05);
+  z-index: 2000;
+}
+
+/* Azul marino como color activo */
+.icon-button.active {
+  background: #1e3a8a;
+}
+
+.icon-button svg {
+  width: 22px;
+  height: 22px;
+  stroke: #2d3748;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.3s ease;
+}
+
+.icon-button.active svg {
+  stroke: #ffffff;
+}
+
+/* ==========================================
+   TOOLTIPS
+   ========================================== */
+.tooltip {
+  position: absolute;
+  left: 70px;
+  background: #1e3a8a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+  z-index: 1000;
+}
+
+.tooltip::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: #1e3a8a;
+}
+
+.icon-button:hover .tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ==========================================
+   ELEMENTOS AUXILIARES
+   ========================================== */
+.divider {
+  width: 32px;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px auto;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.logout-button:hover svg {
+  stroke: #ef4444;
+}
+
+/* ==========================================
+   BOTÓN HAMBURGUESA MÓVIL
+   ========================================== */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: #1e3a8a;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.3);
+  cursor: pointer;
+  z-index: 2005;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+.mobile-menu-btn .hamburger {
+  width: 24px;
+  height: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mobile-menu-btn .hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.mobile-menu-btn.active .hamburger span:nth-child(1) {
+  transform: translateY(8.5px) rotate(45deg);
+}
+.mobile-menu-btn.active .hamburger span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.mobile-menu-btn.active .hamburger span:nth-child(3) {
+  transform: translateY(-8.5px) rotate(-45deg);
+}
+
+/* ==========================================
+   OVERLAY MÓVIL
+   ========================================== */
+.mobile-overlay {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1999;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ==========================================
+   RESPONSIVE MÓVIL
+   ========================================== */
+@media (max-width: 768px) {
+  .sidebar-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px !important;
+    height: 100vh;
+    padding-top: 90px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 4px;
+    background: #ffffff;
+    border-radius: 0 20px 20px 0 !important;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 2000;
+  }
+
+  .sidebar-container.mobile-active {
+    transform: translateX(0);
+  }
+
+  .icon-button {
+    width: 100% !important;
+    height: 46px !important;
+    border-radius: 8px !important;
+    margin-bottom: 2px;
+    padding: 0 12px !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    background: transparent;
+  }
+
+  .icon-button svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    margin-right: 12px !important;
+    stroke: #475569 !important;
+  }
+
+  .tooltip {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    background: transparent !important;
+    color: #334155 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap;
+    display: inline-block !important;
+    pointer-events: auto !important;
+  }
+
+  .tooltip::before { display: none !important; }
+
+  /* Activo en móvil — azul marino suave */
+  .icon-button.active {
+    background: #eff6ff !important;
+  }
+
+  .icon-button.active svg {
+    stroke: #1e3a8a !important;
+  }
+
+  .icon-button.active .tooltip {
+    color: #1e3a8a !important;
+    font-weight: 600 !important;
+  }
+
+  .icon-button:hover {
+    transform: none !important;
+    background: #f1f5f9 !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}

@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <style id="tutorial-styles">
+/* ========================================
+   TUTORIAL OVERLAY - Estilo Acrobat
+======================================== */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* Capa oscura con "agujero" recortado */
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: all;
+  transition: opacity 0.35s ease;
+  /* background transparente: el oscurecimiento lo hacen los 4 masks */
+  background: transparent;
+}
+
+/* Los 4 rectángulos que rodean el spotlight */
+.tut-mask {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.58);
+  z-index: 9998;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: all;
+}
+
+/* El "spotlight" recorta la zona destacada */
+.tutorial-spotlight {
+  position: fixed;
+  border-radius: 14px;
+  z-index: 9999;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* El borde cyan se pone via outline */
+  outline: 3px solid rgba(6, 182, 212, 0.85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(6,182,212,0.3), 0 0 24px rgba(6,182,212,0.3);
+}
+
+/* Tarjeta flotante del tutorial */
+.tutorial-card {
+  position: fixed;
+  z-index: 10000;
+  width: 310px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(6, 182, 212, 0.15);
+  padding: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: tutorialCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tutorialCardIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Header de la tarjeta */
+.tutorial-card-header {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  padding: 1rem 1.25rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tutorial-card-header .tut-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tutorial-card-header .tut-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.tutorial-card-header .tut-close {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.tutorial-card-header .tut-close:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Body */
+.tutorial-card-body {
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+.tutorial-card-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.tutorial-card-body p {
+  font-size: 0.83rem;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+/* Footer con paginación y botones */
+.tutorial-card-footer {
+  padding: 0.75rem 1.25rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tut-page-info {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.tut-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.tut-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: all 0.3s;
+}
+
+.tut-dot.active {
+  background: #06b6d4;
+  transform: scale(1.3);
+}
+
+.tut-nav-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.tut-btn-prev,
+.tut-btn-next {
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  gap: 0.3rem;
+}
+
+.tut-btn-prev {
+  width: 32px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.tut-btn-prev:hover { background: #e2e8f0; }
+.tut-btn-prev:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.tut-btn-next {
+  padding: 0 1rem;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(6,182,212,0.3);
+}
+.tut-btn-next:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(6,182,212,0.4);
+}
+
+/* Botón flotante para relanzar el tutorial */
+.tutorial-launch-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 5000;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(6,182,212,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  opacity: 0.85;
+}
+.tutorial-launch-btn:hover {
+  opacity: 1;
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 8px 28px rgba(6,182,212,0.5);
+}
+
+/* Ocultar cuando el tutorial está activo */
+.tutorial-active .tutorial-launch-btn { display: none; }
+
+</style>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container" data-plan="{{.currentPlan}}">
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="dashboard-layout">
+                    <!-- Create Button -->
+                    <div class="page-header">
+                        <button type="button" id="createAgentBtnDashboard" class="btn-primary" onclick="checkBusinessBeforeAgent()">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Agente</span>
+                        </button>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon sky">
+                                <svg class="stat-bot-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                                    <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                                    <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                                    <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                                    <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="activeAgentsCount">0</div>
+                                <div class="stat-label">Agentes Activos</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon fuchsia">
+                                <i class="lni lni-comments"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Conversaciones</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon lime">
+                                <i class="lni lni-calendar" id="statThirdIcon"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label" id="statThirdLabel">Citas Agendadas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon amber">
+                                <i class="lni lni-timer"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">--</div>
+                                <div class="stat-label">Tiempo de Respuesta</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Billing Section (solo planes de pago) -->
+                    {{if and (ne .currentPlan "gratuito") (ne .currentPlan "Gratuito") (ne .currentPlan "free") (ne .currentPlan "Free") (ne .currentPlan "")}}
+                    <div class="ai-billing-section">
+                        <div class="billing-header">
+                            <div class="billing-title-wrapper">
+                                <h2 class="section-title">
+                                    <i class="lni lni-coin"></i>
+                                    Costos de IA
+                                </h2>
+                                <span class="billing-badge">Gemini API</span>
+                            </div>
+                            <div class="billing-controls">
+                                <div class="view-toggle-group" id="billingViewToggle">
+                                    <button class="view-toggle-btn active" data-view="line" onclick="setBillingView('line')" title="Gráfico de línea">
+                                        <i class="lni lni-graph"></i>
+                                    </button>
+                                    <button class="view-toggle-btn" data-view="bar" onclick="setBillingView('bar')" title="Gráfico de barras">
+                                        <i class="lni lni-bar-chart"></i>
+                                    </button>
+                                    <button class="view-toggle-btn" data-view="table" onclick="setBillingView('table')" title="Tabla">
+                                        <i class="lni lni-list"></i>
+                                    </button>
+                                </div>
+                                <select class="currency-select" id="currencySelect">
+                                    <option value="MXN" selected>🇲🇽 MXN</option>
+                                    <option value="USD">🇺🇸 USD</option>
+                                    <option value="EUR">🇪🇺 EUR</option>
+                                    <option value="GBP">🇬🇧 GBP</option>
+                                    <option value="CAD">🇨🇦 CAD</option>
+                                    <option value="ARS">🇦🇷 ARS</option>
+                                    <option value="COP">🇨🇴 COP</option>
+                                    <option value="CLP">🇨🇱 CLP</option>
+                                </select>
+                                <select class="time-range-select" id="billingTimeRange">
+                                    <option value="7">Últimos 7 días</option>
+                                    <option value="14">Últimos 14 días</option>
+                                    <option value="28" selected>Últimos 28 días</option>
+                                    <option value="90">Últimos 90 días</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="billing-card">
+                            <div class="cost-summary">
+                                <div class="cost-item">
+                                    <div class="cost-label">Costo Total</div>
+                                    <div class="cost-value" id="totalCost">$0.00</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container" id="costChartContainer">
+                                <canvas id="costChart"></canvas>
+                            </div>
+
+                            <div class="billing-table-container" id="costTableContainer" style="display:none;"></div>
+
+                            <div class="billing-footer">
+                                <div class="billing-info">
+                                    <i class="lni lni-information"></i>
+                                    <span>Los costos se actualizan cada hora. Basado en el uso de tokens de la API de Gemini.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{end}}
+
+                    <!-- Unified Services Section -->
+                    <div class="services-unified-section">
+                        <div class="services-unified-header">
+                            <h2 class="section-title">
+                                <i class="lni lni-bar-chart"></i>
+                                <span id="sectionServicesTitle">Estadísticas de Servicios</span>
+                            </h2>
+                            <div class="export-buttons">
+                                <button class="btn-export btn-export-excel" onclick="exportToExcel()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar Excel</span>
+                                </button>
+                                <button class="btn-export btn-export-pdf" onclick="exportToPDF()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar PDF</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="services-unified-grid">
+
+                            <!-- Most Requested Card -->
+                            <div class="service-unified-card">
+                                <div class="service-unified-card-header">
+                                    <div class="service-card-title">
+                                        <i class="lni lni-bar-chart"></i>
+                                        <h3 id="mostRequestedTitle">Servicios Más Pedidos</h3>
+                                        <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
+                                    </div>
+                                    <div class="view-toggle-group">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('most', 'bars')" data-section="most" data-view="bars" title="Barras horizontales">
+                                            <i class="lni lni-bar-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'pie')" data-section="most" data-view="pie" title="Gráfico circular">
+                                            <i class="lni lni-pie-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'table')" data-section="most" data-view="table" title="Tabla">
+                                            <i class="lni lni-list"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Bars view -->
+                                <div id="mostBarsView" class="service-view-panel">
+                                    <div id="mostRequestedServicesContainer" class="service-bars-container"></div>
+                                </div>
+
+                                <!-- Pie view -->
+                                <div id="mostPieView" class="service-view-panel" style="display:none;">
+                                    <div class="pie-chart-content">
+                                        <div class="pie-chart-canvas-wrapper">
+                                            <canvas id="mostRequestedPieChart"></canvas>
+                                        </div>
+                                        <div class="pie-chart-legend" id="mostRequestedLegend"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Table view -->
+                                <div id="mostTableView" class="service-view-panel" style="display:none;"></div>
+                            </div>
+
+                            <!-- Least Requested Card -->
+                            <div class="service-unified-card least-requested">
+                                <div class="service-unified-card-header">
+                                    <div class="service-card-title">
+                                        <i class="lni lni-stats-down"></i>
+                                        <h3 id="leastRequestedTitle">Servicios Menos Pedidos</h3>
+                                        <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
+                                    </div>
+                                    <div class="view-toggle-group">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('least', 'bars')" data-section="least" data-view="bars" title="Barras horizontales">
+                                            <i class="lni lni-bar-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'pie')" data-section="least" data-view="pie" title="Gráfico circular">
+                                            <i class="lni lni-pie-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'table')" data-section="least" data-view="table" title="Tabla">
+                                            <i class="lni lni-list"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Bars view -->
+                                <div id="leastBarsView" class="service-view-panel">
+                                    <div id="leastRequestedServicesContainer" class="service-bars-container"></div>
+                                </div>
+
+                                <!-- Pie view -->
+                                <div id="leastPieView" class="service-view-panel" style="display:none;">
+                                    <div class="pie-chart-content">
+                                        <div class="pie-chart-canvas-wrapper">
+                                            <canvas id="leastRequestedPieChart"></canvas>
+                                        </div>
+                                        <div class="pie-chart-legend" id="leastRequestedLegend"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Table view -->
+                                <div id="leastTableView" class="service-view-panel" style="display:none;"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script>
+        // Ocultar costos de IA si el plan es gratuito (fallback JS)
+        (function() {
+            const plan = (document.querySelector('.app-container')?.dataset?.plan || '').toLowerCase().trim();
+            if (plan === 'gratuito' || plan === 'free' || plan === '') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    const section = document.querySelector('.ai-billing-section');
+                    if (section) section.style.display = 'none';
+                });
+            }
+        })();
+    </script>
+    <script src="/static/js/dashboard.js"></script>
+    <script id="tutorial-script">
+// ============================================
+// TUTORIAL - Estilo Acrobat / tour guiado
+// ============================================
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'attomos_tutorial_done_v2';
+
+  const STEPS = [
+    {
+      selector: '#createAgentBtnDashboard',
+      title: 'Crea tu primer Agente',
+      body: 'Haz clic aquí para configurar un nuevo agente de IA para WhatsApp. Solo toma unos minutos.',
+      icon: 'lni lni-plus',
+      position: 'bottom',
+    },
+    {
+      selector: '.stats-grid',
+      title: 'Métricas en tiempo real',
+      body: 'Aquí verás tus agentes activos, conversaciones, citas agendadas y el tiempo de respuesta promedio.',
+      icon: 'lni lni-bar-chart',
+      position: 'bottom',
+    },
+    {
+      selector: '.services-unified-section',
+      title: 'Estadísticas de Servicios',
+      body: 'Analiza qué servicios piden más tus clientes. Exporta a Excel o PDF con un clic.',
+      icon: 'lni lni-pie-chart',
+      position: 'top',
+    },
+    {
+      selector: '.sidebar',
+      title: 'Navegación lateral',
+      body: 'Accede a Agentes, Integraciones, Historial de chats, Planes y más desde aquí.',
+      icon: 'lni lni-layout',
+      position: 'right',
+    },
+  ];
+
+  // ── Crear DOM ─────────────────────────────────
+  function createTutorialDOM() {
+    // 4 masks para oscurecer alrededor del spotlight
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const m = document.createElement('div');
+      m.className = 'tut-mask';
+      m.id = id;
+      m.style.display = 'none';
+      document.body.appendChild(m);
+    });
+
+    // Spotlight (solo borde)
+    const spotlight = document.createElement('div');
+    spotlight.className = 'tutorial-spotlight';
+    spotlight.id = 'tutSpotlight';
+    spotlight.style.display = 'none';
+    document.body.appendChild(spotlight);
+
+    // Backdrop clickeable (invisible, cubre todo por encima de masks)
+    const backdrop = document.createElement('div');
+    backdrop.className = 'tutorial-backdrop';
+    backdrop.id = 'tutBackdrop';
+    backdrop.style.display = 'none';
+    document.body.appendChild(backdrop);
+
+    // Tarjeta
+    const card = document.createElement('div');
+    card.className = 'tutorial-card';
+    card.id = 'tutCard';
+    card.style.display = 'none';
+    card.innerHTML = `
+      <div class="tutorial-card-header">
+        <div class="tut-icon"><i id="tutIcon" class="lni lni-question-circle"></i></div>
+        <span class="tut-title">Tutorial · Attomos</span>
+        <button class="tut-close" id="tutClose" title="Saltar tutorial">✕</button>
+      </div>
+      <div class="tutorial-card-body">
+        <h3 id="tutTitle"></h3>
+        <p id="tutBody"></p>
+      </div>
+      <div class="tutorial-card-footer">
+        <span class="tut-page-info" id="tutPageInfo"></span>
+        <div class="tut-dots" id="tutDots"></div>
+        <div class="tut-nav-btns">
+          <button class="tut-btn-prev" id="tutPrev" title="Anterior">‹</button>
+          <button class="tut-btn-next" id="tutNext">Siguiente ›</button>
+        </div>
+      </div>`;
+
+    // Botón relanzar
+    const launchBtn = document.createElement('button');
+    launchBtn.className = 'tutorial-launch-btn';
+    launchBtn.id = 'tutLaunch';
+    launchBtn.title = 'Ver tutorial';
+    launchBtn.innerHTML = '<i class="lni lni-question-circle"></i>';
+
+    document.body.appendChild(card);
+    document.body.appendChild(launchBtn);
+  }
+
+  // ── Posicionar los 4 masks alrededor de un rect ─
+  const MARGIN = 8; // px extra alrededor del elemento
+
+  function positionMasks(r) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const top    = r.top    - MARGIN;
+    const left   = r.left   - MARGIN;
+    const right  = r.right  + MARGIN;
+    const bottom = r.bottom + MARGIN;
+
+    setMask('tut-mask-top',    { top:0, left:0, width:vw, height: Math.max(0,top) });
+    setMask('tut-mask-bottom', { top:bottom, left:0, width:vw, height: Math.max(0,vh-bottom) });
+    setMask('tut-mask-left',   { top:top, left:0, width: Math.max(0,left), height: bottom-top });
+    setMask('tut-mask-right',  { top:top, left:right, width: Math.max(0,vw-right), height: bottom-top });
+  }
+
+  function setMask(id, s) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.top    = s.top    + 'px';
+    el.style.left   = s.left   + 'px';
+    el.style.width  = s.width  + 'px';
+    el.style.height = s.height + 'px';
+  }
+
+  function showMasks(show) {
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'block' : 'none';
+    });
+  }
+
+  // ── Posicionar tarjeta ────────────────────────
+  const PAD = 16;
+
+  function placeCard(r, position) {
+    const card = document.getElementById('tutCard');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cw = card.offsetWidth  || 310;
+    const ch = card.offsetHeight || 190;
+
+    let top, left;
+
+    if (position === 'bottom') {
+      top  = r.bottom + MARGIN + PAD;
+      left = r.left + r.width / 2 - cw / 2;
+    } else if (position === 'top') {
+      top  = r.top - MARGIN - ch - PAD;
+      left = r.left + r.width / 2 - cw / 2;
+    } else if (position === 'right') {
+      top  = r.top + r.height / 2 - ch / 2;
+      left = r.right + MARGIN + PAD;
+    } else { // left
+      top  = r.top + r.height / 2 - ch / 2;
+      left = r.left - MARGIN - cw - PAD;
+    }
+
+    // Clamp al viewport
+    left = Math.max(10, Math.min(left, vw - cw - 10));
+    top  = Math.max(10, Math.min(top,  vh - ch - 10));
+
+    card.style.left = left + 'px';
+    card.style.top  = top  + 'px';
+  }
+
+  // ── Highlight ─────────────────────────────────
+  let currentStep = 0;
+  let rafId = null;
+
+  function highlightElement(selector, position) {
+    const el = selector ? document.querySelector(selector) : null;
+    const spotlight = document.getElementById('tutSpotlight');
+
+    if (!el) {
+      spotlight.style.display = 'none';
+      showMasks(false);
+      return;
+    }
+
+    // Scroll suave al elemento
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Pequeña pausa para que termine el scroll
+    setTimeout(() => {
+      const r = el.getBoundingClientRect();
+
+      // Spotlight
+      spotlight.style.display = 'block';
+      spotlight.style.top     = (r.top    - MARGIN) + 'px';
+      spotlight.style.left    = (r.left   - MARGIN) + 'px';
+      spotlight.style.width   = (r.width  + MARGIN * 2) + 'px';
+      spotlight.style.height  = (r.height + MARGIN * 2) + 'px';
+
+      // Masks
+      positionMasks(r);
+      showMasks(true);
+
+      // Tarjeta
+      placeCard(r, position);
+    }, 300);
+  }
+
+  // Actualizar masks en scroll/resize
+  function updateOnScroll() {
+    if (!document.body.classList.contains('tutorial-active')) return;
+    const step = STEPS[currentStep];
+    const el = step.selector ? document.querySelector(step.selector) : null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const spotlight = document.getElementById('tutSpotlight');
+    spotlight.style.top    = (r.top    - MARGIN) + 'px';
+    spotlight.style.left   = (r.left   - MARGIN) + 'px';
+    spotlight.style.width  = (r.width  + MARGIN * 2) + 'px';
+    spotlight.style.height = (r.height + MARGIN * 2) + 'px';
+    positionMasks(r);
+    placeCard(r, step.position);
+  }
+
+  // ── Renderizar paso ───────────────────────────
+  function renderStep(index) {
+    const step  = STEPS[index];
+    const total = STEPS.length;
+
+    document.getElementById('tutTitle').textContent    = step.title;
+    document.getElementById('tutBody').textContent     = step.body;
+    document.getElementById('tutPageInfo').textContent = (index + 1) + ' de ' + total;
+
+    const iconEl = document.getElementById('tutIcon');
+    iconEl.className = step.icon || 'lni lni-question-circle';
+
+    // Dots
+    const dotsEl = document.getElementById('tutDots');
+    dotsEl.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const d = document.createElement('div');
+      d.className = 'tut-dot' + (i === index ? ' active' : '');
+      dotsEl.appendChild(d);
+    }
+
+    // Botones
+    document.getElementById('tutPrev').disabled = index === 0;
+    const nextBtn = document.getElementById('tutNext');
+    if (index === total - 1) {
+      nextBtn.textContent = 'Finalizar ✓';
+      nextBtn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+    } else {
+      nextBtn.textContent = 'Siguiente ›';
+      nextBtn.style.background = 'linear-gradient(135deg,#06b6d4,#0891b2)';
+    }
+
+    highlightElement(step.selector, step.position);
+  }
+
+  // ── Iniciar / cerrar ──────────────────────────
+  function startTutorial() {
+    document.body.classList.add('tutorial-active');
+    document.getElementById('tutBackdrop').style.display = 'block';
+    document.getElementById('tutCard').style.display     = 'block';
+    currentStep = 0;
+    renderStep(currentStep);
+  }
+
+  function closeTutorial() {
+    document.body.classList.remove('tutorial-active');
+    document.getElementById('tutBackdrop').style.display  = 'none';
+    document.getElementById('tutCard').style.display      = 'none';
+    document.getElementById('tutSpotlight').style.display = 'none';
+    showMasks(false);
+    localStorage.setItem(STORAGE_KEY, '1');
+  }
+
+  // ── Eventos ───────────────────────────────────
+  function bindEvents() {
+    document.getElementById('tutClose').addEventListener('click', closeTutorial);
+    document.getElementById('tutLaunch').addEventListener('click', startTutorial);
+    document.getElementById('tutBackdrop').addEventListener('click', closeTutorial);
+
+    // Clicks en masks también cierran
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', closeTutorial);
+    });
+
+    document.getElementById('tutPrev').addEventListener('click', function() {
+      if (currentStep > 0) { currentStep--; renderStep(currentStep); }
+    });
+
+    document.getElementById('tutNext').addEventListener('click', function() {
+      if (currentStep < STEPS.length - 1) {
+        currentStep++;
+        renderStep(currentStep);
+      } else {
+        closeTutorial();
+      }
+    });
+
+    window.addEventListener('resize', updateOnScroll);
+    window.addEventListener('scroll', updateOnScroll, true);
+  }
+
+  // ── Arranque ──────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    createTutorialDOM();
+    bindEvents();
+    const done = localStorage.getItem(STORAGE_KEY);
+    if (!done) {
+      setTimeout(startTutorial, 800);
+    }
+  });
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pedidos - Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/orders.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+                <div class="orders-layout">
+
+                    <!-- ── Header ── -->
+                    <div class="page-header">
+                        <div class="header-title">
+                            <h1>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.75rem;height:1.75rem;color:#06b6d4;flex-shrink:0;">
+                                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                    <line x1="3" x2="21" y1="6" y2="6"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                                Mis Pedidos
+                            </h1>
+                            <p>Gestiona todos los pedidos de tu negocio</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary" id="btnNuevoPedido" onclick="openOrderModal()">
+                                <i class="lni lni-plus"></i>
+                                <span>Nuevo Pedido</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Tabs ── -->
+                    <div class="orders-tabs-bar">
+                        <button type="button" class="orders-tab active" data-tab="mis-pedidos">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                <line x1="3" x2="21" y1="6" y2="6"/>
+                                <path d="M16 10a4 4 0 0 1-8 0"/>
+                            </svg>
+                            Mis Pedidos
+                        </button>
+                        <button type="button" class="orders-tab" data-tab="punto-venta">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <path d="M8 21h8M12 17v4"/>
+                            </svg>
+                            Punto de Venta
+                        </button>
+                    </div>
+
+                    <!-- ══════════════════════════════════════
+                         TAB: MIS PEDIDOS
+                    ══════════════════════════════════════ -->
+                    <div id="tab-mis-pedidos" class="orders-tab-panel active">
+
+                    <!-- ── Stats ── -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="lni lni-timer"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statPending">0</div>
+                                <div class="stat-label">Pendientes</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="lni lni-alarm-clock"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statPreparing">0</div>
+                                <div class="stat-label">En preparación</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statReady">0</div>
+                                <div class="stat-label">Listos para entregar</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="lni lni-calendar"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statToday">0</div>
+                                <div class="stat-label">Pedidos hoy</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="lni lni-coin"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statTotal">$0.00</div>
+                                <div class="stat-label">Venta acumulada</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Controls ── -->
+                    <div class="controls-section">
+                        <div class="filters">
+
+                            <!-- Filtro estado -->
+                            <div class="custom-dropdown-wrapper filter-wrapper">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedStatus">Todos los estados</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedStatus','status','all')"><span>Todos los estados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','pending')"><span class="status-dot pending"></span><span>Pendientes</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','confirmed')"><span class="status-dot confirmed"></span><span>Confirmados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','preparing')"><span class="status-dot preparing"></span><span>En preparación</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','ready')"><span class="status-dot ready"></span><span>Listos</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','delivered')"><span class="status-dot delivered"></span><span>Entregados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','cancelled')"><span class="status-dot cancelled"></span><span>Cancelados</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtro tipo -->
+                            <div class="custom-dropdown-wrapper filter-wrapper">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedType">Tipo de pedido</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedType','type','all')"><span>Todos los tipos</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','delivery')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><path d="M12 17h.01M16 17h.01"/></svg>
+                                            <span>A domicilio</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','pickup')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                            <span>Para llevar</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','dine_in')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                                            <span>En el local</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','local_pickup')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                                            <span>Recoger en local</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtro agente -->
+                            <div class="custom-dropdown-wrapper filter-wrapper">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedAgent">Todos los agentes</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options" id="agentFilterOptions">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedAgent','agent','all')"><span>Todos los agentes</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Búsqueda -->
+                            <div class="search-box">
+                                <i class="lni lni-search-alt"></i>
+                                <input type="text" id="searchInput" placeholder="Buscar cliente o producto...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Table ── -->
+                    <div class="orders-container" id="ordersTableView">
+                        <div class="table-wrapper">
+                            <table class="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Productos</th>
+                                        <th>Total</th>
+                                        <th>Tipo</th>
+                                        <th>Fuente</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ── Empty ── -->
+                    <div class="empty-state" id="emptyState" style="display:none">
+                        <div class="empty-icon"><i class="lni lni-cart"></i></div>
+                        <h3>Sin pedidos registrados</h3>
+                        <p>Los pedidos de tus clientes aparecerán aquí. También puedes crearlos manualmente.</p>
+                        <button class="btn-primary" onclick="openOrderModal()">
+                            <i class="lni lni-plus"></i><span>Crear Primer Pedido</span>
+                        </button>
+                    </div>
+
+                    </div><!-- /tab-mis-pedidos -->
+
+                    <!-- ══════════════════════════════════════
+                         TAB: PUNTO DE VENTA
+                    ══════════════════════════════════════ -->
+                    <div id="tab-punto-venta" class="orders-tab-panel">
+                        <div class="pos-layout">
+
+                            <!-- Catálogo de productos -->
+                            <div class="pos-catalog">
+                                <div class="pos-catalog-header">
+                                    <h2>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                        </svg>
+                                        Catálogo
+                                    </h2>
+                                    <div class="pos-search-wrap">
+                                        <i class="lni lni-search-alt"></i>
+                                        <input type="text" id="posProductSearch" placeholder="Buscar producto...">
+                                    </div>
+                                </div>
+                                <div class="pos-products-grid" id="posProductsGrid">
+                                    <div class="pos-empty-catalog">
+                                        <i class="lni lni-package"></i>
+                                        <span>Agrega productos en <strong>Mi Negocio → Servicios / Productos</strong> para verlos aquí.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ticket / resumen del pedido -->
+                            <div class="pos-ticket">
+                                <div class="pos-ticket-header">
+                                    <h2>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                            <line x1="3" x2="21" y1="6" y2="6"/>
+                                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                                        </svg>
+                                        Pedido actual
+                                    </h2>
+                                    <button class="pos-clear-btn" id="posClearBtn" title="Limpiar pedido">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Info del cliente -->
+                                <div class="pos-customer-row">
+                                    <input type="text" class="pos-input" id="posCustomerName" placeholder="Nombre del cliente">
+                                    <input type="text" class="pos-input" id="posCustomerPhone" placeholder="Teléfono (opcional)">
+                                </div>
+
+                                <!-- Tipo de pedido -->
+                                <div class="pos-type-row">
+                                    <button class="pos-type-btn active" data-type="dine_in">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                                        En local
+                                    </button>
+                                    <button class="pos-type-btn" data-type="pickup">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                        Para llevar
+                                    </button>
+                                    <button class="pos-type-btn" data-type="delivery">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="0"/><path d="M12 17h.01M16 17h.01"/></svg>
+                                        Domicilio
+                                    </button>
+                                </div>
+
+                                <!-- Lista de items -->
+                                <div class="pos-items-list" id="posItemsList">
+                                    <div class="pos-items-empty" id="posItemsEmpty">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:2.5rem;height:2.5rem;color:#d1d5db;">
+                                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                            <line x1="3" x2="21" y1="6" y2="6"/>
+                                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                                        </svg>
+                                        <span>Agrega productos al pedido</span>
+                                    </div>
+                                </div>
+
+                                <!-- Totales -->
+                                <div class="pos-totals">
+                                    <div class="pos-totals-row">
+                                        <span>Subtotal</span>
+                                        <span id="posSubtotal">$0.00</span>
+                                    </div>
+                                    <div class="pos-totals-row discount-row" id="posDiscountRow" style="display:none;">
+                                        <span>Descuento</span>
+                                        <span id="posDiscountAmt" class="discount-val">-$0.00</span>
+                                    </div>
+                                    <div class="pos-totals-row total-row">
+                                        <span>Total</span>
+                                        <span id="posTotal">$0.00</span>
+                                    </div>
+                                </div>
+
+                                <!-- Método de pago -->
+                                <div class="pos-payment-row">
+                                    <label class="pos-label">Pago</label>
+                                    <div class="pos-payment-btns">
+                                        <button class="pos-pay-btn active" data-pay="efectivo">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                                            Efectivo
+                                        </button>
+                                        <button class="pos-pay-btn" data-pay="tarjeta">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                            Tarjeta
+                                        </button>
+                                        <button class="pos-pay-btn" data-pay="transferencia">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+                                            Transferencia
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Cambio -->
+                                <div class="pos-change-row" id="posChangeRow">
+                                    <label class="pos-label">Cliente paga</label>
+                                    <div class="pos-change-input-wrap">
+                                        <span class="pos-currency">$</span>
+                                        <input type="number" class="pos-input pos-change-input" id="posClientPays" placeholder="0.00" min="0" step="0.01">
+                                    </div>
+                                    <div class="pos-change-display" id="posChangeDisplay">
+                                        Cambio: <strong id="posChange">$0.00</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Notas -->
+                                <textarea class="pos-input pos-notes" id="posNotes" placeholder="Notas del pedido (opcional)..." rows="2"></textarea>
+
+                                <!-- Botón crear -->
+                                <button class="pos-submit-btn" id="posSubmitBtn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;">
+                                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                        <line x1="3" x2="21" y1="6" y2="6"/>
+                                        <path d="M16 10a4 4 0 0 1-8 0"/>
+                                    </svg>
+                                    Crear Pedido
+                                </button>
+                            </div>
+
+                        </div><!-- /pos-layout -->
+                    </div><!-- /tab-punto-venta -->
+
+                </div><!-- /orders-layout -->
+            </div><!-- /content-wrapper -->
+        </div><!-- /main-content -->
+    </div><!-- /app-container -->
+
+    <!-- ── Modal nuevo pedido ── -->
+    <div class="modal" id="orderModal">
+        <div class="modal-overlay" onclick="closeOrderModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="lni lni-cart"></i> Nuevo Pedido</h3>
+                <button class="modal-close" onclick="closeOrderModal()"><i class="lni lni-close"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/orders.js"></script>
+</body>
+</html>

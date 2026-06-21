@@ -1,0 +1,378 @@
+/* ==========================================
+   1. RESET & ESTILOS BASE
+   ========================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   2. SIDEBAR FLOTANTE (ESCRITORIO)
+   ========================================== */
+.sidebar-container {
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  border-radius: 50px;
+  padding: 16px 12px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* FIX: solo animar box-shadow, no "all" — evita lag en hover */
+  transition: box-shadow 0.3s ease;
+  z-index: 1000;
+  overflow: visible;
+  /* FIX: forzar capa de composición propia para que el GPU la maneje */
+  will-change: transform;
+}
+
+.sidebar-container:hover {
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================
+   3. BOTONES E ICONOS
+   ========================================== */
+.icon-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* FIX: solo animar background y transform, no "all" */
+  transition: background 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  background: #f5f7fa;
+  transform: scale(1.05);
+  z-index: 2000;
+}
+
+.icon-button.active {
+  background: #06b6d4;
+}
+
+.icon-button svg {
+  width: 22px;
+  height: 22px;
+  stroke: #2d3748;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.2s ease;
+}
+
+.icon-button.active svg {
+  stroke: #ffffff;
+}
+
+/* ==========================================
+   4. TOOLTIPS (ESCRITORIO)
+   ========================================== */
+.tooltip {
+  position: absolute;
+  left: 70px;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  /* FIX: solo animar opacity y transform */
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.tooltip::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: #1a1a1a;
+}
+
+.icon-button:hover .tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ==========================================
+   5. ELEMENTOS AUXILIARES
+   ========================================== */
+.divider {
+  width: 32px;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px auto;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.logout-button:hover svg {
+  stroke: #ef4444;
+}
+
+/* Animación de carga para mensajes */
+.messages-loading {
+  display: none;
+}
+
+.icon-button[data-loading="true"] svg {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ==========================================
+   6. BOTÓN HAMBURGUESA MÓVIL
+   ========================================== */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: #06b6d4;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3);
+  cursor: pointer;
+  z-index: 2005;
+  transition: transform 0.2s ease;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+.mobile-menu-btn .hamburger {
+  width: 24px;
+  height: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mobile-menu-btn .hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  transform-origin: center;
+}
+
+.mobile-menu-btn.active .hamburger span:nth-child(1) {
+  transform: translateY(8.5px) rotate(45deg);
+}
+.mobile-menu-btn.active .hamburger span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.mobile-menu-btn.active .hamburger span:nth-child(3) {
+  transform: translateY(-8.5px) rotate(-45deg);
+}
+
+/* ==========================================
+   7. OVERLAY
+   ========================================== */
+.mobile-overlay {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1999;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ==========================================
+   8. RESPONSIVE MÓVIL
+   ========================================== */
+@media (max-width: 768px) {
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  /* Panel lateral deslizante */
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    padding: 80px 8px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    background: #ffffff;
+    border-radius: 0 24px 24px 0;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
+    overflow-y: auto;
+    overflow-x: visible;
+    z-index: 2000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .sidebar-container.mobile-active {
+    transform: translateX(0);
+  }
+
+  /* Botones de navegación */
+  .sidebar-container .icon-button {
+    width: 100% !important;
+    height: 52px !important;
+    border-radius: 12px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    display: flex;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 14px !important;
+    background: transparent !important;
+    transition: background 0.15s ease !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    overflow: visible !important;
+  }
+
+  .sidebar-container .icon-button:hover {
+    background: #f1f5f9;
+    transform: none;
+  }
+
+  .sidebar-container .icon-button:active {
+    background: #e2e8f0;
+    transform: none;
+  }
+
+  /* Íconos */
+  .sidebar-container .icon-button svg {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+    stroke: #64748b !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    transition: none !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+
+  .sidebar-container .icon-button.active svg {
+    stroke: #06b6d4 !important;
+  }
+
+  /* Texto de navegación (tooltip reutilizado como label) */
+  .sidebar-container .tooltip {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: transparent !important;
+    color: #1e293b !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+    white-space: nowrap !important;
+    display: block !important;
+    flex: 1 !important;
+    transition: none !important;
+    line-height: 1.2 !important;
+    left: auto !important;
+    z-index: auto !important;
+    width: auto !important;
+  }
+
+  .sidebar-container .tooltip::before {
+    display: none !important;
+  }
+
+  /* Estado activo */
+  .sidebar-container .icon-button.active {
+    background: #e0f9ff !important;
+  }
+
+  .sidebar-container .icon-button.active .tooltip {
+    color: #06b6d4 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Logout */
+  .logout-button:hover {
+    background: rgba(239, 68, 68, 0.08) !important;
+  }
+
+  .logout-button:hover svg {
+    stroke: #ef4444;
+  }
+
+  .logout-button:hover .tooltip {
+    color: #ef4444 !important;
+  }
+
+  /* Divisor */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: #f1f5f9;
+    margin: 6px 0;
+    flex-shrink: 0;
+  }
+}

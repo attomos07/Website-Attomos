@@ -1,0 +1,477 @@
+{{define "admin/login.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Attomos Admin — Acceso</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:      #ffffff;
+            --ink:     #1a1a1a;
+            --muted:   #6b7280;
+            --border:  #e5e7eb;
+            --accent:  #06b6d4;
+            --accent2: #0891b2;
+            --danger:  #ef4444;
+            --surface: #f8fafc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Grid background — igual al index */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(6,182,212,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,182,212,.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Canvas de partículas */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── Layout: 2 columnas ── */
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            width: 100%;
+            max-width: 480px;
+            margin: 20px;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow:
+                0 4px 20px rgba(0,0,0,0.08),
+                0 20px 60px rgba(6,182,212,0.12);
+            border: 1px solid rgba(6,182,212,0.15);
+            animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+.brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 60px;
+        }
+
+.brand-icon i { color: #fff; font-size: 22px; }
+
+.panel-tagline {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 40px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.15;
+            letter-spacing: -1px;
+            margin-bottom: 24px;
+        }
+
+.panel-sub {
+            font-size: 16px;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.6;
+            max-width: 280px;
+        }
+
+.stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+.stat-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+.deco-circle-1 { width: 300px; height: 300px; bottom: -80px; right: -80px; }
+/* ── Panel derecho (formulario) ── */
+        .panel-right {
+            width: 100%;
+            background: var(--bg);
+            padding: 60px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+        }
+
+        .form-eyebrow::before {
+            content: '';
+            width: 20px; height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .form-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+
+        .form-sub {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── Form ── */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink);
+            margin-bottom: 8px;
+            letter-spacing: 0.2px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: var(--muted);
+            font-size: 16px;
+            transition: color 0.2s;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--surface);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(6,182,212,0.1);
+        }
+
+        input:focus ~ .input-icon,
+        .input-wrap:focus-within .input-icon {
+            color: var(--accent);
+        }
+
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+            z-index: 1;
+        }
+
+        .eye-btn:hover { color: var(--accent); }
+
+        /* ── Error msg ── */
+        .error-msg {
+            display: none;
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--danger);
+            margin-bottom: 20px;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-msg.show {
+            display: flex;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25%       { transform: translateX(-6px); }
+            75%       { transform: translateX(6px); }
+        }
+
+        /* ── Submit button — igual al hero-btn-primary del index ── */
+        .btn-login {
+            width: 100%;
+            padding: 15px 32px;
+            border-radius: 16px;
+            border: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-login:active { transform: translateY(0); }
+
+        .btn-login.loading { pointer-events: none; }
+        .btn-login.loading .btn-text { opacity: 0; }
+
+        .spinner {
+            position: absolute;
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        .btn-login.loading .spinner { display: block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Footer ── */
+        .form-footer {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .form-footer span {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .panel-right { width: 100%; padding: 48px 32px; }
+            .login-wrapper {
+                max-width: 420px;
+                min-height: auto;
+                border-radius: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="login-wrapper">
+        <div class="panel-right">
+            <div class="form-header">
+                <div class="form-eyebrow">Acceso Restringido</div>
+                <h1 class="form-title">Bienvenido<br/>de vuelta</h1>
+                <p class="form-sub">Solo administradores autorizados.</p>
+            </div>
+
+            <div class="error-msg" id="errorMsg">
+                <i class="lni lni-warning"></i>
+                <span id="errorText">Credenciales incorrectas.</span>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+                <div class="form-group">
+                    <label for="identifier">Correo o usuario</label>
+                    <div class="input-wrap">
+                        <i class="lni lni-user input-icon"></i>
+                        <input type="text" id="identifier" placeholder="admin@attomos.com" autocomplete="username" required/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <div class="input-wrap">
+                        <i class="lni lni-lock-alt input-icon"></i>
+                        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required/>
+                        <button type="button" class="eye-btn" onclick="togglePassword()">
+                            <i class="lni lni-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span class="btn-text">Ingresar al panel</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                Panel exclusivo para <span>administradores de Attomos</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Partículas — mismo sistema que index.js
+        (function() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width  = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+            function createParticle() {
+                return {
+                    x:     randomBetween(0, canvas.width),
+                    y:     randomBetween(0, canvas.height),
+                    r:     randomBetween(1, 2.5),
+                    alpha: randomBetween(0.1, 0.4),
+                    vx:    randomBetween(-0.3, 0.3),
+                    vy:    randomBetween(-0.3, 0.3),
+                };
+            }
+
+            for (let i = 0; i < 60; i++) particles.push(createParticle());
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(6,182,212,${p.alpha})`;
+                    ctx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon  = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'lni lni-eye-alt';
+            } else {
+                input.type = 'password';
+                icon.className = 'lni lni-eye';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn        = document.getElementById('loginBtn');
+            const errorMsg   = document.getElementById('errorMsg');
+            const errorText  = document.getElementById('errorText');
+            const identifier = document.getElementById('identifier').value.trim();
+            const password   = document.getElementById('password').value;
+
+            errorMsg.classList.remove('show');
+            btn.classList.add('loading');
+
+            try {
+                const res = await fetch('/admin/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ identifier, password })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    window.location.href = '/admin/database-admin';
+                } else {
+                    errorText.textContent = data.error || 'Credenciales incorrectas.';
+                    errorMsg.classList.add('show');
+                }
+            } catch {
+                errorText.textContent = 'Error de conexión. Intenta de nuevo.';
+                errorMsg.classList.add('show');
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+    </script>
+</body>
+</html>
+{{end}}

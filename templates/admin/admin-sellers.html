@@ -1,0 +1,1429 @@
+{{define "admin-sellers"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Attomos Admin — Vendedores</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/admin/admin-sidebar.css"/>
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:      #ffffff;
+            --surface: #f8fafc;
+            --panel:   #ffffff;
+            --ink:     #1a1a1a;
+            --ink2:    #374151;
+            --muted:   #6b7280;
+            --border:  #e5e7eb;
+            --accent:  #06b6d4;
+            --accent2: #0891b2;
+            --green:   #10b981;
+            --red:     #ef4444;
+            --amber:   #f59e0b;
+            --navy:    #1e3a8a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(6,182,212,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,182,212,.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes cardRise {
+            0%   { opacity: 0; transform: translateY(30px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Layout ── */
+        .main {
+            margin-left: 96px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(6,182,212,0.08);
+            border: 1px solid rgba(6,182,212,0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* ── Content ── */
+        .content {
+            padding: 32px;
+            flex: 1;
+        }
+
+        /* ── Sección header ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+        }
+
+        /* ── Configuración global (tipo cambio + costos) ── */
+        .config-panel {
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 24px 28px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+            animation: cardRise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        .config-panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-panel-title i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .config-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-field .input-group {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            background: var(--surface);
+        }
+
+        .config-field .input-group:focus-within {
+            border-color: var(--accent);
+        }
+
+        .config-field .input-prefix {
+            padding: 0 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            background: #f1f5f9;
+            border-right: 1.5px solid var(--border);
+            height: 40px;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .config-field input {
+            border: none;
+            background: transparent;
+            padding: 0 12px;
+            height: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+            width: 100%;
+            outline: none;
+        }
+
+        /* ── Stats ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 22px 22px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1.5px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+            animation: cardRise 0.6s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(6,182,212,0.12);
+            border-color: rgba(6,182,212,0.2);
+        }
+
+        .stat-icon {
+            width: 46px; height: 46px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .stat-icon.cyan  { background: linear-gradient(135deg, rgba(6,182,212,.1), rgba(6,182,212,.2)); color: var(--accent); }
+        .stat-icon.green { background: linear-gradient(135deg, rgba(16,185,129,.1), rgba(16,185,129,.2)); color: var(--green); }
+        .stat-icon.amber { background: linear-gradient(135deg, rgba(245,158,11,.1), rgba(245,158,11,.2)); color: var(--amber); }
+        .stat-icon.red   { background: linear-gradient(135deg, rgba(239,68,68,.1), rgba(239,68,68,.2)); color: var(--red); }
+        .stat-icon.navy  { background: linear-gradient(135deg, rgba(30,58,138,.1), rgba(30,58,138,.2)); color: var(--navy); }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* ── Tabla de vendedores ── */
+        .card {
+            background: var(--panel);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 28px;
+            animation: cardRise 0.7s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(6,182,212,0.3);
+        }
+
+        .btn-ghost {
+            background: var(--surface);
+            color: var(--ink2);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: #f1f5f9;
+        }
+
+        .btn-danger {
+            background: rgba(239,68,68,0.08);
+            color: var(--red);
+            border: 1.5px solid rgba(239,68,68,0.2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.15);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 14px 20px;
+            font-size: 14px;
+            color: var(--ink2);
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover td { background: #fafbfc; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-proton {
+            background: rgba(6,182,212,0.1);
+            color: var(--accent);
+            border: 1px solid rgba(6,182,212,0.25);
+        }
+
+        .badge-neutron {
+            background: rgba(30,58,138,0.1);
+            color: var(--navy);
+            border: 1px solid rgba(30,58,138,0.25);
+        }
+
+        .badge-pagado {
+            background: rgba(16,185,129,0.1);
+            color: var(--green);
+        }
+
+        .badge-pendiente {
+            background: rgba(245,158,11,0.1);
+            color: var(--amber);
+        }
+
+        .font-mono {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        .text-green { color: var(--green); font-weight: 700; }
+        .text-red   { color: var(--red);   font-weight: 700; }
+        .text-amber { color: var(--amber); font-weight: 700; }
+        .text-ink   { color: var(--ink);   font-weight: 700; }
+
+        /* ── Formulario agregar venta ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            padding: 20px 24px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-field select,
+        .form-field input {
+            height: 40px;
+            padding: 0 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--surface);
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        .form-field select:focus,
+        .form-field input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-actions {
+            padding: 0 24px 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ── Modal ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 28px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--ink);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-title i { color: var(--accent); }
+
+        .modal-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .modal-form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* ── Detalle vendedor ── */
+        .vendedor-detail {
+            display: none;
+        }
+
+        .vendedor-detail.open {
+            display: block;
+        }
+
+        /* ── Pago pendiente highlight ── */
+        tr.pendiente-row td {
+            background: rgba(245,158,11,0.03);
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+            display: block;
+        }
+
+        /* ── Resumen por vendedor ── */
+        .vendedor-resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .vendedor-card {
+            background: var(--panel);
+            border-radius: 18px;
+            border: 1.5px solid var(--border);
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: cardRise 0.6s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        .vendedor-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px rgba(6,182,212,0.12);
+            transform: translateY(-2px);
+        }
+
+        .vendedor-card.selected {
+            border-color: var(--accent);
+            background: rgba(6,182,212,0.03);
+        }
+
+        .vendedor-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .vendedor-avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .vendedor-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .vendedor-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .vendedor-stats-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .mini-stat {
+            text-align: center;
+            padding: 8px 6px;
+            background: var(--surface);
+            border-radius: 10px;
+        }
+
+        .mini-stat-val {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .mini-stat-lbl {
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .deuda-badge {
+            margin-top: 12px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .deuda-badge.pendiente {
+            background: rgba(245,158,11,0.1);
+            color: var(--amber);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .deuda-badge.pagado {
+            background: rgba(16,185,129,0.1);
+            color: var(--green);
+            border: 1px solid rgba(16,185,129,0.25);
+        }
+
+        .section-divider {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .main { margin-left: 0; padding-top: 60px; }
+            .content { padding: 16px; }
+            .config-grid { grid-template-columns: 1fr 1fr; }
+            table { display: block; overflow-x: auto; }
+            .modal { max-width: 95vw; margin: 0 10px; }
+            .modal-form-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Cómo se calcula ── */
+        .formula-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: rgba(6,182,212,0.07);
+            border: 1px solid rgba(6,182,212,0.2);
+            color: var(--accent2);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .formula-toggle:hover {
+            background: rgba(6,182,212,0.13);
+        }
+        .formula-toggle i { font-size: 13px; }
+
+        .formula-box {
+            display: none;
+            margin-top: 14px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            font-size: 13px;
+            color: var(--ink2);
+            line-height: 1.8;
+        }
+        .formula-box.open { display: block; animation: fadeIn 0.2s ease; }
+
+        .formula-step {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 5px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .formula-step:last-child { border-bottom: none; }
+
+        .formula-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .formula-label {
+            font-weight: 600;
+            color: var(--ink);
+            min-width: 130px;
+        }
+        .formula-expr {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            color: var(--accent2);
+            background: rgba(6,182,212,0.07);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .formula-result {
+            margin-left: auto;
+            font-weight: 700;
+            color: var(--green);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+        }
+        .formula-result.neg { color: var(--red); }
+        .formula-note {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(245,158,11,0.08);
+            border-left: 3px solid var(--amber);
+            border-radius: 0 8px 8px 0;
+            font-size: 12px;
+            color: var(--amber);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+{{template "admin/sidebar.html" .}}
+
+<div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="topbar-title">Contabilidad Vendedores</div>
+        <div class="topbar-right">
+            <span class="admin-badge">
+                <i class="lni lni-shield"></i>
+                Admin
+            </span>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- Configuración global -->
+        <div class="config-panel">
+            <div class="config-panel-title">
+                <i class="lni lni-cog"></i>
+                Configuración de costos
+            </div>
+            <div class="config-grid">
+                <div class="config-field">
+                    <label>Tipo de cambio EUR → MXN</label>
+                    <div class="input-group">
+                        <span class="input-prefix">1 EUR =</span>
+                        <input type="number" id="eurMxn" value="19.50" step="0.01" min="1" oninput="recalcular()"/>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>Servidor Hetzner (€/mes)</label>
+                    <div class="input-group">
+                        <span class="input-prefix">€</span>
+                        <input type="number" id="costoHetzner" value="3.79" step="0.01" min="0" oninput="recalcular()"/>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>Comisión Stripe (% base)</label>
+                    <div class="input-group">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="comisionStripe" value="3.6" step="0.1" min="0" max="100" oninput="recalcular()"/>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>Cuota fija Stripe (MXN)</label>
+                    <div class="input-group">
+                        <span class="input-prefix">$</span>
+                        <input type="number" id="stripeFijo" value="3" step="0.50" min="0" oninput="recalcular()"/>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>Comisión vendedor (%)</label>
+                    <div class="input-group">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="comisionVendedor" value="20" step="1" min="0" max="100" oninput="recalcular()"/>
+                    </div>
+                </div>
+
+            <div class="formula-toggle" onclick="toggleFormula()">
+                <i class="lni lni-question-circle"></i>
+                ¿Cómo se calcula?
+                <i class="lni lni-chevron-down" id="formulaChevron"></i>
+            </div>
+
+            <div class="formula-box" id="formulaBox">
+                <div class="formula-step">
+                    <span class="formula-num">1</span>
+                    <span class="formula-label">Precio bruto</span>
+                    <span class="formula-expr">P = $325 (Protón) / $625 (Neutrón)</span>
+                    <span class="formula-result">$325.00</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">2</span>
+                    <span class="formula-label">Comisión base Stripe</span>
+                    <span class="formula-expr">P × 3.6% + $3 fijo</span>
+                    <span class="formula-result neg">−$14.70</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">3</span>
+                    <span class="formula-label">IVA sobre comisión</span>
+                    <span class="formula-expr">Comisión base × 16%</span>
+                    <span class="formula-result neg">−$2.35</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">4</span>
+                    <span class="formula-label">Total Stripe</span>
+                    <span class="formula-expr">Comisión base + IVA</span>
+                    <span class="formula-result neg">−$17.05</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">5</span>
+                    <span class="formula-label">Neto Stripe</span>
+                    <span class="formula-expr">P − Total Stripe</span>
+                    <span class="formula-result">$307.95</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">6</span>
+                    <span class="formula-label">Costo Hetzner</span>
+                    <span class="formula-expr">€3.79 × tipo de cambio EUR/MXN</span>
+                    <span class="formula-result neg">−$77.98</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">7</span>
+                    <span class="formula-label">Neto final</span>
+                    <span class="formula-expr">Neto Stripe − Hetzner MXN</span>
+                    <span class="formula-result">$229.97</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">8</span>
+                    <span class="formula-label">Comisión vendedor</span>
+                    <span class="formula-expr">Neto final × % comisión</span>
+                    <span class="formula-result neg">−$45.99 (20%)</span>
+                </div>
+                <div class="formula-step">
+                    <span class="formula-num">9</span>
+                    <span class="formula-label">Ganancia Attomos</span>
+                    <span class="formula-expr">Neto final − Comisión vendedor</span>
+                    <span class="formula-result">$183.98</span>
+                </div>
+                <div class="formula-note">
+                    💡 Los ejemplos usan Plan Protón ($325) con tipo de cambio €1 = $20.57 MXN y 20% de comisión al vendedor. Los valores reales se recalculan con los campos de arriba.
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Stats globales -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="stat-icon cyan"><i class="lni lni-dollar"></i></div>
+                <div>
+                    <div class="stat-value" id="statTotalVentas">$0</div>
+                    <div class="stat-label">Total ventas (bruto)</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="lni lni-minus-circle"></i></div>
+                <div>
+                    <div class="stat-value" id="statTotalCostos" style="color:var(--red)">$0</div>
+                    <div class="stat-label">Total costos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+                <div>
+                    <div class="stat-value" id="statNeto" style="color:var(--green)">$0</div>
+                    <div class="stat-label">Neto Attomos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon amber"><i class="lni lni-wallet"></i></div>
+                <div>
+                    <div class="stat-value" id="statPorPagar" style="color:var(--amber)">$0</div>
+                    <div class="stat-label">Por pagar vendedores</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon navy"><i class="lni lni-users"></i></div>
+                <div>
+                    <div class="stat-value" id="statVendedores" style="color:var(--navy)">0</div>
+                    <div class="stat-label">Vendedores activos</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de vendedores -->
+        <div class="section-divider"><i class="lni lni-users"></i> Vendedores</div>
+        <div class="vendedor-resumen-grid" id="vendedoresGrid">
+            <!-- generado por JS -->
+        </div>
+
+        <!-- Detalle del vendedor seleccionado -->
+        <div id="vendedorDetail" class="vendedor-detail">
+            <div class="section-divider" id="detailTitle">
+                <i class="lni lni-list"></i> Ventas de <span id="detailNombre">—</span>
+            </div>
+
+            <!-- Agregar venta -->
+            <div class="card" style="animation-delay:0.1s">
+                <div class="card-header">
+                    <div class="card-header-title"><i class="lni lni-plus" style="color:var(--accent)"></i> Registrar nueva venta</div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Plan vendido</label>
+                        <select id="nuevoPlan">
+                            <option value="proton">Plan Protón — $325</option>
+                            <option value="neutron">Plan Neutrón — $625</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Cliente / Negocio</label>
+                        <input type="text" id="nuevoCliente" placeholder="Ej: Clínica Dental Ruiz"/>
+                    </div>
+                    <div class="form-field">
+                        <label>Fecha</label>
+                        <input type="date" id="nuevoFecha"/>
+                    </div>
+                    <div class="form-field">
+                        <label>Notas (opcional)</label>
+                        <input type="text" id="nuevoNotas" placeholder="Observaciones…"/>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="agregarVenta()">
+                        <i class="lni lni-plus"></i> Agregar venta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de ventas del vendedor -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-title"><i class="lni lni-bar-chart" style="color:var(--accent)"></i> Historial de ventas</div>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalPago()" id="btnMarcarPago">
+                        <i class="lni lni-checkmark"></i> Registrar pago
+                    </button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Plan</th>
+                            <th>Bruto</th>
+                            <th>Stripe (c/IVA)</th>
+                            <th>Hetzner</th>
+                            <th>Neto Stripe</th>
+                            <th>Neto Final</th>
+                            <th>Comisión</th>
+                            <th>Ganancia</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ventasTableBody">
+                        <tr>
+                            <td colspan="12">
+                                <div class="empty-state">
+                                    <i class="lni lni-add-files"></i>
+                                    <div>No hay ventas registradas</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección agregar vendedor -->
+        <div class="section-divider" style="margin-top:8px"><i class="lni lni-user-add"></i> Gestión de vendedores</div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-header-title">Agregar vendedor</div>
+            </div>
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px,1fr))">
+                <div class="form-field">
+                    <label>Nombre completo</label>
+                    <input type="text" id="nuevoVendedorNombre" placeholder="Ej: Carlos Méndez"/>
+                </div>
+                <div class="form-field">
+                    <label>Teléfono / WhatsApp</label>
+                    <input type="text" id="nuevoVendedorTel" placeholder="662 XXX XXXX"/>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="agregarVendedor()">
+                    <i class="lni lni-plus"></i> Agregar vendedor
+                </button>
+            </div>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Modal registrar pago -->
+<div class="modal-backdrop" id="modalPago">
+    <div class="modal">
+        <div class="modal-title"><i class="lni lni-checkmark-circle"></i> Registrar pago a vendedor</div>
+        <div class="modal-form-grid">
+            <div class="form-field full">
+                <label>Monto pagado (MXN)</label>
+                <div class="input-group">
+                    <span class="input-prefix">$</span>
+                    <input type="number" id="montoPagado" placeholder="0.00" step="0.01" min="0"/>
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Fecha de pago</label>
+                <input type="date" id="fechaPago"/>
+            </div>
+            <div class="form-field">
+                <label>Método</label>
+                <select id="metodoPago">
+                    <option value="transferencia">Transferencia</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="oxxo">OXXO</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+            <div class="form-field full">
+                <label>Notas</label>
+                <input type="text" id="notasPago" placeholder="Ej: Pago quincena enero"/>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="confirmarPago()"><i class="lni lni-checkmark"></i> Confirmar pago</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =========================================
+//  ESTADO LOCAL
+// =========================================
+const PRECIOS = { proton: 325, neutron: 625 };
+
+let state = JSON.parse(localStorage.getItem('attomos_vendedores') || 'null') || {
+    vendedores: [],   // { id, nombre, tel }
+    ventas: [],       // { id, vendedorId, plan, cliente, fecha, notas, pagado, fechaPago, metodoPago }
+    pagos: []         // { id, vendedorId, monto, fecha, metodo, notas }
+};
+
+let vendedorSeleccionado = null;
+
+function guardar() {
+    localStorage.setItem('attomos_vendedores', JSON.stringify(state));
+}
+
+// =========================================
+//  HELPERS
+// =========================================
+function cfg() {
+    return {
+        eurMxn:           parseFloat(document.getElementById('eurMxn').value) || 19.5,
+        hetzner:          parseFloat(document.getElementById('costoHetzner').value) || 3.79,
+        stripePorc:       parseFloat(document.getElementById('comisionStripe').value) || 3.6,
+            stripeFijo:       parseFloat(document.getElementById('stripeFijo').value) || 3,
+        vendedorPorc:     parseFloat(document.getElementById('comisionVendedor').value) || 20,
+    };
+}
+
+function calcVenta(venta) {
+    const c = cfg();
+    const bruto      = PRECIOS[venta.plan];
+    const comisionBase = +(bruto * c.stripePorc / 100 + c.stripeFijo).toFixed(2);
+    const iva          = +(comisionBase * 0.16).toFixed(2);
+    const stripe       = +(comisionBase + iva).toFixed(2);
+    const hetznerMxn   = +(c.hetzner * c.eurMxn).toFixed(2);
+    const netoStripe   = +(bruto - stripe).toFixed(2);
+    const neto         = +(netoStripe - hetznerMxn).toFixed(2);
+    const comision     = +(neto * c.vendedorPorc / 100).toFixed(2);
+    const ganancia     = +(neto - comision).toFixed(2);
+    return { bruto, comisionBase, iva, stripe, hetznerMxn, netoStripe, neto, comision, ganancia };
+}
+
+function fmt(n) {
+    return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+function initials(nombre) {
+    return nombre.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+}
+
+function hoy() {
+    return new Date().toISOString().slice(0,10);
+}
+
+// =========================================
+//  VENDEDORES
+// =========================================
+function agregarVendedor() {
+    const nombre = document.getElementById('nuevoVendedorNombre').value.trim();
+    const tel    = document.getElementById('nuevoVendedorTel').value.trim();
+    if (!nombre) { alert('Ingresa el nombre del vendedor'); return; }
+
+    state.vendedores.push({ id: uid(), nombre, tel });
+    guardar();
+    document.getElementById('nuevoVendedorNombre').value = '';
+    document.getElementById('nuevoVendedorTel').value = '';
+    renderTodo();
+}
+
+function eliminarVendedor(id) {
+    if (!confirm('¿Eliminar vendedor y todas sus ventas?')) return;
+    state.vendedores = state.vendedores.filter(v => v.id !== id);
+    state.ventas     = state.ventas.filter(v => v.vendedorId !== id);
+    if (vendedorSeleccionado === id) {
+        vendedorSeleccionado = null;
+        document.getElementById('vendedorDetail').classList.remove('open');
+    }
+    guardar();
+    renderTodo();
+}
+
+function seleccionarVendedor(id) {
+    vendedorSeleccionado = id;
+    const v = state.vendedores.find(v => v.id === id);
+    document.getElementById('detailNombre').textContent = v.nombre;
+    document.getElementById('vendedorDetail').classList.add('open');
+    document.getElementById('vendedorDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    renderVentasTabla();
+    renderVendedoresGrid();
+}
+
+// =========================================
+//  VENTAS
+// =========================================
+function agregarVenta() {
+    if (!vendedorSeleccionado) { alert('Selecciona un vendedor'); return; }
+    const plan    = document.getElementById('nuevoPlan').value;
+    const cliente = document.getElementById('nuevoCliente').value.trim();
+    const fecha   = document.getElementById('nuevoFecha').value || hoy();
+    const notas   = document.getElementById('nuevoNotas').value.trim();
+
+    if (!cliente) { alert('Ingresa el nombre del cliente'); return; }
+
+    state.ventas.push({
+        id: uid(),
+        vendedorId: vendedorSeleccionado,
+        plan,
+        cliente,
+        fecha,
+        notas,
+        pagado: false,
+        fechaPago: null,
+        metodoPago: null
+    });
+    guardar();
+    document.getElementById('nuevoCliente').value = '';
+    document.getElementById('nuevoNotas').value = '';
+    renderTodo();
+}
+
+function eliminarVenta(id) {
+    if (!confirm('¿Eliminar esta venta?')) return;
+    state.ventas = state.ventas.filter(v => v.id !== id);
+    guardar();
+    renderTodo();
+}
+
+// =========================================
+//  PAGOS
+// =========================================
+function abrirModalPago() {
+    if (!vendedorSeleccionado) return;
+    document.getElementById('fechaPago').value = hoy();
+    document.getElementById('montoPagado').value = '';
+    document.getElementById('notasPago').value = '';
+    // Sugerir monto pendiente
+    const pendiente = calcPendienteVendedor(vendedorSeleccionado);
+    document.getElementById('montoPagado').value = pendiente.toFixed(2);
+    document.getElementById('modalPago').classList.add('open');
+}
+
+function cerrarModal() {
+    document.getElementById('modalPago').classList.remove('open');
+}
+
+function confirmarPago() {
+    const monto  = parseFloat(document.getElementById('montoPagado').value);
+    const fecha  = document.getElementById('fechaPago').value || hoy();
+    const metodo = document.getElementById('metodoPago').value;
+    const notas  = document.getElementById('notasPago').value.trim();
+    if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
+
+    state.pagos.push({
+        id: uid(),
+        vendedorId: vendedorSeleccionado,
+        monto,
+        fecha,
+        metodo,
+        notas
+    });
+
+    // Marcar ventas como pagadas (FIFO hasta cubrir monto)
+    let restante = monto;
+    for (const v of state.ventas.filter(v => v.vendedorId === vendedorSeleccionado && !v.pagado)) {
+        const { comision } = calcVenta(v);
+        if (restante >= comision) {
+            v.pagado     = true;
+            v.fechaPago  = fecha;
+            v.metodoPago = metodo;
+            restante    -= comision;
+        }
+        if (restante <= 0) break;
+    }
+
+    guardar();
+    cerrarModal();
+    renderTodo();
+}
+
+// =========================================
+//  CÁLCULOS GLOBALES
+// =========================================
+function calcPendienteVendedor(id) {
+    return state.ventas
+        .filter(v => v.vendedorId === id && !v.pagado)
+        .reduce((sum, v) => sum + calcVenta(v).comision, 0);
+}
+
+function calcTotales() {
+    let bruto = 0, costos = 0, comisiones = 0;
+    for (const v of state.ventas) {
+        const c = calcVenta(v);
+        bruto      += c.bruto;
+        costos     += c.stripe + c.hetznerMxn;
+        comisiones += c.comision;
+    }
+    return {
+        bruto,
+        costos,
+        neto: bruto - costos - comisiones,
+        comisiones
+    };
+}
+
+// =========================================
+//  RENDER
+// =========================================
+function renderStats() {
+    const t = calcTotales();
+    document.getElementById('statTotalVentas').textContent  = fmt(t.bruto);
+    document.getElementById('statTotalCostos').textContent  = fmt(t.costos);
+    document.getElementById('statNeto').textContent         = fmt(t.neto);
+    document.getElementById('statPorPagar').textContent     = fmt(t.comisiones);
+    document.getElementById('statVendedores').textContent   = state.vendedores.length;
+}
+
+function renderVendedoresGrid() {
+    const grid = document.getElementById('vendedoresGrid');
+    if (!state.vendedores.length) {
+        grid.innerHTML = `<div style="color:var(--muted);font-size:14px;padding:8px 0">No hay vendedores registrados aún.</div>`;
+        return;
+    }
+    grid.innerHTML = state.vendedores.map(v => {
+        const ventas    = state.ventas.filter(s => s.vendedorId === v.id);
+        const pendiente = calcPendienteVendedor(v.id);
+        const total     = ventas.reduce((s, vv) => s + calcVenta(vv).comision, 0);
+        const pagado    = total - pendiente;
+        const selected  = vendedorSeleccionado === v.id ? 'selected' : '';
+
+        return `
+        <div class="vendedor-card ${selected}" onclick="seleccionarVendedor('${v.id}')">
+            <div class="vendedor-card-header">
+                <div class="vendedor-avatar">${initials(v.nombre)}</div>
+                <div>
+                    <div class="vendedor-name">${v.nombre}</div>
+                    <div class="vendedor-meta">${v.tel || 'Sin teléfono'} · ${ventas.length} venta${ventas.length !== 1 ? 's' : ''}</div>
+                </div>
+            </div>
+            <div class="vendedor-stats-mini">
+                <div class="mini-stat">
+                    <div class="mini-stat-val">${ventas.length}</div>
+                    <div class="mini-stat-lbl">Ventas</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-val" style="color:var(--green)">${fmt(pagado)}</div>
+                    <div class="mini-stat-lbl">Pagado</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-val" style="color:var(--amber)">${fmt(pendiente)}</div>
+                    <div class="mini-stat-lbl">Pendiente</div>
+                </div>
+            </div>
+            <div class="deuda-badge ${pendiente > 0 ? 'pendiente' : 'pagado'}">
+                <span>${pendiente > 0 ? '⚠ Deuda pendiente' : '✓ Al corriente'}</span>
+                <span>${pendiente > 0 ? fmt(pendiente) : fmt(total)}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderVentasTabla() {
+    if (!vendedorSeleccionado) return;
+    const ventas = state.ventas
+        .filter(v => v.vendedorId === vendedorSeleccionado)
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+    const tbody = document.getElementById('ventasTableBody');
+
+    if (!ventas.length) {
+        tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><i class="lni lni-add-files"></i><div>Sin ventas registradas</div></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = ventas.map((v, i) => {
+        const c = calcVenta(v);
+        const planBadge = v.plan === 'proton'
+            ? `<span class="badge badge-proton">Protón</span>`
+            : `<span class="badge badge-neutron">Neutrón</span>`;
+        const estadoBadge = v.pagado
+            ? `<span class="badge badge-pagado"><i class="lni lni-checkmark"></i> Pagado</span>`
+            : `<span class="badge badge-pendiente">Pendiente</span>`;
+
+        return `
+        <tr class="${v.pagado ? '' : 'pendiente-row'}">
+            <td class="font-mono">${i + 1}</td>
+            <td>${v.fecha}</td>
+            <td><strong>${v.cliente}</strong>${v.notas ? `<br><span style="font-size:11px;color:var(--muted)">${v.notas}</span>` : ''}</td>
+            <td>${planBadge}</td>
+            <td class="font-mono text-ink">${fmt(c.bruto)}</td>
+            <td class="font-mono text-red" title="Base: -${fmt(c.comisionBase)} + IVA: -${fmt(c.iva)}">−${fmt(c.stripe)}</td>
+            <td class="font-mono text-red">−${fmt(c.hetznerMxn)}</td>
+            <td class="font-mono" style="color:#0891b2">${fmt(c.netoStripe)}</td>
+            <td class="font-mono text-green">${fmt(c.neto)}</td>
+            <td class="font-mono text-amber">${fmt(c.comision)}</td>
+            <td class="font-mono text-green">${fmt(c.ganancia)}</td>
+            <td>${estadoBadge}${v.fechaPago ? `<br><span style="font-size:11px;color:var(--muted)">${v.fechaPago}</span>` : ''}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="eliminarVenta('${v.id}')">
+                    <i class="lni lni-trash-can"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderTodo() {
+    renderStats();
+    renderVendedoresGrid();
+    renderVentasTabla();
+}
+
+function recalcular() {
+    renderTodo();
+}
+
+
+function toggleFormula() {
+    const box = document.getElementById('formulaBox');
+    const chev = document.getElementById('formulaChevron');
+    const open = box.classList.toggle('open');
+    chev.style.transform = open ? 'rotate(180deg)' : '';
+    chev.style.transition = 'transform 0.2s ease';
+}
+
+// Init
+document.getElementById('nuevoFecha').value = hoy();
+renderTodo();
+
+// Cerrar modal al click fuera
+document.getElementById('modalPago').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModal();
+});
+</script>
+
+</body>
+</html>
+{{end}}

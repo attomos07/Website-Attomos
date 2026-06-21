@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planes - Attomos</title>
+<!-- Favicon -->
+<link href="/static/images/attomos-favicon.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/static/images/attomos-favicon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+<link href="/static/css/sidebar.css" rel="stylesheet">
+<link href="/static/css/userbar.css" rel="stylesheet"/>
+<link href="/static/css/plans.css" rel="stylesheet"/>
+</link></head>
+<body>
+<div class="app-container">
+<!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+<div class="main-content">
+<!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+<div class="content-wrapper">
+<div class="plans-layout">
+<!-- Page Header -->
+<div class="page-header">
+<div class="header-content">
+<h1 class="page-title">Planes y Precios</h1>
+<p class="page-subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
+</div>
+</div>
+<!-- Current Plan Banner -->
+                    {{if .currentPlan}}
+                    {{if ne .currentPlan "pending"}}
+                    <div class="current-plan-banner">
+<div class="banner-icon">
+<i class="lni lni-dollar"></i>
+</div>
+<div class="banner-content">
+<div class="banner-title">Plan Actual: <strong>{{.currentPlan}}</strong></div>
+<div class="banner-subtitle">Gestiona tu suscripción y pagos</div>
+</div>
+<a class="banner-link" href="/billing">
+                            Ver Facturación
+                            <i class="lni lni-arrow-right"></i>
+</a>
+</div>
+                    {{end}}
+                    {{end}}
+
+                    <!-- Toggle de Periodo de Facturación -->
+<div class="billing-toggle" id="billingToggleContainer">
+<span class="toggle-label">Mensual</span>
+<label class="toggle-switch">
+<input id="billingToggle" type="checkbox"/>
+<span class="toggle-slider"></span>
+</label>
+<span class="toggle-label">Anual</span>
+</div>
+<!-- Pricing Cards -->
+<div class="pricing-grid">
+                        {{range .plans}}
+                        <div class="pricing-card {{if .popular}}featured{{end}} {{if .isFree}}free-plan{{end}}" data-plan="{{.id}}">
+                            {{if .isFree}}
+                            <div class="free-badge">Gratis</div>
+                            {{else if .popular}}
+                            <div class="popular-badge">Más Popular</div>
+                            {{end}}
+                            
+                            <h3 class="plan-name">{{.name}}</h3>
+<div class="plan-price">
+                                {{if .isFree}}
+                                <span class="price-amount">$0</span>
+<span class="price-period">/ 30 días</span>
+                                {{else}}
+                                <span class="price-amount" data-annual="{{.annual.amount}}" data-annual-price-id="{{.annual.priceId}}" data-monthly="{{.monthly.amount}}" data-monthly-price-id="{{.monthly.priceId}}">
+                                    ${{.monthly.amount}}
+                                </span>
+<span class="price-period">/ mes</span>
+                                {{end}}
+                            </div>
+<p class="plan-description">{{.description}}</p>
+<ul class="plan-features">
+                                {{range .features}}
+                                <li>
+<div class="check-icon"><i class="lni lni-checkmark"></i></div>
+<span>{{.}}</span>
+</li>
+                                {{end}}
+                            </ul>
+                            
+                            {{if eq $.currentPlan .id}}
+                            <button class="plan-button current-plan" disabled="">Plan Actual</button>
+                            {{else if .isFree}}
+                            <button class="plan-button free-trial">Probar Gratis</button>
+                            {{else}}
+                            <button class="plan-button upgrade">Actualizar Plan</button>
+                            {{end}}
+                        </div>
+                        {{end}}
+                    </div>
+<!-- Comparison Table -->
+<div class="comparison-section">
+<h2 class="comparison-title">Comparación Detallada de Planes</h2>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th class="feature-column">Características</th>
+<th>Gratuito</th>
+<th class="featured-column">Protón</th>
+<th>Neutrón</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="feature-name">Número de Agentes</td>
+<td>1</td>
+<td class="featured-cell">Ilimitados</td>
+<td>Ilimitados</td>
+</tr>
+<tr>
+<td class="feature-name">WhatsApp</td>
+<td>Web (QR)</td>
+<td class="featured-cell">Business API</td>
+<td>Business API</td>
+</tr>
+<tr>
+<td class="feature-name">Mensajes</td>
+<td>Ilimitados</td>
+<td class="featured-cell">Ilimitados</td>
+<td>Ilimitados</td>
+</tr>
+<tr>
+<td class="feature-name">IA</td>
+<td>Gemini</td>
+<td class="featured-cell">Gemini Avanzada</td>
+<td>Gemini Avanzada</td>
+</tr>
+<tr>
+<td class="feature-name">CRM</td>
+<td><i class="lni lni-close"></i></td>
+<td class="featured-cell">Chatwoot</td>
+<td>Chatwoot</td>
+</tr>
+<tr>
+<td class="feature-name">Google Sheets</td>
+<td><i class="lni lni-checkmark"></i></td>
+<td class="featured-cell"><i class="lni lni-close"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+<tr>
+<td class="feature-name">Google Calendar</td>
+<td><i class="lni lni-checkmark"></i></td>
+<td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+<tr>
+<td class="feature-name">Catálogo</td>
+<td>Servicios</td>
+<td class="featured-cell">Servicios</td>
+<td>Productos</td>
+</tr>
+<tr>
+<td class="feature-name">Promociones</td>
+<td><i class="lni lni-checkmark"></i></td>
+<td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+<td>Packs</td>
+</tr>
+<tr>
+<td class="feature-name">Ofertas de Trabajo</td>
+<td><i class="lni lni-checkmark"></i></td>
+<td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+<tr>
+<td class="feature-name">Página Web + App</td>
+<td><i class="lni lni-close"></i></td>
+<td class="featured-cell"><i class="lni lni-close"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+<tr>
+<td class="feature-name">Sistema de Inventario</td>
+<td><i class="lni lni-close"></i></td>
+<td class="featured-cell"><i class="lni lni-close"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+<tr>
+<td class="feature-name">Punto de Venta (POS)</td>
+<td><i class="lni lni-close"></i></td>
+<td class="featured-cell"><i class="lni lni-close"></i></td>
+<td><i class="lni lni-checkmark"></i></td>
+</tr>
+
+
+
+</tbody>
+</table>
+</div>
+</div>
+<!-- FAQ Section -->
+<div class="faq-section">
+<h2 class="faq-title">Preguntas Frecuentes</h2>
+<div class="faq-list">
+<div class="faq-item">
+<div class="faq-question">
+<div class="faq-question-text">
+<i class="lni lni-question-circle"></i>
+<span>¿Puedo cambiar de plan en cualquier momento?</span>
+</div>
+<div class="faq-toggle">
+<i class="lni lni-chevron-down"></i>
+</div>
+</div>
+<div class="faq-answer">
+<p>Sí, puedes actualizar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<div class="faq-question-text">
+<i class="lni lni-question-circle"></i>
+<span>¿Qué pasa si excedo mi límite de mensajes?</span>
+</div>
+<div class="faq-toggle">
+<i class="lni lni-chevron-down"></i>
+</div>
+</div>
+<div class="faq-answer">
+<p>Todos nuestros planes incluyen mensajes ilimitados, por lo que no tendrás que preocuparte por límites.</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<div class="faq-question-text">
+<i class="lni lni-question-circle"></i>
+<span>¿Ofrecen garantía de devolución?</span>
+</div>
+<div class="faq-toggle">
+<i class="lni lni-chevron-down"></i>
+</div>
+</div>
+<div class="faq-answer">
+<p>Sí, ofrecemos garantía de devolución de 30 días sin preguntas.</p>
+</div>
+</div>
+<div class="faq-item">
+<div class="faq-question">
+<div class="faq-question-text">
+<i class="lni lni-question-circle"></i>
+<span>¿Cómo funciona la facturación anual?</span>
+</div>
+<div class="faq-toggle">
+<i class="lni lni-chevron-down"></i>
+</div>
+</div>
+<div class="faq-answer">
+<p>Al elegir facturación anual, pagas por adelantado y obtienes un 20% de descuento.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="/static/js/sidebar.js"></script>
+<script src="/static/js/plans.js"></script>
+</body>
+</html>
