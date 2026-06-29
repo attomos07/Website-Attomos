@@ -1,5 +1,9 @@
 // Plans page functionality
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const billingToggle = document.getElementById('billingToggle');
     const priceAmounts = document.querySelectorAll('.price-amount');
@@ -28,9 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Actualizar el texto del período
             pricePeriods.forEach(period => {
                 if (isAnnual) {
-                    period.textContent = '/ año';
+                    period.textContent = window.Translations?.dict?.[getLang()]?.plans_period_year || '/ año';
                 } else {
-                    period.textContent = '/ mes';
+                    period.textContent = window.Translations?.dict?.[getLang()]?.plans_period_month || '/ mes';
                 }
             });
         });

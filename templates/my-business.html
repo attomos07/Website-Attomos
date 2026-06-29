@@ -318,9 +318,9 @@
                                     <path d="M3 9l1.5-5h15L21 9"/>
                                     <path d="M9 9v1a3 3 0 0 0 6 0V9"/>
                                 </svg>
-                                Mi Negocio
+                                <span data-translate="mybiz_page_title">Mi Negocio</span>
                             </h1>
-                            <p class="page-subtitle">Administra la información de tu negocio</p>
+                            <p class="page-subtitle" data-translate="mybiz_subtitle">Administra la información de tu negocio</p>
                         </div>
                     </div>
 
@@ -421,7 +421,7 @@
                                 <path d="M3 9l1.5-5h15L21 9"/>
                                 <path d="M9 9v1a3 3 0 0 0 6 0V9"/>
                             </svg>
-                            Mi Negocio
+                            <span data-translate="mybiz_tab_business">Mi Negocio</span>
                         </button>
                         <button type="button" class="page-tab" data-tab="inventario">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
@@ -429,14 +429,14 @@
                                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                                 <line x1="12" y1="22.08" x2="12" y2="12"/>
                             </svg>
-                            Inventario
+                            <span data-translate="mybiz_tab_inventory">Inventario</span>
                         </button>
                         <button type="button" class="page-tab" data-tab="contabilidad">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
                                 <line x1="12" y1="1" x2="12" y2="23"/>
                                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                             </svg>
-                            Contabilidad
+                            <span data-translate="mybiz_tab_accounting">Contabilidad</span>
                         </button>
                     </div>
 
@@ -450,14 +450,14 @@
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-image"></i>
-                                    <h2>Imágenes del Negocio</h2>
+                                    <h2 data-translate="mybiz_images_title">Imágenes del Negocio</h2>
                                 </div>
                             </div>
                             <div class="card-content">
 
                                 <!-- BANNER -->
                                 <div class="info-group">
-                                    <label class="info-label">Banner de portada</label>
+                                    <label class="info-label" data-translate="mybiz_banner_label">Banner de portada</label>
                                     <div class="brand-upload-wrap" id="bannerWrap">
                                         <!-- Preview -->
                                         <div class="brand-banner-preview" id="bannerPreview" style="display:none">
@@ -469,10 +469,10 @@
                                         <!-- Placeholder -->
                                         <div class="brand-placeholder" id="bannerPlaceholder">
                                             <i class="lni lni-image" style="font-size:2rem;color:#aaa"></i>
-                                            <span>Imagen de portada para Ninda</span>
+                                            <span data-translate="mybiz_banner_ninda">Imagen de portada para Ninda</span>
                                             <small>Recomendado: 1200×400 px · JPG o PNG</small>
                                             <button type="button" class="btn-brand-upload" id="bannerUploadBtn">
-                                                <i class="lni lni-upload"></i> Subir banner
+                                                <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_banner">Subir banner</span>
                                             </button>
                                         </div>
                                         <input type="file" id="bannerFileInput" accept="image/*" style="display:none">
@@ -486,7 +486,7 @@
 
                                 <!-- LOGO -->
                                 <div class="info-group" style="margin-top:1.5rem">
-                                    <label class="info-label">Logo del negocio</label>
+                                    <label class="info-label" data-translate="mybiz_logo_label">Logo del negocio</label>
                                     <div style="display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap">
                                         <div class="brand-logo-area" id="logoArea">
                                             <div class="brand-logo-preview" id="logoPreview" style="display:none">
@@ -506,7 +506,7 @@
                                         </div>
                                         <div style="flex:1;min-width:160px">
                                             <button type="button" class="btn-brand-upload" id="logoUploadBtn">
-                                                <i class="lni lni-upload"></i> Subir logo
+                                                <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_logo">Subir logo</span>
                                             </button>
                                             <div class="info-example" style="margin-top:.5rem">Se muestra como foto de perfil circular en Ninda · PNG cuadrado recomendado</div>
                                         </div>
@@ -525,13 +525,13 @@
                             </div>
                             <div class="card-content">
                                 <div class="info-group">
-                                    <label class="info-label">Nombre del Negocio</label>
+                                    <label class="info-label" data-translate="mybiz_name_label">Nombre del Negocio</label>
                                     <input type="text" class="info-input" id="businessNameInput">
                                     <div class="info-example">Ej: Mi Negocio Ejemplo</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Giro del Negocio</label>
+                                    <label class="info-label" data-translate="mybiz_type_label">Giro del Negocio</label>
                                     <div class="custom-select-wrapper" id="businessTypeWrapper">
                                         <input type="text" 
                                                class="info-input form-select" 
@@ -746,13 +746,13 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Sitio Web</label>
+                                    <label class="info-label" data-translate="mybiz_website_label">Sitio Web</label>
                                     <input type="url" class="info-input" id="websiteInput">
                                     <div class="info-example">Ej: https://minegocio.com</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Email de Contacto</label>
+                                    <label class="info-label" data-translate="mybiz_email_label">Email de Contacto</label>
                                     <input type="email" class="info-input" id="emailInput">
                                     <div class="info-example">Ej: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e78488899386849388a78a8e89828088848e88c984888a">[email&#160;protected]</a></div>
                                 </div>
@@ -760,7 +760,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group">
                                     <label class="info-label">
                                         <i class="lni lni-phone"></i>
-                                        Teléfono de esta Sucursal
+                                        <span data-translate="mybiz_phone_label">Teléfono de esta Sucursal</span>
                                     </label>
                                     <input type="tel" class="info-input" id="phoneNumberInput" placeholder="Ej: +52 662 123 4567">
                                     <div class="info-example">Número directo de esta sucursal</div>
@@ -772,7 +772,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-calendar"></i>
-                                    <h2>Horario de Atención</h2>
+                                    <h2 data-translate="mybiz_hours_title">Horario de Atención</h2>
                                 </div>
                             </div>
                             <div class="card-content">
@@ -781,11 +781,11 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group full-width" style="margin-top: 32px;">
                                     <label class="info-label">
                                         <i class="lni lni-calendar"></i>
-                                        Días Festivos / Inhábiles
+                                        <span data-translate="mybiz_holidays_title">Días Festivos / Inhábiles</span>
                                     </label>
                                     <button type="button" class="btn-add-holiday" id="btnAddHoliday">
                                         <i class="lni lni-plus"></i>
-                                        Agregar Día Festivo
+                                        <span data-translate="mybiz_add_holiday">Agregar Día Festivo</span>
                                     </button>
                                     <div class="holidays-list" id="holidaysList"></div>
                                     <div class="info-example">Los días festivos agregados serán días en que el negocio permanecerá cerrado</div>
@@ -797,54 +797,54 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-map-marker"></i>
-                                    <h2>Ubicación</h2>
+                                    <h2 data-translate="mybiz_location_title">Ubicación</h2>
                                 </div>
                             </div>
                             <div class="card-content">
                                 <div class="info-group full-width">
-                                    <label class="info-label">Dirección Completa</label>
+                                    <label class="info-label" data-translate="mybiz_address_label">Dirección Completa</label>
                                     <input type="text" class="info-input" id="addressInput">
                                     <div class="info-example">Ej: Calle Principal #123</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Entre Calles</label>
+                                    <label class="info-label" data-translate="mybiz_between_streets">Entre Calles</label>
                                     <input type="text" class="info-input" id="betweenStreetsInput">
                                     <div class="info-example">Ej: Entre Av. Uno y Calle Dos</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Número Exterior / Interior</label>
+                                    <label class="info-label" data-translate="mybiz_ext_num">Número Exterior / Interior</label>
                                     <input type="text" class="info-input" id="numberInput">
                                     <div class="info-example">Ej: 123 Int. A</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Colonia</label>
+                                    <label class="info-label" data-translate="mybiz_neighborhood">Colonia</label>
                                     <input type="text" class="info-input" id="neighborhoodInput">
                                     <div class="info-example">Ej: Centro</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Ciudad</label>
+                                    <label class="info-label" data-translate="mybiz_city">Ciudad</label>
                                     <input type="text" class="info-input" id="cityInput" style="display: none;">
                                     <div class="info-example">Ej: Hermosillo</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Estado/Provincia</label>
+                                    <label class="info-label" data-translate="mybiz_state">Estado/Provincia</label>
                                     <input type="text" class="info-input" id="stateInput" style="display: none;">
                                     <div class="info-example">Ej: Sonora</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">País</label>
+                                    <label class="info-label" data-translate="mybiz_country">País</label>
                                     <input type="text" class="info-input" id="countryInput" style="display: none;">
                                     <div class="info-example">Ej: México</div>
                                 </div>
 
                                 <div class="info-group">
-                                    <label class="info-label">Código Postal</label>
+                                    <label class="info-label" data-translate="mybiz_zip">Código Postal</label>
                                     <input type="text" class="info-input" id="postalCodeInput">
                                     <div class="info-example">Ej: 83000</div>
                                 </div>
@@ -855,14 +855,14 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-share-alt"></i>
-                                    <h2>Redes Sociales</h2>
+                                    <h2 data-translate="mybiz_social_title">Redes Sociales</h2>
                                 </div>
                             </div>
                             <div class="card-content">
                                 <div class="info-group full-width">
                                     <label class="info-label">
                                         <i class="lni lni-facebook-oval"></i>
-                                        Facebook
+                                        <span data-translate="mybiz_facebook">Facebook</span>
                                     </label>
                                     <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tupagina">
                                 </div>
@@ -870,7 +870,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group full-width">
                                     <label class="info-label">
                                         <i class="lni lni-instagram"></i>
-                                        Instagram
+                                        <span data-translate="mybiz_instagram">Instagram</span>
                                     </label>
                                     <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tuusuario">
                                 </div>
@@ -878,7 +878,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group full-width">
                                     <label class="info-label">
                                         <i class="lni lni-twitter"></i>
-                                        Twitter / X
+                                        <span data-translate="mybiz_twitter">Twitter / X</span>
                                     </label>
                                     <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tuusuario">
                                 </div>
@@ -886,7 +886,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group full-width">
                                     <label class="info-label">
                                         <i class="lni lni-linkedin"></i>
-                                        LinkedIn
+                                        <span data-translate="mybiz_linkedin">LinkedIn</span>
                                     </label>
                                     <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tuempresa">
                                 </div>
@@ -898,7 +898,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-package"></i>
-                                    <h2>Servicios / Productos</h2>
+                                    <h2 data-translate="mybiz_services_title">Servicios / Productos</h2>
                                 </div>
                                 <button type="button" class="btn-card-add" id="btnAddService">
                                     <i class="lni lni-plus"></i>
@@ -909,7 +909,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="services-list" id="servicesList"></div>
                                 <div class="empty-list-hint" id="servicesHint">
                                     <i class="lni lni-package"></i>
-                                    <span>No hay servicios. Haz clic en "Agregar" para añadir uno.</span>
+                                    <span data-translate="mybiz_no_services">No hay servicios. Haz clic en "Agregar" para añadir uno.</span>
                                 </div>
                             </div>
                         </div>
@@ -919,17 +919,17 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-files"></i>
-                                    <h2 class="menu-section-title">Menú</h2>
+                                    <h2 class="menu-section-title" data-translate="mybiz_menu_title">Menú</h2>
                                 </div>
                             </div>
                             <div class="card-content" style="display:flex;flex-direction:column;gap:1.25rem;">
-                                <p class="card-hint" style="margin:0;">Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia.</p>
+                                <p class="card-hint" style="margin:0;" data-translate="mybiz_menu_card_hint">Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia.</p>
                                 <div class="menu-upload-area" id="menuUploadArea">
                                     <input type="file" id="menuFileInput" accept="image/*,.pdf" style="display:none">
                                     <div class="menu-upload-placeholder" id="menuUploadPlaceholder">
                                         <i class="lni lni-upload"></i>
-                                        <span>Arrastra tu menú aquí o <strong>haz clic para seleccionar</strong></span>
-                                        <span class="menu-upload-hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
+                                        <span data-translate="mybiz_menu_drag">Arrastra tu menú aquí o <strong>haz clic para seleccionar</strong></span>
+                                        <span class="menu-upload-hint" data-translate="mybiz_menu_hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
                                     </div>
                                     <div class="menu-file-preview" id="menuFilePreview" style="display:none">
                                         <div class="menu-file-info">
@@ -959,7 +959,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-users"></i>
-                                    <h2>Trabajadores</h2>
+                                    <h2 data-translate="mybiz_workers_title">Trabajadores</h2>
                                 </div>
                                 <button type="button" class="btn-card-add" id="btnAddWorker">
                                     <i class="lni lni-plus"></i>
@@ -970,7 +970,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="workers-list" id="workersList"></div>
                                 <div class="empty-list-hint" id="workersHint">
                                     <i class="lni lni-users"></i>
-                                    <span>No hay trabajadores. Haz clic en "Agregar" para añadir uno.</span>
+                                    <span data-translate="mybiz_no_workers">No hay trabajadores. Haz clic en "Agregar" para añadir uno.</span>
                                 </div>
                             </div>
                         </div>
@@ -1367,7 +1367,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
 
     <button class="btn-save" id="saveProfileBtn">
         <i class="lni lni-checkmark"></i>
-        <span>Guardar Cambios</span>
+        <span data-translate="mybiz_save_btn">Guardar Cambios</span>
     </button>
 
     <!-- Sileo viewport -->
@@ -1375,6 +1375,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
 
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/my-business.js"></script>
 </body>

@@ -26,7 +26,7 @@
             <div class="content-wrapper">
                 <div class="details-layout">
                     <!-- Back Button -->
-                    <a href="/my-agents" class="back-button">
+                    <a href="/my-agents" class="back-button" data-translate="ad_back">
                         <i class="lni lni-chevron-left"></i>
                         <span>Volver a Agentes</span>
                     </a>
@@ -69,11 +69,11 @@
                         <div class="agent-actions">
                             <button class="btn-primary" onclick="editAgent()">
                                 <i class="lni lni-pencil"></i>
-                                <span>Editar</span>
+                                <span data-translate="ad_edit">Editar</span>
                             </button>
                             <button class="btn-secondary" onclick="toggleAgentStatus()">
                                 <i class="lni lni-pause" id="toggleIcon"></i>
-                                <span id="toggleText">Pausar</span>
+                                <span id="toggleText" data-translate="ad_pause">Pausar</span>
                             </button>
                         </div>
                     </div>
@@ -85,7 +85,7 @@
                             <div class="section-header">
                                 <h2 class="section-title">
                                     <i class="lni lni-whatsapp"></i>
-                                    Conexión WhatsApp
+                                    <span data-translate="ad_conn_title">Conexión WhatsApp</span>
                                 </h2>
                             </div>
                             <div class="qr-container" id="qrContainer">
@@ -95,13 +95,13 @@
                                 </div>
                             </div>
                             <div class="qr-instructions">
-                                <h3>Cómo conectar:</h3>
+                                <h3 data-translate="ad_how_connect">Cómo conectar:</h3>
                                 <ol>
-                                    <li>Abre WhatsApp en tu teléfono</li>
-                                    <li>Toca <strong>Menú</strong> o <strong>Configuración</strong></li>
-                                    <li>Toca <strong>Dispositivos vinculados</strong></li>
-                                    <li>Toca <strong>Vincular un dispositivo</strong></li>
-                                    <li>Apunta tu teléfono a esta pantalla para escanear el código QR</li>
+                                    <li data-translate="ad_qr_step1">Abre WhatsApp en tu teléfono</li>
+                                    <li data-translate="ad_qr_step2">Toca <strong>Menú</strong> o <strong>Configuración</strong></li>
+                                    <li data-translate="ad_qr_step3">Toca <strong>Dispositivos vinculados</strong></li>
+                                    <li data-translate="ad_qr_step4">Toca <strong>Vincular un dispositivo</strong></li>
+                                    <li data-translate="ad_qr_step5">Apunta tu teléfono a esta pantalla para escanear el código QR</li>
                                 </ol>
                             </div>
                         </div>
@@ -113,24 +113,24 @@
                                 <div class="section-header">
                                     <h2 class="section-title">
                                         <i class="lni lni-information"></i>
-                                        Información Básica
+                                        <span data-translate="ad_basic_title">Información Básica</span>
                                     </h2>
                                 </div>
                                 <div class="info-grid">
                                     <div class="info-item">
-                                        <label>Nombre del Agente</label>
+                                        <label data-translate="ad_name_label">Nombre del Agente</label>
                                         <div class="info-value" id="infoName">--</div>
                                     </div>
                                     <div class="info-item">
-                                        <label>Número de Teléfono</label>
+                                        <label data-translate="ad_phone_label">Número de Teléfono</label>
                                         <div class="info-value" id="infoPhone">--</div>
                                     </div>
                                     <div class="info-item">
-                                        <label>Tipo de Negocio</label>
+                                        <label data-translate="ad_type_label">Tipo de Negocio</label>
                                         <div class="info-value" id="infoBusinessType">--</div>
                                     </div>
                                     <div class="info-item">
-                                        <label>Puerto</label>
+                                        <label data-translate="ad_port_label">Puerto</label>
                                         <div class="info-value" id="infoPort">--</div>
                                     </div>
                                 </div>
@@ -141,20 +141,20 @@
                                 <div class="section-header">
                                     <h2 class="section-title">
                                         <i class="lni lni-cog"></i>
-                                        Configuración
+                                        <span data-translate="ad_config_title">Configuración</span>
                                     </h2>
                                 </div>
                                 <div class="config-grid">
                                     <div class="config-item">
-                                        <label>Tono</label>
+                                        <label data-translate="ad_tone_label">Tono</label>
                                         <div class="config-value" id="configTone">--</div>
                                     </div>
                                     <div class="config-item">
-                                        <label>Idiomas</label>
+                                        <label data-translate="ad_langs_label">Idiomas</label>
                                         <div class="config-value" id="configLanguages">--</div>
                                     </div>
                                     <div class="config-item full-width">
-                                        <label>Mensaje de Bienvenida</label>
+                                        <label data-translate="ad_welcome_label">Mensaje de Bienvenida</label>
                                         <div class="config-value message" id="configWelcome">--</div>
                                     </div>
                                 </div>
@@ -165,7 +165,7 @@
                                 <div class="section-header">
                                     <h2 class="section-title">
                                         <i class="lni lni-calendar"></i>
-                                        Horario de Atención
+                                        <span data-translate="ad_schedule_title">Horario de Atención</span>
                                     </h2>
                                 </div>
                                 <div class="schedule-grid" id="scheduleGrid">
@@ -178,7 +178,7 @@
                                 <div class="section-header">
                                     <h2 class="section-title">
                                         <i class="lni lni-briefcase"></i>
-                                        Servicios
+                                        <span data-translate="ad_services_title">Servicios</span>
                                     </h2>
                                 </div>
                                 <div class="services-list" id="servicesList">
@@ -191,7 +191,7 @@
                                 <div class="section-header">
                                     <h2 class="section-title">
                                         <i class="lni lni-users"></i>
-                                        Personal
+                                        <span data-translate="ad_workers_title">Personal</span>
                                     </h2>
                                 </div>
                                 <div class="workers-list" id="workersList">
@@ -205,6 +205,7 @@
         </div>
     </div>
 
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/agent-details.js"></script>
 </body>

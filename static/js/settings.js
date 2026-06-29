@@ -3,6 +3,13 @@
 // ============================================
 
 // ─── Helpers ────────────────────────────────
+
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
 function showMessage(element, duration = 5000) {
     element.style.display = 'flex';
     element.style.animation = 'slideInFromTop 0.5s ease-out';
@@ -78,7 +85,7 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
 
     // Validar coincidencia
     if (newPassword !== confirmPassword) {
-        errorText.textContent = 'Las contraseñas nuevas no coinciden';
+        errorText.textContent = t('settings_pw_mismatch', 'Las contraseñas nuevas no coinciden');
         showMessage(errorMessage);
         return;
     }
@@ -92,14 +99,14 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
     if (!/[@$!%*?&#]/.test(newPassword))    missing.push('un símbolo (@$!%*?&#)');
 
     if (missing.length > 0) {
-        errorText.textContent = 'Falta: ' + missing.join(', ');
+        errorText.textContent = t('settings_pw_missing', 'Falta: ') + missing.join(', ');
         showMessage(errorMessage);
         return;
     }
 
     // Loading state
     submitBtn.classList.add('loading');
-    submitBtn.innerHTML = '<i class="lni lni-spinner"></i><span>Actualizando...</span>';
+    submitBtn.innerHTML = `<i class="lni lni-spinner"></i><span>${t('settings_pw_updating', 'Actualizando...')}</span>`;
 
     try {
         const response = await fetch('/api/user/password', {
@@ -115,16 +122,16 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
             showMessage(successMessage);
             e.target.reset();
         } else {
-            errorText.textContent = data.error || 'Error al actualizar la contraseña';
+            errorText.textContent = data.error || t('settings_pw_mismatch', 'Error al actualizar la contraseña');
             showMessage(errorMessage);
         }
     } catch (error) {
         console.error('Error updating password:', error);
-        errorText.textContent = 'Ocurrió un error al actualizar la contraseña';
+        errorText.textContent = t('settings_pw_mismatch', 'Ocurrió un error al actualizar la contraseña');
         showMessage(errorMessage);
     } finally {
         submitBtn.classList.remove('loading');
-        submitBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Actualizar Contraseña</span>';
+        submitBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('settings_update_pw', 'Actualizar Contraseña')}</span>`;
     }
 });
 
@@ -141,8 +148,9 @@ function closeDeleteModal() {
 async function confirmDelete() {
     const confirmInput = document.getElementById('confirmDelete').value;
 
-    if (confirmInput !== 'ELIMINAR') {
-        alert('Por favor escribe ELIMINAR para confirmar');
+    const deleteWord = t('settings_delete_type', 'ELIMINAR');
+    if (confirmInput !== deleteWord) {
+        alert(t('settings_confirm_type', 'Por favor escribe ELIMINAR para confirmar'));
         return;
     }
 

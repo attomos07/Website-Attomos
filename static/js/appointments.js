@@ -15,6 +15,13 @@ let openDropdown = null;
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 Inicializando página de citas...');
     initializeAppointments();
@@ -84,7 +91,7 @@ function openAppointmentModal() {
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
 
-    modalTitle.innerHTML = '<i class="lni lni-calendar-plus" style="color: #06b6d4;"></i> Nueva Cita';
+    modalTitle.innerHTML = `<i class="lni lni-calendar-plus" style="color: #06b6d4;"></i> ${t('appts_new_btn', 'Nueva Cita')}`;
 
     modalBody.innerHTML = `
         <form id="createAppointmentForm" class="appointment-form">
@@ -192,13 +199,13 @@ async function handleCreateAppointment(e) {
     };
 
     if (!formData.agentId) {
-        showNotification('Por favor selecciona un agente', 'error');
+        showNotification(t('appts_filter_all_agents', 'Por favor selecciona un agente'), 'error');
         return;
     }
 
     const submitBtn = e.target.querySelector('.btn-submit');
     const originalHTML = submitBtn.innerHTML;
-    submitBtn.innerHTML = `<div class="loading-spinner-small"></div> <span>Creando...</span>`;
+    submitBtn.innerHTML = `<div class="loading-spinner-small"></div> <span>${t('loading', 'Cargando...')}</span>`;
     submitBtn.disabled = true;
 
     try {
@@ -310,10 +317,10 @@ function initAgentDropdown() {
             container.appendChild(div);
         });
     } else {
-        container.innerHTML = '<div class="dropdown-option"><span>Cargando agentes...</span></div>';
+        container.innerHTML = `<div class="dropdown-option"><span>${t('agents_loading', 'Cargando agentes...')}</span></div>`;
     }
 
-    setupCustomDropdown(wrapper, display, hidden, 'Selecciona un agente');
+    setupCustomDropdown(wrapper, display, hidden, t('appts_filter_all_agents', 'Selecciona un agente'));
 }
 
 function initTimeDropdown() {
@@ -530,7 +537,7 @@ function renderAppointments() {
 
 function createTableRow(appt) {
     const agent = agents.find(a => a.id === appt.agentId);
-    const agentName = agent ? agent.name : (appt.agentName || 'Desconocido');
+    const agentName = agent ? agent.name : (appt.agentName || t('ad_not_configured', 'Desconocido'));
 
     const [y, m, d] = appt.date.split('-');
     const dateObj = new Date(y, m - 1, d);
@@ -600,11 +607,11 @@ function renderCalendar() {
     const title = document.getElementById('calendarMonth');
     if (!grid) return;
 
-    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const months = [t('month_jan','Enero'),t('month_feb','Febrero'),t('month_mar','Marzo'),t('month_apr','Abril'),t('month_may','Mayo'),t('month_jun','Junio'),t('month_jul','Julio'),t('month_aug','Agosto'),t('month_sep','Septiembre'),t('month_oct','Octubre'),t('month_nov','Noviembre'),t('month_dec','Diciembre')];
     title.textContent = `${months[currentMonth]} ${currentYear}`;
     grid.innerHTML = '';
 
-    ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(d => {
+    [t('day_sun','Dom'),t('day_mon','Lun'),t('day_tue','Mar'),t('day_wed','Mié'),t('day_thu','Jue'),t('day_fri','Vie'),t('day_sat','Sáb')].forEach(d => {
         const div = document.createElement('div');
         div.className = 'calendar-day-header';
         div.textContent = d;
@@ -731,7 +738,7 @@ function deleteAppointment(id, clientName) {
             'Esta acción no se puede deshacer',
             'Se perderán todos los datos de la cita'
         ],
-        confirmText: 'Eliminar Cita',
+        confirmText: t('appts_delete_btn', 'Eliminar Cita'),
         confirmClass: 'danger',
         onConfirm: async () => {
             const response = await fetch(`/api/appointments/${id}`, {
@@ -739,7 +746,7 @@ function deleteAppointment(id, clientName) {
                 credentials: 'include'
             });
             if (!response.ok) throw new Error('Error al eliminar');
-            showNotification('Cita eliminada correctamente', 'success');
+            showNotification(t('appts_deleted_ok', 'Cita eliminada correctamente'), 'success');
             await loadAppointments();
             updateStats();
             renderAppointments();
@@ -764,7 +771,7 @@ function formatTime(t) {
 }
 
 function getStatusText(s) {
-    const map = { confirmed: 'Confirmada', pending: 'Pendiente', cancelled: 'Cancelada', completed: 'Completada' };
+    const map = { confirmed: t('appts_status_confirmed', 'Confirmada'), pending: t('appts_status_pending', 'Pendiente'), cancelled: t('appts_status_cancelled', 'Cancelada'), completed: t('appts_status_completed', 'Completada') };
     return map[s] || s;
 }
 

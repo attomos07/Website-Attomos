@@ -39,12 +39,12 @@
                                 </svg>
                                 Mis Pedidos
                             </h1>
-                            <p>Gestiona todos los pedidos de tu negocio</p>
+                            <p data-translate="orders_subtitle">Gestiona todos los pedidos de tu negocio</p>
                         </div>
                         <div class="header-actions">
                             <button class="btn-primary" id="btnNuevoPedido" onclick="openOrderModal()">
                                 <i class="lni lni-plus"></i>
-                                <span>Nuevo Pedido</span>
+                                <span data-translate="orders_new_btn">Nuevo Pedido</span>
                             </button>
                         </div>
                     </div>
@@ -79,28 +79,28 @@
                             <div class="stat-icon orange"><i class="lni lni-timer"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statPending">0</div>
-                                <div class="stat-label">Pendientes</div>
+                                <div class="stat-label" data-translate="orders_stat_pending">Pendientes</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon purple"><i class="lni lni-alarm-clock"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statPreparing">0</div>
-                                <div class="stat-label">En preparación</div>
+                                <div class="stat-label" data-translate="orders_stat_preparing">En preparación</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statReady">0</div>
-                                <div class="stat-label">Listos para entregar</div>
+                                <div class="stat-label" data-translate="orders_stat_ready">Listos para entregar</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon blue"><i class="lni lni-calendar"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statToday">0</div>
-                                <div class="stat-label">Pedidos hoy</div>
+                                <div class="stat-label" data-translate="orders_stat_today">Pedidos hoy</div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -119,18 +119,18 @@
                             <!-- Filtro estado -->
                             <div class="custom-dropdown-wrapper filter-wrapper">
                                 <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
-                                    <span id="selectedStatus">Todos los estados</span>
+                                    <span id="selectedStatus" data-translate="orders_filter_all_status">Todos los estados</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedStatus','status','all')"><span>Todos los estados</span></div>
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedStatus','status','all')"><span data-translate="orders_filter_all_status">Todos los estados</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','pending')"><span class="status-dot pending"></span><span>Pendientes</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','confirmed')"><span class="status-dot confirmed"></span><span>Confirmados</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','preparing')"><span class="status-dot preparing"></span><span>En preparación</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','ready')"><span class="status-dot ready"></span><span>Listos</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','delivered')"><span class="status-dot delivered"></span><span>Entregados</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','cancelled')"><span class="status-dot cancelled"></span><span>Cancelados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','confirmed')"><span class="status-dot confirmed"></span><span data-translate="orders_status_confirmed">Confirmados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','preparing')"><span class="status-dot preparing"></span><span data-translate="orders_stat_preparing">En preparación</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','ready')"><span class="status-dot ready"></span><span data-translate="orders_status_ready">Listos</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','delivered')"><span class="status-dot delivered"></span><span data-translate="orders_status_delivered">Entregados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','cancelled')"><span class="status-dot cancelled"></span><span data-translate="orders_status_cancelled">Cancelados</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -138,12 +138,12 @@
                             <!-- Filtro tipo -->
                             <div class="custom-dropdown-wrapper filter-wrapper">
                                 <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
-                                    <span id="selectedType">Tipo de pedido</span>
+                                    <span id="selectedType" data-translate="orders_th_type">Tipo de pedido</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedType','type','all')"><span>Todos los tipos</span></div>
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedType','type','all')"><span data-translate="orders_filter_all_types">Todos los tipos</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','delivery')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><path d="M12 17h.01M16 17h.01"/></svg>
                                             <span>A domicilio</span>
@@ -167,12 +167,12 @@
                             <!-- Filtro agente -->
                             <div class="custom-dropdown-wrapper filter-wrapper">
                                 <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
-                                    <span id="selectedAgent">Todos los agentes</span>
+                                    <span id="selectedAgent" data-translate="appts_filter_all_agents">Todos los agentes</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options" id="agentFilterOptions">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedAgent','agent','all')"><span>Todos los agentes</span></div>
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedAgent','agent','all')"><span data-translate="appts_filter_all_agents">Todos los agentes</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -191,14 +191,14 @@
                             <table class="orders-table">
                                 <thead>
                                     <tr>
-                                        <th>Cliente</th>
-                                        <th>Productos</th>
+                                        <th data-translate="th_client">Cliente</th>
+                                        <th data-translate="th_products">Productos</th>
                                         <th>Total</th>
-                                        <th>Tipo</th>
-                                        <th>Fuente</th>
-                                        <th>Estado</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
+                                        <th data-translate="th_type">Tipo</th>
+                                        <th data-translate="th_source">Fuente</th>
+                                        <th data-translate="orders_th_status">Estado</th>
+                                        <th data-translate="th_date">Fecha</th>
+                                        <th data-translate="agents_th_actions">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ordersList"></tbody>
@@ -209,10 +209,10 @@
                     <!-- ── Empty ── -->
                     <div class="empty-state" id="emptyState" style="display:none">
                         <div class="empty-icon"><i class="lni lni-cart"></i></div>
-                        <h3>Sin pedidos registrados</h3>
+                        <h3 data-translate="orders_empty_title">Sin pedidos registrados</h3>
                         <p>Los pedidos de tus clientes aparecerán aquí. También puedes crearlos manualmente.</p>
                         <button class="btn-primary" onclick="openOrderModal()">
-                            <i class="lni lni-plus"></i><span>Crear Primer Pedido</span>
+                            <i class="lni lni-plus"></i><span data-translate="orders_create_btn">Crear Primer Pedido</span>
                         </button>
                     </div>
 
@@ -319,7 +319,7 @@
 
                                 <!-- Método de pago -->
                                 <div class="pos-payment-row">
-                                    <label class="pos-label">Pago</label>
+                                    <label class="pos-label" data-translate="orders_th_payment">Pago</label>
                                     <div class="pos-payment-btns">
                                         <button class="pos-pay-btn active" data-pay="efectivo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
@@ -387,6 +387,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/orders.js"></script>
 </body>

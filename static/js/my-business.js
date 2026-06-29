@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function () {
     initWorkers();
     initSaveButton();
     initBrandImages();
+
+    // Re-apply translations after all dynamic content is rendered
+    if (window.Translations) window.Translations.apply(getLang());
     initMenu();
 
     console.log('✅ Profile funcionalidades inicializadas');
@@ -49,19 +52,26 @@ const CITIES_SONORA = [
     'Huatabampo', 'Etchojoa', 'Magdalena', 'Santa Ana'
 ];
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 const MONTHS = [
-    { value: '01', name: 'Enero' },
-    { value: '02', name: 'Febrero' },
-    { value: '03', name: 'Marzo' },
-    { value: '04', name: 'Abril' },
-    { value: '05', name: 'Mayo' },
-    { value: '06', name: 'Junio' },
-    { value: '07', name: 'Julio' },
-    { value: '08', name: 'Agosto' },
-    { value: '09', name: 'Septiembre' },
-    { value: '10', name: 'Octubre' },
-    { value: '11', name: 'Noviembre' },
-    { value: '12', name: 'Diciembre' }
+    { value: '01', name: t('month_jan','Enero') },
+    { value: '02', name: t('month_feb','Febrero') },
+    { value: '03', name: t('month_mar','Marzo') },
+    { value: '04', name: t('month_apr','Abril') },
+    { value: '05', name: t('month_may','Mayo') },
+    { value: '06', name: t('month_jun','Junio') },
+    { value: '07', name: t('month_jul','Julio') },
+    { value: '08', name: t('month_aug','Agosto') },
+    { value: '09', name: t('month_sep','Septiembre') },
+    { value: '10', name: t('month_oct','Octubre') },
+    { value: '11', name: t('month_nov','Noviembre') },
+    { value: '12', name: t('month_dec','Diciembre') }
 ];
 
 // Giros que manejan existencias/inventario físico (NO son servicios puros)
@@ -229,7 +239,7 @@ function updateMenuLabel() {
         'clinica-dental', 'clinica', 'dental',
         'peluqueria', 'peluquería', 'estetica', 'estética', 'salon', 'salón',
     ];
-    h2.textContent = catalogoGiros.includes(giro) ? 'Catálogo' : 'Menú';
+    h2.textContent = catalogoGiros.includes(giro) ? t('mybiz_catalog_title','Catálogo') : t('mybiz_menu_title','Menú');
 }
 
 function loadBranchData(branch) {
@@ -647,13 +657,13 @@ function selectLocationOption(option, displayInput, hiddenInput, wrapper, allOpt
 
 function initSchedule() {
     const days = [
-        { name: 'Lunes', key: 'monday' },
-        { name: 'Martes', key: 'tuesday' },
-        { name: 'Miércoles', key: 'wednesday' },
-        { name: 'Jueves', key: 'thursday' },
-        { name: 'Viernes', key: 'friday' },
-        { name: 'Sábado', key: 'saturday' },
-        { name: 'Domingo', key: 'sunday' }
+        { name: t('day_monday','Lunes'), key: 'monday' },
+        { name: t('day_tuesday','Martes'), key: 'tuesday' },
+        { name: t('day_wednesday','Miércoles'), key: 'wednesday' },
+        { name: t('day_thursday','Jueves'), key: 'thursday' },
+        { name: t('day_friday','Viernes'), key: 'friday' },
+        { name: t('day_saturday','Sábado'), key: 'saturday' },
+        { name: t('day_sunday','Domingo'), key: 'sunday' }
     ];
 
     const scheduleList = document.getElementById('scheduleList');
@@ -671,7 +681,7 @@ function initSchedule() {
                     <input type="checkbox" id="day-${day.key}" checked>
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="toggle-label">Abierto</span>
+                <span class="toggle-label" data-translate="mybiz_open">Abierto</span>
             </div>
             <div class="day-times">
                 <input type="time" class="time-input" id="time-${day.key}-open" value="09:00" style="display: none;">
@@ -895,7 +905,7 @@ function addHoliday() {
             <div class="holiday-dropdown-group" id="month-${id}"></div>
             <div class="holiday-dropdown-group" id="day-${id}"></div>
             <div class="holiday-name-group">
-                <input type="text" class="holiday-name-input" data-field="name" placeholder="Nombre del día festivo">
+                <input type="text" class="holiday-name-input" data-field="name" placeholder="${t('mybiz_holiday_name','Nombre del día festivo')}">
             </div>
         </div>
         <button type="button" class="btn-remove-holiday" data-remove="${id}">
@@ -905,13 +915,13 @@ function addHoliday() {
 
     container.appendChild(div);
 
-    createHolidayDropdown(`month-${id}`, MONTHS, 'Mes', id);
+    createHolidayDropdown(`month-${id}`, MONTHS, t('mybiz_month','Mes'), id);
 
     const days = [];
     for (let i = 1; i <= 31; i++) {
         days.push({ value: String(i).padStart(2, '0'), name: String(i) });
     }
-    createHolidayDropdown(`day-${id}`, days, 'Día', id);
+    createHolidayDropdown(`day-${id}`, days, t('mybiz_day','Día'), id);
 
     div.querySelector('.btn-remove-holiday').addEventListener('click', function () {
         removeHoliday(id);
@@ -1058,7 +1068,7 @@ async function saveProfile(opts = {}) {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
     if (!opts.silent) {
-        saveBtn.innerHTML = `<div class="loading-spinner"></div><span>Guardando...</span>`;
+        saveBtn.innerHTML = `<div class="loading-spinner"></div><span>${t('mybiz_saving','Guardando...')}</span>`;
         saveBtn.disabled = true;
     }
 
@@ -1237,13 +1247,13 @@ function addServiceItem(e, data = null) {
     const promoEnd   = data?.promoDateEnd   || '';
 
     const DAY_OPTS = [
-        { val: 'monday',    lbl: 'Lun' },
-        { val: 'tuesday',   lbl: 'Mar' },
-        { val: 'wednesday', lbl: 'Mié' },
-        { val: 'thursday',  lbl: 'Jue' },
-        { val: 'friday',    lbl: 'Vie' },
-        { val: 'saturday',  lbl: 'Sáb' },
-        { val: 'sunday',    lbl: 'Dom' },
+        { val: 'monday',    lbl: t('day_mon_abbr','Lun') },
+        { val: 'tuesday',   lbl: t('day_tue_abbr','Mar') },
+        { val: 'wednesday', lbl: t('day_wed_abbr','Mié') },
+        { val: 'thursday',  lbl: t('day_thu_abbr','Jue') },
+        { val: 'friday',    lbl: t('day_fri_abbr','Vie') },
+        { val: 'saturday',  lbl: t('day_sat_abbr','Sáb') },
+        { val: 'sunday',    lbl: t('day_sun_abbr','Dom') },
     ];
     const daysHTML = DAY_OPTS.map(d => `
         <label class="day-chip ${promoDays.includes(d.val) ? 'active' : ''}">
@@ -1257,11 +1267,11 @@ function addServiceItem(e, data = null) {
 
     div.innerHTML = `
         <div class="service-item-row">
-            <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
-            <label class="stock-toggle" title="${inStock ? 'En existencia' : 'Agotado'}">
+            <input type="text" class="info-input service-title" placeholder="${t('mybiz_service_name','Nombre del servicio')}" value="${data?.title || ''}">
+            <label class="stock-toggle" title="${inStock ? t('mybiz_in_stock','En existencia') : t('mybiz_out_of_stock','Agotado')}">
                 <input type="checkbox" class="service-in-stock" ${inStock ? 'checked' : ''}>
                 <span class="stock-slider"></span>
-                <span class="stock-label">${inStock ? 'En existencia' : 'Agotado'}</span>
+                <span class="stock-label">${inStock ? t('mybiz_in_stock','En existencia') : t('mybiz_out_of_stock','Agotado')}</span>
             </label>
 
             <button type="button" class="btn-remove-item" onclick="removeItem(this, 'servicesList', 'servicesHint')">
@@ -1269,7 +1279,7 @@ function addServiceItem(e, data = null) {
             </button>
         </div>
         <div class="service-item-row">
-            <input type="text" class="info-input service-desc" placeholder="Descripción (opcional)" value="${data?.description || ''}">
+            <input type="text" class="info-input service-desc" placeholder="${t('mybiz_desc_optional','Descripción (opcional)')}" value="${data?.description || ''}">
         </div>
         <div class="service-item-row service-stock-qty-row" style="display:none;align-items:center;gap:10px;">
             <label class="stock-qty-label"><i class="lni lni-layers"></i> Existencias</label>
@@ -1290,20 +1300,20 @@ function addServiceItem(e, data = null) {
                 </div>`).join('')}
                 <div class="service-img-add-btn">
                     <i class="lni lni-camera"></i>
-                    <span>Agregar foto</span>
+                    <span>${t('mybiz_add_photo','Agregar foto')}</span>
                 </div>
             </div>
             <input type="hidden" class="service-image-urls" value="${imgUrls.join(',')}">
             <div class="service-image-uploading" style="display:none">
-                <i class="lni lni-spinner-arrow"></i> Subiendo...
+                <i class="lni lni-spinner-arrow"></i> ${t('mybiz_uploading','Subiendo...')}
             </div>
         </div>
 
         <!-- PRECIO -->
         <div class="service-price-row">
             <div class="price-type-toggle">
-                <button type="button" class="price-type-btn ${!isPromo ? 'active' : ''}" data-type="normal">Normal</button>
-                <button type="button" class="price-type-btn ${isPromo ? 'active' : ''}" data-type="promo">Promoción</button>
+                <button type="button" class="price-type-btn ${!isPromo ? 'active' : ''}" data-type="normal">${t('mybiz_price_normal','Normal')}</button>
+                <button type="button" class="price-type-btn ${isPromo ? 'active' : ''}" data-type="promo">${t('mybiz_price_promo','Promoción')}</button>
             </div>
             <div class="price-fields price-normal-fields" style="display:${isPromo ? 'none' : 'flex'}">
                 <span class="price-symbol">$</span>
@@ -1469,9 +1479,9 @@ function addServiceItem(e, data = null) {
         // Al cambiar
         stockCheckbox.addEventListener('change', function() {
             const label = this.closest('.stock-toggle').querySelector('.stock-label');
-            label.textContent = this.checked ? 'En existencia' : 'Agotado';
+            label.textContent = this.checked ? t('mybiz_in_stock','En existencia') : t('mybiz_out_of_stock','Agotado');
             label.style.color = this.checked ? '#06b6d4' : '#ef4444';
-            this.closest('.stock-toggle').title = this.checked ? 'En existencia' : 'Agotado';
+            this.closest('.stock-toggle').title = this.checked ? t('mybiz_in_stock','En existencia') : t('mybiz_out_of_stock','Agotado');
             refreshInventoryTable();
         });
     }
@@ -1572,7 +1582,7 @@ function renderWorkers(workers = []) {
     workers.forEach(w => addWorkerItem(null, w));
 }
 
-const DAY_LABELS = { monday:'Lun', tuesday:'Mar', wednesday:'Mié', thursday:'Jue', friday:'Vie', saturday:'Sáb', sunday:'Dom' };
+const DAY_LABELS = () => ({ monday:t('day_sun_abbr','Lun'), tuesday:t('day_tue_abbr','Mar'), wednesday:t('day_wed_abbr','Mié'), thursday:t('day_thu_abbr','Jue'), friday:t('day_fri_abbr','Vie'), saturday:t('day_sat_abbr','Sáb'), sunday:t('day_sun_abbr','Dom') });
 
 function addWorkerItem(e, data = null) {
     const list = document.getElementById('workersList');
@@ -1583,7 +1593,7 @@ function addWorkerItem(e, data = null) {
     div.className = 'worker-item';
 
     const checkedDays = data?.days || ['monday','tuesday','wednesday','thursday','friday'];
-    const daysHTML = Object.entries(DAY_LABELS).map(([val, label]) => `
+    const daysHTML = Object.entries(DAY_LABELS()).map(([val, label]) => `
         <label class="day-chip ${checkedDays.includes(val) ? 'active' : ''}">
             <input type="checkbox" value="${val}" ${checkedDays.includes(val) ? 'checked' : ''} style="display:none">
             <span>${label}</span>
@@ -1592,15 +1602,15 @@ function addWorkerItem(e, data = null) {
 
     div.innerHTML = `
         <div class="worker-item-row">
-            <input type="text" class="info-input worker-name" placeholder="Nombre del trabajador" value="${data?.name || ''}">
+            <input type="text" class="info-input worker-name" placeholder="${t('mybiz_worker_name','Nombre del trabajador')}" value="${data?.name || ''}">
             <button type="button" class="btn-remove-item" onclick="removeItem(this, 'workersList', 'workersHint')">
                 <i class="lni lni-trash-can"></i>
             </button>
         </div>
         <div class="worker-item-row worker-times">
-            <label class="info-label">De</label>
+            <label class="info-label">${t('mybiz_from','De')}</label>
             <input type="time" class="info-input worker-start" value="${data?.startTime || '09:00'}">
-            <label class="info-label">a</label>
+            <label class="info-label">${t('mybiz_to','a')}</label>
             <input type="time" class="info-input worker-end" value="${data?.endTime || '18:00'}">
         </div>
         <div class="worker-days">${daysHTML}</div>
@@ -2023,7 +2033,7 @@ async function handleMenuFile(file) {
             document.getElementById('menuUploadProgress').style.display = 'none';
         }, 500);
         await saveProfile({ silent: true });
-        showNotification('Menú subido correctamente', 'success');
+        showNotification(t('mybiz_menu_uploaded','Menú subido correctamente'), 'success');
     } catch (err) {
         console.error('❌ Error subiendo menú:', err);
         document.getElementById('menuUploadProgress').style.display = 'none';
@@ -2214,7 +2224,7 @@ function renderErRows(containerId, items, tipo) {
     const el = document.getElementById(containerId);
     if (!el) return;
     if (items.length === 0) {
-        el.innerHTML = `<div class="acct-er-empty">Sin ${tipo === 'ingreso' ? 'ingresos' : 'egresos'} registrados.</div>`;
+        el.innerHTML = `<div class="acct-er-empty">${tipo === 'ingreso' ? t('mybiz_no_income','Sin ingresos registrados.') : t('mybiz_no_expenses','Sin egresos registrados.')}</div>`;
         return;
     }
     el.innerHTML = items.map((m, i) => `

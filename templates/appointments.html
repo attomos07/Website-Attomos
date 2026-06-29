@@ -41,12 +41,12 @@
                                 </svg>
                                 Mis Citas
                             </h1>
-                            <p>Gestiona todas tus citas agendadas</p>
+                            <p data-translate="appts_subtitle">Gestiona todas tus citas agendadas</p>
                         </div>
                         <div class="header-actions">
                             <button class="btn-primary" id="createAppointmentBtn" onclick="openAppointmentModal()">
                                 <i class="lni lni-plus"></i>
-                                <span>Nueva Cita</span>
+                                <span data-translate="appts_new_btn">Nueva Cita</span>
                             </button>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="totalAppointments">0</div>
-                                <div class="stat-label">Citas para hoy</div>
+                                <div class="stat-label" data-translate="appts_stat_today">Citas para hoy</div>
                             </div>
                         </div>
 
@@ -91,7 +91,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="confirmedAppointments">0</div>
-                                <div class="stat-label">Citas Confirmadas</div>
+                                <div class="stat-label" data-translate="appts_stat_confirmed">Citas Confirmadas</div>
                             </div>
                         </div>
 
@@ -101,7 +101,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="pendingAppointments">0</div>
-                                <div class="stat-label">Citas Canceladas</div>
+                                <div class="stat-label" data-translate="appts_stat_cancelled">Citas Canceladas</div>
                             </div>
                         </div>
 
@@ -111,7 +111,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="totalClients">0</div>
-                                <div class="stat-label">Total de citas</div>
+                                <div class="stat-label" data-translate="appts_stat_total">Total de citas</div>
                             </div>
                         </div>
 
@@ -134,13 +134,13 @@
                             
                             <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
                                 <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedStatus">Todos los Estados</span>
+                                    <span id="selectedStatus" data-translate="appts_filter_all_status">Todos los Estados</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
                                         <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span>Todos los Estados</span>
+                                            <span data-translate="appts_filter_all_status">Todos los Estados</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
                                             <span class="status-dot confirmed"></span>
@@ -164,13 +164,13 @@
 
                             <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
                                 <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedAgent">Todos los Agentes</span>
+                                    <span id="selectedAgent" data-translate="appts_filter_all_agents">Todos los Agentes</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
                                         <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedAgent')">
-                                            <span>Todos los Agentes</span>
+                                            <span data-translate="appts_filter_all_agents">Todos los Agentes</span>
                                         </div>
                                     </div>
                                 </div>
@@ -178,13 +178,13 @@
 
                             <div class="custom-dropdown-wrapper filter-wrapper" style="width: 180px; min-width: 160px;">
                                 <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedDate">Todas las Fechas</span>
+                                    <span id="selectedDate" data-translate="appts_all_dates">Todas las Fechas</span>
                                     <i class="lni lni-chevron-down dropdown-arrow"></i>
                                 </div>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
                                         <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span>Todas las Fechas</span>
+                                            <span data-translate="appts_all_dates">Todas las Fechas</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
                                             <span>Hoy</span>
@@ -220,15 +220,15 @@
                             <table class="appointments-table">
                                 <thead>
                                     <tr>
-                                        <th>Cliente</th>
-                                        <th>Teléfono</th>
-                                        <th>Servicio</th>
-                                        <th>Trabajador</th>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Agente</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th data-translate="th_client">Cliente</th>
+                                        <th data-translate="th_phone">Teléfono</th>
+                                        <th data-translate="th_service">Servicio</th>
+                                        <th data-translate="th_worker">Trabajador</th>
+                                        <th data-translate="th_date">Fecha</th>
+                                        <th data-translate="th_time">Hora</th>
+                                        <th data-translate="th_agent">Agente</th>
+                                        <th data-translate="appts_th_status">Estado</th>
+                                        <th data-translate="agents_th_actions">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="appointmentsList">
@@ -254,11 +254,11 @@
                         <div class="empty-icon">
                             <i class="lni lni-calendar"></i>
                         </div>
-                        <h3>No hay citas agendadas</h3>
-                        <p>Comienza creando tu primera cita o sincroniza con tus agentes</p>
+                        <h3 data-translate="appts_empty_title">No hay citas agendadas</h3>
+                        <p data-translate="appts_empty_desc">Comienza creando tu primera cita o sincroniza con tus agentes</p>
                         <button class="btn-primary" onclick="document.getElementById('createAppointmentBtn').click()">
                             <i class="lni lni-plus"></i>
-                            <span>Crear Primera Cita</span>
+                            <span data-translate="appts_create_first">Crear Primera Cita</span>
                         </button>
                     </div>
                     </div><!-- /tab-mis-citas -->
@@ -364,7 +364,7 @@
 
                                 <!-- Método de pago -->
                                 <div class="pos-payment-row">
-                                    <label class="pos-label">Pago</label>
+                                    <label class="pos-label" data-translate="appts_th_payment">Pago</label>
                                     <div class="pos-payment-btns">
                                         <button class="pos-pay-btn active" data-pay="efectivo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
@@ -436,6 +436,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/appointments.js"></script>
     <script src="/static/js/orders.js"></script>

@@ -11,6 +11,13 @@ let openDropdown  = null;
 // ==========================================
 // INIT
 // ==========================================
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initOrders();
     document.addEventListener('click', e => {
@@ -567,7 +574,7 @@ async function handleCreateOrder(e) {
 
     // Validar que si es efectivo, el monto sea suficiente
     if (paymentMethod === 'cash' && cashReceived > 0 && cashReceived < total) {
-        showNotification('El monto recibido es menor al total del pedido', 'warning');
+        showNotification(t('orders_amount_low', 'El monto recibido es menor al total del pedido'), 'warning');
         return;
     }
 
@@ -587,7 +594,7 @@ async function handleCreateOrder(e) {
 
     const btn  = e.target.querySelector('.btn-submit');
     const orig = btn.innerHTML;
-    btn.innerHTML = `<div class="loading-spinner-small"></div><span>Creando...</span>`;
+    btn.innerHTML = `<div class="loading-spinner-small"></div><span>${t('loading', 'Cargando...')}</span>`;
     btn.disabled  = true;
 
     try {
@@ -601,7 +608,7 @@ async function handleCreateOrder(e) {
             throw new Error(err.error || 'Error al crear el pedido');
         }
         closeOrderModal();
-        showNotification('Pedido creado exitosamente', 'success');
+        showNotification(t('orders_created_ok', 'Pedido creado exitosamente'), 'success');
         await loadOrders(); updateStats(); renderOrders();
     } catch (err) {
         showNotification(err.message, 'error');
@@ -636,12 +643,12 @@ function deleteOrder(id, name) {
         type: 'danger', icon: 'lni-trash-can',
         title: '¿Eliminar pedido?',
         message: `Pedido de <strong>${name}</strong>`,
-        list: ['Esta acción no se puede deshacer'],
-        confirmText: 'Eliminar',
+        list: [t('settings_delete_modal_desc', 'Esta acción no se puede deshacer')],
+        confirmText: t('settings_delete_btn', 'Eliminar'),
         onConfirm: async () => {
             const res = await fetch(`/api/orders/${id}`, { method: 'DELETE', credentials: 'include' });
             if (!res.ok) throw new Error('Error eliminando');
-            showNotification('Pedido eliminado', 'success');
+            showNotification(t('orders_deleted_ok', 'Pedido eliminado'), 'success');
             await loadOrders(); updateStats(); renderOrders();
         },
     });

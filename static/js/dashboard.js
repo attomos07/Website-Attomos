@@ -529,16 +529,17 @@ function showBusinessRequiredModal() {
                 justify-content:center; margin:0 auto 1.5rem; font-size:2.2rem;
             "><i class="lni lni-briefcase" style="color:#0284c7;"></i></div>
 
-            <h3 style="font-size:1.5rem; font-weight:800; color:#1a1a1a; margin-bottom:0.75rem;">
-                ¡Configura tu negocio primero!
-            </h3>
-            <p style="color:#6b7280; font-size:0.95rem; line-height:1.65; margin-bottom:0.75rem;">
-                Para usar Attomos necesitas completar la información básica de tu negocio —
+            <h3 style="font-size:1.5rem; font-weight:800; color:#1a1a1a; margin-bottom:0.75rem;"
+                data-translate="brq_title">¡Configura tu negocio primero!</h3>
+            <p style="color:#6b7280; font-size:0.95rem; line-height:1.65; margin-bottom:0.75rem;"
+               data-translate="brq_desc">Para usar Attomos necesitas completar la información básica de tu negocio —
                 nombre y giro. Esto le permite a tu agente conocer tu empresa y responder
-                correctamente a tus clientes.
-            </p>
-            <p style="color:#9ca3af; font-size:0.82rem; margin-bottom:2rem;">
-                Solo te toma 2 minutos ⚡
+                correctamente a tus clientes.</p>
+            <p style="color:#9ca3af; font-size:0.82rem; margin-bottom:2rem; display:flex; align-items:center; justify-content:center; gap:0.35rem;">
+                <span data-translate="brq_minutes">Solo te toma 2 minutos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style="flex-shrink:0;vertical-align:middle;">
+                    <path d="M13 2L4.09 12.97A1 1 0 0 0 5 14.5h6.5L11 22l8.91-10.97A1 1 0 0 0 19 9.5h-6.5L13 2z"/>
+                </svg>
             </p>
 
             <div style="display:flex; flex-direction:column; gap:0.75rem;">
@@ -552,14 +553,14 @@ function showBusinessRequiredModal() {
                     " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(6,182,212,0.45)'"
                        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(6,182,212,0.35)'">
                     <i class="lni lni-pencil-alt"></i>
-                    Completar información del negocio
+                    <span data-translate="brq_complete">Completar información del negocio</span>
                 </a>
                 <button onclick="document.getElementById('businessRequiredModal').style.display='none'" style="
                     padding:0.75rem; background:transparent; border:none;
                     color:#9ca3af; font-size:0.85rem; cursor:pointer;
                     transition:color 0.2s;
                 " onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
-                    Recordármelo después
+                    <span data-translate="brq_later">Recordármelo después</span>
                 </button>
             </div>
         </div>
@@ -567,6 +568,8 @@ function showBusinessRequiredModal() {
 
     // NO cierra al hacer click en el overlay — es intencional
     document.body.appendChild(modal);
+    // Aplicar idioma activo a los data-translate recién insertados
+    if (window.Translations) window.Translations.apply(getLang());
 }
 window.showBusinessRequiredModal = showBusinessRequiredModal;
 

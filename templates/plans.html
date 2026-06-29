@@ -29,8 +29,8 @@
 <!-- Page Header -->
 <div class="page-header">
 <div class="header-content">
-<h1 class="page-title">Planes y Precios</h1>
-<p class="page-subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
+<h1 class="page-title" data-translate="plans_title">Planes y Precios</h1>
+<p class="page-subtitle" data-translate="plans_subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
 </div>
 </div>
 <!-- Current Plan Banner -->
@@ -42,7 +42,7 @@
 </div>
 <div class="banner-content">
 <div class="banner-title">Plan Actual: <strong>{{.currentPlan}}</strong></div>
-<div class="banner-subtitle">Gestiona tu suscripción y pagos</div>
+<div class="banner-subtitle" data-translate="plans_banner_subtitle">Gestiona tu suscripción y pagos</div>
 </div>
 <a class="banner-link" href="/billing">
                             Ver Facturación
@@ -54,12 +54,12 @@
 
                     <!-- Toggle de Periodo de Facturación -->
 <div class="billing-toggle" id="billingToggleContainer">
-<span class="toggle-label">Mensual</span>
+<span class="toggle-label" data-translate="plans_toggle_monthly">Mensual</span>
 <label class="toggle-switch">
 <input id="billingToggle" type="checkbox"/>
 <span class="toggle-slider"></span>
 </label>
-<span class="toggle-label">Anual</span>
+<span class="toggle-label" data-translate="plans_toggle_annual">Anual</span>
 </div>
 <!-- Pricing Cards -->
 <div class="pricing-grid">
@@ -105,12 +105,12 @@
                     </div>
 <!-- Comparison Table -->
 <div class="comparison-section">
-<h2 class="comparison-title">Comparación Detallada de Planes</h2>
+<h2 class="comparison-title" data-translate="plans_comparison_title">Comparación Detallada de Planes</h2>
 <div class="comparison-table-wrapper">
 <table class="comparison-table">
 <thead>
 <tr>
-<th class="feature-column">Características</th>
+<th class="feature-column" data-translate="plans_feat_chars">Características</th>
 <th>Gratuito</th>
 <th class="featured-column">Protón</th>
 <th>Neutrón</th>
@@ -204,62 +204,62 @@
 </div>
 <!-- FAQ Section -->
 <div class="faq-section">
-<h2 class="faq-title">Preguntas Frecuentes</h2>
+<h2 class="faq-title" data-translate="plans_faq_title">Preguntas Frecuentes</h2>
 <div class="faq-list">
 <div class="faq-item">
 <div class="faq-question">
 <div class="faq-question-text">
 <i class="lni lni-question-circle"></i>
-<span>¿Puedo cambiar de plan en cualquier momento?</span>
+<span data-translate="plans_faq_q1">¿Puedo cambiar de plan en cualquier momento?</span>
 </div>
 <div class="faq-toggle">
 <i class="lni lni-chevron-down"></i>
 </div>
 </div>
 <div class="faq-answer">
-<p>Sí, puedes actualizar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
+<p data-translate="plans_faq_a1">Sí, puedes actualizar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
 </div>
 </div>
 <div class="faq-item">
 <div class="faq-question">
 <div class="faq-question-text">
 <i class="lni lni-question-circle"></i>
-<span>¿Qué pasa si excedo mi límite de mensajes?</span>
+<span data-translate="plans_faq_q2">¿Qué pasa si excedo mi límite de mensajes?</span>
 </div>
 <div class="faq-toggle">
 <i class="lni lni-chevron-down"></i>
 </div>
 </div>
 <div class="faq-answer">
-<p>Todos nuestros planes incluyen mensajes ilimitados, por lo que no tendrás que preocuparte por límites.</p>
+<p data-translate="plans_faq_a2">Todos nuestros planes incluyen mensajes ilimitados, por lo que no tendrás que preocuparte por límites.</p>
 </div>
 </div>
 <div class="faq-item">
 <div class="faq-question">
 <div class="faq-question-text">
 <i class="lni lni-question-circle"></i>
-<span>¿Ofrecen garantía de devolución?</span>
+<span data-translate="plans_faq_q3">¿Ofrecen garantía de devolución?</span>
 </div>
 <div class="faq-toggle">
 <i class="lni lni-chevron-down"></i>
 </div>
 </div>
 <div class="faq-answer">
-<p>Sí, ofrecemos garantía de devolución de 30 días sin preguntas.</p>
+<p data-translate="plans_faq_a3">Sí, ofrecemos garantía de devolución de 30 días sin preguntas.</p>
 </div>
 </div>
 <div class="faq-item">
 <div class="faq-question">
 <div class="faq-question-text">
 <i class="lni lni-question-circle"></i>
-<span>¿Cómo funciona la facturación anual?</span>
+<span data-translate="plans_faq_q4">¿Cómo funciona la facturación anual?</span>
 </div>
 <div class="faq-toggle">
 <i class="lni lni-chevron-down"></i>
 </div>
 </div>
 <div class="faq-answer">
-<p>Al elegir facturación anual, pagas por adelantado y obtienes un 20% de descuento.</p>
+<p data-translate="plans_faq_a4">Al elegir facturación anual, pagas por adelantado y obtienes un 20% de descuento.</p>
 </div>
 </div>
 </div>
@@ -268,7 +268,8 @@
 </div>
 </div>
 </div>
-<script src="/static/js/sidebar.js"></script>
+<script src="/static/js/translations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
 <script src="/static/js/plans.js"></script>
 </body>
 </html>

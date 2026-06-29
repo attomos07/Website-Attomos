@@ -1,5 +1,9 @@
 // Agent Details Page functionality
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+
 let agentId = null;
 let agent = null;
 let qrPollInterval = null;
@@ -64,15 +68,15 @@ function renderAgentDetails(agent) {
     const toggleText = document.getElementById('toggleText');
     if (agent.isActive) {
         toggleIcon.className = 'lni lni-pause';
-        toggleText.textContent = 'Pausar';
+        toggleText.textContent = window.Translations?.dict?.[getLang()]?.ad_pause || 'Pausar';
     } else {
         toggleIcon.className = 'lni lni-play';
-        toggleText.textContent = 'Activar';
+        toggleText.textContent = window.Translations?.dict?.[getLang()]?.ad_activate || 'Activar';
     }
     
     // Basic Info
     document.getElementById('infoName').textContent = agent.name;
-    document.getElementById('infoPhone').textContent = agent.phoneNumber || 'No configurado';
+    document.getElementById('infoPhone').textContent = agent.phoneNumber || (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
     document.getElementById('infoBusinessType').textContent = formatBusinessType(agent.businessType);
     document.getElementById('infoPort').textContent = agent.port || '--';
     
@@ -83,10 +87,10 @@ function renderAgentDetails(agent) {
         const languages = [...(agent.config.languages || []), ...(agent.config.additionalLanguages || [])];
         document.getElementById('configLanguages').textContent = languages.length > 0 
             ? languages.join(', ') 
-            : 'No configurado';
+            : (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
         
         document.getElementById('configWelcome').textContent = 
-            agent.config.welcomeMessage || 'No hay mensaje de bienvenida configurado';
+            agent.config.welcomeMessage || (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
         
         // Schedule
         renderSchedule(agent.config.schedule);
@@ -106,16 +110,16 @@ function updateStatusBadge(agent) {
     
     if (agent.deployStatus === 'running' && agent.isActive) {
         statusBadge.classList.add('active');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Activo</span>';
+        statusBadge.innerHTML = `<span class="status-dot"></span><span>${window.Translations?.dict?.[getLang()]?.ad_status_active || 'Activo'}</span>`;
     } else if (agent.deployStatus === 'pending' || agent.deployStatus === 'deploying') {
         statusBadge.classList.add('pending');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Desplegando</span>';
+        statusBadge.innerHTML = `<span class="status-dot"></span><span>${window.Translations?.dict?.[getLang()]?.ad_status_deploying || 'Desplegando'}</span>`;
     } else if (agent.deployStatus === 'error') {
         statusBadge.classList.add('inactive');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Error</span>';
+        statusBadge.innerHTML = `<span class="status-dot"></span><span>${window.Translations?.dict?.[getLang()]?.ad_status_error || 'Error'}</span>`;
     } else {
         statusBadge.classList.add('inactive');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Inactivo</span>';
+        statusBadge.innerHTML = `<span class="status-dot"></span><span>${window.Translations?.dict?.[getLang()]?.ad_status_inactive || 'Inactivo'}</span>`;
     }
 }
 
@@ -351,7 +355,7 @@ function stopQRPolling() {
 // Render schedule
 function renderSchedule(schedule) {
     if (!schedule) {
-        document.getElementById('scheduleGrid').innerHTML = '<p class="no-data">No hay horario configurado</p>';
+        document.getElementById('scheduleGrid').innerHTML = `<p class="no-data">${window.Translations?.dict?.[getLang()]?.ad_no_schedule || 'No hay horario configurado'}</p>`;
         return;
     }
     
@@ -383,13 +387,13 @@ function renderSchedule(schedule) {
         `;
     }).join('');
     
-    document.getElementById('scheduleGrid').innerHTML = scheduleHTML || '<p class="no-data">No hay horario configurado</p>';
+    document.getElementById('scheduleGrid').innerHTML = scheduleHTML || `<p class="no-data">${window.Translations?.dict?.[getLang()]?.ad_no_schedule || 'No hay horario configurado'}</p>`;
 }
 
 // Render services
 function renderServices(services) {
     if (!services || services.length === 0) {
-        document.getElementById('servicesList').innerHTML = '<p class="no-data">No hay servicios configurados</p>';
+        document.getElementById('servicesList').innerHTML = `<p class="no-data">${window.Translations?.dict?.[getLang()]?.ad_no_services || 'No hay servicios configurados'}</p>`;
         return;
     }
     
@@ -409,7 +413,7 @@ function renderServices(services) {
 // Render workers
 function renderWorkers(workers) {
     if (!workers || workers.length === 0) {
-        document.getElementById('workersList').innerHTML = '<p class="no-data">No hay personal configurado</p>';
+        document.getElementById('workersList').innerHTML = `<p class="no-data">${window.Translations?.dict?.[getLang()]?.ad_no_workers || 'No hay personal configurado'}</p>`;
         return;
     }
     
@@ -443,7 +447,7 @@ function formatPrice(service) {
 
 // Format work days
 function formatWorkDays(days) {
-    if (!days || days.length === 0) return 'Sin días configurados';
+    if (!days || days.length === 0) return window.Translations?.dict?.[getLang()]?.ad_not_configured || 'Sin días configurados';
     
     const dayAbbr = {
         monday: 'Lun',

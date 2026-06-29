@@ -1,5 +1,12 @@
 // My Agents Page functionality
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 let agents = [];
 
 // Inicializar página
@@ -29,7 +36,7 @@ function openOnboardingModal() {
                 <div class="onboarding-modal-header">
                     <h2 class="onboarding-modal-title">
                         <i class="lni lni-rocket"></i>
-                        Crear Nuevo Agente
+                        <span data-translate="agents_create_modal_title">Crear Nuevo Agente</span>
                     </h2>
                     <button class="btn-close-onboarding" onclick="closeOnboardingModal()">
                         <i class="lni lni-close"></i>
@@ -38,7 +45,7 @@ function openOnboardingModal() {
                 <div class="onboarding-modal-body" id="onboardingModalBody">
                     <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
                         <div class="loading-spinner"></div>
-                        <div class="loading-text" style="margin-left: 1rem;">Cargando formulario...</div>
+                        <div class="loading-text" style="margin-left: 1rem;" data-translate="loading">Cargando...</div>
                     </div>
                 </div>
             </div>
@@ -718,22 +725,22 @@ function getStatusBadge(agent) {
     if (agent.deployStatus === 'running' && agent.isActive) {
         return `<div class="status-badge active">
                 <span class="status-dot"></span>
-                <span>Activo</span>
+                <span>${t('ad_status_active', 'Activo')}</span>
             </div>`;
     } else if (agent.deployStatus === 'pending' || agent.deployStatus === 'deploying') {
         return `<div class="status-badge pending">
                 <span class="status-dot"></span>
-                <span>Desplegando</span>
+                <span>${t('ad_status_deploying', 'Desplegando')}</span>
             </div>`;
     } else if (agent.deployStatus === 'error') {
         return `<div class="status-badge inactive">
                 <span class="status-dot"></span>
-                <span>Error</span>
+                <span>${t('ad_status_error', 'Error')}</span>
             </div>`;
     } else {
         return `<div class="status-badge inactive">
                 <span class="status-dot"></span>
-                <span>Inactivo</span>
+                <span>${t('ad_status_inactive', 'Inactivo')}</span>
             </div>`;
     }
 }
@@ -782,8 +789,8 @@ async function toggleAgentStatus(agentId, currentStatus) {
     const agent = agents.find(a => a.id === agentId);
     if (!agent) return;
 
-    const action = currentStatus ? 'pausar' : 'activar';
-    const actionTitle = currentStatus ? 'Pausar' : 'Activar';
+    const action = currentStatus ? t('ad_pause', 'Pausar').toLowerCase() : t('ad_activate', 'Activar').toLowerCase();
+    const actionTitle = currentStatus ? t('ad_pause', 'Pausar') : t('ad_activate', 'Activar');
 
     showConfirmModal({
         type: 'warning',
@@ -813,7 +820,7 @@ async function toggleAgentStatus(agentId, currentStatus) {
                 }
 
                 await loadAgents();
-                showNotification(`✅ Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`, 'success');
+                showNotification(`✅ Agente ${action} exitosamente`, 'success');
             } catch (error) {
                 console.error('❌ Error:', error);
                 showNotification('❌ Error al cambiar el estado del agente', 'error');
@@ -1109,7 +1116,7 @@ async function _fetchQR(agentId, onStatusChange) {
                         <small>El bot se está reiniciando, espera el nuevo QR...</small></p>
                     </div>`;
             } else {
-                body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(msg || 'Esperando QR...')}</p></div>`;
+                body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(msg || t('ad_qr_loading', 'Cargando QR...'))}</p></div>`;
             }
             if (onStatusChange) onStatusChange(false);
         }
