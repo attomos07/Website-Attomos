@@ -26,10 +26,10 @@
         <canvas id="particles-canvas"></canvas>
         <div class="hero-container">
             <h1 class="hero-title">
-                Descubre Nuestros <span class="highlight">Agentes IA</span>
+                <span data-translate="agents_hero_title_pre">Descubre Nuestros</span> <span class="highlight" data-translate="agents_hero_title_hi">Agentes IA</span>
             </h1>
             <p class="hero-subtitle">
-                Agentes especializados para cada industria. Elige el que mejor se adapte a tu negocio.
+                <span data-translate="agents_hero_subtitle">Agentes especializados para cada industria. Elige el que mejor se adapte a tu negocio.</span>
             </p>
         </div>
     </section>
@@ -40,31 +40,31 @@
             <div class="filter-controls">
                 <button class="filter-btn active" data-filter="all">
                     <i class="lni lni-grid"></i>
-                    Todos
+                    <span data-translate="filter_all">Todos</span>
                 </button>
                 <button class="filter-btn" data-filter="health">
                     <i class="lni lni-hospital"></i>
-                    Salud
+                    <span data-translate="filter_health">Salud</span>
                 </button>
                 <button class="filter-btn" data-filter="beauty">
                     <i class="lni lni-cut"></i>
-                    Belleza
+                    <span data-translate="filter_beauty">Belleza</span>
                 </button>
                 <button class="filter-btn" data-filter="food">
                     <i class="lni lni-restaurant"></i>
-                    Comida
+                    <span data-translate="filter_food">Comida</span>
                 </button>
                 <button class="filter-btn" data-filter="commerce">
                     <i class="lni lni-shop"></i>
-                    Comercio
+                    <span data-translate="filter_commerce">Comercio</span>
                 </button>
                 <button class="filter-btn" data-filter="auto">
                     <i class="lni lni-car"></i>
-                    Automotriz
+                    <span data-translate="filter_auto">Automotriz</span>
                 </button>
                 <button class="filter-btn" data-filter="other">
                     <i class="lni lni-briefcase"></i>
-                    Otros
+                    <span data-translate="filter_other">Otros</span>
                 </button>
             </div>
         </div>
@@ -80,17 +80,15 @@
                     <div class="agent-icon">
                         <i class="lni lni-hospital"></i>
                     </div>
-                    <h3 class="agent-name">Clínica Dental</h3>
-                    <p class="agent-description">
-                        Automatiza citas, recordatorios y consultas odontológicas básicas las 24 horas.
-                    </p>
+                    <h3 class="agent-name" data-translate="agent_dental_name">Clínica Dental</h3>
+                    <p class="agent-description" data-translate="agent_dental_desc">Automatiza citas, recordatorios y consultas odontológicas básicas las 24 horas.</p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-calendar"></i> Agendamiento</div>
-                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> Recordatorios</div>
-                        <div class="feature-tag"><i class="lni lni-chat"></i> Consultas</div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> <span data-translate="feat_scheduling">Agendamiento</span></div>
+                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> <span data-translate="feat_reminders">Recordatorios</span></div>
+                        <div class="feature-tag"><i class="lni lni-chat"></i> <span data-translate="feat_queries">Consultas</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Clínica Dental')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -99,17 +97,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-cut"></i>
                     </div>
-                    <h3 class="agent-name">Peluquería / Estética</h3>
+                    <h3 class="agent-name" data-translate="agent_beauty_name">Peluquería / Estética</h3>
                     <p class="agent-description">
-                        Gestiona tu salón con reservas automatizadas, recordatorios y promociones personalizadas.
+                        <span data-translate="agent_beauty_desc">Gestiona tu salón con reservas automatizadas, recordatorios y promociones personalizadas.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-bookmark"></i> Reservas</div>
-                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> Recordatorios</div>
-                        <div class="feature-tag"><i class="lni lni-offer"></i> Promociones</div>
+                        <div class="feature-tag"><i class="lni lni-bookmark"></i> <span data-translate="feat_bookings">Reservas</span></div>
+                        <div class="feature-tag"><i class="lni lni-alarm-clock"></i> <span data-translate="feat_reminders">Recordatorios</span></div>
+                        <div class="feature-tag"><i class="lni lni-offer"></i> <span data-translate="feat_promos">Promociones</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Peluquería / Estética')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -118,17 +116,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-restaurant"></i>
                     </div>
-                    <h3 class="agent-name">Restaurante</h3>
+                    <h3 class="agent-name" data-translate="agent_restaurant_name">Restaurante</h3>
                     <p class="agent-description">
-                        Recibe pedidos, gestiona reservas de mesa y responde sobre el menú automáticamente.
+                        <span data-translate="agent_restaurant_desc">Recibe pedidos, gestiona reservas de mesa y responde sobre el menú automáticamente.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
-                        <div class="feature-tag"><i class="lni lni-calendar"></i> Reservas</div>
-                        <div class="feature-tag"><i class="lni lni-menu"></i> Menú Digital</div>
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> <span data-translate="feat_orders">Pedidos</span></div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> <span data-translate="feat_table_res">Reservas</span></div>
+                        <div class="feature-tag"><i class="lni lni-menu"></i> <span data-translate="feat_digital_menu">Menú Digital</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Restaurante')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -137,17 +135,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-pizza"></i>
                     </div>
-                    <h3 class="agent-name">Pizzería</h3>
+                    <h3 class="agent-name" data-translate="agent_pizza_name">Pizzería</h3>
                     <p class="agent-description">
-                        Toma pedidos por WhatsApp, gestiona combos y coordina entregas a domicilio sin esfuerzo.
+                        <span data-translate="agent_pizza_desc">Toma pedidos por WhatsApp, gestiona combos y coordina entregas a domicilio sin esfuerzo.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-shopping-basket"></i> Pedidos</div>
-                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
-                        <div class="feature-tag"><i class="lni lni-offer"></i> Combos</div>
+                        <div class="feature-tag"><i class="lni lni-shopping-basket"></i> <span data-translate="feat_orders">Pedidos</span></div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> <span data-translate="feat_delivery">Domicilio</span></div>
+                        <div class="feature-tag"><i class="lni lni-offer"></i> <span data-translate="feat_combos">Combos</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Pizzería')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -156,17 +154,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-cake"></i>
                     </div>
-                    <h3 class="agent-name">Panadería / Repostería</h3>
+                    <h3 class="agent-name" data-translate="agent_bakery_name">Panadería / Repostería</h3>
                     <p class="agent-description">
-                        Muestra tu catálogo, recibe pedidos de pasteles personalizados y gestiona apartos con anticipación.
+                        <span data-translate="agent_bakery_desc">Muestra tu catálogo, recibe pedidos de pasteles personalizados y gestiona apartos con anticipación.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-book"></i> Catálogo</div>
-                        <div class="feature-tag"><i class="lni lni-calendar"></i> Apartos</div>
-                        <div class="feature-tag"><i class="lni lni-whatsapp"></i> Pedidos</div>
+                        <div class="feature-tag"><i class="lni lni-book"></i> <span data-translate="feat_catalog">Catálogo</span></div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> <span data-translate="feat_reservations">Apartos</span></div>
+                        <div class="feature-tag"><i class="lni lni-whatsapp"></i> <span data-translate="feat_orders">Pedidos</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Panadería / Repostería')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -175,17 +173,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-leaf"></i>
                     </div>
-                    <h3 class="agent-name">Ensaladas / Saludable</h3>
+                    <h3 class="agent-name" data-translate="agent_salad_name">Ensaladas / Saludable</h3>
                     <p class="agent-description">
-                        Gestiona pedidos de comida saludable, opciones del menú del día y entregas a domicilio.
+                        <span data-translate="agent_salad_desc">Gestiona pedidos de comida saludable, opciones del menú del día y entregas a domicilio.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
-                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
-                        <div class="feature-tag"><i class="lni lni-menu"></i> Menú del Día</div>
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> <span data-translate="feat_orders">Pedidos</span></div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> <span data-translate="feat_delivery">Domicilio</span></div>
+                        <div class="feature-tag"><i class="lni lni-menu"></i> <span data-translate="feat_daily_menu">Menú del Día</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Ensaladas / Saludable')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -194,17 +192,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-fish"></i>
                     </div>
-                    <h3 class="agent-name">Mariscos / Pescadería</h3>
+                    <h3 class="agent-name" data-translate="agent_seafood_name">Mariscos / Pescadería</h3>
                     <p class="agent-description">
-                        Comparte el menú del día, recibe pedidos y coordina entregas o apartos de producto fresco.
+                        <span data-translate="agent_seafood_desc">Comparte el menú del día, recibe pedidos y coordina entregas o apartos de producto fresco.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-dinner"></i> Pedidos</div>
-                        <div class="feature-tag"><i class="lni lni-calendar"></i> Apartos</div>
-                        <div class="feature-tag"><i class="lni lni-map-marker"></i> Domicilio</div>
+                        <div class="feature-tag"><i class="lni lni-dinner"></i> <span data-translate="feat_orders">Pedidos</span></div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> <span data-translate="feat_reservations">Apartos</span></div>
+                        <div class="feature-tag"><i class="lni lni-map-marker"></i> <span data-translate="feat_delivery">Domicilio</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Mariscos / Pescadería')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -213,17 +211,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-book"></i>
                     </div>
-                    <h3 class="agent-name">Librería / Papelería</h3>
+                    <h3 class="agent-name" data-translate="agent_bookstore_name">Librería / Papelería</h3>
                     <p class="agent-description">
-                        Consulta de inventario, apartado de artículos y atención a clientes sin llamadas.
+                        <span data-translate="agent_bookstore_desc">Consulta de inventario, apartado de artículos y atención a clientes sin llamadas.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-search-alt"></i> Inventario</div>
-                        <div class="feature-tag"><i class="lni lni-bookmark"></i> Apartos</div>
-                        <div class="feature-tag"><i class="lni lni-chat"></i> Atención</div>
+                        <div class="feature-tag"><i class="lni lni-search-alt"></i> <span data-translate="feat_inventory">Inventario</span></div>
+                        <div class="feature-tag"><i class="lni lni-bookmark"></i> <span data-translate="feat_reservations">Apartos</span></div>
+                        <div class="feature-tag"><i class="lni lni-chat"></i> <span data-translate="feat_support">Atención</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Librería / Papelería')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -232,17 +230,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-car"></i>
                     </div>
-                    <h3 class="agent-name">Automotriz</h3>
+                    <h3 class="agent-name" data-translate="agent_auto_name">Automotriz</h3>
                     <p class="agent-description">
-                        Agenda servicios de taller, consulta de refacciones y seguimiento de órdenes de trabajo.
+                        <span data-translate="agent_auto_desc">Agenda servicios de taller, consulta de refacciones y seguimiento de órdenes de trabajo.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-calendar"></i> Citas</div>
-                        <div class="feature-tag"><i class="lni lni-package"></i> Refacciones</div>
-                        <div class="feature-tag"><i class="lni lni-checkmark"></i> Seguimiento</div>
+                        <div class="feature-tag"><i class="lni lni-calendar"></i> <span data-translate="feat_appointments">Citas</span></div>
+                        <div class="feature-tag"><i class="lni lni-package"></i> <span data-translate="feat_parts">Refacciones</span></div>
+                        <div class="feature-tag"><i class="lni lni-checkmark"></i> <span data-translate="feat_tracking">Seguimiento</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Automotriz')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -251,17 +249,17 @@
                     <div class="agent-icon">
                         <i class="lni lni-government"></i>
                     </div>
-                    <h3 class="agent-name">Institución Pública</h3>
+                    <h3 class="agent-name" data-translate="agent_govt_name">Institución Pública</h3>
                     <p class="agent-description">
-                        Informa a ciudadanos sobre trámites, horarios y requisitos sin saturar líneas telefónicas.
+                        <span data-translate="agent_govt_desc">Informa a ciudadanos sobre trámites, horarios y requisitos sin saturar líneas telefónicas.</span>
                     </p>
                     <div class="agent-features">
-                        <div class="feature-tag"><i class="lni lni-question-circle"></i> Trámites</div>
-                        <div class="feature-tag"><i class="lni lni-timer"></i> Horarios</div>
-                        <div class="feature-tag"><i class="lni lni-files"></i> Requisitos</div>
+                        <div class="feature-tag"><i class="lni lni-question-circle"></i> <span data-translate="feat_procedures">Trámites</span></div>
+                        <div class="feature-tag"><i class="lni lni-timer"></i> <span data-translate="feat_hours">Horarios</span></div>
+                        <div class="feature-tag"><i class="lni lni-files"></i> <span data-translate="feat_requirements">Requisitos</span></div>
                     </div>
                     <button class="agent-btn" onclick="openWhatsApp('Institución Pública')">
-                        <i class="lni lni-whatsapp"></i> Me interesa
+                        <i class="lni lni-whatsapp"></i> <span data-translate="agent_btn">Me interesa</span>
                     </button>
                 </div>
 
@@ -273,13 +271,13 @@
     <section class="agents-cta-section">
         <div class="container">
             <div class="cta-content">
-                <h2 class="cta-title">¿No encuentras el agente perfecto?</h2>
+                <h2 class="cta-title" data-translate="agents_cta_title">¿No encuentras el agente perfecto?</h2>
                 <p class="cta-subtitle">
-                    Creamos agentes personalizados para tu industria. Contáctanos y cuéntanos sobre tu negocio.
+                    <span data-translate="agents_cta_subtitle">Creamos agentes personalizados para tu industria. Contáctanos y cuéntanos sobre tu negocio.</span>
                 </p>
                 <button class="cta-btn" onclick="openWhatsApp()">
                     <i class="lni lni-whatsapp"></i>
-                    Solicitar Agente Personalizado
+                    <span data-translate="agents_cta_btn">Solicitar Agente Personalizado</span>
                 </button>
             </div>
         </div>
@@ -291,7 +289,7 @@
     <!-- Botón flotante de WhatsApp -->
     <div class="whatsapp-float" onclick="openWhatsApp()">
         <i class="lni lni-whatsapp"></i>
-        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+        <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
     </div>
 
     <!-- JavaScript -->

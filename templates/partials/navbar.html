@@ -67,6 +67,20 @@
         <!-- Grupo derecho: idioma + auth (siempre en la derecha, menú centrado) -->
         <div class="nav-right-group">
 
+            <!-- DESKTOP: Botones guest o Userbar (según sesión) -->
+            <div class="nav-auth" id="navAuth">
+
+            <!-- GUEST: el JS lo muestra si no hay sesión -->
+            <div id="navAuthGuest" class="nav-auth-guest" style="display:none;">
+                <a href="/login" class="nav-link nav-login" data-translate="nav_login">Iniciar sesión</a>
+                <a href="/register" class="nav-link nav-cta" data-translate="nav_register">Registrarse</a>
+            </div>
+
+            </div><!-- /nav-auth -->
+
+            <!-- Divider visual entre auth y lang -->
+            <div class="navbar-lang-divider"></div>
+
             <!-- Selector de idioma -->
             <div class="lang-selector" id="langSelector">
                 <button class="lang-trigger" id="langTrigger" aria-label="Idioma">
@@ -89,13 +103,7 @@
                 </div>
             </div>
 
-            <!-- Divider visual entre lang y auth -->
-            <div class="navbar-lang-divider"></div>
-
-            <!-- DESKTOP: Botones guest o Userbar (según sesión) -->
-            <div class="nav-auth" id="navAuth">
-
-            <!-- GUEST: el JS lo muestra si no hay sesión -->
+        </div><!-- /nav-right-group -->
             <div id="navAuthGuest" class="nav-auth-guest" style="display:none;">
                 <a href="/login" class="nav-link nav-login" data-translate="nav_login">Iniciar sesión</a>
                 <a href="/register" class="nav-link nav-cta" data-translate="nav_register">Registrarse</a>

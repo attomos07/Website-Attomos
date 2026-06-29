@@ -480,18 +480,16 @@ function setActiveNavLink() {
     }
 
     function syncActiveOption(lang) {
-        // Actualizar label y opción activa en AMBOS selectores
-        const flags = {
-            'es':'🇲🇽 ES','en':'🇺🇸 EN','ru':'🇷🇺 RU','uz':'🇺🇿 UZ',
-            'ja':'🇯🇵 JA','zh':'🇨🇳 ZH','fr':'🇫🇷 FR','pt':'🇧🇷 PT',
-            'de':'🇩🇪 DE','ko':'🇰🇷 KO'
-        };
-        const label = flags[lang] || lang.toUpperCase();
+        // Usar FLAG_SVG y LANG_META de Translations si están disponibles
+        const FLAG_SVG  = (window.Translations && window.Translations.FLAG_SVG)  || {};
+        const LANG_META = (window.Translations && window.Translations.LANG_META) || {};
+        const meta = LANG_META[lang] || {};
+        const labelHtml = (FLAG_SVG[lang] || '') + ' ' + (meta.code || lang.toUpperCase());
 
-        // Labels
+        // Labels — innerHTML para poder meter el SVG
         ['langTriggerLabel', 'langTriggerLabelMobile'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.textContent = label;
+            if (el) el.innerHTML = labelHtml;
         });
 
         // Active class en todas las opciones de ambos dropdowns

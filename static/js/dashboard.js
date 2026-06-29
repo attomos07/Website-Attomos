@@ -1,3 +1,20 @@
+// Helper: leer idioma activo (compatible con ambas claves de localStorage)
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+
+// Hook: cuando Translations.apply cambie el idioma, re-aplicar textos dinámicos
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.Translations && window.Translations.apply) {
+        const _orig = window.Translations.apply.bind(window.Translations);
+        window.Translations.apply = function(lang) {
+            _orig(lang);
+            // Re-aplicar textos que dashboard.js inyecta dinámicamente
+            if (typeof applyFoodLogic === 'function') applyFoodLogic(window._dashboardBizType || '');
+        };
+    }
+});
+
 // Helper: detectar si el usuario está en plan gratuito
 function isFreePlan() {
     const plan = document.querySelector('.app-container')?.dataset?.plan || '';
@@ -289,17 +306,17 @@ async function applyFoodLogic() {
         const leastTitle     = document.getElementById('leastRequestedTitle');
 
         if (isFood) {
-            if (labelEl)      labelEl.textContent = 'Pedidos Hoy';
+            if (labelEl)      labelEl.textContent = window.Translations?.dict?.[getLang()]?.dash_orders_today        || 'Pedidos Hoy';
             if (iconEl)       iconEl.className    = 'lni lni-cart';
-            if (sectionTitle) sectionTitle.textContent = 'Estadísticas de Productos';
-            if (mostTitle)    mostTitle.textContent    = 'Productos Más Pedidos';
-            if (leastTitle)   leastTitle.textContent   = 'Productos Menos Pedidos';
+            if (sectionTitle) sectionTitle.textContent = window.Translations?.dict?.[getLang()]?.dash_stats_products || 'Estadísticas de Productos';
+            if (mostTitle)    mostTitle.textContent    = window.Translations?.dict?.[getLang()]?.dash_most_ordered   || 'Productos Más Pedidos';
+            if (leastTitle)   leastTitle.textContent   = window.Translations?.dict?.[getLang()]?.dash_least_ordered  || 'Productos Menos Pedidos';
         } else {
-            if (labelEl)      labelEl.textContent = 'Citas Agendadas';
+            if (labelEl)      labelEl.textContent = window.Translations?.dict?.[getLang()]?.dash_appts_today         || 'Citas Agendadas';
             if (iconEl)       iconEl.className    = 'lni lni-calendar';
-            if (sectionTitle) sectionTitle.textContent = 'Estadísticas de Servicios';
-            if (mostTitle)    mostTitle.textContent    = 'Servicios Más Pedidos';
-            if (leastTitle)   leastTitle.textContent   = 'Servicios Menos Pedidos';
+            if (sectionTitle) sectionTitle.textContent = window.Translations?.dict?.[getLang()]?.dash_stats_services || 'Estadísticas de Servicios';
+            if (mostTitle)    mostTitle.textContent    = window.Translations?.dict?.[getLang()]?.dash_most_services   || 'Servicios Más Pedidos';
+            if (leastTitle)   leastTitle.textContent   = window.Translations?.dict?.[getLang()]?.dash_least_services  || 'Servicios Menos Pedidos';
         }
         console.log('✅ [dashboard] applyFoodLogic — isFood:', isFood, '— bizType:', bizType);
     } catch (err) {

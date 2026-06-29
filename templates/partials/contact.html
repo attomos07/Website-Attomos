@@ -26,10 +26,10 @@
         <canvas id="particles-canvas"></canvas>
         <div class="hero-container">
             <h1 class="hero-title">
-                ¿Tienes alguna <span class="highlight">pregunta?</span>
+                <span data-translate="contact_hero_pre">¿Tienes alguna</span> <span class="highlight" data-translate="contact_hero_hi">pregunta?</span>
             </h1>
             <p class="hero-subtitle">
-                Estamos aquí para ayudarte. Contáctanos y te responderemos en menos de 24 horas.
+                <span data-translate="contact_hero_subtitle">Estamos aquí para ayudarte. Contáctanos y te responderemos en menos de 24 horas.</span>
             </p>
         </div>
     </section>
@@ -42,13 +42,11 @@
                     <div class="method-icon">
                         <i class="lni lni-whatsapp"></i>
                     </div>
-                    <h3 class="method-title">WhatsApp</h3>
-                    <p class="method-description">
-                        Chatea con nosotros directamente
-                    </p>
+                    <h3 class="method-title" data-translate="contact_method_wa">WhatsApp</h3>
+                    <p class="method-description" data-translate="contact_method_wa_desc">Chatea con nosotros directamente</p>
                     <a href="https://wa.me/526623710899" class="method-link" target="_blank">
                         <i class="lni lni-whatsapp"></i>
-                        Abrir WhatsApp
+                        <span data-translate="contact_open_wa">Abrir WhatsApp</span>
                     </a>
                 </div>
 
@@ -56,10 +54,8 @@
                     <div class="method-icon">
                         <i class="lni lni-envelope"></i>
                     </div>
-                    <h3 class="method-title">Email</h3>
-                    <p class="method-description">
-                        Envíanos un correo electrónico
-                    </p>
+                    <h3 class="method-title" data-translate="contact_method_email">Email</h3>
+                    <p class="method-description" data-translate="contact_method_email_desc">Envíanos un correo electrónico</p>
                     <a href="mailto:attomos07@gmail.com" class="method-link">
                         <i class="lni lni-envelope"></i>
                         attomos07@gmail.com
@@ -70,10 +66,8 @@
                     <div class="method-icon">
                         <i class="lni lni-phone"></i>
                     </div>
-                    <h3 class="method-title">Teléfono</h3>
-                    <p class="method-description">
-                        Llámanos de Lun - Vie, 9am - 6pm
-                    </p>
+                    <h3 class="method-title" data-translate="contact_method_phone">Teléfono</h3>
+                    <p class="method-description" data-translate="contact_method_phone_desc">Llámanos de Lun - Vie, 9am - 6pm</p>
                     <a href="tel:+526623710899" class="method-link">
                         <i class="lni lni-phone"></i>
                         +52 662 371 0899
@@ -89,53 +83,51 @@
             <div class="contact-grid">
                 <!-- Contact Form -->
                 <div class="form-container">
-                    <h2 class="form-title">Envíanos un mensaje</h2>
-                    <p class="form-subtitle">
-                        Completa el formulario y te contactaremos lo antes posible.
-                    </p>
+                    <h2 class="form-title" data-translate="contact_form_title">Envíanos un mensaje</h2>
+                    <p class="form-subtitle" data-translate="contact_form_subtitle">Completa el formulario y te contactaremos lo antes posible.</p>
 
                     <form class="contact-form" id="contactForm">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="name">Nombre completo</label>
+                                <label for="name" data-translate="contact_label_name">Nombre completo</label>
                                 <input type="text" id="name" name="name" required>
                             </div>
                             <div class="form-group">
-                                <label for="email">Email</label>
+                                <label for="email" data-translate="contact_label_email">Email</label>
                                 <input type="email" id="email" name="email" required>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="phone">Teléfono</label>
+                                <label for="phone" data-translate="contact_label_phone">Teléfono</label>
                                 <input type="tel" id="phone" name="phone">
                             </div>
                             <div class="form-group">
-                                <label for="company">Empresa</label>
+                                <label for="company" data-translate="contact_label_company">Empresa</label>
                                 <input type="text" id="company" name="company">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="subject">Asunto</label>
+                            <label for="subject" data-translate="contact_label_subject">Asunto</label>
                             <select id="subject" name="subject" required>
-                                <option value="">Selecciona un asunto</option>
-                                <option value="sales">Ventas</option>
-                                <option value="support">Soporte Técnico</option>
-                                <option value="partnership">Alianzas</option>
-                                <option value="other">Otro</option>
+                                <option value="" data-translate="contact_subject_placeholder">Selecciona un asunto</option>
+                                <option value="sales" data-translate="contact_subject_sales">Ventas</option>
+                                <option value="support" data-translate="contact_subject_support">Soporte Técnico</option>
+                                <option value="partnership" data-translate="contact_subject_partnership">Alianzas</option>
+                                <option value="other" data-translate="contact_subject_other">Otro</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="message">Mensaje</label>
+                            <label for="message" data-translate="contact_label_message">Mensaje</label>
                             <textarea id="message" name="message" rows="5" required></textarea>
                         </div>
 
                         <button type="submit" class="submit-btn">
                             <i class="lni lni-telegram-original"></i>
-                            Enviar Mensaje
+                            <span data-translate="contact_submit">Enviar Mensaje</span>
                         </button>
                     </form>
                 </div>
@@ -143,15 +135,15 @@
                 <!-- Contact Info -->
                 <div class="info-container">
                     <div class="info-card">
-                        <h3 class="info-title">Información de Contacto</h3>
+                        <h3 class="info-title" data-translate="contact_info_title">Información de Contacto</h3>
                         
                         <div class="info-item">
                             <div class="info-icon">
                                 <i class="lni lni-map-marker"></i>
                             </div>
                             <div class="info-content">
-                                <h4>Ubicación</h4>
-                                <p>Hermosillo, Sonora<br>México · 100% Digital</p>
+                                <h4 data-translate="contact_info_location">Ubicación</h4>
+                                <p data-translate="contact_info_location_val">Hermosillo, Sonora<br>México · 100% Digital</p>
                             </div>
                         </div>
 
@@ -160,8 +152,8 @@
                                 <i class="lni lni-timer"></i>
                             </div>
                             <div class="info-content">
-                                <h4>Horario de Atención</h4>
-                                <p>Lunes - Viernes: 9:00 AM - 6:00 PM<br>Sábado: 10:00 AM - 2:00 PM</p>
+                                <h4 data-translate="contact_info_hours">Horario de Atención</h4>
+                                <p data-translate="contact_info_hours_val">Lunes - Viernes: 9:00 AM - 6:00 PM<br>Sábado: 10:00 AM - 2:00 PM</p>
                             </div>
                         </div>
 
@@ -170,14 +162,14 @@
                                 <i class="lni lni-support"></i>
                             </div>
                             <div class="info-content">
-                                <h4>Soporte 24/7</h4>
-                                <p>Disponible para clientes<br>del plan Attomos y Electrón</p>
+                                <h4 data-translate="contact_info_support">Soporte 24/7</h4>
+                                <p data-translate="contact_info_support_val">Disponible para clientes<br>del plan Attomos y Electrón</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="social-card">
-                        <h3 class="social-title">Síguenos</h3>
+                        <h3 class="social-title" data-translate="contact_follow_us">Síguenos</h3>
                         <div class="social-links">
                             <a href="#" class="social-link" aria-label="WhatsApp">
                                 <i class="lni lni-whatsapp"></i>
@@ -206,8 +198,8 @@
                     <i class="lni lni-world"></i>
                 </div>
                 <div class="digital-banner-content">
-                    <h3>Empresa 100% Digital</h3>
-                    <p>Atendemos a nuestros clientes de forma remota desde Hermosillo, Sonora. Sin fronteras, sin filas, sin desplazamientos — todo desde WhatsApp.</p>
+                    <h3 data-translate="contact_banner_title">Empresa 100% Digital</h3>
+                    <p data-translate="contact_banner_desc">Atendemos a nuestros clientes de forma remota desde Hermosillo, Sonora. Sin fronteras, sin filas, sin desplazamientos — todo desde WhatsApp.</p>
                 </div>
             </div>
         </div>
@@ -219,7 +211,7 @@
     <!-- Botón flotante de WhatsApp -->
     <div class="whatsapp-float" onclick="openWhatsApp()">
         <i class="lni lni-whatsapp"></i>
-        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+        <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
     </div>
 
     <!-- JavaScript -->
