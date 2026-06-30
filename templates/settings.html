@@ -31,7 +31,7 @@
                     <!-- Page Header -->
                     <div class="page-header">
                         <i class="lni lni-cog"></i>
-                        <h1>Configuración</h1>
+                        <h1 data-translate="settings_page_title">Configuración</h1>
                     </div>
 
                     <!-- Settings Grid -->
@@ -44,15 +44,15 @@
                                     <i class="lni lni-lock"></i>
                                 </div>
                                 <div class="settings-card-title">
-                                    <h2>Cambiar Contraseña</h2>
-                                    <p>Actualiza tu contraseña para mantener tu cuenta segura</p>
+                                    <h2 data-translate="settings_change_password">Cambiar Contraseña</h2>
+                                    <p data-translate="settings_pw_card_desc">Actualiza tu contraseña para mantener tu cuenta segura</p>
                                 </div>
                             </div>
 
                             <form id="passwordForm">
                                 <!-- Contraseña Actual -->
                                 <div class="form-group">
-                                    <label class="form-label" for="currentPassword">Contraseña Actual</label>
+                                    <label class="form-label" for="currentPassword" data-translate="settings_current_pw">Contraseña Actual</label>
                                     <div class="password-input-wrapper">
                                         <input
                                             type="password"
@@ -72,7 +72,7 @@
 
                                 <!-- Nueva Contraseña -->
                                 <div class="form-group">
-                                    <label class="form-label" for="newPassword">Nueva Contraseña</label>
+                                    <label class="form-label" for="newPassword" data-translate="settings_new_pw">Nueva Contraseña</label>
                                     <div class="password-input-wrapper">
                                         <input
                                             type="password"
@@ -90,13 +90,13 @@
                                     </div>
                                     <div class="form-description">
                                         <i class="lni lni-information"></i>
-                                        <span>Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&#)</span>
+                                        <span data-translate="settings_pw_hint">Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos (@$!%*?&#)</span>
                                     </div>
                                 </div>
 
                                 <!-- Confirmar Nueva Contraseña -->
                                 <div class="form-group">
-                                    <label class="form-label" for="confirmPassword">Confirmar Nueva Contraseña</label>
+                                    <label class="form-label" for="confirmPassword" data-translate="settings_confirm_pw">Confirmar Nueva Contraseña</label>
                                     <div class="password-input-wrapper">
                                         <input
                                             type="password"
@@ -118,24 +118,24 @@
                                 <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.25rem;">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="lni lni-checkmark-circle"></i>
-                                        <span>Actualizar Contraseña</span>
+                                        <span data-translate="settings_update_pw">Actualizar Contraseña</span>
                                     </button>
                                     <a href="/recover-password"
                                        style="font-size:0.875rem; color:#06b6d4; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem; transition:opacity 0.2s;"
                                        onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
                                         <i class="lni lni-question-circle" style="font-size:1rem;"></i>
-                                        No recuerdo mi contraseña
+                                        <span data-translate="settings_forgot_pw_link">No recuerdo mi contraseña</span>
                                     </a>
                                 </div>
 
                                 <!-- Mensajes -->
                                 <div id="passwordSuccess" class="success-message" style="display:none;">
                                     <i class="lni lni-checkmark-circle"></i>
-                                    <span>¡Contraseña actualizada exitosamente!</span>
+                                    <span data-translate="settings_pw_success">¡Contraseña actualizada exitosamente!</span>
                                 </div>
                                 <div id="passwordError" class="error-message" style="display:none;">
                                     <i class="lni lni-cross-circle"></i>
-                                    <span id="passwordErrorText">Error al actualizar la contraseña</span>
+                                    <span id="passwordErrorText" data-translate="settings_pw_error_default">Error al actualizar la contraseña</span>
                                 </div>
                             </form>
                         </div>
@@ -147,8 +147,8 @@
                                     <i class="lni lni-help"></i>
                                 </div>
                                 <div class="settings-card-title">
-                                    <h2>Soporte</h2>
-                                    <p>Contáctanos directamente por WhatsApp</p>
+                                    <h2 data-translate="settings_support">Soporte</h2>
+                                    <p data-translate="settings_support_desc">Contáctanos directamente por WhatsApp</p>
                                 </div>
                             </div>
 
@@ -157,9 +157,9 @@
                                     <i class="lni lni-whatsapp"></i>
                                 </div>
                                 <div class="whatsapp-content">
-                                    <div class="whatsapp-title">Soporte por WhatsApp</div>
+                                    <div class="whatsapp-title" data-translate="settings_whatsapp_title">Soporte por WhatsApp</div>
                                     <div class="whatsapp-description">
-                                        Nuestro equipo está disponible para ayudarte con cualquier duda o problema
+                                        <span data-translate="settings_whatsapp_desc">Nuestro equipo está disponible para ayudarte con cualquier duda o problema</span>
                                     </div>
                                     <div class="whatsapp-number">
                                         <i class="lni lni-phone"></i>
@@ -177,22 +177,22 @@
                                     <i class="lni lni-warning"></i>
                                 </div>
                                 <div class="settings-card-title">
-                                    <h2>Zona de Peligro</h2>
-                                    <p>Acciones irreversibles y destructivas</p>
+                                    <h2 data-translate="settings_danger_zone">Zona de Peligro</h2>
+                                    <p data-translate="settings_danger_desc">Acciones irreversibles y destructivas</p>
                                 </div>
                             </div>
 
                             <div class="danger-info">
                                 <i class="lni lni-shield"></i>
                                 <div class="danger-info-content">
-                                    <h3>Eliminar Tu Cuenta</h3>
-                                    <p>Una vez que elimines tu cuenta, no hay vuelta atrás. Esta acción eliminará permanentemente todos tus datos, agentes, conversaciones y configuraciones. Por favor, asegúrate de esta decisión.</p>
+                                    <h3 data-translate="settings_delete_account">Eliminar Tu Cuenta</h3>
+                                    <p data-translate="settings_delete_warning">Una vez que elimines tu cuenta, no hay vuelta atrás. Esta acción eliminará permanentemente todos tus datos, agentes, conversaciones y configuraciones. Por favor, asegúrate de esta decisión.</p>
                                 </div>
                             </div>
 
                             <button type="button" class="btn btn-danger" onclick="showDeleteModal()">
                                 <i class="lni lni-trash-can"></i>
-                                <span>Eliminar Cuenta</span>
+                                <span data-translate="settings_delete_btn">Eliminar Cuenta</span>
                             </button>
                         </div>
 
@@ -210,23 +210,23 @@
                 <div class="modal-icon">
                     <i class="lni lni-warning"></i>
                 </div>
-                <h3>¿Eliminar Cuenta?</h3>
+                <h3 data-translate="settings_delete_confirm_title">¿Eliminar Cuenta?</h3>
             </div>
             <p class="modal-description">
-                Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, todos los agentes, conversaciones y datos asociados. ¿Estás absolutamente seguro?
+                <span data-translate="settings_delete_modal_desc">Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, todos los agentes, conversaciones y datos asociados. ¿Estás absolutamente seguro?</span>
             </p>
             <div class="form-group">
-                <label class="form-label" for="confirmDelete">Escribe "ELIMINAR" para confirmar</label>
+                <label class="form-label" for="confirmDelete" data-translate="settings_delete_label">Escribe "ELIMINAR" para confirmar</label>
                 <input type="text" id="confirmDelete" class="form-input">
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeDeleteModal()" style="flex:1;">
                     <i class="lni lni-close"></i>
-                    <span>Cancelar</span>
+                    <span data-translate="dash_cancel">Cancelar</span>
                 </button>
                 <button class="btn btn-danger" onclick="confirmDelete()" style="flex:1;">
                     <i class="lni lni-trash-can"></i>
-                    <span>Eliminar Cuenta</span>
+                    <span data-translate="settings_delete_btn">Eliminar Cuenta</span>
                 </button>
             </div>
         </div>
@@ -239,18 +239,18 @@
             <div class="confirmation-modal-icon">
                 <i class="lni lni-warning"></i>
             </div>
-            <h3 class="confirmation-modal-title">Esta es tu última advertencia</h3>
+            <h3 class="confirmation-modal-title" data-translate="settings_last_warning">Esta es tu última advertencia</h3>
             <p class="confirmation-modal-description">
-                Tu cuenta será eliminada permanentemente. Esta acción no se puede deshacer.
+                <span data-translate="settings_final_modal_desc">Tu cuenta será eliminada permanentemente. Esta acción no se puede deshacer.</span>
             </p>
             <div class="confirmation-modal-actions">
                 <button class="btn btn-secondary" onclick="closeFinalConfirmation()" style="flex:1;">
                     <i class="lni lni-close"></i>
-                    <span>Cancelar</span>
+                    <span data-translate="dash_cancel">Cancelar</span>
                 </button>
                 <button class="btn btn-danger" onclick="executeDelete()" style="flex:1;">
                     <i class="lni lni-trash-can"></i>
-                    <span>Sí, eliminar</span>
+                    <span data-translate="settings_yes_delete">Sí, eliminar</span>
                 </button>
             </div>
         </div>
@@ -263,12 +263,13 @@
             <div class="success-modal-icon">
                 <i class="lni lni-checkmark-circle"></i>
             </div>
-            <h3 class="success-modal-title">Tu cuenta ha sido eliminada</h3>
-            <p class="success-modal-description">Redirigiendo a la página de inicio de sesión...</p>
+            <h3 class="success-modal-title" data-translate="settings_account_deleted">Tu cuenta ha sido eliminada</h3>
+            <p class="success-modal-description" data-translate="settings_redirecting">Redirigiendo a la página de inicio de sesión...</p>
         </div>
     </div>
 
     <!-- Scripts -->
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/settings.js"></script>
 </body>

@@ -347,13 +347,13 @@
                             </div>
                             <div class="billing-controls">
                                 <div class="view-toggle-group" id="billingViewToggle">
-                                    <button class="view-toggle-btn active" data-view="line" onclick="setBillingView('line')" title="Gráfico de línea">
+                                    <button class="view-toggle-btn active" data-view="line" onclick="setBillingView('line')" title="Gráfico de línea" data-translate-title="dash_tt_line">
                                         <i class="lni lni-graph"></i>
                                     </button>
-                                    <button class="view-toggle-btn" data-view="bar" onclick="setBillingView('bar')" title="Gráfico de barras">
+                                    <button class="view-toggle-btn" data-view="bar" onclick="setBillingView('bar')" title="Gráfico de barras" data-translate-title="dash_tt_bar">
                                         <i class="lni lni-bar-chart"></i>
                                     </button>
-                                    <button class="view-toggle-btn" data-view="table" onclick="setBillingView('table')" title="Tabla">
+                                    <button class="view-toggle-btn" data-view="table" onclick="setBillingView('table')" title="Tabla" data-translate-title="dash_tt_table">
                                         <i class="lni lni-list"></i>
                                     </button>
                                 </div>
@@ -431,13 +431,13 @@
                                         <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
                                     </div>
                                     <div class="view-toggle-group">
-                                        <button class="view-toggle-btn active" onclick="setUnifiedView('most', 'bars')" data-section="most" data-view="bars" title="Barras horizontales">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('most', 'bars')" data-section="most" data-view="bars" title="Barras horizontales" data-translate-title="dash_tt_bars_h">
                                             <i class="lni lni-bar-chart"></i>
                                         </button>
-                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'pie')" data-section="most" data-view="pie" title="Gráfico circular">
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'pie')" data-section="most" data-view="pie" title="Gráfico circular" data-translate-title="dash_tt_pie">
                                             <i class="lni lni-pie-chart"></i>
                                         </button>
-                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'table')" data-section="most" data-view="table" title="Tabla">
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'table')" data-section="most" data-view="table" title="Tabla" data-translate-title="dash_tt_table">
                                             <i class="lni lni-list"></i>
                                         </button>
                                     </div>
@@ -471,13 +471,13 @@
                                         <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
                                     </div>
                                     <div class="view-toggle-group">
-                                        <button class="view-toggle-btn active" onclick="setUnifiedView('least', 'bars')" data-section="least" data-view="bars" title="Barras horizontales">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('least', 'bars')" data-section="least" data-view="bars" title="Barras horizontales" data-translate-title="dash_tt_bars_h">
                                             <i class="lni lni-bar-chart"></i>
                                         </button>
-                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'pie')" data-section="least" data-view="pie" title="Gráfico circular">
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'pie')" data-section="least" data-view="pie" title="Gráfico circular" data-translate-title="dash_tt_pie">
                                             <i class="lni lni-pie-chart"></i>
                                         </button>
-                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'table')" data-section="least" data-view="table" title="Tabla">
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'table')" data-section="least" data-view="table" title="Tabla" data-translate-title="dash_tt_table">
                                             <i class="lni lni-list"></i>
                                         </button>
                                     </div>
@@ -605,7 +605,7 @@
       <div class="tutorial-card-header">
         <div class="tut-icon"><i id="tutIcon" class="lni lni-question-circle"></i></div>
         <span class="tut-title" data-translate="dash_tutorial_title">Tutorial · Attomos</span>
-        <button class="tut-close" id="tutClose" title="Saltar tutorial">✕</button>
+        <button class="tut-close" id="tutClose" title="Saltar tutorial" data-translate-title="dash_tt_skip_tutorial">✕</button>
       </div>
       <div class="tutorial-card-body">
         <h3 id="tutTitle"></h3>
@@ -615,7 +615,7 @@
         <span class="tut-page-info" id="tutPageInfo"></span>
         <div class="tut-dots" id="tutDots"></div>
         <div class="tut-nav-btns">
-          <button class="tut-btn-prev" id="tutPrev" title="Anterior">‹</button>
+          <button class="tut-btn-prev" id="tutPrev" title="Anterior" data-translate-title="dash_tt_prev">‹</button>
           <button class="tut-btn-next" id="tutNext">Siguiente ›</button>
         </div>
       </div>`;

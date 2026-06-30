@@ -41,9 +41,9 @@
                         <div class="header-content">
                             <h1 class="page-title">
                                 <i class="lni lni-credit-cards"></i>
-                                Facturación
+                                <span data-translate="billing_title">Facturación</span>
                             </h1>
-                            <p class="page-subtitle">Gestiona tu suscripción y revisa tus transacciones</p>
+                            <p class="page-subtitle" data-translate="billing_subtitle">Gestiona tu suscripción y revisa tus transacciones</p>
                         </div>
 
                     </div>
@@ -52,35 +52,35 @@
                     <div class="subscription-card">
                         <div class="subscription-header">
                             <div class="subscription-title-wrapper">
-                                <h2 class="subscription-title">Suscripción Actual</h2>
-                                <span class="subscription-status inactive" id="subscriptionStatus">Cargando...</span>
+                                <h2 class="subscription-title" data-translate="billing_current_sub">Suscripción Actual</h2>
+                                <span class="subscription-status inactive" id="subscriptionStatus" data-translate="billing_loading">Cargando...</span>
                             </div>
                             <a href="/billing/payment-method" class="edit-payment-btn">
                                 <i class="lni lni-pencil"></i>
-                                Editar Método de Pago
+                                <span data-translate="billing_edit_payment">Editar Método de Pago</span>
                             </a>
                         </div>
 
                         <div class="subscription-details">
                             <div class="subscription-info">
                                 <div class="info-row" id="subPlanRow">
-                                    <span class="info-label">Plan:</span>
-                                    <span class="info-value" style="color:#9ca3af;">Cargando...</span>
+                                    <span class="info-label" data-translate="billing_label_plan">Plan:</span>
+                                    <span class="info-value" style="color:#9ca3af;" data-translate="billing_loading">Cargando...</span>
                                 </div>
                                 <div class="info-row" id="subPriceRow">
-                                    <span class="info-label">Precio:</span>
+                                    <span class="info-label" data-translate="billing_label_price">Precio:</span>
                                     <span class="info-value">—</span>
                                 </div>
                                 <div class="info-row" id="subStartRow">
-                                    <span class="info-label">Inicio del plan:</span>
+                                    <span class="info-label" data-translate="billing_label_start">Inicio del plan:</span>
                                     <span class="info-value">—</span>
                                 </div>
                                 <div class="info-row" id="subNextRow">
-                                    <span class="info-label">Próximo cobro:</span>
+                                    <span class="info-label" data-translate="billing_label_next">Próximo cobro:</span>
                                     <span class="info-value">—</span>
                                 </div>
                                 <div class="info-row" id="subMethodRow" style="display:none;">
-                                    <span class="info-label">Método de pago:</span>
+                                    <span class="info-label" data-translate="billing_label_method">Método de pago:</span>
                                     <span class="info-value">
                                         <i class="lni lni-credit-cards"></i>
                                         Stripe
@@ -90,11 +90,11 @@
                             <div class="subscription-actions">
                                 <a href="/plans" class="action-link upgrade">
                                     <i class="lni lni-arrow-up-circle"></i>
-                                    Actualizar Plan
+                                    <span data-translate="billing_upgrade">Actualizar Plan</span>
                                 </a>
                                 <button class="action-link danger" id="cancelBtn" onclick="cancelSubscription()">
                                     <i class="lni lni-close-circle"></i>
-                                    Cancelar Suscripción
+                                    <span data-translate="billing_cancel_sub">Cancelar Suscripción</span>
                                 </button>
                             </div>
                         </div>
@@ -103,18 +103,18 @@
                     <!-- Payments Table -->
                     <div class="agents-table-container" id="paymentsTableContainer">
                         <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid #f3f4f6;">
-                            <h3 style="font-size:1rem;font-weight:700;color:#1a1a1a;">Historial de Pagos</h3>
+                            <h3 style="font-size:1rem;font-weight:700;color:#1a1a1a;" data-translate="billing_history">Historial de Pagos</h3>
                         </div>
                         <table class="agents-table" id="paymentsTable">
                             <thead>
                                 <tr>
-                                    <th>ID de Pago</th>
-                                    <th>ID de Recibo</th>
-                                    <th>Suscripción</th>
-                                    <th>Mes</th>
-                                    <th>Fecha de Pago</th>
-                                    <th style="color:#06b6d4;">Cantidad</th>
-                                    <th>Estado</th>
+                                    <th data-translate="billing_th_payment_id">ID de Pago</th>
+                                    <th data-translate="billing_th_receipt_id">ID de Recibo</th>
+                                    <th data-translate="billing_th_sub">Suscripción</th>
+                                    <th data-translate="billing_th_month">Mes</th>
+                                    <th data-translate="billing_th_date">Fecha de Pago</th>
+                                    <th style="color:#06b6d4;" data-translate="billing_th_amount">Cantidad</th>
+                                    <th data-translate="billing_th_status">Estado</th>
                                     <th style="text-align:right;"></th>
                                 </tr>
                             </thead>
@@ -131,8 +131,8 @@
                                     <circle cx="38" cy="38" r="3" fill="currentColor"/>
                                 </svg>
                             </div>
-                            <h3>No hay pagos registrados</h3>
-                            <p>Aquí aparecerán tus pagos una vez que realices una suscripción</p>
+                            <h3 data-translate="billing_no_payments">No hay pagos registrados</h3>
+                            <p data-translate="billing_no_payments_desc">Aquí aparecerán tus pagos una vez que realices una suscripción</p>
                         </div>
 
                         <!-- Pagination -->
@@ -152,6 +152,7 @@
         </div>
     </div>
 
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/billing.js"></script>
 </body>

@@ -403,12 +403,12 @@
                                 <div class="branch-dropdown-footer">
                                     <button type="button" class="btn-add-branch" id="btnAddBranch">
                                         <i class="lni lni-plus"></i>
-                                        <span>Nueva Sucursal</span>
+                                        <span data-translate="mybiz_new_branch">Nueva Sucursal</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        <span class="branch-badge" id="branchBadge">Sucursal activa</span>
+                        <span class="branch-badge" id="branchBadge" data-translate="mybiz_branch_active">Sucursal activa</span>
                     </div>
 
                     <!-- =============================================
@@ -470,7 +470,7 @@
                                         <div class="brand-placeholder" id="bannerPlaceholder">
                                             <i class="lni lni-image" style="font-size:2rem;color:#aaa"></i>
                                             <span data-translate="mybiz_banner_ninda">Imagen de portada para Ninda</span>
-                                            <small>Recomendado: 1200×400 px · JPG o PNG</small>
+                                            <small data-translate="mybiz_banner_size">Recomendado: 1200×400 px · JPG o PNG</small>
                                             <button type="button" class="btn-brand-upload" id="bannerUploadBtn">
                                                 <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_banner">Subir banner</span>
                                             </button>
@@ -481,7 +481,7 @@
                                             <div class="brand-spinner"></div><span>Subiendo...</span>
                                         </div>
                                     </div>
-                                    <div class="info-example">Se muestra como fondo de tu card en el directorio de Ninda</div>
+                                    <div class="info-example" data-translate="mybiz_banner_hint">Se muestra como fondo de tu card en el directorio de Ninda</div>
                                 </div>
 
                                 <!-- LOGO -->
@@ -508,7 +508,7 @@
                                             <button type="button" class="btn-brand-upload" id="logoUploadBtn">
                                                 <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_logo">Subir logo</span>
                                             </button>
-                                            <div class="info-example" style="margin-top:.5rem">Se muestra como foto de perfil circular en Ninda · PNG cuadrado recomendado</div>
+                                            <div class="info-example" style="margin-top:.5rem" data-translate="mybiz_logo_hint">Se muestra como foto de perfil circular en Ninda · PNG cuadrado recomendado</div>
                                         </div>
                                     </div>
                                 </div>
@@ -520,14 +520,14 @@
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-briefcase"></i>
-                                    <h2>Información del Negocio</h2>
+                                    <h2 data-translate="mybiz_info_title">Información del Negocio</h2>
                                 </div>
                             </div>
                             <div class="card-content">
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_name_label">Nombre del Negocio</label>
                                     <input type="text" class="info-input" id="businessNameInput">
-                                    <div class="info-example">Ej: Mi Negocio Ejemplo</div>
+                                    <div class="info-example" data-translate="mybiz_ex_name">Ej: Mi Negocio Ejemplo</div>
                                 </div>
 
                                 <div class="info-group">
@@ -736,25 +736,25 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="info-example">Ej: Peluquería / Salón de Belleza</div>
+                                    <div class="info-example" data-translate="mybiz_ex_type">Ej: Peluquería / Salón de Belleza</div>
                                 </div>
 
                                 <div class="info-group full-width">
-                                    <label class="info-label">Descripción del Negocio</label>
+                                    <label class="info-label" data-translate="mybiz_desc_label">Descripción del Negocio</label>
                                     <textarea class="info-textarea" id="descriptionInput" rows="4"></textarea>
-                                    <div class="info-example">Ej: Somos un salón de belleza especializado en cortes modernos...</div>
+                                    <div class="info-example" data-translate="mybiz_ex_desc">Ej: Somos un salón de belleza especializado en cortes modernos...</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_website_label">Sitio Web</label>
                                     <input type="url" class="info-input" id="websiteInput">
-                                    <div class="info-example">Ej: https://minegocio.com</div>
+                                    <div class="info-example" data-translate="mybiz_ex_website">Ej: https://minegocio.com</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_email_label">Email de Contacto</label>
                                     <input type="email" class="info-input" id="emailInput">
-                                    <div class="info-example">Ej: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e78488899386849388a78a8e89828088848e88c984888a">[email&#160;protected]</a></div>
+                                    <div class="info-example" data-translate="mybiz_ex_email">Ej: contacto&#64;minegocio.com</div>
                                 </div>
 
                                 <div class="info-group">
@@ -762,8 +762,8 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-phone"></i>
                                         <span data-translate="mybiz_phone_label">Teléfono de esta Sucursal</span>
                                     </label>
-                                    <input type="tel" class="info-input" id="phoneNumberInput" placeholder="Ej: +52 662 123 4567">
-                                    <div class="info-example">Número directo de esta sucursal</div>
+                                    <input type="tel" class="info-input" id="phoneNumberInput" placeholder="Ej: +52 662 123 4567" data-translate-placeholder="mybiz_phone_placeholder">
+                                    <div class="info-example" data-translate="mybiz_phone_hint">Número directo de esta sucursal</div>
                                 </div>
                             </div>
                         </div>
@@ -788,7 +788,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <span data-translate="mybiz_add_holiday">Agregar Día Festivo</span>
                                     </button>
                                     <div class="holidays-list" id="holidaysList"></div>
-                                    <div class="info-example">Los días festivos agregados serán días en que el negocio permanecerá cerrado</div>
+                                    <div class="info-example" data-translate="mybiz_holiday_hint">Los días festivos agregados serán días en que el negocio permanecerá cerrado</div>
                                 </div>
                             </div>
                         </div>
@@ -804,49 +804,49 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="info-group full-width">
                                     <label class="info-label" data-translate="mybiz_address_label">Dirección Completa</label>
                                     <input type="text" class="info-input" id="addressInput">
-                                    <div class="info-example">Ej: Calle Principal #123</div>
+                                    <div class="info-example" data-translate="mybiz_ex_address">Ej: Calle Principal #123</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_between_streets">Entre Calles</label>
                                     <input type="text" class="info-input" id="betweenStreetsInput">
-                                    <div class="info-example">Ej: Entre Av. Uno y Calle Dos</div>
+                                    <div class="info-example" data-translate="mybiz_ex_between">Ej: Entre Av. Uno y Calle Dos</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_ext_num">Número Exterior / Interior</label>
                                     <input type="text" class="info-input" id="numberInput">
-                                    <div class="info-example">Ej: 123 Int. A</div>
+                                    <div class="info-example" data-translate="mybiz_ex_extnum">Ej: 123 Int. A</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_neighborhood">Colonia</label>
                                     <input type="text" class="info-input" id="neighborhoodInput">
-                                    <div class="info-example">Ej: Centro</div>
+                                    <div class="info-example" data-translate="mybiz_ex_neighborhood">Ej: Centro</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_city">Ciudad</label>
                                     <input type="text" class="info-input" id="cityInput" style="display: none;">
-                                    <div class="info-example">Ej: Hermosillo</div>
+                                    <div class="info-example" data-translate="mybiz_ex_city">Ej: Hermosillo</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_state">Estado/Provincia</label>
                                     <input type="text" class="info-input" id="stateInput" style="display: none;">
-                                    <div class="info-example">Ej: Sonora</div>
+                                    <div class="info-example" data-translate="mybiz_ex_state">Ej: Sonora</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_country">País</label>
                                     <input type="text" class="info-input" id="countryInput" style="display: none;">
-                                    <div class="info-example">Ej: México</div>
+                                    <div class="info-example" data-translate="mybiz_ex_country">Ej: México</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label" data-translate="mybiz_zip">Código Postal</label>
                                     <input type="text" class="info-input" id="postalCodeInput">
-                                    <div class="info-example">Ej: 83000</div>
+                                    <div class="info-example" data-translate="mybiz_ex_zip">Ej: 83000</div>
                                 </div>
                             </div>
                         </div>
@@ -864,7 +864,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-facebook-oval"></i>
                                         <span data-translate="mybiz_facebook">Facebook</span>
                                     </label>
-                                    <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tupagina">
+                                    <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tupagina" data-translate-placeholder="mybiz_ph_facebook">
                                 </div>
 
                                 <div class="info-group full-width">
@@ -872,7 +872,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-instagram"></i>
                                         <span data-translate="mybiz_instagram">Instagram</span>
                                     </label>
-                                    <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tuusuario">
+                                    <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tuusuario" data-translate-placeholder="mybiz_ph_instagram">
                                 </div>
 
                                 <div class="info-group full-width">
@@ -880,7 +880,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-twitter"></i>
                                         <span data-translate="mybiz_twitter">Twitter / X</span>
                                     </label>
-                                    <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tuusuario">
+                                    <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tuusuario" data-translate-placeholder="mybiz_ph_twitter">
                                 </div>
 
                                 <div class="info-group full-width">
@@ -888,7 +888,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-linkedin"></i>
                                         <span data-translate="mybiz_linkedin">LinkedIn</span>
                                     </label>
-                                    <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tuempresa">
+                                    <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tuempresa" data-translate-placeholder="mybiz_ph_linkedin">
                                 </div>
                             </div>
                         </div>
@@ -902,7 +902,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <button type="button" class="btn-card-add" id="btnAddService">
                                     <i class="lni lni-plus"></i>
-                                    Agregar
+                                    <span data-translate="mybiz_add_btn">Agregar</span>
                                 </button>
                             </div>
                             <div class="card-content">
@@ -963,7 +963,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <button type="button" class="btn-card-add" id="btnAddWorker">
                                     <i class="lni lni-plus"></i>
-                                    Agregar
+                                    <span data-translate="mybiz_add_btn">Agregar</span>
                                 </button>
                             </div>
                             <div class="card-content">
@@ -984,10 +984,10 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-package"></i>
-                                    <h2>Inventario</h2>
+                                    <h2 data-translate="mybiz_inv_title">Inventario</h2>
                                 </div>
                                 <div class="card-header-actions">
-                                    <span class="inv-sync-hint"><i class="lni lni-reload"></i> Se actualiza con tu menú</span>
+                                    <span class="inv-sync-hint"><i class="lni lni-reload"></i> <span data-translate="mybiz_inv_sync_hint">Se actualiza con tu menú</span></span>
                                     <button type="button" class="btn-rd-sync" id="btnRdSyncInventory" style="display:none;" title="Sincronizar inventario desde RepairDesk">
                                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:1em;height:1em;"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M7 12h10M7 8.5h6M7 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
                                         Sync RepairDesk
@@ -999,15 +999,15 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="inv-summary-bar" id="invSummaryBar">
                                     <div class="inv-summary-card inv-ok">
                                         <span class="inv-sum-num" id="invCountOk">0</span>
-                                        <span class="inv-sum-lbl">En existencia</span>
+                                        <span class="inv-sum-lbl" data-translate="mybiz_inv_in_stock">En existencia</span>
                                     </div>
                                     <div class="inv-summary-card inv-low">
                                         <span class="inv-sum-num" id="invCountLow">0</span>
-                                        <span class="inv-sum-lbl">Stock bajo (≤5)</span>
+                                        <span class="inv-sum-lbl" data-translate="mybiz_inv_low_stock">Stock bajo (≤5)</span>
                                     </div>
                                     <div class="inv-summary-card inv-out">
                                         <span class="inv-sum-num" id="invCountOut">0</span>
-                                        <span class="inv-sum-lbl">Agotados</span>
+                                        <span class="inv-sum-lbl" data-translate="mybiz_inv_out_stock">Agotados</span>
                                     </div>
                                 </div>
 
@@ -1016,10 +1016,10 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     <table class="inv-table" id="invTable">
                                         <thead>
                                             <tr>
-                                                <th>Producto</th>
-                                                <th class="inv-th-center">Estado</th>
-                                                <th class="inv-th-center">Existencias</th>
-                                                <th class="inv-th-center">Ajustar</th>
+                                                <th data-translate="mybiz_inv_th_product">Producto</th>
+                                                <th class="inv-th-center" data-translate="mybiz_inv_th_status">Estado</th>
+                                                <th class="inv-th-center" data-translate="mybiz_inv_th_stock">Existencias</th>
+                                                <th class="inv-th-center" data-translate="mybiz_inv_th_adjust">Ajustar</th>
                                             </tr>
                                         </thead>
                                         <tbody id="invTableBody">
@@ -1027,7 +1027,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     </table>
                                     <div class="empty-list-hint" id="invEmpty" style="display:none;">
                                         <i class="lni lni-package"></i>
-                                        <span>Agrega productos con existencias en la sección <strong>Menú / Catálogo</strong> para verlos aquí.</span>
+                                        <span data-translate="mybiz_inv_empty_pre">Agrega productos con existencias en la sección</span> <strong data-translate="mybiz_inv_empty_strong">Menú / Catálogo</strong> <span data-translate="mybiz_inv_empty_post">para verlos aquí.</span>
                                     </div>
                                 </div>
 
@@ -1072,15 +1072,15 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;color:#06b6d4;">
                                     <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                                 </svg>
-                                Periodo
+                                <span data-translate="mybiz_acct_period">Periodo</span>
                             </div>
                             <select class="acct-select" id="acctMonth">
-                                <option value="1">Enero</option><option value="2">Febrero</option>
-                                <option value="3">Marzo</option><option value="4">Abril</option>
-                                <option value="5">Mayo</option><option value="6">Junio</option>
-                                <option value="7">Julio</option><option value="8">Agosto</option>
-                                <option value="9">Septiembre</option><option value="10">Octubre</option>
-                                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                                <option value="1" data-translate="month_jan">Enero</option><option value="2" data-translate="month_feb">Febrero</option>
+                                <option value="3" data-translate="month_mar">Marzo</option><option value="4" data-translate="month_apr">Abril</option>
+                                <option value="5" data-translate="month_may">Mayo</option><option value="6" data-translate="month_jun">Junio</option>
+                                <option value="7" data-translate="month_jul">Julio</option><option value="8" data-translate="month_aug">Agosto</option>
+                                <option value="9" data-translate="month_sep">Septiembre</option><option value="10" data-translate="month_oct">Octubre</option>
+                                <option value="11" data-translate="month_nov">Noviembre</option><option value="12" data-translate="month_dec">Diciembre</option>
                             </select>
                             <select class="acct-select" id="acctYear"></select>
                             <button class="acct-btn-load" id="acctLoadBtn">
@@ -1088,14 +1088,14 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
                                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                                 </svg>
-                                Cargar
+                                <span data-translate="mybiz_acct_load">Cargar</span>
                             </button>
                             <button class="acct-btn-export" id="acctExportBtn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:0.9rem;height:0.9rem;">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                     <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                                 </svg>
-                                Exportar CSV
+                                <span data-translate="mybiz_acct_export">Exportar CSV</span>
                             </button>
                         </div>
 
@@ -1107,7 +1107,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <div class="acct-kpi-info">
                                     <div class="acct-kpi-value" id="kpiIngresos">$0.00</div>
-                                    <div class="acct-kpi-label">Ingresos</div>
+                                    <div class="acct-kpi-label" data-translate="mybiz_acct_kpi_income">Ingresos</div>
                                 </div>
                             </div>
                             <div class="acct-kpi-card red">
@@ -1116,7 +1116,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <div class="acct-kpi-info">
                                     <div class="acct-kpi-value" id="kpiEgresos">$0.00</div>
-                                    <div class="acct-kpi-label">Egresos</div>
+                                    <div class="acct-kpi-label" data-translate="mybiz_acct_kpi_expenses">Egresos</div>
                                 </div>
                             </div>
                             <div class="acct-kpi-card blue" id="kpiUtilCard">
@@ -1125,7 +1125,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <div class="acct-kpi-info">
                                     <div class="acct-kpi-value" id="kpiUtilidad">$0.00</div>
-                                    <div class="acct-kpi-label">Utilidad neta</div>
+                                    <div class="acct-kpi-label" data-translate="mybiz_acct_kpi_profit">Utilidad neta</div>
                                 </div>
                             </div>
                             <div class="acct-kpi-card teal">
@@ -1134,16 +1134,16 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 </div>
                                 <div class="acct-kpi-info">
                                     <div class="acct-kpi-value" id="kpiTransacciones">0</div>
-                                    <div class="acct-kpi-label">Transacciones</div>
+                                    <div class="acct-kpi-label" data-translate="mybiz_acct_kpi_tx">Transacciones</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- ── Sub-tabs contabilidad ── -->
                         <div class="acct-subtabs">
-                            <button class="acct-subtab active" data-acct="estado-resultados">Estado de Resultados</button>
-                            <button class="acct-subtab" data-acct="conciliacion">Conciliación Bancaria</button>
-                            <button class="acct-subtab" data-acct="flujo-efectivo">Flujo de Efectivo</button>
+                            <button class="acct-subtab active" data-acct="estado-resultados" data-translate="mybiz_acct_tab_income_statement">Estado de Resultados</button>
+                            <button class="acct-subtab" data-acct="conciliacion" data-translate="mybiz_acct_tab_reconciliation">Conciliación Bancaria</button>
+                            <button class="acct-subtab" data-acct="flujo-efectivo" data-translate="mybiz_acct_tab_cashflow">Flujo de Efectivo</button>
                         </div>
 
                         <!-- ══ Estado de Resultados ══ -->
@@ -1152,33 +1152,33 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="card-header">
                                     <div class="card-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                                        <h2>Estado de Resultados</h2>
+                                        <h2 data-translate="mybiz_acct_tab_income_statement">Estado de Resultados</h2>
                                     </div>
                                     <button class="btn-card-add" id="btnAddIngreso">
-                                        <i class="lni lni-plus"></i> Agregar movimiento
+                                        <i class="lni lni-plus"></i> <span data-translate="mybiz_acct_add_movement">Agregar movimiento</span>
                                     </button>
                                 </div>
                                 <div class="card-content">
                                     <div class="acct-er-section">
                                         <div class="acct-er-header green-header">
-                                            <span>INGRESOS</span>
+                                            <span data-translate="mybiz_acct_income_caps">INGRESOS</span>
                                             <span id="erTotalIngresos">$0.00</span>
                                         </div>
                                         <div id="erIngresosRows" class="acct-er-rows">
-                                            <div class="acct-er-empty">Sin ingresos registrados este periodo.</div>
+                                            <div class="acct-er-empty" data-translate="mybiz_acct_no_income_period">Sin ingresos registrados este periodo.</div>
                                         </div>
                                     </div>
                                     <div class="acct-er-section">
                                         <div class="acct-er-header red-header">
-                                            <span>EGRESOS / COSTOS</span>
+                                            <span data-translate="mybiz_acct_expenses_caps">EGRESOS / COSTOS</span>
                                             <span id="erTotalEgresos">$0.00</span>
                                         </div>
                                         <div id="erEgresosRows" class="acct-er-rows">
-                                            <div class="acct-er-empty">Sin egresos registrados este periodo.</div>
+                                            <div class="acct-er-empty" data-translate="mybiz_acct_no_expenses_period">Sin egresos registrados este periodo.</div>
                                         </div>
                                     </div>
                                     <div class="acct-er-total-row">
-                                        <span>UTILIDAD / PÉRDIDA NETA</span>
+                                        <span data-translate="mybiz_acct_net_profit">UTILIDAD / PÉRDIDA NETA</span>
                                         <span id="erUtilidad" class="acct-er-util-val">$0.00</span>
                                     </div>
                                 </div>
@@ -1191,26 +1191,26 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="card-header">
                                     <div class="card-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                                        <h2>Conciliación Bancaria</h2>
+                                        <h2 data-translate="mybiz_acct_tab_reconciliation">Conciliación Bancaria</h2>
                                     </div>
                                     <button class="btn-card-add" id="btnImportBank">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:0.85rem;height:0.85rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                        Importar estado de cuenta
+                                        <span data-translate="mybiz_import_statement">Importar estado de cuenta</span>
                                     </button>
                                 </div>
                                 <div class="card-content">
                                     <!-- Resumen de conciliación -->
                                     <div class="acct-concil-summary">
                                         <div class="acct-concil-box">
-                                            <div class="acct-concil-box-label">Saldo según banco</div>
+                                            <div class="acct-concil-box-label" data-translate="mybiz_balance_bank">Saldo según banco</div>
                                             <input type="number" class="acct-input" id="saldoBanco" placeholder="0.00" step="0.01">
                                         </div>
                                         <div class="acct-concil-box">
-                                            <div class="acct-concil-box-label">Saldo según libros</div>
+                                            <div class="acct-concil-box-label" data-translate="mybiz_balance_books">Saldo según libros</div>
                                             <div class="acct-concil-book-val" id="saldoLibros">$0.00</div>
                                         </div>
                                         <div class="acct-concil-box" id="acctDiffBox">
-                                            <div class="acct-concil-box-label">Diferencia</div>
+                                            <div class="acct-concil-box-label" data-translate="mybiz_difference">Diferencia</div>
                                             <div class="acct-concil-diff-val" id="acctDiff">$0.00</div>
                                         </div>
                                     </div>
@@ -1218,25 +1218,25 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     <!-- Movimientos banco -->
                                     <div class="acct-bank-section">
                                         <div class="acct-bank-header">
-                                            <span>Movimientos del banco</span>
+                                            <span data-translate="mybiz_bank_movements">Movimientos del banco</span>
                                             <button class="acct-btn-sm" id="btnAddBankTx">
-                                                <i class="lni lni-plus"></i> Agregar
+                                                <i class="lni lni-plus"></i> <span data-translate="mybiz_add_btn">Agregar</span>
                                             </button>
                                         </div>
                                         <div class="acct-bank-upload" id="bankUploadArea">
                                             <input type="file" id="bankFileInput" accept=".csv,.xlsx,.xls" style="display:none">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:2rem;height:2rem;color:#d1d5db;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                            <span>Arrastra tu estado de cuenta CSV aquí o <strong style="color:#06b6d4;cursor:pointer;" onclick="document.getElementById('bankFileInput').click()">selecciona el archivo</strong></span>
-                                            <small>Formato: Fecha, Descripción, Cargo, Abono, Saldo</small>
+                                            <span><span data-translate="mybiz_drag_csv_pre">Arrastra tu estado de cuenta CSV aquí o</span> <strong style="color:#06b6d4;cursor:pointer;" onclick="document.getElementById('bankFileInput').click()" data-translate="mybiz_drag_csv_link">selecciona el archivo</strong></span>
+                                            <small data-translate="mybiz_csv_format">Formato: Fecha, Descripción, Cargo, Abono, Saldo</small>
                                         </div>
                                         <table class="acct-table" id="bankTxTable" style="display:none">
                                             <thead>
                                                 <tr>
-                                                    <th>Fecha</th>
-                                                    <th>Descripción</th>
-                                                    <th>Cargo</th>
-                                                    <th>Abono</th>
-                                                    <th>Estado</th>
+                                                    <th data-translate="mybiz_th_date">Fecha</th>
+                                                    <th data-translate="mybiz_th_desc">Descripción</th>
+                                                    <th data-translate="mybiz_th_charge">Cargo</th>
+                                                    <th data-translate="mybiz_th_credit">Abono</th>
+                                                    <th data-translate="mybiz_inv_th_status">Estado</th>
                                                     <th></th>
                                                 </tr>
                                             </thead>
@@ -1247,20 +1247,20 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     <!-- Movimientos sistema -->
                                     <div class="acct-bank-section" style="margin-top:1.5rem;">
                                         <div class="acct-bank-header">
-                                            <span>Movimientos del sistema (pedidos/citas)</span>
+                                            <span data-translate="mybiz_system_movements">Movimientos del sistema (pedidos/citas)</span>
                                         </div>
                                         <table class="acct-table" id="sysTxTable">
                                             <thead>
                                                 <tr>
-                                                    <th>Fecha</th>
-                                                    <th>Descripción</th>
-                                                    <th>Monto</th>
-                                                    <th>Tipo</th>
-                                                    <th>Conciliado</th>
+                                                    <th data-translate="mybiz_th_date">Fecha</th>
+                                                    <th data-translate="mybiz_th_desc">Descripción</th>
+                                                    <th data-translate="mybiz_th_amount">Monto</th>
+                                                    <th data-translate="mybiz_th_type">Tipo</th>
+                                                    <th data-translate="mybiz_th_reconciled">Conciliado</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="sysTxBody">
-                                                <tr><td colspan="5" class="acct-table-empty">Carga el periodo para ver los movimientos del sistema.</td></tr>
+                                                <tr><td colspan="5" class="acct-table-empty" data-translate="mybiz_load_period_hint">Carga el periodo para ver los movimientos del sistema.</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -1274,7 +1274,7 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="card-header">
                                     <div class="card-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;color:#06b6d4;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                                        <h2>Flujo de Efectivo</h2>
+                                        <h2 data-translate="mybiz_acct_tab_cashflow">Flujo de Efectivo</h2>
                                     </div>
                                 </div>
                                 <div class="card-content">
@@ -1282,30 +1282,30 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <div class="acct-flujo-section">
                                             <div class="acct-flujo-title">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:0.9rem;height:0.9rem;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                                                Entradas de efectivo
+                                                <span data-translate="mybiz_cash_in">Entradas de efectivo</span>
                                             </div>
                                             <div id="flujoEntradas" class="acct-flujo-rows">
-                                                <div class="acct-er-empty">Sin datos para este periodo.</div>
+                                                <div class="acct-er-empty" data-translate="mybiz_no_data_period">Sin datos para este periodo.</div>
                                             </div>
                                             <div class="acct-flujo-subtotal green-val">
-                                                Total entradas: <strong id="flujoTotalEntradas">$0.00</strong>
+                                                <span data-translate="mybiz_total_in">Total entradas:</span> <strong id="flujoTotalEntradas">$0.00</strong>
                                             </div>
                                         </div>
                                         <div class="acct-flujo-section">
                                             <div class="acct-flujo-title">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:0.9rem;height:0.9rem;"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-                                                Salidas de efectivo
+                                                <span data-translate="mybiz_cash_out">Salidas de efectivo</span>
                                             </div>
                                             <div id="flujoSalidas" class="acct-flujo-rows">
-                                                <div class="acct-er-empty">Sin datos para este periodo.</div>
+                                                <div class="acct-er-empty" data-translate="mybiz_no_data_period">Sin datos para este periodo.</div>
                                             </div>
                                             <div class="acct-flujo-subtotal red-val">
-                                                Total salidas: <strong id="flujoTotalSalidas">$0.00</strong>
+                                                <span data-translate="mybiz_total_out">Total salidas:</span> <strong id="flujoTotalSalidas">$0.00</strong>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="acct-flujo-neto">
-                                        <span>FLUJO NETO DEL PERIODO</span>
+                                        <span data-translate="mybiz_net_cashflow">FLUJO NETO DEL PERIODO</span>
                                         <span id="flujoNeto" class="acct-er-util-val">$0.00</span>
                                     </div>
                                 </div>

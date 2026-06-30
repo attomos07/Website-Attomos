@@ -39,7 +39,7 @@
                                     <line x1="8" y1="2" x2="8" y2="6"/>
                                     <line x1="3" y1="10" x2="21" y2="10"/>
                                 </svg>
-                                Mis Citas
+                                <span data-translate="appts_page_title">Mis Citas</span>
                             </h1>
                             <p data-translate="appts_subtitle">Gestiona todas tus citas agendadas</p>
                         </div>
@@ -60,14 +60,14 @@
                                 <line x1="8" y1="2" x2="8" y2="6"/>
                                 <line x1="3" y1="10" x2="21" y2="10"/>
                             </svg>
-                            Mis Citas
+                            <span data-translate="appts_page_title">Mis Citas</span>
                         </button>
                         <button type="button" class="orders-tab" data-tab="punto-venta">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
                                 <rect x="2" y="3" width="20" height="14" rx="2"/>
                                 <path d="M8 21h8M12 17v4"/>
                             </svg>
-                            Punto de Venta
+                            <span data-translate="appts_tab_pos">Punto de Venta</span>
                         </button>
                     </div>
 
@@ -276,7 +276,7 @@
                                             <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                                             <line x1="12" y1="22.08" x2="12" y2="12"/>
                                         </svg>
-                                        Catálogo
+                                        <span data-translate="appts_pos_catalog_title">Catálogo</span>
                                     </h2>
                                     <div class="pos-search-wrap">
                                         <i class="lni lni-search-alt"></i>
@@ -286,7 +286,7 @@
                                 <div class="pos-products-grid" id="posProductsGrid">
                                     <div class="pos-empty-catalog">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:2.5rem;height:2.5rem;color:#d1d5db;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                                        <span>Agrega productos en <strong>Mi Negocio → Servicios / Productos</strong> para verlos aquí.</span>
+                                        <span><span data-translate="appts_pos_empty_pre">Agrega productos en</span> <strong data-translate="appts_mybiz_link">Mi Negocio → Servicios / Productos</strong> <span data-translate="appts_sync_hint">para verlos aquí.</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -301,7 +301,7 @@
                                             <line x1="8" y1="2" x2="8" y2="6"/>
                                             <line x1="3" y1="10" x2="21" y2="10"/>
                                         </svg>
-                                        Cobro de servicio
+                                        <span data-translate="appts_pos_charge_title">Cobro de servicio</span>
                                     </h2>
                                     <button class="pos-clear-btn" id="posClearBtn" title="Limpiar">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
@@ -319,9 +319,9 @@
 
                                 <!-- Trabajador -->
                                 <div class="appt-pos-field">
-                                    <label class="pos-label">Trabajador</label>
+                                    <label class="pos-label" data-translate="th_worker_label">Trabajador</label>
                                     <select class="pos-input" id="apptPosWorker">
-                                        <option value="">Sin asignar</option>
+                                        <option value="" data-translate="appts_unassigned">Sin asignar</option>
                                     </select>
                                 </div>
 
@@ -329,11 +329,11 @@
                                 <div class="pos-type-row">
                                     <button class="pos-type-btn active" data-appt-type="walkin">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v5l3 3"/><path d="M9.5 17.5 7 21M14.5 17.5 17 21"/><path d="M9 12H6M18 12h-3"/></svg>
-                                        Ahora mismo
+                                        <span data-translate="appts_pos_now_btn">Ahora mismo</span>
                                     </button>
                                     <button class="pos-type-btn" data-appt-type="scheduled">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                        Agendar
+                                        <span data-translate="appts_pos_schedule_btn">Agendar</span>
                                     </button>
                                 </div>
 
@@ -351,15 +351,15 @@
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:2.5rem;height:2.5rem;color:#d1d5db;">
                                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                         </svg>
-                                        <span>Selecciona un servicio del catálogo</span>
+                                        <span data-translate="appts_pos_select_service">Selecciona un servicio del catálogo</span>
                                     </div>
                                 </div>
 
                                 <!-- Totales -->
                                 <div class="pos-totals">
-                                    <div class="pos-totals-row"><span>Subtotal</span><span id="posSubtotal">$0.00</span></div>
+                                    <div class="pos-totals-row"><span data-translate="appts_th_subtotal_lbl">Subtotal</span><span id="posSubtotal">$0.00</span></div>
                                     <div class="pos-totals-row discount-row" id="posDiscountRow" style="display:none;"><span>Descuento</span><span id="posDiscountAmt" class="discount-val">-$0.00</span></div>
-                                    <div class="pos-totals-row total-row"><span>Total</span><span id="posTotal">$0.00</span></div>
+                                    <div class="pos-totals-row total-row"><span data-translate="appts_th_total_lbl">Total</span><span id="posTotal">$0.00</span></div>
                                 </div>
 
                                 <!-- Método de pago -->
@@ -368,32 +368,32 @@
                                     <div class="pos-payment-btns">
                                         <button class="pos-pay-btn active" data-pay="efectivo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-                                            Efectivo
+                                            <span data-translate="appts_pos_cash">Efectivo</span>
                                         </button>
                                         <button class="pos-pay-btn" data-pay="tarjeta">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                                            Tarjeta
+                                            <span data-translate="appts_pos_card">Tarjeta</span>
                                         </button>
                                         <button class="pos-pay-btn" data-pay="transferencia">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
-                                            Transferencia
+                                            <span data-translate="appts_pos_transfer">Transferencia</span>
                                         </button>
                                         <button class="pos-pay-btn" data-pay="pendiente">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                            Pendiente
+                                            <span data-translate="appts_pos_pending">Pendiente</span>
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Cambio (solo efectivo) -->
                                 <div class="pos-change-row" id="posChangeRow">
-                                    <label class="pos-label">Cliente paga</label>
+                                    <label class="pos-label" data-translate="appts_client_pays">Cliente paga</label>
                                     <div class="pos-change-input-wrap">
                                         <span class="pos-currency">$</span>
                                         <input type="text" inputmode="decimal" class="pos-input pos-change-input" id="posClientPays" placeholder="0.00">
                                     </div>
                                     <div class="pos-change-display" id="posChangeDisplay">
-                                        Cambio: <strong id="posChange">$0.00</strong>
+                                        <span data-translate="appts_pos_change">Cambio:</span> <strong id="posChange">$0.00</strong>
                                     </div>
                                 </div>
 
@@ -406,7 +406,7 @@
                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                                         <polyline points="22 4 12 14.01 9 11.01"/>
                                     </svg>
-                                    Registrar Cobro
+                                    <span data-translate="appts_pos_register_btn">Registrar Cobro</span>
                                 </button>
                             </div>
 

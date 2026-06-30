@@ -180,11 +180,11 @@ async function executeDelete() {
             setTimeout(() => { window.location.href = '/login'; }, 2000);
         } else {
             const error = await response.json();
-            alert(error.error || 'Error al eliminar la cuenta');
+            alert(error.error || t('settings_delete_error', 'Error al eliminar la cuenta'));
         }
     } catch (error) {
         console.error('Error deleting account:', error);
-        alert('Ocurrió un error al eliminar la cuenta');
+        alert(t('settings_delete_error_generic', 'Ocurrió un error al eliminar la cuenta'));
     }
 }
 

@@ -2,6 +2,13 @@
 // BILLING - HISTORIAL DE PAGOS + SUSCRIPCIÓN DINÁMICA
 // ============================================
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 const PAGE_SIZE = 7;
 let allPayments = [];
 let currentPage = 1;
@@ -34,12 +41,12 @@ function renderSubscriptionCard(data) {
     // Status badge
     const statusEl = document.getElementById('subscriptionStatus');
     if (statusEl) {
-        statusEl.textContent = sub ? sub.statusDisplay : 'Sin plan';
+        statusEl.textContent = sub ? sub.statusDisplay : t('billing_no_plan', 'Sin plan');
         statusEl.className = 'subscription-status ' + (sub ? sub.statusClass : 'inactive');
     }
 
     if (!hasPlan || !sub) {
-        document.getElementById('subPlanRow').innerHTML    = '<span class="info-label">Plan:</span><span class="info-value">Sin plan activo</span>';
+        document.getElementById('subPlanRow').innerHTML    = `<span class="info-label">${t('billing_label_plan','Plan:')}</span><span class="info-value">${t('billing_no_active_plan','Sin plan activo')}</span>`;
         document.getElementById('subPriceRow').innerHTML   = '';
         document.getElementById('subNextRow').innerHTML    = '';
         document.getElementById('subMethodRow').innerHTML  = '';
@@ -48,20 +55,20 @@ function renderSubscriptionCard(data) {
     }
 
     // Plan
-    setInfoRow('subPlanRow', 'Plan:', `<strong>${sub.planDisplay}</strong> &nbsp;<span style="font-size:0.75rem;color:#6b7280;">(${sub.cycleDisplay})</span>`);
+    setInfoRow('subPlanRow', t('billing_label_plan','Plan:'), `<strong>${sub.planDisplay}</strong> &nbsp;<span style="font-size:0.75rem;color:#6b7280;">(${sub.cycleDisplay})</span>`);
 
     // Precio (solo si existe)
     if (sub.priceDisplay) {
-        setInfoRow('subPriceRow', 'Precio:', sub.priceDisplay);
+        setInfoRow('subPriceRow', t('billing_label_price','Precio:'), sub.priceDisplay);
     } else {
         document.getElementById('subPriceRow').style.display = 'none';
     }
 
     // Próximo cobro / vencimiento
     if (sub.nextBilling) {
-        const label = sub.isTrial ? 'Fin de prueba:' : 'Próximo cobro:';
+        const label = sub.isTrial ? t('billing_trial_end','Fin de prueba:') : t('billing_label_next','Próximo cobro:');
         const suffix = sub.cancelAtPeriodEnd
-            ? ' <span style="color:#ef4444;font-size:0.8rem;">(cancelación pendiente)</span>'
+            ? ` <span style="color:#ef4444;font-size:0.8rem;">(${t('billing_cancel_pending','cancelación pendiente')})</span>`
             : '';
         setInfoRow('subNextRow', label, sub.nextBilling + suffix);
     } else {
@@ -70,12 +77,12 @@ function renderSubscriptionCard(data) {
 
     // Días restantes info
     if (sub.daysRemaining !== undefined && sub.daysRemaining <= 7) {
-        setInfoRow('subNextRow', 'Vence en:', `<span style="color:#f59e0b;font-weight:600;">${sub.daysRemaining} días</span>`);
+        setInfoRow('subNextRow', t('billing_expires_in','Vence en:'), `<span style="color:#f59e0b;font-weight:600;">${sub.daysRemaining} ${t('billing_days','días')}</span>`);
     }
 
     // Inicio de plan/prueba
     if (sub.startDate) {
-        const startLabel = sub.isTrial ? 'Inicio de prueba:' : 'Inicio del plan:';
+        const startLabel = sub.isTrial ? t('billing_trial_start','Inicio de prueba:') : t('billing_label_start','Inicio del plan:');
         setInfoRow('subStartRow', startLabel, sub.startDate);
     } else {
         const startEl = document.getElementById('subStartRow');
@@ -143,23 +150,23 @@ function renderTable() {
 
     const statusBadge = (s) => {
         const map = {
-            succeeded: '<span class="badge-invoiced-yes">✓ Completado</span>',
-            failed:    '<span class="badge-invoiced-no">✕ Fallido</span>',
-            pending:   '<span style="color:#f59e0b;font-weight:600;">⏳ Pendiente</span>',
-            refunded:  '<span style="color:#8b5cf6;font-weight:600;">↩ Reembolsado</span>',
+            succeeded: `<span class="badge-invoiced-yes">${t('billing_status_completed','✓ Completado')}</span>`,
+            failed:    `<span class="badge-invoiced-no">${t('billing_status_failed','✕ Fallido')}</span>`,
+            pending:   `<span style="color:#f59e0b;font-weight:600;">${t('billing_status_pending','⏳ Pendiente')}</span>`,
+            refunded:  `<span style="color:#8b5cf6;font-weight:600;">${t('billing_status_refunded','↩ Reembolsado')}</span>`,
         };
         return map[s] || `<span>${s}</span>`;
     };
 
     tbody.innerHTML = pageItems.map(p => `
         <tr>
-            <td data-label="ID de Pago"><span class="pay-id" title="${p.paymentId}">...${p.paymentId.slice(-8)}</span></td>
-            <td data-label="ID de Recibo"><span class="receipt-id">${p.receiptId}</span></td>
-            <td data-label="Suscripción"><span class="pay-subscription">${p.subscription}</span></td>
-            <td data-label="Mes">${p.month}</td>
-            <td data-label="Fecha">${p.paymentDate}</td>
-            <td data-label="Cantidad"><span class="pay-amount">${p.amount}</span></td>
-            <td data-label="Estado">${statusBadge(p.status)}</td>
+            <td data-label="${t('billing_th_payment_id','ID de Pago')}"><span class="pay-id" title="${p.paymentId}">...${p.paymentId.slice(-8)}</span></td>
+            <td data-label="${t('billing_th_receipt_id','ID de Recibo')}"><span class="receipt-id">${p.receiptId}</span></td>
+            <td data-label="${t('billing_th_sub','Suscripción')}"><span class="pay-subscription">${p.subscription}</span></td>
+            <td data-label="${t('billing_th_month','Mes')}">${p.month}</td>
+            <td data-label="${t('billing_th_date','Fecha')}">${p.paymentDate}</td>
+            <td data-label="${t('billing_th_amount','Cantidad')}"><span class="pay-amount">${p.amount}</span></td>
+            <td data-label="${t('billing_th_status','Estado')}">${statusBadge(p.status)}</td>
             <td><button class="row-menu-btn" onclick="openRowMenu(this, '${p.paymentId}', '${p.chargeId || ''}', ${p.id || 0})">⋮</button></td>
         </tr>
     `).join('');
@@ -200,8 +207,8 @@ function openRowMenu(btn, paymentId, chargeId, dbId) {
     const menu = document.createElement('div');
     menu.className = 'row-context-menu';
     menu.innerHTML = `
-        <button onclick="copyPaymentId('${paymentId}')"><i class="lni lni-files"></i> Copiar ID</button>
-        ${dbId ? `<button onclick="downloadReceipt(${dbId})"><i class="lni lni-download"></i> Descargar recibo PDF</button>` : ''}
+        <button onclick="copyPaymentId('${paymentId}')"><i class="lni lni-files"></i> ${t('billing_copy_id','Copiar ID')}</button>
+        ${dbId ? `<button onclick="downloadReceipt(${dbId})"><i class="lni lni-download"></i> ${t('billing_download_receipt','Descargar recibo PDF')}</button>` : ''}
     `;
     const rect = btn.getBoundingClientRect();
     const menuLeft = Math.max(8, rect.left - 140);
@@ -220,13 +227,13 @@ function openRowMenu(btn, paymentId, chargeId, dbId) {
 }
 
 function copyPaymentId(id) {
-    navigator.clipboard.writeText(id).then(() => showNotification('ID copiado al portapapeles', 'success'));
+    navigator.clipboard.writeText(id).then(() => showNotification(t('billing_id_copied','ID copiado al portapapeles'), 'success'));
     document.querySelectorAll('.row-context-menu').forEach(m => m.remove());
 }
 
 function downloadReceipt(dbId) {
     document.querySelectorAll('.row-context-menu').forEach(m => m.remove());
-    showNotification('Generando recibo...', 'info');
+    showNotification(t('billing_generating_receipt','Generando recibo...'), 'info');
     window.location.href = `/api/billing/receipt/${dbId}`;
 }
 
@@ -238,14 +245,14 @@ function cancelSubscription() {
     showConfirmModal({
         type: 'danger',
         icon: 'lni-warning',
-        title: '¿Cancelar Suscripción?',
-        message: 'Estás a punto de cancelar tu suscripción activa.',
+        title: t('billing_cancel_title','¿Cancelar Suscripción?'),
+        message: t('billing_cancel_msg','Estás a punto de cancelar tu suscripción activa.'),
         list: [
-            'Mantendrás acceso hasta el fin del período actual',
-            'No se realizarán más cobros automáticos',
-            'Podrás reactivar tu plan en cualquier momento'
+            t('billing_cancel_item1','Mantendrás acceso hasta el fin del período actual'),
+            t('billing_cancel_item2','No se realizarán más cobros automáticos'),
+            t('billing_cancel_item3','Podrás reactivar tu plan en cualquier momento')
         ],
-        confirmText: 'Sí, cancelar',
+        confirmText: t('billing_cancel_confirm','Sí, cancelar'),
         confirmClass: 'danger',
         onConfirm: async () => {
             const response = await fetch('/api/billing/cancel', {
@@ -254,10 +261,10 @@ function cancelSubscription() {
             });
             const data = await response.json();
             if (response.ok) {
-                showNotification('Suscripción cancelada. Acceso activo hasta fin del período.', 'success');
+                showNotification(t('billing_cancel_success','Suscripción cancelada. Acceso activo hasta fin del período.'), 'success');
                 setTimeout(() => loadBillingInfo(), 1000);
             } else {
-                throw new Error(data.error || 'Error al cancelar');
+                throw new Error(data.error || t('billing_cancel_error','Error al cancelar'));
             }
         }
     });
@@ -311,7 +318,7 @@ function showConfirmModal(options) {
                 <div class="confirm-actions">
                     <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
                         <i class="lni lni-close"></i>
-                        <span>Volver</span>
+                        <span>${t('billing_modal_back','Volver')}</span>
                     </button>
                     <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
                         <i class="lni lni-checkmark"></i>
@@ -325,13 +332,13 @@ function showConfirmModal(options) {
     modal.classList.add('active');
 
     document.getElementById('confirmActionBtn').addEventListener('click', async function () {
-        this.innerHTML = `<div class="loading-spinner-small"></div><span>Procesando...</span>`;
+        this.innerHTML = `<div class="loading-spinner-small"></div><span>${t('billing_modal_processing','Procesando...')}</span>`;
         this.disabled = true;
         try {
             await onConfirm();
             closeConfirmModal();
         } catch (error) {
-            showNotification(error.message || 'Error al procesar', 'error');
+            showNotification(error.message || t('billing_modal_generic_error','Error al procesar'), 'error');
             this.disabled = false;
             this.innerHTML = `<i class="lni lni-checkmark"></i><span>${confirmText}</span>`;
         }

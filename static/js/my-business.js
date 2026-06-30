@@ -59,6 +59,20 @@ function t(key, fallback) {
     return window.Translations?.dict?.[getLang()]?.[key] || fallback;
 }
 
+// Si el nombre de la sucursal es el default genérico ("Sucursal N" en
+// cualquier idioma en que se haya creado), lo traducimos al idioma activo.
+// Si el usuario le puso un nombre propio, lo dejamos tal cual.
+const BRANCH_DEFAULT_WORDS = ['Sucursal','Branch','Филиал','Filial','支店','分店','Succursale','Filiale','지점'];
+function displayBranchName(branchName, branchNumber) {
+    const branchWord = t('mybiz_branch_default','Sucursal');
+    if (!branchName) return branchWord + ' ' + branchNumber;
+    const match = branchName.match(/^(.+?)\s+(\d+)$/);
+    if (match && BRANCH_DEFAULT_WORDS.includes(match[1].trim())) {
+        return branchWord + ' ' + match[2];
+    }
+    return branchName;
+}
+
 const MONTHS = [
     { value: '01', name: t('month_jan','Enero') },
     { value: '02', name: t('month_feb','Febrero') },
@@ -145,7 +159,7 @@ function renderBranchList() {
     list.innerHTML = '';
 
     if (branches.length === 0) {
-        list.innerHTML = '<div class="branch-item-empty">Sin sucursales guardadas</div>';
+        list.innerHTML = `<div class="branch-item-empty">${t('mybiz_no_branches','Sin sucursales guardadas')}</div>`;
         return;
     }
 
@@ -155,8 +169,8 @@ function renderBranchList() {
         item.dataset.branchId = b.id;
         item.innerHTML = `
             <i class="lni lni-map-marker"></i>
-            <span>${b.branchName || 'Sucursal ' + b.branchNumber}</span>
-            ${b.branchNumber > 1 ? `<button type="button" class="btn-delete-branch" data-id="${b.id}" title="Eliminar"><i class="lni lni-trash-can"></i></button>` : ''}
+            <span>${displayBranchName(b.branchName, b.branchNumber)}</span>
+            ${b.branchNumber > 1 ? `<button type="button" class="btn-delete-branch" data-id="${b.id}" title="${t('mybiz_delete_tooltip','Eliminar')}"><i class="lni lni-trash-can"></i></button>` : ''}
         `;
 
         item.addEventListener('click', async function(e) {
@@ -201,7 +215,7 @@ async function createNewBranch() {
             activeBranchId = data.branch.id;
             loadBranchData(data.branch);
             renderBranchList();
-            showNotification('Nueva sucursal creada', 'success');
+            showNotification(t('mybiz_branch_created','Nueva sucursal creada'), 'success');
         }
     } catch(e) {
         console.error('Error creando sucursal', e);
@@ -209,7 +223,7 @@ async function createNewBranch() {
 }
 
 async function deleteBranch(branchId) {
-    if (!confirm('¿Eliminar esta sucursal?')) return;
+    if (!confirm(t('mybiz_delete_branch_confirm','¿Eliminar esta sucursal?'))) return;
     try {
         const res = await fetch(`/api/my-business/branch/${branchId}`, { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
@@ -220,7 +234,7 @@ async function deleteBranch(branchId) {
                 await switchBranch(branches[0].id);
             }
             renderBranchList();
-            showNotification('Sucursal eliminada', 'success');
+            showNotification(t('mybiz_branch_deleted','Sucursal eliminada'), 'success');
         }
     } catch(e) {
         console.error('Error eliminando sucursal', e);
@@ -244,7 +258,7 @@ function updateMenuLabel() {
 
 function loadBranchData(branch) {
     // Actualizar label del dropdown
-    const label = branch.branchName || ('Sucursal ' + branch.branchNumber);
+    const label = displayBranchName(branch.branchName, branch.branchNumber);
     document.getElementById('branchDropdownLabel').textContent = label;
     document.getElementById('branchBadge').textContent = label;
 
@@ -307,7 +321,8 @@ function loadBranchData(branch) {
     // Actualizar nombre si la dirección cambia
     document.getElementById('addressInput').addEventListener('input', function() {
         const addr = this.value.trim();
-        const newName = addr ? 'Sucursal ' + addr : ('Sucursal ' + (branch.branchNumber || 1));
+        const branchWord = t('mybiz_branch_default','Sucursal');
+        const newName = addr ? branchWord + ' ' + addr : (branchWord + ' ' + (branch.branchNumber || 1));
         document.getElementById('branchDropdownLabel').textContent = newName;
         document.getElementById('branchBadge').textContent = newName;
         // Actualizar en lista
@@ -514,9 +529,9 @@ function initCustomSelect() {
 // ============================================
 
 function initLocationDropdowns() {
-    createLocationDropdown('countryInput', COUNTRIES, 'Selecciona un país');
-    createLocationDropdown('stateInput', STATES_MEXICO.map(s => ({ value: s.toLowerCase().replace(/\s+/g, '-'), name: s })), 'Selecciona un estado');
-    createLocationDropdown('cityInput', CITIES_SONORA.map(c => ({ value: c.toLowerCase().replace(/\s+/g, '-'), name: c })), 'Selecciona una ciudad');
+    createLocationDropdown('countryInput', COUNTRIES, t('mybiz_select_country','Selecciona un país'));
+    createLocationDropdown('stateInput', STATES_MEXICO.map(s => ({ value: s.toLowerCase().replace(/\s+/g, '-'), name: s })), t('mybiz_select_state','Selecciona un estado'));
+    createLocationDropdown('cityInput', CITIES_SONORA.map(c => ({ value: c.toLowerCase().replace(/\s+/g, '-'), name: c })), t('mybiz_select_city','Selecciona una ciudad'));
 }
 
 function createLocationDropdown(inputId, options, placeholder) {

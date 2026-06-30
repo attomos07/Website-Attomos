@@ -2,6 +2,9 @@
 function getLang() {
     return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
 }
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
 
 // Hook: cuando Translations.apply cambie el idioma, re-aplicar textos dinámicos
 document.addEventListener('DOMContentLoaded', function() {
@@ -204,7 +207,7 @@ function setUnifiedView(section, view) {
 
 function renderServiceTable(container, services, isLeast = false) {
     if (!services || services.length === 0) {
-        container.innerHTML = `<div class="service-chart-empty"><i class="lni lni-pie-chart"></i><p>No hay datos disponibles</p></div>`;
+        container.innerHTML = `<div class="service-chart-empty"><i class="lni lni-pie-chart"></i><p>${t('dash_no_data','No hay datos disponibles')}</p></div>`;
         return;
     }
     const total = services.reduce((sum, s) => sum + s.count, 0);
@@ -442,12 +445,10 @@ function showBusinessWarningModal() {
             "><i class="lni lni-warning" style="color:#f59e0b;"></i></div>
 
             <h3 style="font-size:1.4rem; font-weight:800; color:#1a1a1a; margin-bottom:0.75rem;">
-                Completa tu perfil de negocio
+                ${t('dash_bw_title','Completa tu perfil de negocio')}
             </h3>
             <p style="color:#6b7280; font-size:0.95rem; line-height:1.6; margin-bottom:2rem;">
-                Antes de crear un agente necesitas configurar la información
-                de tu negocio. Esto permite que el agente conozca tu empresa
-                y responda correctamente a tus clientes.
+                ${t('dash_bw_desc','Antes de crear un agente necesitas configurar la información de tu negocio. Esto permite que el agente conozca tu empresa y responda correctamente a tus clientes.')}
             </p>
 
             <div style="display:flex; gap:0.75rem; justify-content:center;">
@@ -455,7 +456,7 @@ function showBusinessWarningModal() {
                     padding:0.75rem 1.5rem; background:#f3f4f6; border:none;
                     border-radius:10px; font-weight:600; color:#6b7280;
                     cursor:pointer; font-size:0.95rem; transition:background 0.2s;
-                ">Cancelar</button>
+                ">${t('dash_cancel','Cancelar')}</button>
                 <a href="/my-business" id="bwGoBtn" style="
                     padding:0.75rem 1.5rem; background:#06b6d4; border:none;
                     border-radius:10px; font-weight:600; color:white;
@@ -463,7 +464,7 @@ function showBusinessWarningModal() {
                     display:inline-flex; align-items:center; gap:0.5rem;
                     box-shadow:0 4px 12px rgba(6,182,212,0.3);
                     transition:all 0.2s;
-                "><i class="lni lni-pencil-alt"></i> Ir a Mi Negocio</a>
+                "><i class="lni lni-pencil-alt"></i> ${t('dash_bw_go_btn','Ir a Mi Negocio')}</a>
             </div>
         </div>
     `;
@@ -1329,7 +1330,7 @@ function renderServiceBars(containerId, services) {
         container.innerHTML = `
       <div class="service-chart-empty">
         <i class="lni lni-pie-chart"></i>
-        <p>No hay datos disponibles</p>
+        <p>${t('dash_no_data','No hay datos disponibles')}</p>
       </div>
     `;
         return;
@@ -1402,7 +1403,7 @@ function renderPieChart(canvasId, legendId, totalId, services, isLeast = false) 
         canvas.parentElement.innerHTML = `
       <div class="service-chart-empty">
         <i class="lni lni-pie-chart"></i>
-        <p>No hay datos disponibles</p>
+        <p>${t('dash_no_data','No hay datos disponibles')}</p>
       </div>
     `;
         return;
