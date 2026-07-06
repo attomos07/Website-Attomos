@@ -309,6 +309,11 @@ body {
     font-size: 0.875rem;
 }
 
+.pm-empty-methods {
+    font-size: 0.875rem; color: #6b7280; line-height: 1.5;
+    text-align: center; padding: 1.25rem 1rem;
+}
+
 /* ── Add Card Button ────────────────────────────── */
 .btn-add-card {
     width: 100%; padding: 0.875rem;

@@ -17,6 +17,16 @@ let subscriptionData = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadBillingInfo();
     loadPayments();
+
+    // Re-render dynamic content when language changes
+    if (window.Translations) {
+        const _orig = window.Translations.apply.bind(window.Translations);
+        window.Translations.apply = function(lang) {
+            _orig(lang);
+            if (subscriptionData) renderSubscriptionCard(subscriptionData);
+            if (allPayments.length) renderTable();
+        };
+    }
 });
 
 // ============================================
@@ -28,11 +38,58 @@ async function loadBillingInfo() {
         const response = await fetch('/api/billing/info', { credentials: 'include' });
         if (!response.ok) throw new Error('Error cargando info de facturación');
         const data = await response.json();
-        subscriptionData = data.subscription;
+        subscriptionData = data;
         renderSubscriptionCard(data);
     } catch (error) {
         console.error('Error cargando billing info:', error);
     }
+}
+
+function planDisplayName(planKey) {
+    const map = {
+        gratuito: t('billing_plan_gratuito', 'Gratuito (Prueba)'),
+        proton:   t('billing_plan_proton', 'Protón'),
+        neutron:  t('billing_plan_neutron', 'Neutrón'),
+        electron: t('billing_plan_electron', 'Electrón'),
+        pending:  t('billing_plan_pending', 'Sin plan'),
+    };
+    return map[planKey] || planKey;
+}
+
+function statusDisplayText(status) {
+    const map = {
+        active:   t('billing_status_active', 'Activa'),
+        trialing: t('billing_status_trialing', 'Prueba'),
+        canceled: t('billing_status_canceled', 'Cancelada'),
+        past_due: t('billing_status_pastdue', 'Vencida'),
+    };
+    return map[status] || t('billing_status_inactive', 'Inactiva');
+}
+
+function cycleDisplayText(cycle) {
+    return cycle === 'annual' ? t('billing_annual', 'Anual') : t('billing_monthly', 'Mensual');
+}
+
+function formatISODate(iso) {
+    if (!iso) return '';
+    let d = new Date(iso);
+    // If not valid ISO, try parsing Spanish format "D de Monthname, YYYY"
+    if (isNaN(d.getTime())) {
+        const sm = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
+        const m = iso.match(/(\d+)\s+de\s+(\w+),?\s+(\d{4})/i);
+        if (m && sm[m[2].toLowerCase()] !== undefined) {
+            d = new Date(parseInt(m[3]), sm[m[2].toLowerCase()], parseInt(m[1]));
+        }
+    }
+    if (isNaN(d.getTime())) return iso; // fallback: return as-is
+    const localeMap = { es:'es-MX', en:'en-US', ru:'ru-RU', uz:'uz-UZ', ja:'ja-JP', zh:'zh-CN', fr:'fr-FR', pt:'pt-BR', de:'de-DE', ko:'ko-KR' };
+    return d.toLocaleDateString(localeMap[getLang()] || 'es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function formatPrice(amount, currency) {
+    if (!amount) return '';
+    const cur = (currency || 'mxn').toUpperCase();
+    return `$${amount.toFixed(2)} ${cur}`;
 }
 
 function renderSubscriptionCard(data) {
@@ -41,7 +98,9 @@ function renderSubscriptionCard(data) {
     // Status badge
     const statusEl = document.getElementById('subscriptionStatus');
     if (statusEl) {
-        statusEl.textContent = sub ? sub.statusDisplay : t('billing_no_plan', 'Sin plan');
+        statusEl.textContent = sub
+            ? statusDisplayText(sub.status) || sub.statusDisplay || t('billing_no_plan','Sin plan')
+            : t('billing_no_plan', 'Sin plan');
         statusEl.className = 'subscription-status ' + (sub ? sub.statusClass : 'inactive');
     }
 
@@ -55,22 +114,32 @@ function renderSubscriptionCard(data) {
     }
 
     // Plan
-    setInfoRow('subPlanRow', t('billing_label_plan','Plan:'), `<strong>${sub.planDisplay}</strong> &nbsp;<span style="font-size:0.75rem;color:#6b7280;">(${sub.cycleDisplay})</span>`);
+    const planName = sub.plan ? planDisplayName(sub.plan) : (sub.planDisplay || '');
+    const cycleName = sub.billingCycle ? cycleDisplayText(sub.billingCycle) : (sub.cycleDisplay || '');
+    setInfoRow('subPlanRow', t('billing_label_plan','Plan:'), `<strong>${planName}</strong> &nbsp;<span style="font-size:0.75rem;color:#6b7280;">(${cycleName})</span>`);
 
-    // Precio (solo si existe)
-    if (sub.priceDisplay) {
+    // Precio
+    const isFreeField = sub.isFree ?? (sub.plan === 'gratuito');
+    if (isFreeField) {
+        setInfoRow('subPriceRow', t('billing_label_price','Precio:'), t('billing_free','Gratis'));
+    } else if (sub.priceAmount) {
+        const periodSuffix = sub.billingCycle === 'annual' ? t('billing_per_year','/ año') : t('billing_per_month','/ mes');
+        setInfoRow('subPriceRow', t('billing_label_price','Precio:'), `${formatPrice(sub.priceAmount, sub.priceCurrency)} ${periodSuffix}`);
+    } else if (sub.priceDisplay) {
+        // backward-compat: old backend already formatted the price string
         setInfoRow('subPriceRow', t('billing_label_price','Precio:'), sub.priceDisplay);
     } else {
         document.getElementById('subPriceRow').style.display = 'none';
     }
 
     // Próximo cobro / vencimiento
-    if (sub.nextBilling) {
+    const nextDate = sub.currentPeriodEnd ? formatISODate(sub.currentPeriodEnd) : (sub.nextBilling || '');
+    if (nextDate) {
         const label = sub.isTrial ? t('billing_trial_end','Fin de prueba:') : t('billing_label_next','Próximo cobro:');
         const suffix = sub.cancelAtPeriodEnd
             ? ` <span style="color:#ef4444;font-size:0.8rem;">(${t('billing_cancel_pending','cancelación pendiente')})</span>`
             : '';
-        setInfoRow('subNextRow', label, sub.nextBilling + suffix);
+        setInfoRow('subNextRow', label, nextDate + suffix);
     } else {
         document.getElementById('subNextRow').style.display = 'none';
     }
@@ -80,20 +149,10 @@ function renderSubscriptionCard(data) {
         setInfoRow('subNextRow', t('billing_expires_in','Vence en:'), `<span style="color:#f59e0b;font-weight:600;">${sub.daysRemaining} ${t('billing_days','días')}</span>`);
     }
 
-    // Inicio de plan/prueba
-    if (sub.startDate) {
-        const startLabel = sub.isTrial ? t('billing_trial_start','Inicio de prueba:') : t('billing_label_start','Inicio del plan:');
-        setInfoRow('subStartRow', startLabel, sub.startDate);
-    } else {
-        const startEl = document.getElementById('subStartRow');
-        if (startEl) startEl.style.display = 'none';
-    }
-
-    // Botón cancelar — ocultar si plan gratuito O si ya está cancelado
+    // Botón cancelar
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) {
-        const isFree = sub.isFree || sub.planKey === 'free' || sub.planKey === 'gratuito' ||
-                       (sub.planDisplay && sub.planDisplay.toLowerCase().includes('gratuito'));
+        const isFree = sub.isFree ?? (sub.plan === 'gratuito');
         if (sub.cancelAtPeriodEnd || isFree) {
             cancelBtn.style.display = 'none';
         } else {
@@ -158,13 +217,29 @@ function renderTable() {
         return map[s] || `<span>${s}</span>`;
     };
 
+    const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun',
+                        'month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
+    const monthName = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        return t(monthKeys[d.getMonth()], '');
+    };
+    const shortDate = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        const localeMap = { es:'es-MX', en:'en-US', ru:'ru-RU', uz:'uz-UZ', ja:'ja-JP', zh:'zh-CN', fr:'fr-FR', pt:'pt-BR', de:'de-DE', ko:'ko-KR' };
+        return d.toLocaleDateString(localeMap[getLang()] || 'es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
     tbody.innerHTML = pageItems.map(p => `
         <tr>
             <td data-label="${t('billing_th_payment_id','ID de Pago')}"><span class="pay-id" title="${p.paymentId}">...${p.paymentId.slice(-8)}</span></td>
             <td data-label="${t('billing_th_receipt_id','ID de Recibo')}"><span class="receipt-id">${p.receiptId}</span></td>
-            <td data-label="${t('billing_th_sub','Suscripción')}"><span class="pay-subscription">${p.subscription}</span></td>
-            <td data-label="${t('billing_th_month','Mes')}">${p.month}</td>
-            <td data-label="${t('billing_th_date','Fecha')}">${p.paymentDate}</td>
+            <td data-label="${t('billing_th_sub','Suscripción')}"><span class="pay-subscription">${planDisplayName(p.plan)}</span></td>
+            <td data-label="${t('billing_th_month','Mes')}">${monthName(p.paymentDate)}</td>
+            <td data-label="${t('billing_th_date','Fecha')}">${shortDate(p.paymentDate)}</td>
             <td data-label="${t('billing_th_amount','Cantidad')}"><span class="pay-amount">${p.amount}</span></td>
             <td data-label="${t('billing_th_status','Estado')}">${statusBadge(p.status)}</td>
             <td><button class="row-menu-btn" onclick="openRowMenu(this, '${p.paymentId}', '${p.chargeId || ''}', ${p.id || 0})">⋮</button></td>

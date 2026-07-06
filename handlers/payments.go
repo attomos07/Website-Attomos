@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -24,7 +23,9 @@ func GetBillingPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "billing.html", gin.H{"user": user})
 }
 
-// GetBillingInfo devuelve la suscripción activa con datos completos del usuario
+// GetBillingInfo devuelve la suscripción activa con datos completos del usuario.
+// Devuelve códigos crudos (plan, status, billingCycle) y fechas ISO 8601;
+// el frontend se encarga de traducir y formatear según el idioma activo.
 func GetBillingInfo(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -42,98 +43,66 @@ func GetBillingInfo(c *gin.Context) {
 		return
 	}
 
-	planNames := map[string]string{
-		"gratuito": "Gratuito (Prueba)",
-		"proton":   "Protón",
-		"neutron":  "Neutrón",
-		"electron": "Electrón",
-		"pending":  "Sin plan",
-	}
-	planDisplay := planNames[subscription.Plan]
-	if planDisplay == "" {
-		planDisplay = subscription.Plan
-	}
-
-	cycleDisplay := "Mensual"
-	if subscription.BillingCycle == "annual" {
-		cycleDisplay = "Anual"
-	}
-
-	priceDisplay := ""
-	if subscription.Plan == "gratuito" {
-		priceDisplay = "Gratis"
-	} else {
+	// Precio: solo monto crudo + moneda. El plan gratuito no tiene pago asociado.
+	var priceAmount float64
+	var priceCurrency string
+	isFree := subscription.Plan == "gratuito"
+	if !isFree {
 		var lastPayment models.Payment
 		if err := config.DB.Where("user_id = ? AND status = ?", user.ID, "succeeded").
 			Order("paid_at DESC").First(&lastPayment).Error; err == nil {
-			priceDisplay = lastPayment.GetFormattedAmount()
-			if subscription.BillingCycle == "monthly" {
-				priceDisplay += " / mes"
-			} else {
-				priceDisplay += " / año"
-			}
+			priceAmount = lastPayment.GetAmountInMXN()
+			priceCurrency = lastPayment.Currency
 		}
 	}
 
-	months := []string{"enero", "febrero", "marzo", "abril", "mayo", "junio",
-		"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"}
-
-	nextBillingDisplay := ""
-	if subscription.CurrentPeriodEnd != nil {
-		t := *subscription.CurrentPeriodEnd
-		nextBillingDisplay = fmt.Sprintf("%d de %s, %d", t.Day(), months[t.Month()-1], t.Year())
-	}
-
-	startDisplay := ""
-	if subscription.CurrentPeriodStart != nil {
-		t := *subscription.CurrentPeriodStart
-		startDisplay = fmt.Sprintf("%d de %s, %d", t.Day(), months[t.Month()-1], t.Year())
-	}
-
-	statusDisplay := "Inactiva"
 	statusClass := "inactive"
 	switch subscription.Status {
 	case "active":
-		statusDisplay = "Activa"
 		statusClass = "active"
 	case "trialing":
-		statusDisplay = "Prueba"
 		statusClass = "trial"
 	case "canceled":
-		statusDisplay = "Cancelada"
 		statusClass = "canceled"
 	case "past_due":
-		statusDisplay = "Vencida"
 		statusClass = "past_due"
+	}
+
+	var startISO, endISO string
+	if subscription.CurrentPeriodStart != nil {
+		startISO = subscription.CurrentPeriodStart.Format(time.RFC3339)
+	}
+	if subscription.CurrentPeriodEnd != nil {
+		endISO = subscription.CurrentPeriodEnd.Format(time.RFC3339)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"hasPlan": subscription.Plan != "" && subscription.Plan != "pending",
 		"subscription": gin.H{
-			"id":                subscription.ID,
-			"plan":              subscription.Plan,
-			"planDisplay":       planDisplay,
-			"billingCycle":      subscription.BillingCycle,
-			"cycleDisplay":      cycleDisplay,
-			"status":            subscription.Status,
-			"statusDisplay":     statusDisplay,
-			"statusClass":       statusClass,
-			"priceDisplay":      priceDisplay,
-			"startDate":         startDisplay,
-			"nextBilling":       nextBillingDisplay,
-			"currentPeriodEnd":  subscription.CurrentPeriodEnd,
-			"cancelAtPeriodEnd": subscription.CancelAtPeriodEnd,
-			"stripeCustomerId":  subscription.StripeCustomerID,
-			"maxAgents":         subscription.MaxAgents,
-			"maxMessages":       subscription.MaxMessages,
-			"usedMessages":      subscription.UsedMessages,
-			"daysRemaining":     subscription.GetDaysRemaining(),
-			"isTrial":           subscription.IsTrial(),
+			"id":                 subscription.ID,
+			"plan":               subscription.Plan,
+			"billingCycle":       subscription.BillingCycle,
+			"status":             subscription.Status,
+			"statusClass":        statusClass,
+			"isFree":             isFree,
+			"priceAmount":        priceAmount,
+			"priceCurrency":      priceCurrency,
+			"currentPeriodStart": startISO,
+			"currentPeriodEnd":   endISO,
+			"cancelAtPeriodEnd":  subscription.CancelAtPeriodEnd,
+			"stripeCustomerId":   subscription.StripeCustomerID,
+			"maxAgents":          subscription.MaxAgents,
+			"maxMessages":        subscription.MaxMessages,
+			"usedMessages":       subscription.UsedMessages,
+			"daysRemaining":      subscription.GetDaysRemaining(),
+			"isTrial":            subscription.IsTrial(),
 		},
 	})
 }
 
-// GetBillingPayments devuelve el historial de pagos del usuario
+// GetBillingPayments devuelve el historial de pagos del usuario.
+// Devuelve el código de plan crudo y la fecha en ISO 8601;
+// el frontend traduce el nombre del plan y formatea la fecha según el idioma.
 func GetBillingPayments(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -151,47 +120,29 @@ func GetBillingPayments(c *gin.Context) {
 		return
 	}
 
-	planNames := map[string]string{
-		"gratuito": "Gratuito",
-		"proton":   "Protón",
-		"neutron":  "Neutrón",
-		"electron": "Electrón",
-	}
-
-	months := []string{"", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-		"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}
-
 	type PaymentRow struct {
-		ID           uint    `json:"id"`
-		PaymentID    string  `json:"paymentId"`
-		ReceiptID    string  `json:"receiptId"`
-		Subscription string  `json:"subscription"`
-		Month        string  `json:"month"`
-		PaymentDate  string  `json:"paymentDate"`
-		Amount       string  `json:"amount"`
-		AmountRaw    float64 `json:"amountRaw"`
-		Invoiced     bool    `json:"invoiced"`
-		Status       string  `json:"status"`
-		ChargeID     string  `json:"chargeId"`
+		ID          uint    `json:"id"`
+		PaymentID   string  `json:"paymentId"`
+		ReceiptID   string  `json:"receiptId"`
+		Plan        string  `json:"plan"`
+		PaymentDate string  `json:"paymentDate"` // ISO 8601
+		Amount      string  `json:"amount"`
+		AmountRaw   float64 `json:"amountRaw"`
+		Invoiced    bool    `json:"invoiced"`
+		Status      string  `json:"status"`
+		ChargeID    string  `json:"chargeId"`
 	}
 
 	rows := make([]PaymentRow, 0, len(payments))
 	for _, p := range payments {
-		planDisplay := planNames[p.Plan]
-		if planDisplay == "" {
-			planDisplay = p.Plan
-		}
-
 		paidDate := p.CreatedAt
 		if p.PaidAt != nil {
 			paidDate = *p.PaidAt
 		}
 
-		monthDisplay := ""
-		dateDisplay := ""
+		paymentDateISO := ""
 		if !paidDate.IsZero() {
-			monthDisplay = months[int(paidDate.Month())]
-			dateDisplay = fmt.Sprintf("%d %s %d", paidDate.Day(), monthDisplay[:3], paidDate.Year())
+			paymentDateISO = paidDate.Format(time.RFC3339)
 		}
 
 		receiptSrc := p.StripeChargeID
@@ -204,17 +155,16 @@ func GetBillingPayments(c *gin.Context) {
 		}
 
 		rows = append(rows, PaymentRow{
-			ID:           p.ID,
-			PaymentID:    p.StripePaymentIntentID,
-			ReceiptID:    receiptID,
-			Subscription: planDisplay,
-			Month:        monthDisplay,
-			PaymentDate:  dateDisplay,
-			Amount:       p.GetFormattedAmount(),
-			AmountRaw:    p.GetAmountInMXN(),
-			Invoiced:     false,
-			Status:       p.Status,
-			ChargeID:     p.StripeChargeID,
+			ID:          p.ID,
+			PaymentID:   p.StripePaymentIntentID,
+			ReceiptID:   receiptID,
+			Plan:        p.Plan,
+			PaymentDate: paymentDateISO,
+			Amount:      p.GetFormattedAmount(),
+			AmountRaw:   p.GetAmountInMXN(),
+			Invoiced:    false,
+			Status:      p.Status,
+			ChargeID:    p.StripeChargeID,
 		})
 	}
 

@@ -12,6 +12,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/payment-method.css">
+    <style>.methods-empty { color: #9ca3af; font-size: 0.9rem; margin: 0.5rem 0; }</style>
 </head>
 <body>
     <!-- Decorative Rings -->
@@ -40,20 +41,20 @@
                         <div class="header-content">
                             <a href="/billing" class="back-btn">
                                 <i class="lni lni-chevron-left"></i>
-                                <span>Facturación</span>
+                                <span data-translate="pm_back">Facturación</span>
                             </a>
                             <h1 class="page-title">
                                 <i class="lni lni-credit-cards"></i>
-                                Método de Pago
+                                <span data-translate="pm_title">Método de Pago</span>
                             </h1>
-                            <p class="page-subtitle">Administra las tarjetas usadas para tus pagos automáticos</p>
+                            <p class="page-subtitle" data-translate="pm_subtitle">Administra las tarjetas usadas para tus pagos automáticos</p>
                         </div>
                     </div>
 
                     <!-- Loading State -->
                     <div class="pm-loading" id="pmLoading">
                         <div class="loading-spinner-large"></div>
-                        <p>Cargando métodos de pago...</p>
+                        <p data-translate="pm_loading">Cargando métodos de pago...</p>
                     </div>
 
                     <!-- Main Grid -->
@@ -66,7 +67,7 @@
                             <div class="card-visual-section">
                                 <h2 class="section-title">
                                     <i class="lni lni-checkmark-circle"></i>
-                                    Tarjeta Principal
+                                    <span data-translate="pm_main_card">Tarjeta Principal</span>
                                 </h2>
 
                                 <!-- Credit Card 3D -->
@@ -106,11 +107,11 @@
                                             <div class="card-number" id="cardDisplayNumber">•••• •••• •••• ••••</div>
                                             <div class="card-bottom-row">
                                                 <div class="card-holder-section">
-                                                    <div class="card-label">Titular</div>
+                                                    <div class="card-label" data-translate="pm_label_titular">Titular</div>
                                                     <div class="card-holder-name" id="cardDisplayHolder">NOMBRE TITULAR</div>
                                                 </div>
                                                 <div class="card-expiry-section">
-                                                    <div class="card-label">Expira</div>
+                                                    <div class="card-label" data-translate="pm_label_expira">Expira</div>
                                                     <div class="card-expiry" id="cardDisplayExpiry">MM/AA</div>
                                                 </div>
                                             </div>
@@ -131,8 +132,8 @@
                                     <div class="no-card-icon">
                                         <i class="lni lni-credit-cards"></i>
                                     </div>
-                                    <h3>Sin método de pago</h3>
-                                    <p>Agrega una tarjeta para activar el cobro automático de tu suscripción</p>
+                                    <h3 data-translate="pm_no_card_title">Sin método de pago</h3>
+                                    <p data-translate="pm_no_card_desc">Agrega una tarjeta para activar el cobro automático de tu suscripción</p>
                                 </div>
                             </div>
 
@@ -140,7 +141,7 @@
                             <div class="saved-methods-section" id="savedMethodsSection">
                                 <h2 class="section-title">
                                     <i class="lni lni-list"></i>
-                                    Tarjetas Guardadas
+                                    <span data-translate="pm_saved_cards">Tarjetas Guardadas</span>
                                 </h2>
                                 <div class="methods-list" id="methodsList">
                                     <!-- Rendered by JS -->
@@ -157,8 +158,8 @@
                                         <i class="lni lni-lock" id="formHeaderIcon"></i>
                                     </div>
                                     <div>
-                                        <h2 class="form-title" id="formTitle">Agregar Tarjeta</h2>
-                                        <p class="form-subtitle" id="formSubtitle">Tus datos están cifrados y seguros</p>
+                                        <h2 class="form-title" id="formTitle" data-translate="pm_add_card">Agregar Tarjeta</h2>
+                                        <p class="form-subtitle" id="formSubtitle" data-translate="pm_form_subtitle">Tus datos están cifrados y seguros</p>
                                     </div>
                                 </div>
 
@@ -167,7 +168,7 @@
 
                                     <!-- Card Number -->
                                     <div class="field-group">
-                                        <label class="field-label">Número de Tarjeta</label>
+                                        <label class="field-label" data-translate="pm_field_number">Número de Tarjeta</label>
                                         <div class="field-input-wrapper">
                                             <i class="lni lni-credit-cards field-icon"></i>
                                             <input type="text" id="fieldCardNumber" class="field-input" 
@@ -181,7 +182,7 @@
 
                                     <!-- Card Holder -->
                                     <div class="field-group">
-                                        <label class="field-label">Nombre del Titular</label>
+                                        <label class="field-label" data-translate="pm_field_holder">Nombre del Titular</label>
                                         <div class="field-input-wrapper">
                                             <i class="lni lni-user field-icon"></i>
                                             <input type="text" id="fieldCardHolder" class="field-input" 
@@ -193,28 +194,14 @@
                                     <!-- Expiry + CVC Row -->
                                     <div class="field-row">
                                         <div class="field-group">
-                                            <label class="field-label">Mes de Expiración</label>
+                                            <label class="field-label" data-translate="pm_field_exp_month">Mes de Expiración</label>
                                             <div class="field-input-wrapper">
                                                 <i class="lni lni-calendar field-icon"></i>
-                                                <select id="fieldExpMonth" class="field-input field-select">
-                                                    <option value="">MM</option>
-                                                    <option value="01">01 - Enero</option>
-                                                    <option value="02">02 - Febrero</option>
-                                                    <option value="03">03 - Marzo</option>
-                                                    <option value="04">04 - Abril</option>
-                                                    <option value="05">05 - Mayo</option>
-                                                    <option value="06">06 - Junio</option>
-                                                    <option value="07">07 - Julio</option>
-                                                    <option value="08">08 - Agosto</option>
-                                                    <option value="09">09 - Septiembre</option>
-                                                    <option value="10">10 - Octubre</option>
-                                                    <option value="11">11 - Noviembre</option>
-                                                    <option value="12">12 - Diciembre</option>
-                                                </select>
+                                                <select id="fieldExpMonth" class="field-input field-select"><option value="">MM</option></select>
                                             </div>
                                         </div>
                                         <div class="field-group">
-                                            <label class="field-label">Año de Expiración</label>
+                                            <label class="field-label" data-translate="pm_field_exp_year">Año de Expiración</label>
                                             <div class="field-input-wrapper">
                                                 <i class="lni lni-calendar field-icon"></i>
                                                 <select id="fieldExpYear" class="field-input field-select">
@@ -234,7 +221,7 @@
                                         </label>
                                         <div class="cvc-hint" id="cvcHint" style="display:none;">
                                             <i class="lni lni-information"></i>
-                                            Son los 3 dígitos en la parte trasera de tu tarjeta (Visa/MC) o 4 dígitos al frente (Amex).
+                                            <span data-translate="pm_cvc_hint">Son los 3 dígitos en la parte trasera de tu tarjeta (Visa/MC) o 4 dígitos al frente (Amex).</span>
                                         </div>
                                         <div class="field-input-wrapper">
                                             <i class="lni lni-lock field-icon"></i>
@@ -255,8 +242,8 @@
                                                 <span class="toggle-slider"></span>
                                             </div>
                                             <div class="toggle-text">
-                                                <span class="toggle-title">Usar como tarjeta principal</span>
-                                                <span class="toggle-desc">Se usará para los cobros automáticos</span>
+                                                <span class="toggle-title" data-translate="pm_default_toggle_title">Usar como tarjeta principal</span>
+                                                <span class="toggle-desc" data-translate="pm_default_toggle_desc">Se usará para los cobros automáticos</span>
                                             </div>
                                         </label>
                                     </div>
@@ -265,18 +252,18 @@
                                     <div class="form-actions">
                                         <button class="btn-cancel-form" type="button" id="btnCancelForm" onclick="cancelForm()" style="display:none;">
                                             <i class="lni lni-close"></i>
-                                            <span>Cancelar</span>
+                                            <span data-translate="pm_cancel">Cancelar</span>
                                         </button>
                                         <button class="btn-save-card" type="button" id="btnSaveCard" onclick="saveCard()">
                                             <i class="lni lni-lock"></i>
-                                            <span id="btnSaveText">Guardar Tarjeta</span>
+                                            <span id="btnSaveText" data-translate="pm_save_card">Guardar Tarjeta</span>
                                         </button>
                                     </div>
 
                                     <!-- Security note -->
                                     <div class="security-note">
                                         <i class="lni lni-shield"></i>
-                                        <span>Conexión segura SSL · Cifrado AES-256 · PCI DSS compliant</span>
+                                        <span data-translate="pm_security_note">Conexión segura SSL · Cifrado AES-256 · PCI DSS compliant</span>
                                     </div>
                                 </div>
                             </div>
@@ -293,6 +280,7 @@
     <div id="confirmModal" class="confirm-modal"></div>
 
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/payment-method.js"></script>
 </body>

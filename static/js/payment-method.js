@@ -2,15 +2,57 @@
 // PAYMENT METHOD - ATTOMOS
 // ============================================
 
+function getLang() { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; }
+function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key] || fallback; }
+
+function populateMonths() {
+    const monthSel = document.getElementById('fieldExpMonth');
+    if (!monthSel) return;
+    const saved = monthSel.value;
+    const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun',
+                       'month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
+    const fallbacks = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    monthSel.innerHTML = '<option value="">MM</option>';
+    monthKeys.forEach((key, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i + 1).padStart(2, '0');
+        opt.textContent = `${opt.value} - ${t(key, fallbacks[i])}`;
+        monthSel.appendChild(opt);
+    });
+    if (saved) monthSel.value = saved;
+}
+
 let paymentMethods = [];
 let activeMethodId = null;
 let stripeInstance  = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     populateYears();
+
+    // Set up language change hook FIRST (before any async operations)
+    function reRenderDynamic() {
+        populateMonths();
+        renderMethodsList();
+        const editingId = document.getElementById('editingMethodId')?.value;
+        const formTitle = document.getElementById('formTitle');
+        const btnSaveText = document.getElementById('btnSaveText');
+        if (formTitle) formTitle.textContent = editingId ? t('pm_edit_card','Editar Tarjeta') : t('pm_add_card','Agregar Tarjeta');
+        if (btnSaveText) btnSaveText.textContent = editingId ? t('pm_update_card','Actualizar Tarjeta') : t('pm_save_card','Guardar Tarjeta');
+    }
+    if (window.Translations) {
+        const _orig = window.Translations.apply.bind(window.Translations);
+        window.Translations.apply = function(lang) { _orig(lang); reRenderDynamic(); };
+    }
+    // Backup: catch language stored in localStorage by userbar
+    document.addEventListener('attomos:langchange', reRenderDynamic);
+    document.addEventListener('click', (e) => {
+        if (e.target.closest?.('[data-lang]')) setTimeout(reRenderDynamic, 50);
+    });
+
     loadPaymentMethods();
     initCardLivePreview();
     await initStripe();
+    populateMonths();
 });
 
 // ============================================
@@ -31,6 +73,23 @@ async function initStripe() {
 // ============================================
 // POPULATE YEAR SELECT
 // ============================================
+function populateMonths() {
+    const monthSel = document.getElementById('fieldExpMonth');
+    if (!monthSel) return;
+    const saved = monthSel.value;
+    const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun',
+                       'month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
+    const fallbacks = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    monthSel.innerHTML = '<option value="">MM</option>';
+    monthKeys.forEach((key, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i + 1).padStart(2, '0');
+        opt.textContent = `${opt.value} - ${t(key, fallbacks[i])}`;
+        monthSel.appendChild(opt);
+    });
+    if (saved) monthSel.value = saved;
+}
+
 function populateYears() {
     const yearSelect = document.getElementById('fieldExpYear');
     const currentYear = new Date().getFullYear();
@@ -72,7 +131,7 @@ function renderMethods() {
     const section = document.getElementById('savedMethodsSection');
 
     if (!paymentMethods.length) {
-        list.innerHTML = '<p class="methods-empty">No hay tarjetas guardadas. Agrega una usando el formulario.</p>';
+        list.innerHTML = `<p class="pm-empty-methods">${t('pm_no_cards','No hay tarjetas guardadas. Agrega una usando el formulario.')}</p>`;
         showNoCard();
         return;
     }
@@ -87,16 +146,16 @@ function renderMethods() {
                 <div class="method-number">•••• •••• •••• ${m.last4}</div>
                 <div class="method-meta">${capitalizeFirst(m.brand)} · Expira ${m.expMonth}/${String(m.expYear).slice(-2)}</div>
             </div>
-            ${m.id === activeMethodId ? '<span class="method-default-badge"><i class="lni lni-checkmark-circle"></i> Principal</span>' : ''}
+            ${m.id === activeMethodId ? `<span class="method-default-badge"><i class="lni lni-checkmark-circle"></i> ${t('pm_badge_main','Principal')}</span>` : ''}
             <div class="method-actions" onclick="event.stopPropagation()">
                 ${m.id !== activeMethodId ? `
                 <button class="method-action-btn" title="Usar como principal" onclick="setDefaultMethod('${m.id}')">
                     <i class="lni lni-checkmark-circle"></i>
                 </button>` : ''}
-                <button class="method-action-btn" title="Editar" onclick="editMethod('${m.id}')">
+                <button class="method-action-btn" title="${t('pm_tooltip_edit','Editar')}" onclick="editMethod('${m.id}')">
                     <i class="lni lni-pencil"></i>
                 </button>
-                <button class="method-action-btn danger" title="Eliminar" onclick="confirmDeleteMethod('${m.id}')">
+                <button class="method-action-btn danger" title="${t('pm_tooltip_delete','Eliminar')}" onclick="confirmDeleteMethod('${m.id}')">
                     <i class="lni lni-trash-can"></i>
                 </button>
             </div>
@@ -107,7 +166,7 @@ function renderMethods() {
     list.innerHTML += `
         <button class="btn-add-card" onclick="resetForm()">
             <i class="lni lni-plus-circle"></i>
-            <span>Agregar otra tarjeta</span>
+            <span>${t('pm_add_another','Agregar otra tarjeta')}</span>
         </button>
     `;
 }
@@ -331,7 +390,7 @@ async function saveCard() {
     if (!expYear)                          { setError('fieldExpYear'); }
 
     if (hasError) {
-        showNotification('Por favor completa todos los campos correctamente', 'error');
+        showNotification(t('pm_validation_error','Por favor completa todos los campos correctamente'), 'error');
         return;
     }
 
@@ -347,7 +406,7 @@ async function saveCard() {
         if (!editingId) {
             // ── NUEVA TARJETA: tokenizar con Stripe primero ──
             if (!stripeInstance) {
-                throw new Error('Stripe no está inicializado. Recarga la página.');
+                throw new Error(t('pm_stripe_not_init','Stripe no está inicializado. Recarga la página.'));
             }
 
             const { paymentMethod, error: stripeError } = await stripeInstance.createPaymentMethod({
@@ -392,12 +451,9 @@ async function saveCard() {
         });
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || 'Error guardando tarjeta');
+        if (!res.ok) throw new Error(data.error || t('pm_save_error','Error guardando tarjeta'));
 
-        showNotification(
-            editingId ? 'Tarjeta actualizada correctamente' : 'Tarjeta guardada correctamente',
-            'success'
-        );
+        showNotification(editingId ? t('pm_updated_ok','Tarjeta actualizada correctamente') : t('pm_saved_ok','Tarjeta guardada correctamente'), 'success');
         resetForm();
         await loadPaymentMethods();
 
@@ -405,7 +461,7 @@ async function saveCard() {
         showNotification(e.message, 'error');
     } finally {
         btn.disabled = false;
-        btnText.textContent = document.getElementById('editingMethodId').value ? 'Actualizar Tarjeta' : 'Guardar Tarjeta';
+        btnText.textContent = document.getElementById('editingMethodId').value ? t('pm_update_card','Actualizar Tarjeta') : t('pm_save_card','Guardar Tarjeta');
         btn.querySelector('i').className = 'lni lni-lock';
     }
 }
@@ -418,9 +474,9 @@ function editMethod(id) {
     if (!m) return;
 
     document.getElementById('editingMethodId').value = id;
-    document.getElementById('formTitle').textContent    = 'Editar Tarjeta';
+    document.getElementById('formTitle').textContent    = t('pm_edit_card','Editar Tarjeta');
     document.getElementById('formSubtitle').textContent = `•••• •••• •••• ${m.last4}`;
-    document.getElementById('btnSaveText').textContent  = 'Actualizar Tarjeta';
+    document.getElementById('btnSaveText').textContent  = t('pm_update_card','Actualizar Tarjeta');
     document.getElementById('btnCancelForm').style.display = 'flex';
 
     // Hide number & cvc fields (can't re-enter full number for security)
@@ -444,9 +500,9 @@ function editMethod(id) {
 // ============================================
 function resetForm() {
     document.getElementById('editingMethodId').value   = '';
-    document.getElementById('formTitle').textContent   = 'Agregar Tarjeta';
+    document.getElementById('formTitle').textContent   = t('pm_add_card','Agregar Tarjeta');
     document.getElementById('formSubtitle').textContent= 'Tus datos están cifrados y seguros';
-    document.getElementById('btnSaveText').textContent = 'Guardar Tarjeta';
+    document.getElementById('btnSaveText').textContent = t('pm_save_card','Guardar Tarjeta');
     document.getElementById('btnCancelForm').style.display = 'none';
 
     document.getElementById('fieldCardNumber').closest('.field-group').style.display = '';
@@ -487,10 +543,10 @@ async function setDefaultMethod(id) {
             method: 'POST', credentials: 'include'
         });
         if (!res.ok) throw new Error('Error');
-        showNotification('Tarjeta principal actualizada', 'success');
+        showNotification(t('pm_default_ok','Tarjeta principal actualizada'), 'success');
         await loadPaymentMethods();
     } catch (e) {
-        showNotification('Error al actualizar tarjeta principal', 'error');
+        showNotification(t('pm_default_error','Error al actualizar tarjeta principal'), 'error');
     }
 }
 
@@ -504,13 +560,13 @@ function confirmDeleteMethod(id) {
     showConfirmModal({
         type: 'danger',
         icon: 'lni-trash-can',
-        title: '¿Eliminar Tarjeta?',
-        message: `Eliminarás la tarjeta que termina en <strong>${m.last4}</strong>.`,
+        title: t('pm_delete_title','¿Eliminar Tarjeta?'),
+        message: `${t('pm_delete_msg_pre','Eliminarás la tarjeta que termina en')} <strong>${m.last4}</strong>.`,
         list: [
             'Esta acción no se puede deshacer',
-            m.id === activeMethodId ? 'Es tu tarjeta principal de cobro' : '',
+            m.id === activeMethodId ? t('pm_delete_main_warn','Es tu tarjeta principal de cobro') : '',
         ].filter(Boolean),
-        confirmText: 'Eliminar Tarjeta',
+        confirmText: t('pm_delete_confirm','Eliminar Tarjeta'),
         confirmClass: 'danger',
         onConfirm: () => deleteMethod(id),
     });
@@ -522,9 +578,9 @@ async function deleteMethod(id) {
     });
     if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || 'Error al eliminar');
+        throw new Error(d.error || t('pm_delete_error','Error al eliminar'));
     }
-    showNotification('Tarjeta eliminada correctamente', 'success');
+    showNotification(t('pm_deleted_ok','Tarjeta eliminada correctamente'), 'success');
     await loadPaymentMethods();
 }
 
@@ -559,7 +615,7 @@ function showConfirmModal(options) {
                 ${list.length ? `<div class="confirm-list">${list.map(i => `<div class="confirm-list-item"><i class="lni lni-close"></i><span>${i}</span></div>`).join('')}</div>` : ''}
                 <div class="confirm-actions">
                     <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
-                        <i class="lni lni-close"></i><span>Cancelar</span>
+                        <i class="lni lni-close"></i><span>${t('pm_modal_cancel','Cancelar')}</span>
                     </button>
                     <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
                         <i class="lni lni-checkmark"></i><span>${confirmText}</span>
@@ -571,7 +627,7 @@ function showConfirmModal(options) {
     modal.classList.add('active');
 
     document.getElementById('confirmActionBtn').addEventListener('click', async function () {
-        this.innerHTML = `<div class="loading-spinner-small"></div><span>Procesando...</span>`;
+        this.innerHTML = `<div class="loading-spinner-small"></div><span>${t('pm_processing','Procesando...')}</span>`;
         this.disabled = true;
         try {
             await onConfirm();
