@@ -181,15 +181,15 @@
                         <div class="header-content">
                             <h1 class="page-title">
                                 <i class="lni lni-plug"></i>
-                                Integraciones
+                                <span data-translate="integ_title">Integraciones</span>
                             </h1>
-                            <p class="page-subtitle">Conecta tus herramientas favoritas con Attomos</p>
+                            <p class="page-subtitle" data-translate="integ_subtitle">Conecta tus herramientas favoritas con Attomos</p>
                         </div>
                     </div>
 
                     <!-- Agent Selector -->
                     <div class="agent-selector">
-                        <label class="selector-label">Selecciona un agente para configurar sus integraciones</label>
+                        <label class="selector-label" data-translate="integ_select_label">Selecciona un agente para configurar sus integraciones</label>
                         <div class="custom-select" id="agentSelect">
                             <div class="select-display" id="agentSelectDisplay">
                                 Selecciona un agente...
@@ -215,40 +215,23 @@
                                 </svg>
                                     <h2>Gemini AI</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="geminiStatusBadge">
-                                    <span class="status-indicator"></span>
-                                    No configurado
-                                </div>
+                                <div class="status-badge disconnected" id="geminiStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
                             </div>
 
-                            <p class="card-description">
-                                Configura tu API Key de Google Gemini para potenciar tu agente con inteligencia artificial avanzada.
-                            </p>
+                            <p class="card-description" data-translate="integ_gemini_desc">Configura tu API Key de Google Gemini para potenciar tu agente con inteligencia artificial avanzada.</p>
 
                             <div class="card-features">
                                 <ul class="feature-list">
-                                    <li class="feature-item">
-                                        <i class="lni lni-brain"></i>
-                                        IA conversacional avanzada
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-comments"></i>
-                                        Respuestas naturales y contextuales
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-target-customer"></i>
-                                        Personalización de personalidad
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-pulse"></i>
-                                        Procesamiento en tiempo real
-                                    </li>
+                                    <li class="feature-item"><i class="lni lni-brain"></i><span data-translate="integ_gemini_f1">IA conversacional avanzada</span></li>
+                                    <li class="feature-item"><i class="lni lni-comments"></i><span data-translate="integ_gemini_f2">Respuestas naturales y contextuales</span></li>
+                                    <li class="feature-item"><i class="lni lni-target-customer"></i><span data-translate="integ_gemini_f3">Personalización de personalidad</span></li>
+                                    <li class="feature-item"><i class="lni lni-pulse"></i><span data-translate="integ_gemini_f4">Procesamiento en tiempo real</span></li>
                                 </ul>
                             </div>
 
                             <div class="card-note">
                                 <i class="lni lni-information"></i>
-                                <span>Obtén tu API Key gratis en <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #06b6d4; font-weight: 600; text-decoration: underline;">AI Studio de Google</a></span>
+                                <span><span data-translate="integ_gemini_note_pre">Obtén tu API Key gratis en</span> <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #06b6d4; font-weight: 600; text-decoration: underline;">AI Studio de Google</a></span>
                             </div>
 
                             <!-- API Key Input Form -->
@@ -270,16 +253,13 @@
                                             <i class="lni lni-eye"></i>
                                         </button>
                                     </div>
-                                    <small class="input-hint">Tu API Key se encripta y almacena de forma segura</small>
+                                    <small class="input-hint" data-translate="integ_gemini_hint">Tu API Key se encripta y almacena de forma segura</small>
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
                             <div class="card-actions" id="geminiActions">
-                                <button class="btn btn-connect" id="btnSaveGeminiKey" disabled>
-                                    <i class="lni lni-save"></i>
-                                    Guardar API Key
-                                </button>
+                                <button class="btn btn-connect" id="btnSaveGeminiKey" disabled><i class="lni lni-save"></i><span data-translate="integ_gemini_save">Guardar API Key</span></button>
                             </div>
 
                             <!-- Connection Info (shown when configured) -->
@@ -291,21 +271,15 @@
                                     </div>
                                     <div class="connection-detail">
                                         <span class="connection-label">Estado:</span>
-                                        <span class="connection-value" style="color: #10b981; font-weight: 700;">✓ Configurado</span>
+                                        <span class="connection-value" style="color: #10b981; font-weight: 700;" data-translate="integ_gemini_status_configured">✓ Configurado</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Manage Actions (hidden by default) -->
                             <div class="card-actions" id="geminiManageActions" style="display: none;">
-                                <button class="btn btn-secondary" id="btnUpdateGeminiKey">
-                                    <i class="lni lni-pencil"></i>
-                                    Actualizar
-                                </button>
-                                <button class="btn btn-disconnect" id="btnRemoveGeminiKey">
-                                    <i class="lni lni-trash"></i>
-                                    Eliminar
-                                </button>
+                                <button class="btn btn-secondary" id="btnUpdateGeminiKey"><i class="lni lni-pencil"></i><span data-translate="integ_gemini_update">Actualizar</span></button>
+                                <button class="btn btn-disconnect" id="btnRemoveGeminiKey"><i class="lni lni-trash"></i><span data-translate="integ_gemini_remove">Eliminar</span></button>
                             </div>
                         </div>
 
@@ -316,10 +290,7 @@
                                     <i class="lni lni-whatsapp integration-icon" style="font-size: 2rem; color: #25D366;"></i>
                                     <h2>Meta WhatsApp Business API</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="metaStatusBadge">
-                                    <span class="status-indicator"></span>
-                                    No configurado
-                                </div>
+                                <div class="status-badge disconnected" id="metaStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
                             </div>
 
                             <p class="card-description">
@@ -349,7 +320,7 @@
 
                             <div class="card-note">
                                 <i class="lni lni-information"></i>
-                                <span>Obtén tus credenciales en <a href="https://developers.facebook.com/apps" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">Meta for Developers</a></span>
+                                <span><span data-translate="integ_meta_note_pre">Obtén tus credenciales en</span> <a href="https://developers.facebook.com/apps" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">Meta for Developers</a></span>
                             </div>
 
                             <!-- Meta Credentials Form -->
@@ -465,22 +436,13 @@
 
                             <!-- Action Buttons -->
                             <div class="card-actions" id="metaActions">
-                                <button class="btn btn-connect" id="btnSaveMetaCredentials" disabled>
-                                    <i class="lni lni-save"></i>
-                                    Guardar Credenciales
-                                </button>
+                                <button class="btn btn-connect" id="btnSaveMetaCredentials" disabled><i class="lni lni-save"></i><span data-translate="integ_meta_save">Guardar Credenciales</span></button>
                             </div>
 
                             <!-- Manage Actions (hidden by default) -->
                             <div class="card-actions" id="metaManageActions" style="display: none;">
-                                <button class="btn btn-secondary" id="btnUpdateMetaCredentials">
-                                    <i class="lni lni-pencil"></i>
-                                    Actualizar
-                                </button>
-                                <button class="btn btn-disconnect" id="btnRemoveMetaCredentials">
-                                    <i class="lni lni-trash"></i>
-                                    Eliminar
-                                </button>
+                                <button class="btn btn-secondary" id="btnUpdateMetaCredentials"><i class="lni lni-pencil"></i><span data-translate="integ_meta_update">Actualizar</span></button>
+                                <button class="btn btn-disconnect" id="btnRemoveMetaCredentials"><i class="lni lni-trash"></i><span data-translate="integ_meta_remove">Eliminar</span></button>
                             </div>
                         </div>
 
@@ -501,10 +463,7 @@
                                 </svg>
                                     <h2>Google Calendar</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="googleStatusBadge">
-                                    <span class="status-indicator"></span>
-                                    No conectado
-                                </div>
+                                <div class="status-badge disconnected" id="googleStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                             </div>
 
                             <!-- Descripción — negocio -->
@@ -554,18 +513,18 @@
                                 <div id="googleConnectActions">
                                     <button class="btn btn-connect" id="btnConnectGoogle" disabled>
                                         <i class="lni lni-link"></i>
-                                        <span class="cal-btn-business">Conectar Calendar</span>
-                                        <span class="cal-btn-gov" style="display:none;">Conectar Google</span>
+                                        <span class="cal-btn-business" data-translate="integ_cal_connect_biz">Conectar Calendar</span>
+                                        <span class="cal-btn-gov" style="display:none;" data-translate="integ_cal_connect_gov">Conectar Google</span>
                                     </button>
                                 </div>
                                 <div id="googleManageActions" style="display: none; gap: 1rem;">
                                     <button class="btn btn-secondary" id="btnReconnectGoogle">
                                         <i class="lni lni-reload"></i>
-                                        Reconectar
+                                        <span data-translate="integ_cal_reconnect">Reconectar</span>
                                     </button>
                                     <button class="btn btn-disconnect" id="btnDisconnectGoogle">
                                         <i class="lni lni-unlink"></i>
-                                        Desconectar
+                                        <span data-translate="integ_cal_disconnect">Desconectar</span>
                                     </button>
                                 </div>
                             </div>
@@ -587,10 +546,7 @@
                                     </svg>
                                     <h2>Google Sheets</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="sheetsStatusBadge">
-                                    <span class="status-indicator"></span>
-                                    No conectado
-                                </div>
+                                <div class="status-badge disconnected" id="sheetsStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                             </div>
 
                             <!-- Descripción — negocio -->
@@ -627,8 +583,8 @@
                                     <div class="connection-detail">
                                         <span class="connection-label">Sheet:</span>
                                         <a href="#" id="sheetLink" class="connection-link" target="_blank">
-                                            <span class="sheets-link-label-business">Ver hoja de citas</span>
-                                            <span class="sheets-link-label-gov" style="display:none;">Ver hoja de inscripciones</span>
+                                            <span class="sheets-link-label-business" data-translate="integ_sheets_link_biz">Ver hoja de citas</span>
+                                            <span class="sheets-link-label-gov" style="display:none;" data-translate="integ_sheets_link_gov">Ver hoja de inscripciones</span>
                                             <i class="lni lni-arrow-right"></i>
                                         </a>
                                     </div>
@@ -664,10 +620,7 @@
                                 </svg>
                                 <h2>RepairDesk</h2>
                             </div>
-                            <div class="status-badge disconnected" id="repairDeskStatusBadge">
-                                <span class="status-indicator"></span>
-                                No conectado
-                            </div>
+                            <div class="status-badge disconnected" id="repairDeskStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                         </div>
 
                         <p class="card-description">
@@ -715,7 +668,7 @@
                         <div class="card-actions" id="repairDeskActions">
                             <button class="btn btn-connect" id="btnSaveRepairDesk" disabled>
                                 <i class="lni lni-save"></i>
-                                Conectar RepairDesk
+                                <span data-translate="integ_rd_save">Conectar RepairDesk</span>
                             </button>
                         </div>
 
@@ -737,15 +690,15 @@
                         <div class="card-actions" id="repairDeskManageActions" style="display:none;">
                             <button class="btn btn-secondary" id="btnSyncRepairDesk">
                                 <i class="lni lni-reload"></i>
-                                Sincronizar ahora
+                                <span data-translate="integ_rd_sync">Sincronizar ahora</span>
                             </button>
                             <button class="btn btn-secondary" id="btnUpdateRepairDesk">
                                 <i class="lni lni-pencil"></i>
-                                Actualizar Key
+                                <span data-translate="integ_rd_update">Actualizar Key</span>
                             </button>
                             <button class="btn btn-disconnect" id="btnDisconnectRepairDesk">
                                 <i class="lni lni-unlink"></i>
-                                Desconectar
+                                <span data-translate="integ_cal_disconnect">Desconectar</span>
                             </button>
                         </div>
                     </div>
@@ -762,10 +715,7 @@
                                 </svg>
                                 <h2>SoftRestaurant</h2>
                             </div>
-                            <div class="status-badge disconnected" id="srStatusBadge">
-                                <span class="status-indicator"></span>
-                                No conectado
-                            </div>
+                            <div class="status-badge disconnected" id="srStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                         </div>
 
                         <p class="card-description">
@@ -840,12 +790,12 @@
                                 <label class="sr-toggle-label" title="Enviar pedidos del bot automáticamente">
                                     <input type="checkbox" id="srAutoSend" checked disabled>
                                     <span class="sr-toggle-switch"></span>
-                                    <span class="sr-toggle-text">Envío automático</span>
+                                    <span class="sr-toggle-text" data-translate="integ_sr_autosend">Envío automático</span>
                                 </label>
                                 <label class="sr-toggle-label" title="Sincronizar estado desde SoftRestaurant">
                                     <input type="checkbox" id="srSyncStatus" disabled>
                                     <span class="sr-toggle-switch"></span>
-                                    <span class="sr-toggle-text">Sync de estado</span>
+                                    <span class="sr-toggle-text" data-translate="integ_sr_syncstatus">Sync de estado</span>
                                 </label>
                             </div>
                         </div>
@@ -871,11 +821,11 @@
                         <div class="card-actions" id="srSaveActions">
                             <button class="btn btn-secondary" id="btnSrTest" disabled>
                                 <i class="lni lni-plug"></i>
-                                Probar conexión
+                                <span data-translate="integ_sr_test">Probar conexión</span>
                             </button>
                             <button class="btn btn-connect" id="btnSaveSr" disabled>
                                 <i class="lni lni-save"></i>
-                                Guardar y conectar
+                                <span data-translate="integ_sr_save">Guardar y conectar</span>
                             </button>
                         </div>
 
@@ -883,15 +833,15 @@
                         <div class="card-actions" id="srManageActions" style="display:none;">
                             <button class="btn btn-secondary" id="btnSrTestConnected">
                                 <i class="lni lni-plug"></i>
-                                Probar conexión
+                                <span data-translate="integ_sr_test">Probar conexión</span>
                             </button>
                             <button class="btn btn-secondary" id="btnEditSr">
                                 <i class="lni lni-pencil"></i>
-                                Editar
+                                <span data-translate="integ_sr_edit">Editar</span>
                             </button>
                             <button class="btn btn-disconnect" id="btnDisconnectSr">
                                 <i class="lni lni-unlink"></i>
-                                Desconectar
+                                <span data-translate="integ_cal_disconnect">Desconectar</span>
                             </button>
                         </div>
                     </div>
@@ -904,10 +854,7 @@
                                     <i class="lni lni-credit-cards integration-icon" style="font-size: 2rem; color: #f59e0b;"></i>
                                     <h2>Pasarela de Pagos</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="paymentsStatusBadge">
-                                    <span class="status-indicator"></span>
-                                    Sin configurar
-                                </div>
+                                <div class="status-badge disconnected" id="paymentsStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_without_config">Sin configurar</span></div>
                             </div>
 
                             <p class="card-description">
@@ -957,10 +904,7 @@
                                             <span class="spei-subtitle">CLABE interbancaria · 18 dígitos</span>
                                         </div>
                                     </div>
-                                    <div class="status-badge disconnected" id="speiStatusBadge">
-                                        <span class="status-indicator"></span>
-                                        No configurado
-                                    </div>
+                                    <div class="status-badge disconnected" id="speiStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
                                 </div>
 
                                 <!-- Formulario SPEI (modo edición) -->
@@ -1025,17 +969,17 @@
                                 <div class="card-actions spei-save-actions" id="speiSaveActions">
                                     <button class="btn btn-connect" id="btnSaveSPEI" disabled>
                                         <i class="lni lni-save"></i>
-                                        Guardar CLABE
+                                        <span data-translate="integ_spei_save">Guardar CLABE</span>
                                     </button>
                                 </div>
                                 <div class="card-actions spei-manage-actions" id="speiManageActions" style="display: none;">
                                     <button class="btn btn-secondary" id="btnEditSPEI">
                                         <i class="lni lni-pencil"></i>
-                                        Editar
+                                        <span data-translate="integ_spei_edit">Editar</span>
                                     </button>
                                     <button class="btn btn-disconnect" id="btnRemoveSPEI">
                                         <i class="lni lni-trash"></i>
-                                        Eliminar
+                                        <span data-translate="integ_spei_remove">Eliminar</span>
                                     </button>
                                 </div>
                             </div>
@@ -1062,10 +1006,7 @@
                                             <span class="stripe-subtitle">Pagos con tarjeta de crédito / débito</span>
                                         </div>
                                     </div>
-                                    <div class="status-badge disconnected" id="stripeConnectStatusBadge">
-                                        <span class="status-indicator"></span>
-                                        No conectado
-                                    </div>
+                                    <div class="status-badge disconnected" id="stripeConnectStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                                 </div>
 
                                 <!-- Descripción -->
@@ -1102,13 +1043,13 @@
                                 <div class="stripe-actions" id="stripeConnectActions">
                                     <button class="btn btn-stripe" id="btnConnectStripe" disabled>
                                         <i class="lni lni-link"></i>
-                                        Conectar con Stripe
+                                        <span data-translate="integ_stripe_connect">Conectar con Stripe</span>
                                     </button>
                                 </div>
                                 <div class="stripe-actions" id="stripeManageActions" style="display: none;">
                                     <button class="btn btn-disconnect" id="btnDisconnectStripe">
                                         <i class="lni lni-unlink"></i>
-                                        Desconectar Stripe
+                                        <span data-translate="integ_stripe_disconnect">Desconectar Stripe</span>
                                     </button>
                                 </div>
 
@@ -1141,11 +1082,11 @@
                                 <rect x="34" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
                             </svg>
                         </div>
-                        <h3>No tienes agentes creados</h3>
-                        <p>Crea tu primer agente para comenzar a usar las integraciones</p>
+                        <h3 data-translate="integ_no_agents_title">No tienes agentes creados</h3>
+                        <p data-translate="integ_no_agents_desc">Crea tu primer agente para comenzar a usar las integraciones</p>
                         <button type="button" class="btn-primary" onclick="openOnboardingModal()" style="margin-top: 0.5rem;">
                             <i class="lni lni-plus"></i>
-                            <span>Crear Agente</span>
+                            <span data-translate="integ_create_agent">Crear Agente</span>
                         </button>
                     </div>
                 </div>
@@ -1153,6 +1094,7 @@
         </div>
     </div>
 
+    <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/integrations.js"></script>
 </body>

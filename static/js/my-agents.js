@@ -97,6 +97,8 @@ async function loadOnboardingContent() {
 
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
+            // Re-apply translations to the newly injected onboarding content
+            if (window.Translations) window.Translations.apply(getLang());
 
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
@@ -150,6 +152,8 @@ async function loadOnboardingContent() {
                 script.src = '/static/js/onboarding.js?v=' + Date.now();
                 script.onload = () => {
                     _onboardingScriptLoaded = true;
+                    // Re-apply translations after onboarding script loaded
+                    if (window.Translations) window.Translations.apply(getLang());
                     // ── Validar nombre antes de crear (evita POST con name:"") ──
                     setTimeout(() => {
                         var _origCreateAgent = window.createAgent;
@@ -174,6 +178,7 @@ async function loadOnboardingContent() {
                 };
                 document.body.appendChild(script);
             } else {
+                if (window.Translations) window.Translations.apply(getLang());
                 setTimeout(() => {
                     var _origCA = window.createAgent;
                     window.createAgent = function() {

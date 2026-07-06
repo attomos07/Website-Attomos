@@ -639,6 +639,8 @@ async function loadOnboardingContent() {
 
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
+            // Re-apply translations to the newly injected onboarding content
+            if (window.Translations) window.Translations.apply(getLang());
 
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
@@ -749,10 +751,12 @@ async function loadOnboardingContent() {
                 script.src = '/static/js/onboarding.js';
                 script.onload = () => {
                     onboardingScriptLoaded = true;
+                    if (window.Translations) window.Translations.apply(getLang());
                     setTimeout(() => reinitializeOnboardingEvents(), 50);
                 };
                 document.body.appendChild(script);
             } else {
+                if (window.Translations) window.Translations.apply(getLang());
                 setTimeout(() => reinitializeOnboardingEvents(), 20);
             }
         } else {

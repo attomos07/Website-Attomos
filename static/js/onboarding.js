@@ -53,8 +53,8 @@ const SECTIONS_BUSINESS = [
   { id: 5, name: 'Personalidad', icon: 'lni-comments', containerId: 'section-personality' },
   { id: 6, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
   { id: 7, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
-  { id: 8, name: 'Servicios', icon: 'lni-package', containerId: 'section-services' },
-  { id: 9, name: 'Menú', icon: 'lni-files', containerId: 'section-menu' },
+  { id: 8, name: t('onb_sec_services','Servicios'), icon: 'lni-package', containerId: 'section-services' },
+  { id: 9, name: t('onb_sec_menu','Menú'), icon: 'lni-files', containerId: 'section-menu' },
   { id: 10, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
 ];
 
@@ -101,7 +101,7 @@ function _getServicePlaceholder() {
   }
   const placeholders = {
     'clinica-dental': 'Ej: Limpieza dental',
-    'peluqueria':     'Ej: Corte de cabello',
+    'peluqueria':     t('onb_svc_title_placeholder','Ej: Corte de cabello'),
     'gorditas':       'Ej: Gordita de chicharrón',
     'mariscos':       'Ej: Caldo de camarón',
     'automotriz':     'Ej: Aceite de motor 5W-30',
@@ -111,7 +111,7 @@ function _getServicePlaceholder() {
     'panaderia':      'Ej: Concha de vainilla',
     'ensaladas':      'Ej: Ensalada César',
   };
-  return placeholders[type] || 'Ej: Corte de cabello';
+  return placeholders[type] || t('onb_svc_title_placeholder','Ej: Corte de cabello');
 }
 
 /**
@@ -121,16 +121,16 @@ function _getServicePlaceholder() {
 function updateSectionLabels(businessType) {
   const cat = getBusinessCategory(businessType);
 
-  const svcTabLabel  = cat === 'servicio' ? 'Servicios'         : 'Productos';
-  const svcTitle     = cat === 'servicio' ? 'Servicios'         : 'Productos';
+  const svcTabLabel  = cat === 'servicio' ? t('onb_sec_services','Servicios')         : 'Productos';
+  const svcTitle     = cat === 'servicio' ? t('onb_sec_services','Servicios')         : 'Productos';
   const svcBtnLabel  = cat === 'servicio' ? 'Agregar Servicio'  : 'Agregar Producto';
   const svcItemLabel = cat === 'servicio' ? 'Servicio'          : 'Producto';
   const svcHint      = cat === 'servicio'
     ? 'Define los servicios que ofreces'
     : 'Define los productos que ofreces';
 
-  const menuTabLabel = cat === 'comida'   ? 'Menú'     : 'Catálogo';
-  const menuTitle    = cat === 'comida'   ? 'Menú'     : 'Catálogo';
+  const menuTabLabel = cat === 'comida'   ? t('onb_sec_menu','Menú')     : 'Catálogo';
+  const menuTitle    = cat === 'comida'   ? t('onb_sec_menu','Menú')     : 'Catálogo';
   const menuHint     = cat === 'comida'
     ? 'Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.'
     : 'Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.';
@@ -287,7 +287,13 @@ function setDotTarget(fraction) {
 // ============================================
 // INITIALIZE
 // ============================================
+// ONBOARDING.JS - IA Agent setup flow
+// ============================================================
+function getLang() { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; }
+function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key] || fallback; }
+
 document.addEventListener('DOMContentLoaded', function() {
+
   initDotIndicator();
   fetchUserData();
   initializeBusinessTypeSelect();
@@ -469,7 +475,7 @@ function convertToCustomTimePicker(nativeInput) {
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'time-picker-btn time-picker-cancel';
-  cancelBtn.textContent = 'Cancelar';
+  cancelBtn.textContent = t('onb_btn_cancel','Cancelar');
   cancelBtn.onclick = (e) => {
     e.stopPropagation();
     closeBusinessDropdown(wrapper);
@@ -478,7 +484,7 @@ function convertToCustomTimePicker(nativeInput) {
   const confirmBtn = document.createElement('button');
   confirmBtn.type = 'button';
   confirmBtn.className = 'time-picker-btn time-picker-confirm';
-  confirmBtn.textContent = 'Aceptar';
+  confirmBtn.textContent = t('onb_btn_accept','Aceptar');
   confirmBtn.onclick = (e) => {
     e.stopPropagation();
     applyBusinessTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
@@ -690,7 +696,7 @@ function convertToCustomDatePicker(nativeInput) {
   customInput.className = 'date-input-custom';
   customInput.value = formatDisplayDate(nativeInput.value || '');
   customInput.readOnly = true;
-  customInput.placeholder = 'Selecciona una fecha';
+  customInput.placeholder = t('onb_hol_name_placeholder','Selecciona una fecha');
   
   const arrow = document.createElement('i');
   arrow.className = 'lni lni-calendar date-arrow';
@@ -953,7 +959,7 @@ function convertToWorkerTimePicker(nativeInput) {
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'time-picker-btn time-picker-cancel';
-  cancelBtn.textContent = 'Cancelar';
+  cancelBtn.textContent = t('onb_btn_cancel','Cancelar');
   cancelBtn.onclick = (e) => {
     e.stopPropagation();
     closeWorkerDropdown(wrapper);
@@ -962,7 +968,7 @@ function convertToWorkerTimePicker(nativeInput) {
   const confirmBtn = document.createElement('button');
   confirmBtn.type = 'button';
   confirmBtn.className = 'time-picker-btn time-picker-confirm';
-  confirmBtn.textContent = 'Aceptar';
+  confirmBtn.textContent = t('onb_btn_accept','Aceptar');
   confirmBtn.onclick = (e) => {
     e.stopPropagation();
     applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
@@ -1242,11 +1248,11 @@ function applyGovernmentMode() {
   const addHolidayBtn = document.getElementById('addHolidayBtn');
   if (addHolidayBtn) {
     const icon = addHolidayBtn.querySelector('i');
-    addHolidayBtn.textContent = ' Agregar Día Inhábil';
+    addHolidayBtn.textContent = ' ' + t('onb_hol_add_btn','Agregar Día Inhábil');
     if (icon) addHolidayBtn.prepend(icon);
   }
   document.querySelectorAll('.holiday-name-input').forEach(el => {
-    el.placeholder = 'Nombre del día inhábil';
+    el.placeholder = t('onb_hol_name_placeholder','Nombre del día inhábil');
   });
 
   // ── Adaptar sección "Servicios" → "Cursos y Talleres" ────────────────────
@@ -1258,11 +1264,11 @@ function applyGovernmentMode() {
     svcTitle.append(' Cursos y Talleres');
   }
   const svcHint = document.querySelector('#section-services .form-help');
-  if (svcHint) svcHint.textContent = 'Define los cursos o talleres que ofrece tu dependencia';
+  if (svcHint) svcHint.textContent = t('onb_gov_courses','Define los cursos o talleres que ofrece tu dependencia');
   const addSvcBtn = document.getElementById('addServiceBtn');
   if (addSvcBtn) {
     const icon = addSvcBtn.querySelector('i');
-    addSvcBtn.textContent = ' Agregar Curso';
+    addSvcBtn.textContent = ' ' + t('onb_gov_courses','Agregar Curso');
     if (icon) addSvcBtn.prepend(icon);
   }
   window._currentSvcItemLabel = 'Curso';
@@ -1274,10 +1280,10 @@ function applyGovernmentMode() {
     // Actualizar label del título
     const titleLabel = item.querySelector('.form-label');
     if (titleLabel && titleLabel.textContent.includes('Título')) {
-      titleLabel.textContent = 'Título del Curso *';
+      titleLabel.textContent = t('onb_gov_courses','Título del Curso') + ' *';
     }
     const titleInput = item.querySelector('.service-title');
-    if (titleInput) titleInput.placeholder = 'Ej: Curso de computación básica';
+    if (titleInput) titleInput.placeholder = 'Ej: ' + t('onb_gov_courses','Curso') + ' de computación básica';
   });
 
   // ── Adaptar sección "Ubicación" para gobierno ──────────────────────────────
@@ -1330,7 +1336,7 @@ function applyGovernmentMode() {
   const addWorkerBtn = document.getElementById('addWorkerBtn');
   if (addWorkerBtn) {
     const icon = addWorkerBtn.querySelector('i');
-    addWorkerBtn.textContent = ' Agregar Trabajador';
+    addWorkerBtn.textContent = ' ' + t('onb_wkr_add_btn','Agregar Trabajador');
     if (icon) addWorkerBtn.prepend(icon);
   }
 
@@ -1699,7 +1705,7 @@ function renderBranchSelectorBasic(branches, activeBranchId) {
   const allCard = document.createElement('div');
   allCard.className = 'branch-basic-card' + (activeBranchId === 0 ? ' active' : '');
   allCard.dataset.branchId = '0';
-  allCard.innerHTML = '<i class="lni lni-network"></i><span>Todas las sucursales</span>';
+  allCard.innerHTML = `<i class="lni lni-network"></i><span>${t('onb_all_branches','Todas las sucursales')}</span>`;
   allCard.addEventListener('click', () => selectBranchBasic(0, null));
   container.appendChild(allCard);
 
@@ -3059,7 +3065,7 @@ function initializeNavigationButtons() {
 
 function nextStep() {
   if (currentStep === 1 && !selectedSocial) {
-    alert('Por favor selecciona una red social');
+    alert(t('onb_err_select_network','Por favor selecciona una red social'));
     return;
   }
 
@@ -3095,7 +3101,7 @@ function validateStep2() {
   const agentName = document.getElementById('agentName').value.trim();
 
   if (!agentName) {
-    alert('Por favor ingresa el nombre del agente');
+    alert(t('onb_err_agent_name','Por favor ingresa el nombre del agente'));
     document.getElementById('agentName').focus();
     return false;
   }
@@ -3569,7 +3575,7 @@ function ensureModalsExist() {
         <div class="status-info">
           <div class="current-status">
             <i class="lni lni-cog status-icon" id="currentStatusIcon"></i>
-            <span class="status-text" id="currentStatusText">Iniciando creación...</span>
+            <span class="status-text" id="currentStatusText" data-translate="onb_creating_status_init">Iniciando creación...</span>
           </div>
 
           <div class="status-steps" id="statusStepsContainer">
@@ -4115,7 +4121,7 @@ async function createAgent() {
     clearInterval(timerInterval);
     console.error('❌ Error:', error);
     creatingModal.classList.remove('show');
-    alert('Error al crear el agente. Por favor intenta de nuevo.');
+    alert(t('onb_err_creating','Error al crear el agente. Por favor intenta de nuevo.'));
   }
 }
 

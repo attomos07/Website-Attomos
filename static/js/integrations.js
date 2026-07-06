@@ -2,6 +2,9 @@
 // INTEGRATIONS JAVASCRIPT - ACTUALIZADO CON WEBHOOK AUTOMÁTICO
 // ============================================
 
+function getLang() { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; }
+function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key] || fallback; }
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Integrations JS cargado correctamente');
     
@@ -73,7 +76,7 @@ async function initAgentSelector() {
         });
 
         if (!response.ok) {
-            throw new Error('Error al cargar agentes');
+            throw new Error(t('integ_err_load_agents','Error al cargar agentes'));
         }
 
         const data = await response.json();
@@ -91,7 +94,7 @@ async function initAgentSelector() {
         
     } catch (error) {
         console.error('Error cargando agentes:', error);
-        showNotification('Error al cargar agentes', 'error');
+        showNotification(t('integ_err_load_agents','Error al cargar agentes'), 'error');
         showNoAgentsState();
     }
 }
@@ -448,7 +451,7 @@ function updateMetaCredentialsUI(data) {
 
 async function saveMetaCredentials() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
@@ -458,7 +461,7 @@ async function saveMetaCredentials() {
     const verifyToken = document.getElementById('metaVerifyToken').value.trim();
     
     if (!phoneNumberId || !accessToken || !wabaId || !verifyToken) {
-        showNotification('Por favor completa todos los campos', 'error');
+        showNotification(t('integ_err_fill_fields','Por favor completa todos los campos'), 'error');
         return;
     }
     
@@ -496,12 +499,12 @@ async function saveMetaCredentials() {
         const data = await response.json();
         console.log('✅ Credenciales guardadas:', data);
         
-        showNotification('Credenciales guardadas exitosamente', 'success');
+        showNotification(t('integ_ok_credentials_saved','Credenciales guardadas exitosamente'), 'success');
         await loadMetaCredentialsStatus(selectedAgentId);
         
     } catch (error) {
         console.error('Error guardando credenciales Meta:', error);
-        showNotification(error.message || 'Error al guardar credenciales', 'error');
+        showNotification(error.message || t('integ_err_save_credentials','Error al guardar credenciales'), 'error');
         
         btnSave.innerHTML = originalText;
         btnSave.disabled = false;
@@ -548,7 +551,7 @@ function enableMetaEdit() {
 
 async function removeMetaCredentials() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
@@ -577,18 +580,18 @@ async function removeMetaCredentials() {
         });
 
         if (!response.ok) {
-            throw new Error('Error al eliminar credenciales');
+            throw new Error(t('integ_err_remove_credentials','Error al eliminar credenciales'));
         }
 
         const data = await response.json();
         console.log('✅ Credenciales eliminadas:', data);
         
-        showNotification('Credenciales eliminadas exitosamente', 'success');
+        showNotification(t('integ_ok_credentials_removed','Credenciales eliminadas exitosamente'), 'success');
         await loadMetaCredentialsStatus(selectedAgentId);
         
     } catch (error) {
         console.error('Error eliminando credenciales Meta:', error);
-        showNotification('Error al eliminar credenciales', 'error');
+        showNotification(t('integ_err_remove_credentials','Error al eliminar credenciales'), 'error');
         
         btnRemove.innerHTML = originalText;
         btnRemove.disabled = false;
@@ -635,10 +638,10 @@ function copyWebhookUrl(url, button) {
             button.innerHTML = originalHTML;
         }, 2000);
         
-        showNotification('URL del webhook copiada al portapapeles', 'success');
+        showNotification(t('integ_ok_webhook_copied','URL del webhook copiada al portapapeles'), 'success');
     }).catch(err => {
         console.error('Error al copiar:', err);
-        showNotification('Error al copiar URL', 'error');
+        showNotification(t('integ_err_copy','Error al copiar URL'), 'error');
     });
 }
 
@@ -784,14 +787,14 @@ function updateGeminiUI(data) {
 
 async function saveGeminiKey() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
     const apiKey = document.getElementById('geminiApiKey').value.trim();
     
     if (!apiKey) {
-        showNotification('Por favor ingresa una API Key válida', 'error');
+        showNotification(t('integ_err_invalid_apikey','Por favor ingresa una API Key válida'), 'error');
         return;
     }
     
@@ -826,12 +829,12 @@ async function saveGeminiKey() {
         const data = await response.json();
         console.log('✅ Gemini API Key guardada:', data);
         
-        showNotification('API Key guardada exitosamente', 'success');
+        showNotification(t('integ_ok_apikey_saved','API Key guardada exitosamente'), 'success');
         await loadGeminiStatus(selectedAgentId);
         
     } catch (error) {
         console.error('Error guardando Gemini API Key:', error);
-        showNotification(error.message || 'Error al guardar API Key', 'error');
+        showNotification(error.message || t('integ_err_save_apikey','Error al guardar API Key'), 'error');
         
         btnSave.innerHTML = originalText;
         btnSave.disabled = false;
@@ -840,7 +843,7 @@ async function saveGeminiKey() {
 
 async function removeGeminiKey() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
@@ -869,18 +872,18 @@ async function removeGeminiKey() {
         });
 
         if (!response.ok) {
-            throw new Error('Error al eliminar API Key');
+            throw new Error(t('integ_err_remove_apikey','Error al eliminar API Key'));
         }
 
         const data = await response.json();
         console.log('✅ Gemini API Key eliminada:', data);
         
-        showNotification('API Key eliminada exitosamente', 'success');
+        showNotification(t('integ_ok_apikey_removed','API Key eliminada exitosamente'), 'success');
         await loadGeminiStatus(selectedAgentId);
         
     } catch (error) {
         console.error('Error eliminando Gemini API Key:', error);
-        showNotification('Error al eliminar API Key', 'error');
+        showNotification(t('integ_err_remove_apikey','Error al eliminar API Key'), 'error');
         
         btnRemove.innerHTML = originalText;
         btnRemove.disabled = false;
@@ -1034,7 +1037,7 @@ function updateGoogleIntegrationUI(data) {
 
 async function connectGoogle() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
@@ -1071,7 +1074,7 @@ async function connectGoogle() {
         );
         
         if (!popup) {
-            showNotification('Por favor permite ventanas emergentes para continuar', 'error');
+            showNotification(t('integ_err_popups','Por favor permite ventanas emergentes para continuar'), 'error');
             return;
         }
         
@@ -1087,13 +1090,13 @@ async function connectGoogle() {
         
     } catch (error) {
         console.error('Error conectando Google:', error);
-        showNotification('Error al conectar con Google', 'error');
+        showNotification(t('integ_err_google_connect','Error al conectar con Google'), 'error');
     }
 }
 
 async function disconnectGoogle() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
     
@@ -1122,18 +1125,18 @@ async function disconnectGoogle() {
         });
 
         if (!response.ok) {
-            throw new Error('Error al desconectar Google');
+            throw new Error(t('integ_err_google_disconnect','Error al desconectar Google'));
         }
 
         const data = await response.json();
         console.log('✅ Google desconectado:', data);
         
-        showNotification('Google desconectado exitosamente', 'success');
+        showNotification(t('integ_ok_google_disconnect','Google desconectado exitosamente'), 'success');
         await loadGoogleIntegrationStatus(selectedAgentId);
         
     } catch (error) {
         console.error('Error desconectando Google:', error);
-        showNotification('Error al desconectar Google', 'error');
+        showNotification(t('integ_err_google_disconnect','Error al desconectar Google'), 'error');
         
         btnDisconnect.innerHTML = originalText;
         btnDisconnect.disabled = false;
@@ -1313,7 +1316,7 @@ function updatePaymentsUI(data) {
     if (data.speiEnabled && data.clabeNumber) {
         if (speiStatusBadge) {
             speiStatusBadge.className = 'status-badge connected';
-            speiStatusBadge.innerHTML = '<span class="status-indicator"></span>Configurado';
+            speiStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
         }
         if (speiConnectionInfo) {
             speiConnectionInfo.style.display = 'block';
@@ -1332,7 +1335,7 @@ function updatePaymentsUI(data) {
     } else {
         if (speiStatusBadge) {
             speiStatusBadge.className = 'status-badge disconnected';
-            speiStatusBadge.innerHTML = '<span class="status-indicator"></span>No configurado';
+            speiStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
         }
         if (speiConnectionInfo) speiConnectionInfo.style.display = 'none';
         const speiForm = document.getElementById('speiForm');
@@ -1350,7 +1353,7 @@ function updatePaymentsUI(data) {
     if (data.stripeEnabled) {
         if (stripeStatusBadge) {
             stripeStatusBadge.className = 'status-badge connected';
-            stripeStatusBadge.innerHTML = '<span class="status-indicator"></span>Conectado';
+            stripeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`;
         }
         if (stripeConnectInfo) {
             stripeConnectInfo.style.display = 'block';
@@ -1365,15 +1368,15 @@ function updatePaymentsUI(data) {
                 restricted: '⚠️ Restringido'
             };
             if (statusEl) statusEl.textContent = statusMap[data.stripeAccountStatus] || data.stripeAccountStatus;
-            if (chargesEl) chargesEl.textContent = data.stripeChargesEnabled ? '✅ Habilitados' : '⏳ Pendiente';
-            if (payoutsEl) payoutsEl.textContent = data.stripePayoutsEnabled ? '✅ Habilitados' : '⏳ Pendiente';
+            if (chargesEl) chargesEl.textContent = data.stripeChargesEnabled ? t('integ_stripe_enabled','✅ Habilitados') : t('integ_stripe_pending','⏳ Pendiente');
+            if (payoutsEl) payoutsEl.textContent = data.stripePayoutsEnabled ? t('integ_stripe_enabled','✅ Habilitados') : t('integ_stripe_pending','⏳ Pendiente');
         }
         if (stripeConnectActions) stripeConnectActions.style.display = 'none';
         if (stripeManageActions) stripeManageActions.style.display = 'flex';
     } else {
         if (stripeStatusBadge) {
             stripeStatusBadge.className = 'status-badge disconnected';
-            stripeStatusBadge.innerHTML = '<span class="status-indicator"></span>No conectado';
+            stripeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`;
         }
         if (stripeConnectInfo) stripeConnectInfo.style.display = 'none';
         if (stripeConnectActions) stripeConnectActions.style.display = 'flex';
@@ -1386,10 +1389,10 @@ function updatePaymentsUI(data) {
     if (mainBadge) {
         if (anyConfigured) {
             mainBadge.className = 'status-badge connected';
-            mainBadge.innerHTML = '<span class="status-indicator"></span>Configurado';
+            mainBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
         } else {
             mainBadge.className = 'status-badge disconnected';
-            mainBadge.innerHTML = '<span class="status-indicator"></span>Sin configurar';
+            mainBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_without_config','Sin configurar')}`;
         }
     }
 }
@@ -1398,7 +1401,7 @@ function updatePaymentsUI(data) {
 
 async function saveSPEIConfig() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
 
@@ -1407,7 +1410,7 @@ async function saveSPEIConfig() {
     const accountName = document.getElementById('accountName').value.trim();
 
     if (clabe.length !== 18) {
-        showNotification('La CLABE debe tener exactamente 18 dígitos', 'error');
+        showNotification(t('integ_err_clabe_length','La CLABE debe tener exactamente 18 dígitos'), 'error');
         return;
     }
 
@@ -1417,7 +1420,7 @@ async function saveSPEIConfig() {
 
     const btn = document.getElementById('btnSaveSPEI');
     const orig = btn.innerHTML;
-    btn.innerHTML = '<div class="loading-spinner"></div><span>Guardando...</span>';
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
     btn.disabled = true;
 
     try {
@@ -1436,7 +1439,7 @@ async function saveSPEIConfig() {
             const err = await res.json();
             throw new Error(err.error || 'Error al guardar');
         }
-        showNotification('CLABE guardada exitosamente', 'success');
+        showNotification(t('integ_ok_clabe_saved','CLABE guardada exitosamente'), 'success');
         await loadPaymentConfig(branchId);
     } catch (err) {
         showNotification(err.message, 'error');
@@ -1484,7 +1487,7 @@ async function removeSPEIConfig() {
 
     const btn = document.getElementById('btnRemoveSPEI');
     const orig = btn.innerHTML;
-    btn.innerHTML = '<div class="loading-spinner"></div><span>Eliminando...</span>';
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
     btn.disabled = true;
 
     try {
@@ -1493,10 +1496,10 @@ async function removeSPEIConfig() {
             credentials: 'include'
         });
         if (!res.ok) throw new Error('Error al eliminar');
-        showNotification('Configuración SPEI eliminada', 'success');
+        showNotification(t('integ_ok_spei_removed','Configuración SPEI eliminada'), 'success');
         await loadPaymentConfig(branchId);
     } catch (err) {
-        showNotification('Error al eliminar SPEI', 'error');
+        showNotification(t('integ_err_spei_remove','Error al eliminar SPEI'), 'error');
         btn.innerHTML = orig;
         btn.disabled = false;
     }
@@ -1506,7 +1509,7 @@ async function removeSPEIConfig() {
 
 async function connectStripe() {
     if (!selectedAgentId) {
-        showNotification('Por favor selecciona un agente primero', 'error');
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
         return;
     }
 
@@ -1515,7 +1518,7 @@ async function connectStripe() {
 
     const btn = document.getElementById('btnConnectStripe');
     const orig = btn.innerHTML;
-    btn.innerHTML = '<div class="loading-spinner"></div><span>Iniciando...</span>';
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_starting','Iniciando...')}</span>`;
     btn.disabled = true;
 
     try {
@@ -1534,7 +1537,7 @@ async function connectStripe() {
             const w = window.open(data.onboardingUrl, 'StripeConnect', 'width=600,height=700,resizable=yes,scrollbars=yes');
 
             if (!w) {
-                showNotification('Permite ventanas emergentes para continuar', 'error');
+                showNotification(t('integ_err_popups','Permite ventanas emergentes para continuar'), 'error');
                 btn.innerHTML = orig;
                 btn.disabled = false;
                 return;
@@ -1569,7 +1572,7 @@ async function disconnectStripe() {
 
     const btn = document.getElementById('btnDisconnectStripe');
     const orig = btn.innerHTML;
-    btn.innerHTML = '<div class="loading-spinner"></div><span>Desconectando...</span>';
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_disconnecting','Desconectando...')}</span>`;
     btn.disabled = true;
 
     try {
@@ -1577,11 +1580,11 @@ async function disconnectStripe() {
             method: 'DELETE',
             credentials: 'include'
         });
-        if (!res.ok) throw new Error('Error al desconectar Stripe');
-        showNotification('Stripe desconectado exitosamente', 'success');
+        if (!res.ok) throw new Error(t('integ_err_stripe_disconnect','Error al desconectar Stripe'));
+        showNotification(t('integ_ok_stripe_disconnect','Stripe desconectado exitosamente'), 'success');
         await loadPaymentConfig(branchId);
     } catch (err) {
-        showNotification('Error al desconectar Stripe', 'error');
+        showNotification(t('integ_err_stripe_disconnect','Error al desconectar Stripe'), 'error');
         btn.innerHTML = orig;
         btn.disabled = false;
     }
@@ -1605,7 +1608,7 @@ async function getBranchIdForAgent(agentId) {
         console.error('No se pudo obtener branchId:', e);
     }
 
-    showNotification('No se pudo determinar la sucursal del agente', 'error');
+    showNotification(t('integ_err_stripe_branch','No se pudo determinar la sucursal del agente'), 'error');
     return null;
 }
 
@@ -1614,14 +1617,14 @@ async function getBranchIdForAgent(agentId) {
 function checkStripeRedirect() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('stripe_success')) {
-        showNotification('✅ Stripe conectado exitosamente', 'success');
+        showNotification(t('integ_ok_stripe_connected','✅ Stripe conectado exitosamente'), 'success');
         // Limpiar params de la URL
         window.history.replaceState({}, '', '/integrations');
     } else if (params.get('stripe_error')) {
-        showNotification('Error al conectar con Stripe. Intenta de nuevo.', 'error');
+        showNotification(t('integ_err_stripe_connect','Error al conectar con Stripe. Intenta de nuevo.'), 'error');
         window.history.replaceState({}, '', '/integrations');
     } else if (params.get('stripe_refresh')) {
-        showNotification('El onboarding de Stripe expiró. Por favor reconecta.', 'error');
+        showNotification(t('integ_err_stripe_expired','El onboarding de Stripe expiró. Por favor reconecta.'), 'error');
         window.history.replaceState({}, '', '/integrations');
     }
 }
@@ -1694,6 +1697,9 @@ async function loadOnboardingContent() {
         const mainContainer = doc.querySelector('.main-container');
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
+            // Re-apply translations to the newly injected onboarding content
+            if (window.Translations) window.Translations.apply(getLang());
+
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
@@ -1724,6 +1730,8 @@ async function loadOnboardingContent() {
                 const script = document.createElement('script');
                 script.src = '/static/js/onboarding.js?v=' + Date.now();
                 script.onload = () => { _onboardingScriptLoaded = true;
+                    // Re-apply translations after onboarding script loaded
+                    if (window.Translations) window.Translations.apply(getLang());
                     setTimeout(() => {
                         var _origCreateAgent = window.createAgent;
                         window.createAgent = function() {
@@ -1743,6 +1751,7 @@ async function loadOnboardingContent() {
                     setTimeout(() => reinitializeOnboardingEvents(), 50); };
                 document.body.appendChild(script);
             } else {
+                if (window.Translations) window.Translations.apply(getLang());
                 setTimeout(() => {
                     var _origCA = window.createAgent;
                     window.createAgent = function() {
@@ -1910,7 +1919,7 @@ async function reinitializeOnboardingEvents() {
         });
         const resumenBtn = document.createElement('button');
         resumenBtn.type = 'button'; resumenBtn.id = 'modal-resumen-tab'; resumenBtn.className = 'section-nav-btn';
-        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('integ_onb_resume','Resumen')}</span>`;
         resumenBtn.addEventListener('click', () => window._modalGoToResumen());
         sectionNav.appendChild(resumenBtn);
     }
@@ -2107,7 +2116,7 @@ function updateRepairDeskUI(data) {
     if (data.connected) {
         if (badge) {
             badge.className = 'status-badge connected';
-            badge.innerHTML = '<span class="status-indicator"></span>Conectado';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`;
         }
         if (apiInput)   { apiInput.value = '••••••••••••••••••••••'; apiInput.disabled = true; }
         if (toggleBtn)  toggleBtn.disabled = true;
@@ -2121,7 +2130,7 @@ function updateRepairDeskUI(data) {
     } else {
         if (badge) {
             badge.className = 'status-badge disconnected';
-            badge.innerHTML = '<span class="status-indicator"></span>No conectado';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`;
         }
         if (apiInput)   { apiInput.value = ''; apiInput.disabled = false; }
         if (toggleBtn)  toggleBtn.disabled = false;
@@ -2136,13 +2145,13 @@ function updateRepairDeskUI(data) {
 }
 
 async function saveRepairDeskKey() {
-    if (!selectedAgentId) { showNotification('Selecciona un agente primero', 'error'); return; }
+    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
     const apiKey = document.getElementById('repairDeskApiKey')?.value.trim();
-    if (!apiKey)  { showNotification('Ingresa tu API Key de RepairDesk', 'error'); return; }
+    if (!apiKey)  { showNotification(t('integ_err_rd_apikey','Ingresa tu API Key de RepairDesk'), 'error'); return; }
 
     const btn = document.getElementById('btnSaveRepairDesk');
     const orig = btn.innerHTML;
-    btn.innerHTML = '<div class="loading-spinner"></div><span>Conectando...</span>';
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_connecting','Conectando...')}</span>`;
     btn.disabled = true;
 
     try {
@@ -2153,21 +2162,21 @@ async function saveRepairDeskKey() {
             body: JSON.stringify({ api_key: apiKey })
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al conectar'); }
-        showNotification('RepairDesk conectado exitosamente', 'success');
+        showNotification(t('integ_ok_rd_connected','RepairDesk conectado exitosamente'), 'success');
         await loadRepairDeskStatus(selectedAgentId);
         // Disparar sync inicial para reflejar inventario en My Business
         syncRepairDeskNow();
     } catch (err) {
-        showNotification(err.message || 'Error al conectar RepairDesk', 'error');
+        showNotification(err.message || t('integ_err_rd_connect','Error al conectar RepairDesk'), 'error');
         btn.innerHTML = orig;
         btn.disabled = false;
     }
 }
 
 async function syncRepairDeskNow() {
-    if (!selectedAgentId) { showNotification('Selecciona un agente primero', 'error'); return; }
+    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
     const btn = document.getElementById('btnSyncRepairDesk');
-    if (btn) { btn.innerHTML = '<div class="loading-spinner"></div><span>Sincronizando...</span>'; btn.disabled = true; }
+    if (btn) { if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_syncing','Sincronizando...')}</span>` ; btn.disabled = true; }; btn.disabled = true; }
 
     try {
         const res = await fetch(`/api/repairdesk/sync/${selectedAgentId}`, {
@@ -2176,12 +2185,12 @@ async function syncRepairDeskNow() {
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al sincronizar'); }
         const data = await res.json();
-        showNotification(`Inventario sincronizado: ${data.synced_count ?? ''} productos`, 'success');
+        showNotification(`${t('integ_ok_rd_synced','Inventario sincronizado')}: ${data.synced_count ?? ''} ${t('integ_ok_rd_synced_count','productos')}`, 'success');
         await loadRepairDeskStatus(selectedAgentId);
     } catch (err) {
-        showNotification(err.message || 'Error al sincronizar', 'error');
+        showNotification(err.message || t('integ_err_rd_sync','Error al sincronizar'), 'error');
     } finally {
-        if (btn) { btn.innerHTML = '<i class="lni lni-reload"></i> Sincronizar ahora'; btn.disabled = false; }
+        if (btn) { btn.innerHTML = `<i class="lni lni-reload"></i> ${t('integ_rd_sync','Sincronizar ahora')}`; btn.disabled = false; }
     }
 }
 
@@ -2210,11 +2219,11 @@ async function disconnectRepairDesk() {
             method: 'DELETE',
             credentials: 'include'
         });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al desconectar'); }
-        showNotification('RepairDesk desconectado', 'success');
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || t('integ_err_sr_disconnect','Error al desconectar')); }
+        showNotification(t('integ_ok_rd_disconnect','RepairDesk desconectado'), 'success');
         updateRepairDeskUI({ connected: false });
     } catch (err) {
-        showNotification(err.message || 'Error al desconectar', 'error');
+        showNotification(err.message || t('integ_err_rd_disconnect',t('integ_err_sr_disconnect','Error al desconectar')), 'error');
     }
 }
 // ============================================
@@ -2279,7 +2288,7 @@ function updateSoftRestaurantUI(data) {
     const lastPush    = document.getElementById('srLastPush');
 
     if (data.connected) {
-        if (badge) { badge.className = 'status-badge connected'; badge.innerHTML = '<span class="status-indicator"></span>Conectado'; }
+        if (badge) { badge.className = 'status-badge connected'; badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`; }
         if (urlInput)    { urlInput.value = data.url || ''; urlInput.disabled = true; }
         if (keyInput)    { keyInput.value = '••••••••••••••••••••'; keyInput.disabled = true; }
         if (toggleBtn)   toggleBtn.disabled = true;
@@ -2292,7 +2301,7 @@ function updateSoftRestaurantUI(data) {
         if (saveActions) saveActions.style.display = 'none';
         if (mgmtActions) mgmtActions.style.display = 'flex';
     } else {
-        if (badge) { badge.className = 'status-badge disconnected'; badge.innerHTML = '<span class="status-indicator"></span>No conectado'; }
+        if (badge) { badge.className = 'status-badge disconnected'; badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`; }
         if (urlInput)    { urlInput.value = data.url || ''; urlInput.disabled = false; }
         if (keyInput)    { keyInput.value = ''; keyInput.disabled = false; }
         if (toggleBtn)   toggleBtn.disabled = false;
@@ -2313,15 +2322,15 @@ function updateSoftRestaurantUI(data) {
 }
 
 async function srTestConnection(isConnected) {
-    if (!selectedAgentId) { showNotification('Selecciona un agente primero', 'error'); return; }
+    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
     const url    = document.getElementById('srApiUrl')?.value.trim();
     const apiKey = document.getElementById('srApiKey')?.value.trim();
-    if (!url) { showNotification('Ingresa la URL de la API local', 'error'); return; }
+    if (!url) { showNotification(t('integ_err_sr_url','Ingresa la URL de la API local'), 'error'); return; }
 
     const btnId  = isConnected ? 'btnSrTestConnected' : 'btnSrTest';
     const btn    = document.getElementById(btnId);
     const orig   = btn?.innerHTML;
-    if (btn) { btn.innerHTML = '<div class="loading-spinner"></div><span>Probando...</span>'; btn.disabled = true; }
+    if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_testing','Probando...')}</span>`; btn.disabled = true; }
     srHideTestResult();
 
     try {
@@ -2357,21 +2366,21 @@ function srHideTestResult() {
 }
 
 async function srSaveConfig() {
-    if (!selectedAgentId) { showNotification('Selecciona un agente primero', 'error'); return; }
+    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
     const url      = document.getElementById('srApiUrl')?.value.trim();
     const apiKeyRaw= document.getElementById('srApiKey')?.value.trim();
     const timeout  = parseInt(document.getElementById('srTimeout')?.value) || 10;
     const autoSend = document.getElementById('srAutoSend')?.checked ?? true;
     const syncStat = document.getElementById('srSyncStatus')?.checked ?? false;
 
-    if (!url) { showNotification('Ingresa la URL de la API local', 'error'); return; }
+    if (!url) { showNotification(t('integ_err_sr_url','Ingresa la URL de la API local'), 'error'); return; }
 
     const payload = { url, timeout, auto_send: autoSend, sync_status: syncStat };
     if (apiKeyRaw && !apiKeyRaw.startsWith('•')) payload.api_key = apiKeyRaw;
 
     const btn  = document.getElementById('btnSaveSr');
     const orig = btn?.innerHTML;
-    if (btn) { btn.innerHTML = '<div class="loading-spinner"></div><span>Guardando...</span>'; btn.disabled = true; }
+    if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`; btn.disabled = true; }
 
     try {
         const res = await fetch(`/api/softrestaurant/config/${selectedAgentId}`, {
@@ -2381,10 +2390,10 @@ async function srSaveConfig() {
             body: JSON.stringify(payload),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al guardar'); }
-        showNotification('SoftRestaurant conectado', 'success');
+        showNotification(t('integ_ok_sr_connected','SoftRestaurant conectado'), 'success');
         await loadSoftRestaurantStatus(selectedAgentId);
     } catch (err) {
-        showNotification(err.message || 'Error al guardar', 'error');
+        showNotification(err.message || t('integ_err_sr_save','Error al guardar'), 'error');
         if (btn) { btn.innerHTML = orig; btn.disabled = false; }
     }
 }
@@ -2424,9 +2433,9 @@ async function srDisconnect() {
             method: 'DELETE', credentials: 'include'
         });
         if (!res.ok) throw new Error();
-        showNotification('SoftRestaurant desconectado', 'success');
+        showNotification(t('integ_ok_sr_disconnect','SoftRestaurant desconectado'), 'success');
         updateSoftRestaurantUI({ connected: false });
     } catch {
-        showNotification('Error al desconectar', 'error');
+        showNotification(t('integ_err_sr_disconnect','Error al desconectar'), 'error');
     }
 }
