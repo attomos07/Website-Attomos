@@ -571,6 +571,7 @@ function showBusinessRequiredModal() {
     document.body.appendChild(modal);
     // Aplicar idioma activo a los data-translate recién insertados
     if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
 }
 window.showBusinessRequiredModal = showBusinessRequiredModal;
 
@@ -641,6 +642,7 @@ async function loadOnboardingContent() {
             modalBody.innerHTML = mainContainer.innerHTML;
             // Re-apply translations to the newly injected onboarding content
             if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
 
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
@@ -752,11 +754,13 @@ async function loadOnboardingContent() {
                 script.onload = () => {
                     onboardingScriptLoaded = true;
                     if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
                     setTimeout(() => reinitializeOnboardingEvents(), 50);
                 };
                 document.body.appendChild(script);
             } else {
                 if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
                 setTimeout(() => reinitializeOnboardingEvents(), 20);
             }
         } else {
@@ -821,6 +825,29 @@ async function reinitializeOnboardingEvents() {
     const sectionNavEl = document.getElementById('sectionNavigation');
     if (sectionNavEl) sectionNavEl.style.display = 'none';
 
+    // ── Habilitar Continuar al seleccionar red social (SINCRÓNICO, antes de cualquier await) ──
+    (function setupSocialSelectionEarly() {
+        function _enableContinuarEarly(value) {
+            try { window.selectedSocial = value; } catch(e) {}
+            try { window.agentData = window.agentData || {}; window.agentData.social = value; } catch(e) {}
+            var btn = document.getElementById('btnStep1');
+            if (btn) { btn.disabled = false; btn.removeAttribute('disabled'); }
+        }
+        document.querySelectorAll('input[name="social"]').forEach(function(radio) {
+            radio.addEventListener('change', function() { _enableContinuarEarly(this.value); });
+        });
+        document.querySelectorAll('.social-card').forEach(function(label) {
+            label.addEventListener('click', function() {
+                var radio = this.querySelector('input[type="radio"]');
+                if (radio && !radio.disabled) {
+                    setTimeout(function() { _enableContinuarEarly(radio.value); }, 10);
+                }
+            });
+        });
+        var checkedRadioEarly = document.querySelector('input[name="social"]:checked');
+        if (checkedRadioEarly) _enableContinuarEarly(checkedRadioEarly.value);
+    })();
+
     // ── Detectar si ya existe al menos un agente ─────────────────────
     let _hasExistingAgents = false;
     let _isGovModal = false;
@@ -848,33 +875,33 @@ async function reinitializeOnboardingEvents() {
     const AGENT_SECTIONS = _isGovModal
         ? (_hasExistingAgents
             ? [
-                { id: 2, containerId: 'section-basic',       name: 'Info. Básica',  icon: 'lni-information' },
-                { id: 5, containerId: 'section-personality', name: 'Personalidad',  icon: 'lni-comments' },
+                { id: 2, containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),  icon: 'lni-information' },
+                { id: 5, containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),  icon: 'lni-comments' },
               ]
             : [
-                { id: 1, containerId: 'section-business',    name: 'Dependencia',    icon: 'lni-government' },
-                { id: 2, containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
-                { id: 3, containerId: 'section-location',    name: 'Ubicación',      icon: 'lni-map-marker' },
-                { id: 4, containerId: 'section-social',      name: 'Redes Sociales', icon: 'lni-share-alt' },
-                { id: 5, containerId: 'section-personality', name: 'Personalidad',   icon: 'lni-comments' },
-                { id: 6, containerId: 'section-schedule',    name: 'Horarios',       icon: 'lni-calendar' },
-                { id: 7, containerId: 'section-holidays',    name: 'Días Inhábiles', icon: 'lni-gift' },
-                { id: 8, containerId: 'section-services',    name: 'Cursos',         icon: 'lni-graduation' },
+                { id: 1, containerId: 'section-business',    name: () => t('onb_tab_agency','Dependencia'),    icon: 'lni-government' },
+                { id: 2, containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+                { id: 3, containerId: 'section-location',    name: () => t('onb_tab_location','Ubicación'),      icon: 'lni-map-marker' },
+                { id: 4, containerId: 'section-social',      name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt' },
+                { id: 5, containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
+                { id: 6, containerId: 'section-schedule',    name: () => t('onb_tab_schedule','Horarios'),       icon: 'lni-calendar' },
+                { id: 7, containerId: 'section-holidays',    name: () => t('onb_tab_holidays_gov','Días Inhábiles'), icon: 'lni-gift' },
+                { id: 8, containerId: 'section-services',    name: () => t('onb_tab_courses','Cursos'),         icon: 'lni-graduation' },
               ])
         : (_hasExistingAgents
             ? [
-                { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
-                { id: 5,  containerId: 'section-personality', name: 'Personalidad',   icon: 'lni-comments' },
+                { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+                { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
               ]
             : [
-                { id: 1,  containerId: 'section-business',    name: 'Info. Negocio',  icon: 'lni-briefcase' },
-                { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
-                { id: 5,  containerId: 'section-personality', name: 'Personalidad',   icon: 'lni-comments' },
-                { id: 6,  containerId: 'section-schedule',    name: 'Horarios',       icon: 'lni-calendar' },
-                { id: 7,  containerId: 'section-holidays',    name: 'Días Festivos',  icon: 'lni-gift' },
-                { id: 8,  containerId: 'section-services',    name: 'Servicios',      icon: 'lni-package' },
-                { id: 9,  containerId: 'section-menu',        name: 'Menú',           icon: 'lni-files' },
-                { id: 10, containerId: 'section-workers',     name: 'Trabajadores',   icon: 'lni-users' },
+                { id: 1,  containerId: 'section-business',    name: () => t('onb_tab_business','Info. Negocio'),  icon: 'lni-briefcase' },
+                { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+                { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
+                { id: 6,  containerId: 'section-schedule',    name: () => t('onb_tab_schedule','Horarios'),       icon: 'lni-calendar' },
+                { id: 7,  containerId: 'section-holidays',    name: () => t('onb_tab_holidays','Días Festivos'),  icon: 'lni-gift' },
+                { id: 8,  containerId: 'section-services',    name: () => t('onb_tab_services','Servicios / Productos'),      icon: 'lni-package' },
+                { id: 9,  containerId: 'section-menu',        name: () => t('onb_sec_menu','Menú'),           icon: 'lni-files' },
+                { id: 10, containerId: 'section-workers',     name: () => t('onb_tab_workers','Trabajadores'),   icon: 'lni-users' },
               ]);
 
     // Secciones a ocultar según contexto
@@ -936,7 +963,7 @@ async function reinitializeOnboardingEvents() {
             btn.className = 'section-nav-btn';
             btn.dataset.sectionId = sec.id;
             btn.dataset.modalSection = sec.containerId;
-            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${sec.name}</span>`;
+            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${typeof sec.name === "function" ? sec.name() : sec.name}</span>`;
             btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
             sectionNav.appendChild(btn);
         });
@@ -945,7 +972,7 @@ async function reinitializeOnboardingEvents() {
         resumenBtn.type = 'button';
         resumenBtn.id = 'modal-resumen-tab';
         resumenBtn.className = 'section-nav-btn';
-        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('onb_step3_title','Resumen')}</span>`;
         resumenBtn.addEventListener('click', () => window._modalGoToResumen());
         sectionNav.appendChild(resumenBtn);
     }

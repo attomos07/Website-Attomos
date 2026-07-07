@@ -269,35 +269,31 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span> <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
                       <div class="form-grid form-grid-2col">
                         <div class="form-group">
-                          <label class="form-label">
-                            Nombre del Negocio
-                            <span class="form-label-required">*</span>
-                          </label>
+                          <label class="form-label"><span data-translate="onb_biz_name_label">Nombre del Negocio</span> <span class="form-label-required">*</span></label>
                           <input
                             type="text"
                             id="businessNameInput"
                             class="form-input"
-                            placeholder="Ej: Mi Negocio Ejemplo"
+                            data-translate-placeholder="onb_biz_name_label" data-translate-placeholder="onb_biz_name_placeholder" placeholder="Ej: Mi Negocio Ejemplo"
                           />
-                          <span class="form-help">Nombre con el que se conoce tu negocio</span>
+                          <span class="form-help" data-translate="onb_biz_name_help">Nombre con el que se conoce tu negocio</span>
                         </div>
 
                         <div class="form-group">
-                          <label class="form-label">Giro del Negocio</label>
+                          <label class="form-label" data-translate="onb_biz_type_label">Giro del Negocio</label>
                           <div class="custom-select-wrapper" id="businessTypeWrapper">
                             <input
                               type="text"
                               class="form-input form-select"
                               id="businessTypeInput"
                               readonly
+                              data-translate-placeholder="onb_biz_type_select_placeholder"
                               placeholder="Selecciona un giro..."
                             />
                             <i class="lni lni-chevron-down select-arrow"></i>
@@ -307,7 +303,7 @@
                                   type="text"
                                   class="select-search"
                                   id="businessTypeSearch"
-                                  placeholder="Buscar giro..."
+                                  data-translate-placeholder="onb_biz_type_search" placeholder="Buscar giro..."
                                   autocomplete="off"
                                 />
                                 <i class="lni lni-search-alt search-icon"></i>
@@ -318,46 +314,42 @@
                               </div>
                             </div>
                           </div>
-                          <span class="form-help">Ej: Peluquería / Salón de Belleza</span>
+                          <span class="form-help" data-translate="onb_biz_type_help">Ej: Peluquería / Salón de Belleza</span>
                         </div>
 
                         <div class="form-group form-group-full">
-                          <label class="form-label">Descripción del Negocio</label>
+                          <label class="form-label" data-translate="onb_biz_desc_label">Descripción del Negocio</label>
                           <textarea
                             id="businessDescInput"
                             class="form-input form-textarea"
                             rows="4"
-                            placeholder="Ej: Somos un salón de belleza especializado en cortes modernos..."
+                            data-translate-placeholder="onb_biz_desc_label" placeholder="Ej: Somos un salón de belleza especializado en cortes modernos..."
                           ></textarea>
-                          <span class="form-help">Describe brevemente tu negocio y lo que ofrece</span>
+                          <span class="form-help" data-translate="onb_biz_desc_help">Describe brevemente tu negocio y lo que ofrece</span>
                         </div>
 
                         <div class="form-group">
                           <label class="form-label">
-                            <i class="lni lni-website" style="color:#06b6d4;margin-right:4px;"></i>
-                            Sitio Web
-                          </label>
+                            <i class="lni lni-website" style="color:#06b6d4;margin-right:4px;"></i><span data-translate="onb_biz_website_label">Sitio Web</span></label>
                           <input
                             type="url"
                             id="websiteInput"
                             class="form-input"
-                            placeholder="https://minegocio.com"
+                            placeholder="https://google.com"
                           />
-                          <span class="form-help">URL de tu página web (opcional)</span>
+                          <span class="form-help" data-translate="onb_biz_website_help">URL de tu página web (opcional)</span>
                         </div>
 
                         <div class="form-group">
                           <label class="form-label">
-                            <i class="lni lni-envelope" style="color:#06b6d4;margin-right:4px;"></i>
-                            Email de Contacto
-                          </label>
+                            <i class="lni lni-envelope" style="color:#06b6d4;margin-right:4px;"></i><span data-translate="onb_biz_email_label">Email de Contacto</span></label>
                           <input
                             type="email"
                             id="emailContactInput"
                             class="form-input"
-                            placeholder="contacto@minegocio.com"
+                            placeholder="contact@business.com"
                           />
-                          <span class="form-help">Email principal de contacto del negocio</span>
+                          <span class="form-help" data-translate="onb_biz_email_help">Email principal de contacto del negocio</span>
                         </div>
                       </div>
                     </div>
@@ -394,8 +386,8 @@
                         <div class="branch-basic-header">
                           <i class="lni lni-map-marker"></i>
                           <div>
-                            <span class="branch-basic-label">¿Para qué sucursal es este agente?</span>
-                            <span class="branch-basic-sub">Elige una sucursal o "Todas" para uso general</span>
+                            <span class="branch-basic-label" data-translate="onb_basic_branch_label">¿Para qué sucursal es este agente?</span>
+                            <span class="branch-basic-sub" data-translate="onb_basic_branch_sub">Elige una sucursal o "Todas" para uso general</span>
                           </div>
                         </div>
                         <div class="branch-basic-cards" id="branchBasicCards"></div>
@@ -403,32 +395,21 @@
 
                       <div class="form-grid">
                         <div class="form-group">
-                          <label class="form-label">
-                            Nombre del Agente
-                            <span class="form-label-required">*</span>
-                          </label>
+                          <label class="form-label"><span data-translate="onb_basic_agent_name_label">Nombre del Agente</span> <span class="form-label-required">*</span></label>
                           <input
                             type="text"
                             id="agentName"
                             class="form-input"
-                            placeholder="Ej: Asistente Virtual"
+                            data-translate-placeholder="onb_agent_name_placeholder" placeholder="Ej: Asistente Virtual"
                             required
                           />
-                          <span class="form-help"
-                            >Este nombre identificará a tu agente en el
-                            dashboard</span
-                          >
+                          <span class="form-help" data-translate="onb_basic_agent_name_help">Este nombre identificará a tu agente en el dashboard</span>
                         </div>
 
                         <div class="toggle-container">
                           <div class="toggle-info">
-                            <div class="toggle-title">
-                              ¿Usar un número de teléfono diferente?
-                            </div>
-                            <div class="toggle-description" id="phoneToggleDesc">
-                              El agente puede usar tu número registrado o uno
-                              diferente
-                            </div>
+                            <div class="toggle-title" data-translate="onb_phone_toggle_title">¿Usar un número de teléfono diferente?</div>
+                            <div class="toggle-description" id="phoneToggleDesc" data-translate="onb_phone_toggle_desc">El agente puede usar tu número registrado o uno diferente</div>
                           </div>
                           <label class="toggle-switch">
                             <input type="checkbox" id="phoneToggle" />
@@ -463,13 +444,8 @@
                         </div>
 
                         <div class="form-group">
-                          <label class="form-label">
-                            Idiomas adicionales para responder
-                          </label>
-                          <span class="form-help"
-                            >El agente responde en español por defecto.
-                            Selecciona idiomas adicionales</span
-                          >
+                          <label class="form-label" data-translate="onb_lang_additional_label">Idiomas adicionales para responder</label>
+                          <span class="form-help" data-translate="onb_lang_additional_help">El agente responde en español por defecto. Selecciona idiomas adicionales</span>
                           <div class="language-checkboxes">
                             <label class="language-checkbox-item">
                               <input
@@ -479,7 +455,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇺🇸 Inglés</span
+                                ><span class="lang-flag-svg" data-flag-lang="en" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">US</span> <span data-translate="onb_lang_en">Inglés</span></span
                               >
                             </label>
 
@@ -491,7 +467,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇫🇷 Francés</span
+                                ><span class="lang-flag-svg" data-flag-lang="fr" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">FR</span> <span data-translate="onb_lang_fr">Francés</span></span
                               >
                             </label>
 
@@ -503,7 +479,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇧🇷 Portugués</span
+                                ><span class="lang-flag-svg" data-flag-lang="pt" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">BR</span> <span data-translate="onb_lang_pt">Portugués</span></span
                               >
                             </label>
 
@@ -515,7 +491,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇩🇪 Alemán</span
+                                ><span class="lang-flag-svg" data-flag-lang="de" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">DE</span> <span data-translate="onb_lang_de">Alemán</span></span
                               >
                             </label>
 
@@ -527,7 +503,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇮🇹 Italiano</span
+                                ><span class="lang-flag-svg" data-flag-lang="it" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">IT</span> <span data-translate="onb_lang_it">Italiano</span></span
                               >
                             </label>
 
@@ -539,7 +515,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                >🇨🇳 Chino</span
+                                ><span class="lang-flag-svg" data-flag-lang="zh" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">CN</span> <span data-translate="onb_lang_zh">Chino</span></span
                               >
                             </label>
                           </div>
@@ -575,9 +551,8 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
@@ -699,9 +674,8 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
@@ -799,7 +773,7 @@
                       </h3>
 
                       <div class="form-group">
-                        <label class="form-label">Tono de Conversación</label>
+                        <label class="form-label" data-translate="onb_pers_tone_label">Tono de Conversación</label>
                         <div class="tone-radio-group">
                           <label class="tone-radio-option">
                             <input
@@ -845,16 +819,14 @@
                               <i class="lni lni-pencil"></i>
                             </div>
                             <div class="tone-radio-label">
-                              <strong>Personalizado</strong>
-                              <span>Define tu propio estilo</span>
+                              <strong data-translate="onb_tone_custom_title">Personalizado</strong>
+                              <span data-translate="onb_tone_custom_desc">Define tu propio estilo</span>
                             </div>
                           </label>
                         </div>
 
                         <div class="custom-tone-editor" id="customToneEditor">
-                          <label class="form-label"
-                            >Describe la personalidad personalizada</label
-                          >
+                          <label class="form-label" data-translate="onb_tone_custom_editor_label">Describe la personalidad personalizada</label>
                           <span class="form-help"
                             >Define cómo debe comportarse y comunicarse tu
                             agente</span
@@ -933,15 +905,14 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
                       <div class="schedule-list">
                         <div class="schedule-day" data-day="monday">
-                          <div class="day-name">Lunes</div>
+                          <div class="day-name" data-translate="onb_sch_day_mon">Lunes</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input
@@ -951,7 +922,7 @@
                               />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Abierto</span>
+                            <span class="toggle-label" data-translate="onb_sch_open">Abierto</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -960,7 +931,7 @@
                               class="time-input"
                               value="09:00"
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="mondayEnd"
@@ -971,7 +942,7 @@
                         </div>
 
                         <div class="schedule-day" data-day="tuesday">
-                          <div class="day-name">Martes</div>
+                          <div class="day-name" data-translate="onb_sch_day_tue">Martes</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input
@@ -981,7 +952,7 @@
                               />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Abierto</span>
+                            <span class="toggle-label" data-translate="onb_sch_open">Abierto</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -990,7 +961,7 @@
                               class="time-input"
                               value="09:00"
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="tuesdayEnd"
@@ -1001,7 +972,7 @@
                         </div>
 
                         <div class="schedule-day" data-day="wednesday">
-                          <div class="day-name">Miércoles</div>
+                          <div class="day-name" data-translate="onb_sch_day_wed">Miércoles</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input
@@ -1011,7 +982,7 @@
                               />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Abierto</span>
+                            <span class="toggle-label" data-translate="onb_sch_open">Abierto</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -1020,7 +991,7 @@
                               class="time-input"
                               value="09:00"
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="wednesdayEnd"
@@ -1031,7 +1002,7 @@
                         </div>
 
                         <div class="schedule-day" data-day="thursday">
-                          <div class="day-name">Jueves</div>
+                          <div class="day-name" data-translate="onb_sch_day_thu">Jueves</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input
@@ -1041,7 +1012,7 @@
                               />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Abierto</span>
+                            <span class="toggle-label" data-translate="onb_sch_open">Abierto</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -1050,7 +1021,7 @@
                               class="time-input"
                               value="09:00"
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="thursdayEnd"
@@ -1061,7 +1032,7 @@
                         </div>
 
                         <div class="schedule-day" data-day="friday">
-                          <div class="day-name">Viernes</div>
+                          <div class="day-name" data-translate="onb_sch_day_fri">Viernes</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input
@@ -1071,7 +1042,7 @@
                               />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Abierto</span>
+                            <span class="toggle-label" data-translate="onb_sch_open">Abierto</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -1080,7 +1051,7 @@
                               class="time-input"
                               value="09:00"
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="fridayEnd"
@@ -1091,13 +1062,13 @@
                         </div>
 
                         <div class="schedule-day closed" data-day="saturday">
-                          <div class="day-name">Sábado</div>
+                          <div class="day-name" data-translate="onb_sch_day_sat">Sábado</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input type="checkbox" id="saturdayToggle" />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Cerrado</span>
+                            <span class="toggle-label" data-translate="onb_sch_closed">Cerrado</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -1107,7 +1078,7 @@
                               value="09:00"
                               disabled
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="saturdayEnd"
@@ -1119,13 +1090,13 @@
                         </div>
 
                         <div class="schedule-day closed" data-day="sunday">
-                          <div class="day-name">Domingo</div>
+                          <div class="day-name" data-translate="onb_sch_day_sun">Domingo</div>
                           <div class="day-toggle">
                             <label class="toggle-switch">
                               <input type="checkbox" id="sundayToggle" />
                               <span class="toggle-slider"></span>
                             </label>
-                            <span class="toggle-label">Cerrado</span>
+                            <span class="toggle-label" data-translate="onb_sch_closed">Cerrado</span>
                           </div>
                           <div class="day-times">
                             <input
@@ -1135,7 +1106,7 @@
                               value="09:00"
                               disabled
                             />
-                            <span class="time-separator">a</span>
+                            <span class="time-separator" data-translate="onb_sch_to">a</span>
                             <input
                               type="time"
                               id="sundayEnd"
@@ -1175,16 +1146,12 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
-                      <span class="form-help"
-                        >Agrega los días en que tu negocio estará cerrado por
-                        festividades</span
-                      >
+                      <span class="form-help" data-translate="onb_hol_help">Agrega los días en que tu negocio estará cerrado por festividades</span>
 
                       <div class="holidays-list" id="holidaysList">
                         <!-- Los días festivos se agregarán dinámicamente aquí -->
@@ -1196,7 +1163,7 @@
                         class="btn-add-holiday"
                       >
                         <i class="lni lni-plus"></i>
-                        Agregar Día Festivo
+                        <span data-translate="onb_hol_add_btn">Agregar Día Festivo</span>
                       </button>
                     </div>
 
@@ -1227,9 +1194,8 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
@@ -1277,15 +1243,15 @@
                         <span data-translate="onb_sec_menu">Menú</span>
                       </h3>
                       <span class="form-help">
-                        Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.
+                        <span data-translate="onb_catalog_help">Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.</span>
                       </span>
 
                       <div class="menu-upload-area" id="ob-menuUploadArea">
                         <input type="file" id="ob-menuFileInput" accept="image/*,.pdf" style="display:none">
                         <div class="menu-upload-placeholder" id="ob-menuUploadPlaceholder">
                           <i class="lni lni-upload"></i>
-                          <span>Arrastra tu menú aquí o <strong>haz clic para seleccionar</strong></span>
-                          <span class="menu-upload-hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
+                          <span><span data-translate="onb_catalog_drag_pre">Arrastra tu menú aquí o</span> <strong data-translate="onb_catalog_drag_link">haz clic para seleccionar</strong></span>
+                          <span class="menu-upload-hint" data-translate="onb_catalog_hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
                         </div>
                         <div class="menu-file-preview" id="ob-menuFilePreview" style="display:none">
                           <div class="menu-file-info">
@@ -1333,16 +1299,12 @@
                       </h3>
                         <div class="readonly-notice">
                           <i class="lni lni-lock-alt"></i>
-                          Datos precargados desde <strong>Mi Negocio</strong>.
-                          Para editarlos ve a
-                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
+                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
                         </div>
 
 
-                      <span class="form-help"
-                        >Agrega información sobre tu personal y su
-                        disponibilidad</span
-                      >
+                      <span class="form-help" data-translate="onb_wkr_help">Agrega información sobre tu personal y su disponibilidad</span>
 
                       <div class="workers-list" id="workersList">
                         <!-- Los trabajadores se agregarán dinámicamente aquí -->
@@ -1354,7 +1316,7 @@
                         class="btn-add-worker"
                       >
                         <i class="lni lni-plus"></i>
-                        Agregar Trabajador
+                        <span data-translate="onb_wkr_add_btn">Agregar Trabajador</span>
                       </button>
                     </div>
 

@@ -46,28 +46,28 @@ let isGovernment = false;
 
 // Section definitions — base (negocio privado)
 const SECTIONS_BUSINESS = [
-  { id: 1, name: 'Info. Negocio', icon: 'lni-briefcase', containerId: 'section-business' },
-  { id: 2, name: 'Info. Básica', icon: 'lni-information', containerId: 'section-basic' },
-  { id: 3, name: 'Ubicación', icon: 'lni-map-marker', containerId: 'section-location' },
-  { id: 4, name: 'Redes Sociales', icon: 'lni-share-alt', containerId: 'section-social' },
-  { id: 5, name: 'Personalidad', icon: 'lni-comments', containerId: 'section-personality' },
-  { id: 6, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
-  { id: 7, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
-  { id: 8, name: t('onb_sec_services','Servicios'), icon: 'lni-package', containerId: 'section-services' },
-  { id: 9, name: t('onb_sec_menu','Menú'), icon: 'lni-files', containerId: 'section-menu' },
-  { id: 10, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
+  { id: 1, name: () => t('onb_tab_business','Info. Negocio'), icon: 'lni-briefcase', containerId: 'section-business' },
+  { id: 2, name: () => t('onb_tab_basic','Info. Básica'), icon: 'lni-information', containerId: 'section-basic' },
+  { id: 3, name: () => t('onb_tab_location','Ubicación'), icon: 'lni-map-marker', containerId: 'section-location' },
+  { id: 4, name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt', containerId: 'section-social' },
+  { id: 5, name: () => t('onb_tab_personality','Personalidad'), icon: 'lni-comments', containerId: 'section-personality' },
+  { id: 6, name: () => t('onb_tab_schedule','Horarios'), icon: 'lni-calendar', containerId: 'section-schedule' },
+  { id: 7, name: () => t('onb_tab_holidays','Días Festivos'), icon: 'lni-gift', containerId: 'section-holidays' },
+  { id: 8, name: () => t('onb_tab_services','Servicios / Productos'), icon: 'lni-package', containerId: 'section-services' },
+  { id: 9, name: () => t('onb_tab_menu','Catálogo'), icon: 'lni-files', containerId: 'section-menu' },
+  { id: 10, name: () => t('onb_tab_workers','Trabajadores'), icon: 'lni-users', containerId: 'section-workers' }
 ];
 
 // Section definitions — gubernamental (usa My Agency)
 const SECTIONS_GOVERNMENT = [
-  { id: 1, name: 'Dependencia',    icon: 'lni-government',   containerId: 'section-business' },
-  { id: 2, name: 'Info. Básica',   icon: 'lni-information',  containerId: 'section-basic' },
-  { id: 3, name: 'Ubicación',      icon: 'lni-map-marker',   containerId: 'section-location' },
-  { id: 4, name: 'Redes Sociales', icon: 'lni-share-alt',    containerId: 'section-social' },
-  { id: 5, name: 'Personalidad',   icon: 'lni-comments',     containerId: 'section-personality' },
-  { id: 6, name: 'Horarios',       icon: 'lni-calendar',     containerId: 'section-schedule' },
-  { id: 7, name: 'Días Inhábiles', icon: 'lni-gift',         containerId: 'section-holidays' },
-  { id: 8, name: 'Cursos',         icon: 'lni-graduation',   containerId: 'section-services' },
+  { id: 1, name: () => t('onb_tab_agency','Dependencia'),    icon: 'lni-government',   containerId: 'section-business' },
+  { id: 2, name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information',  containerId: 'section-basic' },
+  { id: 3, name: () => t('onb_tab_location','Ubicación'),      icon: 'lni-map-marker',   containerId: 'section-location' },
+  { id: 4, name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt',    containerId: 'section-social' },
+  { id: 5, name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments',     containerId: 'section-personality' },
+  { id: 6, name: () => t('onb_tab_schedule','Horarios'),       icon: 'lni-calendar',     containerId: 'section-schedule' },
+  { id: 7, name: () => t('onb_tab_holidays_gov','Días Inhábiles'), icon: 'lni-gift',         containerId: 'section-holidays' },
+  { id: 8, name: () => t('onb_tab_courses','Cursos'),         icon: 'lni-graduation',   containerId: 'section-services' },
 ];
 
 // Referencia activa (se asigna en fetchUserData)
@@ -121,19 +121,19 @@ function _getServicePlaceholder() {
 function updateSectionLabels(businessType) {
   const cat = getBusinessCategory(businessType);
 
-  const svcTabLabel  = cat === 'servicio' ? t('onb_sec_services','Servicios')         : 'Productos';
-  const svcTitle     = cat === 'servicio' ? t('onb_sec_services','Servicios')         : 'Productos';
-  const svcBtnLabel  = cat === 'servicio' ? 'Agregar Servicio'  : 'Agregar Producto';
-  const svcItemLabel = cat === 'servicio' ? 'Servicio'          : 'Producto';
+  const svcTabLabel  = cat === 'servicio' ? t('onb_tab_services','Servicios / Productos') : t('onb_tab_products','Productos');
+  const svcTitle     = cat === 'servicio' ? t('onb_tab_services','Servicios / Productos') : t('onb_tab_products','Productos');
+  const svcBtnLabel  = cat === 'servicio' ? t('onb_svc_add_btn','Agregar Servicio') : t('onb_menu_add_btn','Agregar Producto');
+  const svcItemLabel = cat === 'servicio' ? t('onb_svc_item_servicio','Servicio') : t('onb_svc_item_producto','Producto');
   const svcHint      = cat === 'servicio'
-    ? 'Define los servicios que ofreces'
-    : 'Define los productos que ofreces';
+    ? t('onb_svc_help','Define los servicios que ofreces')
+    : t('onb_svc_help_products','Define los productos que ofreces');
 
-  const menuTabLabel = cat === 'comida'   ? t('onb_sec_menu','Menú')     : 'Catálogo';
-  const menuTitle    = cat === 'comida'   ? t('onb_sec_menu','Menú')     : 'Catálogo';
+  const menuTabLabel = cat === 'comida'   ? t('onb_sec_menu','Menú')     : t('onb_tab_catalog','Catálogo');
+  const menuTitle    = cat === 'comida'   ? t('onb_sec_menu','Menú')     : t('onb_tab_catalog','Catálogo');
   const menuHint     = cat === 'comida'
-    ? 'Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.'
-    : 'Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.';
+    ? t('onb_catalog_menu_help','Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.')
+    : t('onb_catalog_help','Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.');
 
   // Guardar para uso en addService() / removeService()
   window._currentSvcItemLabel = svcItemLabel;
@@ -169,7 +169,7 @@ function updateSectionLabels(businessType) {
 
   // ── Re-etiquetar items de servicio ya existentes ───────────────────────────
   const svcPlaceholder = _getServicePlaceholder();
-  const fotosLabel     = svcItemLabel === 'Servicio' ? 'Fotos del Servicio' : 'Fotos del Producto';
+  const fotosLabel     = svcItemLabel === 'Servicio' ? t('onb_svc_photos_label','Fotos del Servicio') : t('onb_svc_photos_product','Fotos del Producto');
   document.querySelectorAll('.service-item').forEach((item, idx) => {
     const numEl = item.querySelector('.service-number');
     if (numEl) numEl.textContent = `${svcItemLabel} ${idx + 1}`;
@@ -294,6 +294,26 @@ function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key]
 
 document.addEventListener('DOMContentLoaded', function() {
 
+  // Hook: rebuild section nav tabs when language changes
+  if (window.Translations) {
+    const _origApply = window.Translations.apply.bind(window.Translations);
+    window.Translations.apply = function(lang) {
+      _origApply(lang);
+      const navContainer = document.getElementById('sectionNavigation');
+      if (navContainer && SECTIONS?.length) rebuildSectionNav(navContainer);
+    };
+  }
+
+
+  // Render SVG flags for language checkboxes
+  window.renderLangFlags = function renderLangFlags() {
+    document.querySelectorAll('[data-flag-lang]').forEach(el => {
+      const lang = el.getAttribute('data-flag-lang');
+      const svg = window.Translations?.FLAG_SVG?.[lang];
+      if (svg) el.innerHTML = svg;
+    });
+  };
+  window.renderLangFlags();
   initDotIndicator();
   fetchUserData();
   initializeBusinessTypeSelect();
@@ -333,7 +353,7 @@ function rebuildSectionNav(navigationContainer) {
     btn.dataset.sectionId = section.id;
     btn.innerHTML = `
       <i class="lni ${section.icon}"></i>
-      <span>${section.name}</span>
+      <span>${typeof section.name === 'function' ? section.name() : section.name}</span>
     `;
     btn.addEventListener('click', () => navigateToSection(section.id));
     navigationContainer.appendChild(btn);
@@ -461,8 +481,8 @@ function convertToCustomTimePicker(nativeInput) {
   
   const initialTime = parseTime(nativeInput.value || '09:00');
   
-  const hoursColumn = createTimeColumn('Hora', generateHours(), initialTime.hour);
-  const minutesColumn = createTimeColumn('Min', generateMinutes(), initialTime.minute);
+  const hoursColumn = createTimeColumn(t('onb_time_hour','Hora'), generateHours(), initialTime.hour);
+  const minutesColumn = createTimeColumn(t('onb_time_min','Min'), generateMinutes(), initialTime.minute);
   const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
   
   columnsContainer.appendChild(hoursColumn);
@@ -748,8 +768,8 @@ function convertToCustomDatePicker(nativeInput) {
     
     const current = document.createElement('div');
     current.className = 'date-picker-current';
-    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun','month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
+    const monthNames = monthKeys.map(k => t(k, ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][monthKeys.indexOf(k)]));
     current.textContent = `${monthNames[currentMonth]} ${currentYear}`;
     
     header.appendChild(nav);
@@ -882,8 +902,8 @@ function formatDisplayDate(dateString) {
   
   const date = new Date(dateString + 'T00:00:00');
   const day = date.getDate();
-  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun','month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
+  const monthNames = monthKeys.map(k => t(k, ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][monthKeys.indexOf(k)]));
   
   return `${day} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 }
@@ -945,8 +965,8 @@ function convertToWorkerTimePicker(nativeInput) {
   
   const initialTime = parseTime(nativeInput.value || '09:00');
   
-  const hoursColumn = createTimeColumn('Hora', generateHours(), initialTime.hour);
-  const minutesColumn = createTimeColumn('Min', generateMinutes(), initialTime.minute);
+  const hoursColumn = createTimeColumn(t('onb_time_hour','Hora'), generateHours(), initialTime.hour);
+  const minutesColumn = createTimeColumn(t('onb_time_min','Min'), generateMinutes(), initialTime.minute);
   const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
   
   columnsContainer.appendChild(hoursColumn);
@@ -1215,11 +1235,7 @@ function applyGovernmentMode() {
     '#section-services .readonly-notice, ' +
     '#section-workers .readonly-notice'
   ).forEach(notice => {
-    notice.innerHTML = `
-      <i class="lni lni-lock-alt"></i>
-      Datos precargados desde <strong>Mi Dependencia</strong>.
-      Para editarlos ve a <a href="/my-agency" target="_blank">Mi Dependencia &rarr;</a>
-    `;
+    notice.innerHTML = `<i class="lni lni-lock-alt"></i> ${t('onb_readonly_notice_pre','Datos precargados desde')} <strong>${t('onb_gov_agency','Mi Dependencia')}</strong>. ${t('onb_readonly_notice_mid','Para editarlos ve a')} <a href="/my-agency" target="_blank">${t('onb_gov_agency','Mi Dependencia')} &rarr;</a>`;
   });
 
   // Adaptar labels del formulario de negocio
@@ -1336,7 +1352,7 @@ function applyGovernmentMode() {
   const addWorkerBtn = document.getElementById('addWorkerBtn');
   if (addWorkerBtn) {
     const icon = addWorkerBtn.querySelector('i');
-    addWorkerBtn.textContent = ' ' + t('onb_wkr_add_btn','Agregar Trabajador');
+    if (addWorkerBtn) { addWorkerBtn.innerHTML = `<i class="lni lni-plus"></i> ${t('onb_wkr_add_btn','Agregar Trabajador')}`; }
     if (icon) addWorkerBtn.prepend(icon);
   }
 
@@ -1962,7 +1978,7 @@ function addHolidayWithData(dateStr, name) {
       <input type="date" class="form-input holiday-date-input" value="${dateStr}" required>
     </div>
     <div class="holiday-name form-group">
-      <input type="text" class="form-input holiday-name-input" placeholder="Nombre del día festivo" value="${name}" required>
+      <input type="text" class="form-input holiday-name-input" placeholder="${t('onb_hol_name_placeholder','Nombre del día festivo')}" value="${name}" required>
     </div>
     <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
       <i class="lni lni-trash-can"></i>
@@ -2313,7 +2329,7 @@ function addHoliday() {
       <input type="date" class="form-input holiday-date-input" required>
     </div>
     <div class="holiday-name form-group">
-      <input type="text" class="form-input holiday-name-input" placeholder="Nombre del día festivo" required>
+      <input type="text" class="form-input holiday-name-input" placeholder="${t('onb_hol_name_placeholder','Nombre del día festivo')}" required>
     </div>
     <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
       <i class="lni lni-trash-can"></i>
@@ -2373,18 +2389,18 @@ function addService() {
   const svcUid = 'svc_' + serviceId;
   const serviceLabel   = window._currentSvcItemLabel || 'Servicio';
   const svcPlaceholder = _getServicePlaceholder();
-  const fotosLabel     = serviceLabel === 'Curso' ? 'Fotos del Curso' : (serviceLabel === 'Servicio' ? 'Fotos del Servicio' : 'Fotos del Producto');
+  const fotosLabel     = serviceLabel === 'Curso' ? t('onb_svc_photos_course','Fotos del Curso') : (serviceLabel === 'Servicio' ? t('onb_svc_photos_label','Fotos del Servicio') : t('onb_svc_photos_product','Fotos del Producto'));
 
   serviceItem.innerHTML = `
     <div class="service-header">
-      <div class="service-number">${serviceLabel} ${serviceNumber}</div>
+      <div class="service-number">${t('onb_svc_item_label', serviceLabel)} ${serviceNumber}</div>
       <button type="button" class="btn-remove-service" onclick="removeService(${serviceId})">
         <i class="lni lni-trash-can"></i>
       </button>
     </div>
     <div class="service-fields">
       <div class="form-group">
-        <label class="form-label">Título del ${serviceLabel} *</label>
+        <label class="form-label">${t('onb_svc_title_label','Título del Servicio')} <span class="form-label-required">*</span></label>
         <input type="text" class="form-input service-title" placeholder="${svcPlaceholder}" required>
       </div>
 
@@ -2396,26 +2412,26 @@ function addService() {
           <div class="service-images-grid">
             <div class="service-img-add-btn">
               <i class="lni lni-camera"></i>
-              <span>Agregar foto</span>
+              <span style="white-space:nowrap">${t('onb_svc_add_photo','Agregar foto')}</span>
             </div>
           </div>
           <input type="hidden" class="service-image-urls" value="">
           <div class="service-image-uploading" style="display:none">
-            <i class="lni lni-spinner-arrow"></i> Subiendo...
+            <i class="lni lni-spinner-arrow"></i> ${t('onb_svc_uploading','Subiendo...')}
           </div>
         </div>
       </div>
       
       <div class="form-group">
-        <label class="form-label">Tipo de Precio</label>
+        <label class="form-label">${t('onb_svc_price_label','Tipo de Precio')}</label>
         <div class="price-type-selector">
-          <div class="price-type-option active" data-type="normal">Precio Normal</div>
-          <div class="price-type-option" data-type="promotion">Promoción</div>
+          <div class="price-type-option active" data-type="normal">${t('onb_svc_price_normal','Precio Normal')}</div>
+          <div class="price-type-option" data-type="promotion">${t('onb_svc_price_promo','Promoción')}</div>
         </div>
       </div>
       
       <div class="form-group price-normal">
-        <label class="form-label">Precio *</label>
+        <label class="form-label">${t('onb_svc_price_amount','Precio')} *</label>
         <div class="price-input-wrapper">
           <span class="price-currency">$</span>
           <input type="number" class="form-input service-price price-input" placeholder="0.00" step="0.01" required>
@@ -2424,14 +2440,14 @@ function addService() {
       
       <div class="promotion-prices">
         <div class="form-group">
-          <label class="form-label">Precio Original *</label>
+          <label class="form-label">${t('onb_svc_price_original','Precio Original')} <span class="form-label-required">*</span></label>
           <div class="price-input-wrapper">
             <span class="price-currency">$</span>
             <input type="number" class="form-input service-original-price price-input" placeholder="0.00" step="0.01">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Precio Promoción *</label>
+          <label class="form-label">${t('onb_svc_price_promo_amount','Precio Promoción')} <span class="form-label-required">*</span></label>
           <div class="price-input-wrapper">
             <span class="price-currency">$</span>
             <input type="number" class="form-input service-promo-price price-input" placeholder="0.00" step="0.01">
@@ -2443,31 +2459,31 @@ function addService() {
       <div class="promo-period-block" style="display:none">
         <div class="promo-period-header">
           <i class="lni lni-calendar"></i>
-          <span>Disponibilidad de la promoción</span>
+          <span>${t('onb_svc_promo_avail','Disponibilidad de la promoción')}</span>
           <div class="promo-period-type-toggle">
-            <button type="button" class="period-tab-btn active" data-period="days">Días de la semana</button>
-            <button type="button" class="period-tab-btn" data-period="range">Rango de fechas</button>
+            <button type="button" class="period-tab-btn active" data-period="days">${t('onb_svc_promo_days','Días de la semana')}</button>
+            <button type="button" class="period-tab-btn" data-period="range">${t('onb_svc_promo_range','Rango de fechas')}</button>
           </div>
         </div>
         <div class="promo-days-panel" style="display:flex">
-          <label class="day-chip"><input type="checkbox" value="monday" style="display:none"><span>Lun</span></label>
-          <label class="day-chip"><input type="checkbox" value="tuesday" style="display:none"><span>Mar</span></label>
-          <label class="day-chip"><input type="checkbox" value="wednesday" style="display:none"><span>Mié</span></label>
-          <label class="day-chip"><input type="checkbox" value="thursday" style="display:none"><span>Jue</span></label>
-          <label class="day-chip"><input type="checkbox" value="friday" style="display:none"><span>Vie</span></label>
-          <label class="day-chip"><input type="checkbox" value="saturday" style="display:none"><span>Sáb</span></label>
-          <label class="day-chip"><input type="checkbox" value="sunday" style="display:none"><span>Dom</span></label>
+          <label class="day-chip"><input type="checkbox" value="monday" style="display:none"><span>${t('onb_sch_day_mon_short','Lun')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="tuesday" style="display:none"><span>${t('onb_sch_day_tue_short','Mar')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="wednesday" style="display:none"><span>${t('onb_sch_day_wed_short','Mié')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="thursday" style="display:none"><span>${t('onb_sch_day_thu_short','Jue')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="friday" style="display:none"><span>${t('onb_sch_day_fri_short','Vie')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="saturday" style="display:none"><span>${t('onb_sch_day_sat_short','Sáb')}</span></label>
+          <label class="day-chip"><input type="checkbox" value="sunday" style="display:none"><span>${t('onb_sch_day_sun_short','Dom')}</span></label>
         </div>
         <div class="promo-range-panel" style="display:none">
-          <label class="form-label">Desde</label>
+          <label class="form-label">${t('onb_svc_promo_from','Desde')}</label>
           <input type="date" class="form-input promo-date-start">
-          <label class="form-label">Hasta</label>
+          <label class="form-label">${t('onb_svc_promo_to','Hasta')}</label>
           <input type="date" class="form-input promo-date-end">
         </div>
       </div>
       
       <div class="form-group">
-        <label class="form-label">Descripción del Servicio</label>
+        <label class="form-label">${t('onb_svc_desc_label','Descripción del Servicio')}</label>
         <div class="service-description-editor">
           <div class="service-editor-toolbar">
             <button type="button" class="service-editor-btn" data-command="bold" title="Negrita">
@@ -2649,7 +2665,7 @@ function removeService(serviceId) {
       const numberDiv = item.querySelector('.service-number');
       if (numberDiv) {
         const lbl = window._currentSvcItemLabel || 'Servicio';
-        numberDiv.textContent = `${lbl} ${index + 1}`;
+        numberDiv.textContent = `${t('onb_svc_item_label', lbl)} ${index + 1}`;
       }
     });
   }
@@ -2729,58 +2745,58 @@ function addWorker() {
   
   workerItem.innerHTML = `
     <div class="worker-header">
-      <div class="worker-number">Trabajador ${workerNumber}</div>
+      <div class="worker-number">${t('onb_wkr_item_label','Trabajador')} ${workerNumber}</div>
       <button type="button" class="btn-remove-worker" onclick="removeWorker(${workerId})">
         <i class="lni lni-trash-can"></i>
       </button>
     </div>
     <div class="worker-fields">
       <div class="form-group">
-        <label class="form-label">Nombre del Trabajador *</label>
-        <input type="text" class="form-input worker-name" placeholder="Ej: Juan Pérez" required>
+        <label class="form-label">${t('onb_wkr_name_label','Nombre del Trabajador')} <span class="form-label-required">*</span></label>
+        <input type="text" class="form-input worker-name" placeholder="${t('onb_wkr_name_placeholder','Ej: Juan Pérez')}" required>
       </div>
       
       <div class="worker-availability">
-        <div class="availability-title">Disponibilidad (Días de la Semana)</div>
+        <div class="availability-title">${t('onb_wkr_availability','Disponibilidad (Días de la Semana)')}</div>
         <div class="availability-grid">
           <label class="availability-day">
             <input type="checkbox" value="monday" checked>
-            <span>Lunes</span>
+            <span>${t('onb_sch_day_mon','Lunes')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="tuesday" checked>
-            <span>Martes</span>
+            <span>${t('onb_sch_day_tue','Martes')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="wednesday" checked>
-            <span>Miércoles</span>
+            <span>${t('onb_sch_day_wed','Miércoles')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="thursday" checked>
-            <span>Jueves</span>
+            <span>${t('onb_sch_day_thu','Jueves')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="friday" checked>
-            <span>Viernes</span>
+            <span>${t('onb_sch_day_fri','Viernes')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="saturday">
-            <span>Sábado</span>
+            <span>${t('onb_sch_day_sat','Sábado')}</span>
           </label>
           <label class="availability-day">
             <input type="checkbox" value="sunday">
-            <span>Domingo</span>
+            <span>${t('onb_sch_day_sun','Domingo')}</span>
           </label>
         </div>
       </div>
       
       <div class="worker-hours">
         <div class="form-group">
-          <label class="form-label">Hora de Inicio</label>
+          <label class="form-label">${t('onb_wkr_start_time','Hora de Inicio')}</label>
           <input type="time" class="form-input worker-start-time" value="09:00" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Hora de Fin</label>
+          <label class="form-label">${t('onb_wkr_end_time','Hora de Fin')}</label>
           <input type="time" class="form-input worker-end-time" value="18:00" required>
         </div>
       </div>
@@ -2804,7 +2820,7 @@ function removeWorker(workerId) {
     document.querySelectorAll('.worker-item').forEach((item, index) => {
       const numberDiv = item.querySelector('.worker-number');
       if (numberDiv) {
-        numberDiv.textContent = `Trabajador ${index + 1}`;
+        numberDiv.textContent = `${t('onb_wkr_item_label','Trabajador')} ${index + 1}`;
       }
     });
   }
@@ -3228,10 +3244,10 @@ function generateSummary() {
     <div class="summary-section">
       <h3 class="summary-section-title">
         <i class="lni lni-network"></i>
-        Red Social
+        ${t('onb_sum_social','Red Social')}
       </h3>
       <div class="summary-item">
-        <span class="summary-label">Plataforma:</span>
+<span class="summary-label">${t('onb_sum_platform','Plataforma')}:</span>
         <span class="summary-value">${socialNames[agentData.social]}</span>
       </div>
     </div>
@@ -3239,19 +3255,19 @@ function generateSummary() {
     <div class="summary-section">
       <h3 class="summary-section-title">
         <i class="lni lni-information"></i>
-        Información Básica
+        ${t('onb_sec_basic','Información Básica')}
       </h3>
       <div class="summary-item">
-        <span class="summary-label">Nombre del Agente:</span>
+<span class="summary-label">${t('onb_sum_agent_name','Nombre del Agente')}:</span>
         <span class="summary-value">${agentData.name}</span>
       </div>
       <div class="summary-item">
-        <span class="summary-label">Número de Teléfono:</span>
-        <span class="summary-value">${agentData.phoneNumber || 'Usar número registrado'}</span>
+<span class="summary-label">${t('onb_sum_phone','Número de Teléfono')}:</span>
+        <span class="summary-value">${agentData.phoneNumber || t('onb_sum_registered_phone','Usar número registrado')}</span>
       </div>
       ${agentData.config.additionalLanguages.length > 0 ? `
       <div class="summary-item">
-        <span class="summary-label">Idiomas Adicionales:</span>
+<span class="summary-label">${t('onb_sum_languages','Idiomas Adicionales')}:</span>
         <span class="summary-value">${agentData.config.additionalLanguages.join(', ')}</span>
       </div>
       ` : ''}
@@ -3260,10 +3276,10 @@ function generateSummary() {
     <div class="summary-section">
       <h3 class="summary-section-title">
         <i class="lni lni-comments"></i>
-        Personalidad
+        ${t('onb_sec_personality','Personalidad')}
       </h3>
       <div class="summary-item">
-        <span class="summary-label">Tono:</span>
+<span class="summary-label">${t('onb_sum_tone','Tono')}:</span>
         <span class="summary-value">${formatTone(agentData.config.tone)}</span>
       </div>
     </div>
@@ -3285,17 +3301,17 @@ function generateSummary() {
       <div class="summary-section">
         <h3 class="summary-section-title">
           <i class="lni lni-government"></i>
-          Mi Dependencia
+          ${t('onb_tab_agency','Mi Dependencia')}
         </h3>
-        ${depName    ? `<div class="summary-item"><span class="summary-label">Nombre:</span><span class="summary-value">${depName}</span></div>` : ''}
-        ${depAcronym ? `<div class="summary-item"><span class="summary-label">Siglas:</span><span class="summary-value">${depAcronym}</span></div>` : ''}
-        ${depArea    ? `<div class="summary-item"><span class="summary-label">Área:</span><span class="summary-value">${depArea}</span></div>` : ''}
-        ${depParent  ? `<div class="summary-item"><span class="summary-label">Organismo superior:</span><span class="summary-value">${depParent}</span></div>` : ''}
-        ${govLevel   ? `<div class="summary-item"><span class="summary-label">Nivel de gobierno:</span><span class="summary-value">${govLevel}</span></div>` : ''}
-        ${description ? `<div class="summary-item"><span class="summary-label">Descripción:</span><span class="summary-value">${description}</span></div>` : ''}
+        ${depName    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_name','Nombre')}:</span><span class="summary-value">${depName}</span></div>` : ''}
+        ${depAcronym ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_acronym','Siglas')}:</span><span class="summary-value">${depAcronym}</span></div>` : ''}
+        ${depArea    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_area','Área')}:</span><span class="summary-value">${depArea}</span></div>` : ''}
+        ${depParent  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_parent_org','Organismo superior')}:</span><span class="summary-value">${depParent}</span></div>` : ''}
+        ${govLevel   ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_gov_level','Nivel de gobierno')}:</span><span class="summary-value">${govLevel}</span></div>` : ''}
+        ${description ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_description','Descripción')}:</span><span class="summary-value">${description}</span></div>` : ''}
         ${email      ? `<div class="summary-item"><span class="summary-label">Email:</span><span class="summary-value">${email}</span></div>` : ''}
-        ${website    ? `<div class="summary-item"><span class="summary-label">Sitio web:</span><span class="summary-value">${website}</span></div>` : ''}
-        ${phone      ? `<div class="summary-item"><span class="summary-label">Teléfono:</span><span class="summary-value">${phone}</span></div>` : ''}
+        ${website    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_website','Sitio web')}:</span><span class="summary-value">${website}</span></div>` : ''}
+        ${phone      ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_phone_biz','Teléfono')}:</span><span class="summary-value">${phone}</span></div>` : ''}
       </div>
     `;
 
@@ -3306,9 +3322,9 @@ function generateSummary() {
     if (addr || city) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>Ubicación</h3>
-          ${addr  ? `<div class="summary-item"><span class="summary-label">Dirección:</span><span class="summary-value">${addr}</span></div>` : ''}
-          ${city  ? `<div class="summary-item"><span class="summary-label">Ciudad:</span><span class="summary-value">${city}${state ? ', '+state : ''}</span></div>` : ''}
+          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>${t('onb_sec_location','Ubicación')}</h3>
+          ${addr  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_address','Dirección')}:</span><span class="summary-value">${addr}</span></div>` : ''}
+          ${city  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_city','Ciudad')}:</span><span class="summary-value">${city}${state ? ', '+state : ''}</span></div>` : ''}
         </div>
       `;
     }
@@ -3318,7 +3334,7 @@ function generateSummary() {
     if (soc.facebook || soc.instagram || soc.twitter || soc.linkedin) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>Redes Sociales</h3>
+          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>${t('onb_sec_social','Redes Sociales')}</h3>
           ${soc.facebook  ? `<div class="summary-item"><span class="summary-label">Facebook:</span><span class="summary-value">${soc.facebook}</span></div>` : ''}
           ${soc.instagram ? `<div class="summary-item"><span class="summary-label">Instagram:</span><span class="summary-value">${soc.instagram}</span></div>` : ''}
           ${soc.twitter   ? `<div class="summary-item"><span class="summary-label">Twitter/X:</span><span class="summary-value">${soc.twitter}</span></div>` : ''}
@@ -3334,7 +3350,7 @@ function generateSummary() {
     if (openDays.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>Horario de Atención</h3>
+          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_sec_schedule','Horarios de Atención')}</h3>
           <ul class="summary-list">
             ${openDays.map(d => {
               const dd = sched[d];
@@ -3350,7 +3366,7 @@ function generateSummary() {
     if (hols.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-gift"></i>Días Inhábiles</h3>
+          <h3 class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_tab_holidays_gov','Días Inhábiles')}</h3>
           <ul class="summary-list">
             ${hols.map(h => `<li>${h.date} – ${h.name}</li>`).join('')}
           </ul>
@@ -3363,7 +3379,7 @@ function generateSummary() {
     if (cursos.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-graduation"></i>Cursos y Talleres</h3>
+          <h3 class="summary-section-title"><i class="lni lni-graduation"></i>${t('onb_gov_courses','Cursos y Talleres')}</h3>
           <ul class="summary-list">
             ${cursos.map(c => `<li><strong>${c.title}</strong>${c.modalidad ? ' – '+c.modalidad : ''}</li>`).join('')}
           </ul>
@@ -3392,7 +3408,7 @@ function generateSummary() {
     // Append businessType to basic info section (only in private mode)
     html = html.replace(
       '<span class="summary-label">Número de Teléfono:</span>',
-      `<span class="summary-label">Tipo de Negocio:</span>
+      `<span class="summary-label">${t('onb_sum_biz_type','Tipo de Negocio')}:</span>
         </div><div class="summary-item">
         <span class="summary-value">${businessTypeNames[agentData.businessType] || agentData.businessType}</span>
         </div><div class="summary-item"><span class="summary-label">Número de Teléfono:</span>`
@@ -3411,14 +3427,14 @@ function generateSummary() {
         <div class="summary-section">
           <h3 class="summary-section-title">
             <i class="lni lni-briefcase"></i>
-            Mi Negocio
+            ${t('onb_my_business','Mi Negocio')}
           </h3>
-          ${biz.name ? `<div class="summary-item"><span class="summary-label">Nombre:</span><span class="summary-value">${biz.name}</span></div>` : ''}
-          ${biz.typeName || biz.type ? `<div class="summary-item"><span class="summary-label">Tipo:</span><span class="summary-value">${biz.typeName || biz.type}</span></div>` : ''}
-          ${biz.description ? `<div class="summary-item"><span class="summary-label">Descripción:</span><span class="summary-value">${biz.description}</span></div>` : ''}
+          ${biz.name ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_name','Nombre')}:</span><span class="summary-value">${biz.name}</span></div>` : ''}
+          ${biz.typeName || biz.type ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_type','Tipo')}:</span><span class="summary-value">${biz.typeName || biz.type}</span></div>` : ''}
+          ${biz.description ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_description','Descripción')}:</span><span class="summary-value">${biz.description}</span></div>` : ''}
           ${biz.email ? `<div class="summary-item"><span class="summary-label">Email:</span><span class="summary-value">${biz.email}</span></div>` : ''}
-          ${biz.website ? `<div class="summary-item"><span class="summary-label">Sitio web:</span><span class="summary-value">${biz.website}</span></div>` : ''}
-          ${businessData?.phoneNumber ? `<div class="summary-item"><span class="summary-label">Teléfono:</span><span class="summary-value">${businessData.phoneNumber}</span></div>` : ''}
+          ${biz.website ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_website','Sitio web')}:</span><span class="summary-value">${biz.website}</span></div>` : ''}
+          ${businessData?.phoneNumber ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_phone_biz','Teléfono')}:</span><span class="summary-value">${businessData.phoneNumber}</span></div>` : ''}
         </div>
       `;
     }
@@ -3426,11 +3442,11 @@ function generateSummary() {
     if (loc.address || loc.city) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>Ubicación</h3>
-          ${loc.address ? `<div class="summary-item"><span class="summary-label">Dirección:</span><span class="summary-value">${loc.address}${loc.number ? ' #'+loc.number : ''}</span></div>` : ''}
-          ${loc.neighborhood ? `<div class="summary-item"><span class="summary-label">Colonia:</span><span class="summary-value">${loc.neighborhood}</span></div>` : ''}
-          ${loc.city ? `<div class="summary-item"><span class="summary-label">Ciudad:</span><span class="summary-value">${loc.city}${loc.state ? ', '+loc.state : ''}</span></div>` : ''}
-          ${loc.postalCode ? `<div class="summary-item"><span class="summary-label">C.P.:</span><span class="summary-value">${loc.postalCode}</span></div>` : ''}
+          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>${t('onb_sec_location','Ubicación')}</h3>
+          ${loc.address ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_address','Dirección')}:</span><span class="summary-value">${loc.address}${loc.number ? ' #'+loc.number : ''}</span></div>` : ''}
+          ${loc.neighborhood ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_neighborhood','Colonia')}:</span><span class="summary-value">${loc.neighborhood}</span></div>` : ''}
+          ${loc.city ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_city','Ciudad')}:</span><span class="summary-value">${loc.city}${loc.state ? ', '+loc.state : ''}</span></div>` : ''}
+          ${loc.postalCode ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_zip','C.P.')}:</span><span class="summary-value">${loc.postalCode}</span></div>` : ''}
         </div>
       `;
     }
@@ -3438,7 +3454,7 @@ function generateSummary() {
     if (soc.facebook || soc.instagram || soc.twitter || soc.linkedin) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>Redes Sociales</h3>
+          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>${t('onb_sec_social','Redes Sociales')}</h3>
           ${soc.facebook  ? `<div class="summary-item"><span class="summary-label">Facebook:</span><span class="summary-value">${soc.facebook}</span></div>` : ''}
           ${soc.instagram ? `<div class="summary-item"><span class="summary-label">Instagram:</span><span class="summary-value">${soc.instagram}</span></div>` : ''}
           ${soc.twitter   ? `<div class="summary-item"><span class="summary-label">Twitter/X:</span><span class="summary-value">${soc.twitter}</span></div>` : ''}
@@ -3452,7 +3468,7 @@ function generateSummary() {
     if (openDays.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>Horario de Atención</h3>
+          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_sec_schedule','Horarios de Atención')}</h3>
           <ul class="summary-list">
             ${openDays.map(d => {
               const dd = sched[d];
@@ -3468,7 +3484,7 @@ function generateSummary() {
     if (hols.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-gift"></i>Días Festivos</h3>
+          <h3 class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_sec_holidays','Días Festivos')}</h3>
           <ul class="summary-list">
             ${hols.map(h => `<li>${h.date} – ${h.name}</li>`).join('')}
           </ul>
@@ -3479,7 +3495,7 @@ function generateSummary() {
     if (svcs.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-package"></i>Servicios</h3>
+          <h3 class="summary-section-title"><i class="lni lni-package"></i>${t('onb_sec_services','Servicios')}</h3>
           <ul class="summary-list">
             ${svcs.map(s => {
               let priceText = '';
@@ -3498,9 +3514,9 @@ function generateSummary() {
     if (wrks.length > 0) {
       html += `
         <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-users"></i>Trabajadores</h3>
+          <h3 class="summary-section-title"><i class="lni lni-users"></i>${t('onb_sec_workers','Trabajadores')}</h3>
           <ul class="summary-list">
-            ${wrks.map(w => `<li><strong>${w.name}</strong> – ${w.startTime} a ${w.endTime} (${(w.days||[]).length} días)</li>`).join('')}
+            ${wrks.map(w => `<li><strong>${w.name}</strong> – ${w.startTime} a ${w.endTime} (${(w.days||[]).length} ${t('onb_sum_days','días')})</li>`).join('')}
           </ul>
         </div>
       `;
@@ -3512,23 +3528,23 @@ function generateSummary() {
 
 function formatTone(tone) {
   const toneNames = {
-    'formal': 'Formal',
-    'friendly': 'Amigable',
-    'casual': 'Casual',
-    'custom': 'Personalizado'
+    'formal':   t('onb_tone_formal_title','Formal'),
+    'friendly': t('onb_tone_friendly_title','Amigable'),
+    'casual':   t('onb_tone_casual_title','Casual'),
+    'custom':   t('onb_tone_custom_title','Personalizado')
   };
   return toneNames[tone] || tone;
 }
 
 function formatDay(day) {
   const dayNames = {
-    'monday': 'Lunes',
-    'tuesday': 'Martes',
-    'wednesday': 'Miércoles',
-    'thursday': 'Jueves',
-    'friday': 'Viernes',
-    'saturday': 'Sábado',
-    'sunday': 'Domingo'
+    'monday':    t('onb_sch_day_mon','Lunes'),
+    'tuesday':   t('onb_sch_day_tue','Martes'),
+    'wednesday': t('onb_sch_day_wed','Miércoles'),
+    'thursday':  t('onb_sch_day_thu','Jueves'),
+    'friday':    t('onb_sch_day_fri','Viernes'),
+    'saturday':  t('onb_sch_day_sat','Sábado'),
+    'sunday':    t('onb_sch_day_sun','Domingo')
   };
   return dayNames[day] || day;
 }
