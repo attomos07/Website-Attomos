@@ -3,12 +3,20 @@
 // Attomos — Historial del Cliente / Historial Clínico
 // ═══════════════════════════════════════════════════
 
+// ── i18n helper ──────────────────────────────────────
+function getLang() { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; }
+function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key] || fallback; }
+
 // ── Estado global ────────────────────────────────────
 let historialData = [];
 let agents        = [];
 let currentPage   = 1;
 let totalRecords  = 0;
 const LIMIT       = 10;
+
+// Recordamos el tipo de negocio detectado para poder re-traducir el
+// título/subtítulo si el usuario cambia de idioma después de cargarlos.
+let detectedBusinessCategory = null; // 'clinica' | 'peluqueria' | null
 
 let filters = {
     search:  '',
@@ -20,6 +28,20 @@ let filters = {
 // ═══════════════════════════════════════════════════
 // TÍTULO DINÁMICO POR TIPO DE NEGOCIO
 // ═══════════════════════════════════════════════════
+function applyPageTitleForCategory() {
+    if (detectedBusinessCategory === 'clinica') {
+        document.getElementById('pageTitle').textContent    = t('hist_title_clinic', 'Historial Clínico');
+        document.getElementById('pageSubtitle').textContent = t('hist_subtitle_clinic', 'Expediente completo de pacientes y consultas');
+        document.title = `${t('hist_title_clinic', 'Historial Clínico')} - Attomos`;
+    } else if (detectedBusinessCategory === 'peluqueria') {
+        document.getElementById('pageTitle').textContent    = t('hist_title_salon', 'Historial de Cliente');
+        document.getElementById('pageSubtitle').textContent = t('hist_subtitle_salon', 'Ficha completa de visitas y servicios');
+        document.title = `${t('hist_title_salon', 'Historial de Cliente')} - Attomos`;
+    }
+    // Si no se detectó categoría especial, el título/subtítulo genérico
+    // ya quedó traducido por el loop genérico de data-translate.
+}
+
 async function adaptPageTitle() {
     try {
         const r = await fetch('/api/me', { credentials: 'include' });
@@ -30,14 +52,11 @@ async function adaptPageTitle() {
         const PELUQ   = ['peluqueria','peluquería','salon','salón','barberia','barbería','spa','estetica','estética','belleza'];
 
         if (CLINICA.some(t => bt.includes(t))) {
-            document.getElementById('pageTitle').textContent    = 'Historial Clínico';
-            document.getElementById('pageSubtitle').textContent = 'Expediente completo de pacientes y consultas';
-            document.title = 'Historial Clínico - Attomos';
+            detectedBusinessCategory = 'clinica';
         } else if (PELUQ.some(t => bt.includes(t))) {
-            document.getElementById('pageTitle').textContent    = 'Historial de Cliente';
-            document.getElementById('pageSubtitle').textContent = 'Ficha completa de visitas y servicios';
-            document.title = 'Historial de Cliente - Attomos';
+            detectedBusinessCategory = 'peluqueria';
         }
+        applyPageTitleForCategory();
     } catch(e) {}
 }
 
@@ -74,7 +93,7 @@ async function loadHistorial() {
 
     try {
         const r = await fetch(`/api/client-history?${params}`, { credentials: 'include' });
-        if (!r.ok) throw new Error('Error al cargar historial');
+        if (!r.ok) throw new Error(t('hist_error_loading_generic','Error al cargar historial'));
         const d = await r.json();
 
         historialData = d.historial || [];
@@ -108,8 +127,8 @@ function renderTable() {
                 <td colspan="8">
                     <div class="empty-historial">
                         <i class="lni lni-files"></i>
-                        <h3>Sin registros</h3>
-                        <p>No se encontraron entradas con los filtros actuales</p>
+                        <h3>${t('hist_empty_title', 'Sin registros')}</h3>
+                        <p>${t('hist_empty_desc', 'No se encontraron entradas con los filtros actuales')}</p>
                     </div>
                 </td>
             </tr>`;
@@ -122,13 +141,13 @@ function renderTable() {
         const timeFormatted = formatTime(h.time);
 
         const typeBadge = h.entryType === 'visita'
-            ? `<span class="badge badge-visita"><i class="lni lni-checkmark-circle"></i> Visita</span>`
+            ? `<span class="badge badge-visita"><i class="lni lni-checkmark-circle"></i> ${t('hist_badge_visit','Visita')}</span>`
             : h.entryType === 'cancelada'
-            ? `<span class="badge badge-cancelada"><i class="lni lni-close"></i> Cancelada</span>`
-            : `<span class="badge badge-cita"><i class="lni lni-calendar"></i> Cita</span>`;
+            ? `<span class="badge badge-cancelada"><i class="lni lni-close"></i> ${t('hist_badge_cancelled','Cancelada')}</span>`
+            : `<span class="badge badge-cita"><i class="lni lni-calendar"></i> ${t('hist_badge_appointment','Cita')}</span>`;
 
         const srcClass = h.source === 'sheets' ? 'sheets' : h.source === 'agent' ? 'agent' : 'manual';
-        const srcLabel = h.source === 'sheets' ? 'Sheets' : h.source === 'agent' ? 'Agente' : 'Manual';
+        const srcLabel = h.source === 'sheets' ? 'Sheets' : h.source === 'agent' ? t('hist_source_agent','Agente') : t('hist_source_manual','Manual');
 
         const sheetBtn = h.sheetUrl
             ? `<a class="sheet-link" href="${h.sheetUrl}" target="_blank"><i class="lni lni-google"></i></a>`
@@ -161,7 +180,7 @@ function renderTable() {
             </td>
             <td>
                 <div class="actions-cell">
-                    <button class="action-btn" title="Ver historial del cliente"
+                    <button class="action-btn" title="${t('hist_action_view_history','Ver historial del cliente')}"
                         onclick="openClientPanel('${escapeHtml(h.phone)}', '${escapeHtml(h.client)}')">
                         <i class="lni lni-user"></i>
                     </button>
@@ -182,7 +201,7 @@ function renderPagination() {
     const end   = Math.min(currentPage * LIMIT, totalRecords);
 
     document.getElementById('paginationInfo').textContent =
-        totalRecords === 0 ? 'Sin resultados' : `${start}–${end} de ${totalRecords}`;
+        totalRecords === 0 ? t('hist_no_results','Sin resultados') : `${start}–${end} ${t('hist_pagination_of','de')} ${totalRecords}`;
 
     // Prev
     const btnsPrev = document.getElementById('paginationBtnsPrev');
@@ -217,10 +236,10 @@ function showError(msg) {
         <tr><td colspan="8">
             <div class="empty-historial">
                 <i class="lni lni-warning"></i>
-                <h3>Error al cargar</h3>
+                <h3>${t('hist_error_loading_title','Error al cargar')}</h3>
                 <p>${escapeHtml(msg)}</p>
                 <button class="btn-primary" style="margin-top:1rem" onclick="loadHistorial()">
-                    <i class="lni lni-reload"></i> Reintentar
+                    <i class="lni lni-reload"></i> ${t('hist_retry','Reintentar')}
                 </button>
             </div>
         </td></tr>`;
@@ -242,12 +261,12 @@ async function openClientPanel(phone, name) {
         const initials = name.split(' ').map(p => p[0]||'').join('').slice(0,2).toUpperCase();
 
         const itemsHTML = entries.length === 0
-            ? '<p style="color:#9ca3af;font-size:.87rem;">Sin registros anteriores</p>'
+            ? `<p style="color:#9ca3af;font-size:.87rem;">${t('hist_no_previous_records','Sin registros anteriores')}</p>`
             : entries.map(e => `
                 <div class="panel-timeline-item">
                     <div class="timeline-dot ${e.entryType}"></div>
                     <div class="timeline-content">
-                        <div class="timeline-service">${escapeHtml(e.service || 'Servicio sin nombre')}</div>
+                        <div class="timeline-service">${escapeHtml(e.service || t('hist_service_unnamed','Servicio sin nombre'))}</div>
                         <div class="timeline-meta">
                             ${formatDate(e.date)} · ${formatTime(e.time)}
                             ${e.worker    ? ` · ${escapeHtml(e.worker)}`              : ''}
@@ -265,21 +284,21 @@ async function openClientPanel(phone, name) {
                 </div>
             </div>
             <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
-                <span class="badge badge-visita">${entries.filter(e=>e.entryType==='visita').length} visitas</span>
-                <span class="badge badge-cancelada">${entries.filter(e=>e.entryType==='cancelada').length} canceladas</span>
+                <span class="badge badge-visita">${entries.filter(e=>e.entryType==='visita').length} ${t('hist_visits_count_suffix','visitas')}</span>
+                <span class="badge badge-cancelada">${entries.filter(e=>e.entryType==='cancelada').length} ${t('hist_cancelled_count_suffix','canceladas')}</span>
             </div>
-            <div class="panel-section-title">Historial de Visitas</div>
+            <div class="panel-section-title">${t('hist_panel_section_title','Historial de Visitas')}</div>
             <div class="panel-timeline">${itemsHTML}</div>
             ${phone ? `
             <div style="margin-top:1.5rem;">
                 <button class="btn-primary" style="width:100%" onclick="sendWhatsApp('${escapeHtml(phone)}','${escapeHtml(name)}')">
-                    <i class="lni lni-whatsapp"></i> Contactar por WhatsApp
+                    <i class="lni lni-whatsapp"></i> ${t('hist_contact_whatsapp','Contactar por WhatsApp')}
                 </button>
             </div>` : ''}
         `;
     } catch(e) {
         document.getElementById('clientPanelContent').innerHTML =
-            '<p style="color:#ef4444;padding:1rem;">Error cargando historial del cliente</p>';
+            `<p style="color:#ef4444;padding:1rem;">${t('hist_error_loading_client','Error cargando historial del cliente')}</p>`;
     }
 }
 
@@ -348,7 +367,13 @@ function setupFilters() {
 }
 
 function selectAgentFilter(el, agentId) {
-    document.getElementById('selectedAgent').innerText = el.querySelector('span').innerText;
+    const selectedSpan = document.getElementById('selectedAgent');
+    selectedSpan.innerText = el.querySelector('span').innerText;
+    if (agentId === 'all') {
+        selectedSpan.setAttribute('data-translate', 'hist_all_agents');
+    } else {
+        selectedSpan.removeAttribute('data-translate'); // nombre real de agente — no re-traducir
+    }
     el.closest('.dropdown-options').querySelectorAll('.dropdown-option')
         .forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
@@ -362,7 +387,7 @@ function selectAgentFilter(el, agentId) {
 // ═══════════════════════════════════════════════════
 function exportPDF() {
     if (!historialData.length) {
-        showNotification('No hay datos para exportar', 'warning');
+        showNotification(t('hist_notif_no_data_export','No hay datos para exportar'), 'warning');
         return;
     }
 
@@ -370,32 +395,43 @@ function exportPDF() {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
 
+    const lang = getLang();
+    const dateLocaleMap = { es:'es-MX', en:'en-US', ru:'ru-RU', uz:'uz-UZ', ja:'ja-JP', zh:'zh-CN', fr:'fr-FR', pt:'pt-BR', de:'de-DE', ko:'ko-KR' };
+    const locale = dateLocaleMap[lang] || 'es-MX';
+
     // Encabezado
     doc.setFillColor(6, 182, 212);
     doc.rect(0, 0, pageW, 18, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(document.getElementById('pageTitle').textContent || 'Historial', 12, 12);
+    doc.text(document.getElementById('pageTitle').textContent || t('hist_title','Historial'), 12, 12);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text(
-        `Generado: ${new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' })}`,
+        `${t('hist_pdf_generated_prefix','Generado:')} ${new Date().toLocaleDateString(locale, { day:'2-digit', month:'long', year:'numeric' })}`,
         pageW - 12, 12, { align: 'right' }
     );
 
     // Subtítulo
     doc.setTextColor(100, 116, 139);
     doc.setFontSize(8);
-    doc.text(`Total de registros: ${totalRecords}`, 12, 24);
+    doc.text(`${t('hist_pdf_total_records','Total de registros:')} ${totalRecords}`, 12, 24);
 
     // Tabla
-    const columns = ['Cliente','Teléfono','Servicio','Trabajador','Fecha','Hora','Agente','Tipo','Origen'];
+    const visitLabel = t('hist_badge_visit','Visita');
+    const cancelledLabel = t('hist_badge_cancelled','Cancelada');
+    const appointmentLabel = t('hist_badge_appointment','Cita');
+    const columns = [
+        t('hist_col_client','Cliente'), t('hist_col_phone','Teléfono'), t('hist_col_service','Servicio'),
+        t('hist_col_worker','Trabajador'), t('hist_col_date','Fecha'), t('hist_col_time','Hora'),
+        t('hist_col_agent','Agente'), t('hist_col_type','Tipo'), t('hist_col_source','Origen')
+    ];
     const rows = historialData.map(h => [
         h.client    || '—', h.phone     || '—', h.service   || '—', h.worker    || '—',
         formatDate(h.date), formatTime(h.time), h.agentName || '—',
-        h.entryType === 'visita' ? 'Visita' : h.entryType === 'cancelada' ? 'Cancelada' : 'Cita',
-        h.source    === 'sheets' ? 'Sheets' : h.source    === 'agent'    ? 'Agente'    : 'Manual'
+        h.entryType === 'visita' ? visitLabel : h.entryType === 'cancelada' ? cancelledLabel : appointmentLabel,
+        h.source    === 'sheets' ? 'Sheets' : h.source    === 'agent'    ? t('hist_source_agent','Agente') : t('hist_source_manual','Manual')
     ]);
 
     doc.autoTable({
@@ -413,9 +449,9 @@ function exportPDF() {
         didParseCell(data) {
             if (data.section === 'body' && data.column.index === 7) {
                 const v = data.cell.raw;
-                if (v === 'Visita')    data.cell.styles.textColor = [16, 185, 129];
-                if (v === 'Cancelada') data.cell.styles.textColor = [239, 68, 68];
-                if (v === 'Cita')      data.cell.styles.textColor = [6, 182, 212];
+                if (v === visitLabel)      data.cell.styles.textColor = [16, 185, 129];
+                if (v === cancelledLabel)  data.cell.styles.textColor = [239, 68, 68];
+                if (v === appointmentLabel) data.cell.styles.textColor = [6, 182, 212];
             }
         },
         didDrawPage(data) {
@@ -424,14 +460,14 @@ function exportPDF() {
             doc.setFontSize(7);
             doc.setTextColor(156, 163, 175);
             doc.text(
-                `Página ${current} de ${pageCount}  ·  Attomos`,
+                `${t('hist_pdf_page','Página')} ${current} ${t('hist_pagination_of','de')} ${pageCount}  ·  Attomos`,
                 pageW / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' }
             );
         }
     });
 
     doc.save(`historial_${new Date().toISOString().split('T')[0]}.pdf`);
-    showNotification('PDF exportado exitosamente', 'success');
+    showNotification(t('hist_notif_pdf_success','PDF exportado exitosamente'), 'success');
 }
 
 // ═══════════════════════════════════════════════════
@@ -439,10 +475,14 @@ function exportPDF() {
 // ═══════════════════════════════════════════════════
 function exportCSV() {
     if (!historialData.length) {
-        showNotification('No hay datos para exportar', 'warning');
+        showNotification(t('hist_notif_no_data_export','No hay datos para exportar'), 'warning');
         return;
     }
-    const headers = ['Cliente','Teléfono','Servicio','Trabajador','Fecha','Hora','Agente','Tipo','Origen'];
+    const headers = [
+        t('hist_col_client','Cliente'), t('hist_col_phone','Teléfono'), t('hist_col_service','Servicio'),
+        t('hist_col_worker','Trabajador'), t('hist_col_date','Fecha'), t('hist_col_time','Hora'),
+        t('hist_col_agent','Agente'), t('hist_col_type','Tipo'), t('hist_col_source','Origen')
+    ];
     const rows = historialData.map(h => [
         h.client, h.phone, h.service, h.worker,
         h.date, h.time, h.agentName, h.entryType, h.source
@@ -456,7 +496,7 @@ function exportCSV() {
     a.download = `historial_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showNotification('CSV exportado exitosamente', 'success');
+    showNotification(t('hist_notif_csv_success','CSV exportado exitosamente'), 'success');
 }
 
 // ═══════════════════════════════════════════════════
@@ -465,7 +505,7 @@ function exportCSV() {
 function formatDate(d) {
     if (!d) return '—';
     const [y, m, day] = d.split('-');
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const months = t('hist_months','Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Oct|Nov|Dic').split('|');
     return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
 }
 
@@ -480,7 +520,8 @@ function formatTime(t) {
 
 function sendWhatsApp(phone, name) {
     const num = phone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola ${name}, te contacto desde Attomos.`);
+    const template = t('hist_whatsapp_message', 'Hola {name}, te contacto desde Attomos.');
+    const msg = encodeURIComponent(template.replace('{name}', name));
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
 }
 
@@ -491,13 +532,32 @@ function escapeHtml(t) {
 }
 
 function showNotification(message, type = 'info') {
-    const titles = { success: 'Listo', error: 'Error', warning: 'Aviso', info: 'Info' };
+    const titles = {
+        success: t('hist_notif_title_success','Listo'),
+        error:   t('hist_notif_title_error','Error'),
+        warning: t('hist_notif_title_warning','Aviso'),
+        info:    t('hist_notif_title_info','Info')
+    };
     if (typeof Sileo !== 'undefined' && Sileo[type]) {
         Sileo[type]({ title: titles[type], description: message });
     } else {
         alert(message);
     }
 }
+
+// ═══════════════════════════════════════════════════
+// RE-TRADUCIR CONTENIDO DINÁMICO AL CAMBIAR DE IDIOMA
+// La tabla, paginación y título por tipo de negocio se pintan con t();
+// si el idioma cambia después de la carga inicial, se re-renderizan
+// con los datos ya cacheados (sin volver a pedirlos al servidor).
+// ═══════════════════════════════════════════════════
+document.addEventListener('attomos:langchange', function () {
+    applyPageTitleForCategory();
+    if (historialData.length || totalRecords === 0) {
+        renderTable();
+        renderPagination();
+    }
+});
 
 // ═══════════════════════════════════════════════════
 // INIT

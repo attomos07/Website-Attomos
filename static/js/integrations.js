@@ -21,6 +21,38 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
+// RE-TRADUCIR BADGES DE ESTADO AL CAMBIAR DE IDIOMA
+// Los badges se pintan una sola vez en el idioma activo al conectar/
+// desconectar; si el usuario cambia de idioma después sin disparar
+// esa acción, este listener actualiza el texto sin volver a pedir
+// datos al servidor ni reengachar los botones (evita listeners duplicados).
+// ============================================
+const STATUS_BADGE_KEY_MAP = {
+    metaStatusBadge:            { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    geminiStatusBadge:          { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    googleStatusBadge:          { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    sheetsStatusBadge:          { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    speiStatusBadge:            { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    stripeConnectStatusBadge:   { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    paymentsStatusBadge:        { connected: 'integ_status_configured', disconnected: 'integ_status_without_config' },
+    repairDeskStatusBadge:      { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    srStatusBadge:               { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+};
+
+function refreshIntegrationBadgesLanguage() {
+    Object.keys(STATUS_BADGE_KEY_MAP).forEach(id => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        const state = badge.classList.contains('connected') ? 'connected' : 'disconnected';
+        const key = STATUS_BADGE_KEY_MAP[id][state];
+        const fallback = badge.textContent.trim();
+        badge.innerHTML = `<span class="status-indicator"></span>${t(key, fallback)}`;
+    });
+}
+
+document.addEventListener('attomos:langchange', refreshIntegrationBadgesLanguage);
+
+// ============================================
 // DETECCIÓN GUBERNAMENTAL
 // ============================================
 
@@ -173,6 +205,7 @@ async function selectAgent(option) {
     
     const selectDisplay = document.getElementById('agentSelectDisplay');
     selectDisplay.textContent = agentName;
+    selectDisplay.removeAttribute('data-translate'); // ya no es el placeholder — no debe re-traducirse al cambiar idioma
     
     const allOptions = document.querySelectorAll('.select-option');
     allOptions.forEach(opt => opt.classList.remove('selected'));
@@ -372,7 +405,7 @@ function updateMetaCredentialsUI(data) {
             statusBadge.className = 'status-badge connected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Configurado
+                ${t('integ_status_configured','Configurado')}
             `;
         }
         
@@ -423,7 +456,7 @@ function updateMetaCredentialsUI(data) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Sin configurar
+                ${t('integ_status_not_configured','Sin configurar')}
             `;
         }
         
@@ -749,7 +782,7 @@ function updateGeminiUI(data) {
             statusBadge.className = 'status-badge connected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Configurado
+                ${t('integ_status_configured','Configurado')}
             `;
         }
         
@@ -769,7 +802,7 @@ function updateGeminiUI(data) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Sin configurar
+                ${t('integ_status_not_configured','Sin configurar')}
             `;
         }
         
@@ -952,7 +985,7 @@ function updateGoogleIntegrationUI(data) {
             statusBadge.className = 'status-badge connected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Conectado
+                ${t('integ_status_connected','Conectado')}
             `;
         }
         
@@ -960,7 +993,7 @@ function updateGoogleIntegrationUI(data) {
             sheetsStatusBadge.className = 'status-badge connected';
             sheetsStatusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                Conectado
+                ${t('integ_status_connected','Conectado')}
             `;
         }
         
@@ -1009,7 +1042,7 @@ function updateGoogleIntegrationUI(data) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                No conectado
+                ${t('integ_status_disconnected','No conectado')}
             `;
         }
         
@@ -1017,7 +1050,7 @@ function updateGoogleIntegrationUI(data) {
             sheetsStatusBadge.className = 'status-badge disconnected';
             sheetsStatusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                No conectado
+                ${t('integ_status_disconnected','No conectado')}
             `;
         }
         

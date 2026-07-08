@@ -58,6 +58,7 @@ body {
     font-weight: 300;
     margin: 0;
     display: flex;
+    align-items: center;
 }
 
 .logo-container h1 span[class*='char'] {
@@ -68,11 +69,16 @@ body {
     transform: scale(1.2, 1);
 }
 
-/* Quitar la O (char3) que era visible */
-.logo-container h1 .char3 {
-    padding: 0;
-    visibility: hidden;
-    display: none;
+/* Slot inline donde vive el átomo — ocupa el lugar de la "O" entre ATT y MOS */
+.logo-container h1 .atom-slot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.05em;   /* ancho reservado para la "O" (ajustable) */
+    height: 1em;
+    vertical-align: baseline;
+    overflow: visible;
 }
 
 .hide {
@@ -84,12 +90,12 @@ body {
 
 
 #svg {
-    position: absolute;
-    right: -0.35em;
-    bottom: 0.4em;
     height: 4.4em;
     width: 3.5em;
-    transform: scale(0.93) translateX(-200px) translateY(-20px);
+    transform: scale(0.93);
+    overflow: visible;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 path#ring,
@@ -97,7 +103,6 @@ circle#base {
     stroke: #06b6d4;
     stroke-width: 4px;
     fill: none;
-    position: absolute;
 }
 
 circle#base {
@@ -109,7 +114,6 @@ circle#base {
     stroke: #06b6d4;
     stroke-width: 4px;
     fill: none;
-    position: absolute;
 }
 
 #second {

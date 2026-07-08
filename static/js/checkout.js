@@ -6,6 +6,121 @@ let STRIPE_PUBLISHABLE_KEY = '';
 let plansData = null;
 let selectedPlanData = null;
 let currentBillingPeriod = 'monthly';
+let currentSelectedCountry = 'MX';
+
+// ============================================
+// i18n — helper de traducción para textos generados por JS
+// (alerts, mensajes de error, cupón) usando el diccionario de translations.js
+// ============================================
+function getCheckoutLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+
+function t(key, fallback) {
+    const lang = getCheckoutLang();
+    const dict = window.Translations && window.Translations.dict;
+    return (dict && dict[lang] && dict[lang][key]) || fallback;
+}
+
+// Nombre/features de cada plan, traducidos — mismo criterio usado en plans.js
+// (Protón/Neutron se mantienen en latino salvo en español, igual que en /plans)
+const CHECKOUT_PLAN_I18N = (function () {
+    const F = {
+        es: { wa1: '1 agente de WhatsApp', waweb: 'WhatsApp Web (escaneo QR)', spei: 'Pasarela de pagos SPEI', card: 'Pasarela de pagos con tarjeta', gemini: 'IA con Gemini', gsheets: 'Google Sheets', gcal: 'Google Calendar', hours: 'Horarios personalizados de atención', catSvc: 'Catálogo de servicios', promoSvc: 'Promociones de servicios', photos: 'Subida de fotos a servicios', promoPeriods: 'Periodos de promocion', multiBranch: 'Multi Sucursal', jobs: 'Ofertas de trabajo (Próximamente)', agentsUnl: 'Agentes ilimitados', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Contactos ilimitados', msgsUnl: 'Mensajes ilimitados', chatwoot: 'Chatwoot CRM', catProd: 'Catálogo de productos', promoPacks: 'Promociones y packs', inventory: 'Sistema de inventario', pos: 'Punto de venta (POS)' },
+        en: { wa1: '1 WhatsApp agent', waweb: 'WhatsApp Web (QR scan)', spei: 'SPEI payment gateway', card: 'Card payment gateway', gemini: 'AI with Gemini', gsheets: 'Google Sheets', gcal: 'Google Calendar', hours: 'Customized business hours', catSvc: 'Services catalog', promoSvc: 'Service promotions', photos: 'Photo uploads for services', promoPeriods: 'Promotion periods', multiBranch: 'Multi-branch', jobs: 'Job listings (Coming soon)', agentsUnl: 'Unlimited agents', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Unlimited contacts', msgsUnl: 'Unlimited messages', chatwoot: 'Chatwoot CRM', catProd: 'Product catalog', promoPacks: 'Promotions and bundles', inventory: 'Inventory system', pos: 'Point of sale (POS)' },
+        ru: { wa1: '1 агент WhatsApp', waweb: 'WhatsApp Web (сканирование QR)', spei: 'Платёжный шлюз SPEI', card: 'Платёжный шлюз для карт', gemini: 'ИИ на базе Gemini', gsheets: 'Google Sheets', gcal: 'Google Calendar', hours: 'Индивидуальный график работы', catSvc: 'Каталог услуг', promoSvc: 'Акции на услуги', photos: 'Загрузка фото к услугам', promoPeriods: 'Периоды акций', multiBranch: 'Мультифилиал', jobs: 'Вакансии (Скоро)', agentsUnl: 'Неограниченное количество агентов', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Неограниченное количество контактов', msgsUnl: 'Неограниченные сообщения', chatwoot: 'Chatwoot CRM', catProd: 'Каталог товаров', promoPacks: 'Акции и наборы', inventory: 'Система инвентаризации', pos: 'Точка продаж (POS)' },
+        uz: { wa1: "1 ta WhatsApp agenti", waweb: 'WhatsApp Web (QR skanerlash)', spei: "SPEI to'lov shlyuzi", card: "Karta orqali to'lov shlyuzi", gemini: 'Gemini bilan AI', gsheets: 'Google Sheets', gcal: 'Google Calendar', hours: 'Shaxsiylashtirilgan ish vaqti', catSvc: 'Xizmatlar katalogi', promoSvc: 'Xizmatlar aksiyalari', photos: 'Xizmatlarga rasm yuklash', promoPeriods: 'Aksiya davrlari', multiBranch: "Ko'p filial", jobs: 'Ish takliflari (Tez orada)', agentsUnl: 'Cheksiz agentlar', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Cheksiz kontaktlar', msgsUnl: 'Cheksiz xabarlar', chatwoot: 'Chatwoot CRM', catProd: 'Mahsulotlar katalogi', promoPacks: 'Aksiyalar va paketlar', inventory: 'Ombor tizimi', pos: 'Savdo nuqtasi (POS)' },
+        ja: { wa1: 'WhatsAppエージェント1つ', waweb: 'WhatsApp Web（QRスキャン）', spei: 'SPEI決済ゲートウェイ', card: 'カード決済ゲートウェイ', gemini: 'Gemini搭載AI', gsheets: 'Google Sheets', gcal: 'Google カレンダー', hours: 'カスタム営業時間', catSvc: 'サービスカタログ', promoSvc: 'サービスプロモーション', photos: 'サービスへの写真アップロード', promoPeriods: 'プロモーション期間', multiBranch: 'マルチ支店', jobs: '求人情報（近日公開）', agentsUnl: '無制限のエージェント', metaApi: 'Meta WhatsApp Business API', contactsUnl: '無制限の連絡先', msgsUnl: '無制限のメッセージ', chatwoot: 'Chatwoot CRM', catProd: '商品カタログ', promoPacks: 'プロモーションとパック', inventory: '在庫管理システム', pos: 'POSレジ' },
+        zh: { wa1: '1个WhatsApp坐席', waweb: 'WhatsApp网页版（扫描二维码）', spei: 'SPEI支付网关', card: '银行卡支付网关', gemini: '由Gemini提供的AI', gsheets: 'Google Sheets', gcal: 'Google 日历', hours: '自定义营业时间', catSvc: '服务目录', promoSvc: '服务促销', photos: '为服务上传照片', promoPeriods: '促销时段', multiBranch: '多分店', jobs: '招聘信息（即将推出）', agentsUnl: '无限坐席', metaApi: 'Meta WhatsApp Business API', contactsUnl: '无限联系人', msgsUnl: '无限消息', chatwoot: 'Chatwoot CRM', catProd: '产品目录', promoPacks: '促销与套装', inventory: '库存系统', pos: '销售点（POS）' },
+        fr: { wa1: '1 agent WhatsApp', waweb: 'WhatsApp Web (scan QR)', spei: 'Passerelle de paiement SPEI', card: 'Passerelle de paiement par carte', gemini: 'IA avec Gemini', gsheets: 'Google Sheets', gcal: 'Google Agenda', hours: "Horaires d'ouverture personnalisés", catSvc: 'Catalogue de services', promoSvc: 'Promotions de services', photos: 'Téléchargement de photos pour les services', promoPeriods: 'Périodes de promotion', multiBranch: 'Multi-succursales', jobs: "Offres d'emploi (Bientôt disponible)", agentsUnl: 'Agents illimités', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Contacts illimités', msgsUnl: 'Messages illimités', chatwoot: 'Chatwoot CRM', catProd: 'Catalogue de produits', promoPacks: 'Promotions et forfaits', inventory: "Système d'inventaire", pos: 'Point de vente (POS)' },
+        pt: { wa1: '1 agente de WhatsApp', waweb: 'WhatsApp Web (escaneamento de QR)', spei: 'Gateway de pagamento SPEI', card: 'Gateway de pagamento com cartão', gemini: 'IA com Gemini', gsheets: 'Google Sheets', gcal: 'Google Agenda', hours: 'Horários de atendimento personalizados', catSvc: 'Catálogo de serviços', promoSvc: 'Promoções de serviços', photos: 'Upload de fotos nos serviços', promoPeriods: 'Períodos de promoção', multiBranch: 'Multi Filial', jobs: 'Vagas de emprego (Em breve)', agentsUnl: 'Agentes ilimitados', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Contatos ilimitados', msgsUnl: 'Mensagens ilimitadas', chatwoot: 'Chatwoot CRM', catProd: 'Catálogo de produtos', promoPacks: 'Promoções e pacotes', inventory: 'Sistema de inventário', pos: 'Ponto de venda (PDV)' },
+        de: { wa1: '1 WhatsApp-Agent', waweb: 'WhatsApp Web (QR-Scan)', spei: 'SPEI-Zahlungsgateway', card: 'Zahlungsgateway für Kartenzahlungen', gemini: 'KI mit Gemini', gsheets: 'Google Sheets', gcal: 'Google Kalender', hours: 'Individuelle Öffnungszeiten', catSvc: 'Dienstleistungskatalog', promoSvc: 'Aktionen für Dienstleistungen', photos: 'Fotos zu Dienstleistungen hochladen', promoPeriods: 'Aktionszeiträume', multiBranch: 'Mehrere Filialen', jobs: 'Stellenangebote (Demnächst)', agentsUnl: 'Unbegrenzte Agenten', metaApi: 'Meta WhatsApp Business API', contactsUnl: 'Unbegrenzte Kontakte', msgsUnl: 'Unbegrenzte Nachrichten', chatwoot: 'Chatwoot CRM', catProd: 'Produktkatalog', promoPacks: 'Aktionen und Pakete', inventory: 'Lagerverwaltungssystem', pos: 'Kassensystem (POS)' },
+        ko: { wa1: 'WhatsApp 에이전트 1개', waweb: 'WhatsApp Web (QR 스캔)', spei: 'SPEI 결제 게이트웨이', card: '카드 결제 게이트웨이', gemini: 'Gemini 기반 AI', gsheets: 'Google Sheets', gcal: 'Google 캘린더', hours: '맞춤형 영업시간', catSvc: '서비스 카탈로그', promoSvc: '서비스 프로모션', photos: '서비스 사진 업로드', promoPeriods: '프로모션 기간', multiBranch: '다중 지점', jobs: '채용 정보 (출시 예정)', agentsUnl: '무제한 에이전트', metaApi: 'Meta WhatsApp Business API', contactsUnl: '무제한 연락처', msgsUnl: '무제한 메시지', chatwoot: 'Chatwoot CRM', catProd: '제품 카탈로그', promoPacks: '프로모션 및 패키지', inventory: '재고 관리 시스템', pos: '포스(POS) 시스템' },
+    };
+
+    const NAMES = {
+        es: { gratuito: 'Gratuito', proton: 'Protón', neutron: 'Neutrón' },
+        en: { gratuito: 'Free', proton: 'Proton', neutron: 'Neutron' },
+        ru: { gratuito: 'Бесплатно', proton: 'Proton', neutron: 'Neutron' },
+        uz: { gratuito: 'Bepul', proton: 'Proton', neutron: 'Neutron' },
+        ja: { gratuito: '無料', proton: 'Proton', neutron: 'Neutron' },
+        zh: { gratuito: '免费', proton: 'Proton', neutron: 'Neutron' },
+        fr: { gratuito: 'Gratuit', proton: 'Proton', neutron: 'Neutron' },
+        pt: { gratuito: 'Grátis', proton: 'Proton', neutron: 'Neutron' },
+        de: { gratuito: 'Kostenlos', proton: 'Proton', neutron: 'Neutron' },
+        ko: { gratuito: '무료', proton: 'Proton', neutron: 'Neutron' },
+    };
+
+    function features(lang, planId) {
+        const f = F[lang] || F.es;
+        if (planId === 'gratuito') return [f.wa1, f.waweb, f.spei, f.card, f.gemini, f.gsheets, f.gcal, f.hours, f.catSvc, f.promoSvc, f.photos, f.promoSvc, f.promoPeriods, f.multiBranch, f.jobs];
+        if (planId === 'proton') return [f.agentsUnl, f.metaApi, f.contactsUnl, f.msgsUnl, f.gemini, f.chatwoot, f.gsheets, f.gcal, f.hours, f.catSvc, f.promoSvc, f.jobs];
+        if (planId === 'neutron') return [f.agentsUnl, f.metaApi, f.contactsUnl, f.msgsUnl, f.chatwoot, f.gemini, f.gsheets, f.catProd, f.promoPacks, f.inventory, f.pos, f.jobs];
+        return null;
+    }
+
+    function getDisplayName(lang, planId) {
+        const names = NAMES[lang] || NAMES.es;
+        return names[planId] || null;
+    }
+
+    return { features, getDisplayName };
+})();
+
+// Re-traduce nombre/período/features del plan seleccionado cuando cambia el idioma
+function applyCheckoutDynamicTranslations(lang) {
+    if (!selectedPlanData) return;
+
+    const planNameElement = document.getElementById('selectedPlanName');
+    if (planNameElement) {
+        const displayName = CHECKOUT_PLAN_I18N.getDisplayName(lang, selectedPlanData.id);
+        planNameElement.textContent = displayName || selectedPlanData.displayName || selectedPlanData.name;
+    }
+
+    const billingPeriodElement = document.getElementById('billingPeriod');
+    if (billingPeriodElement) {
+        const dict = window.Translations && window.Translations.dict && window.Translations.dict[lang];
+        billingPeriodElement.textContent = currentBillingPeriod === 'annual'
+            ? (dict && dict.plans_toggle_annual) || 'Anual'
+            : (dict && dict.plans_toggle_monthly) || 'Mensual';
+    }
+
+    const translatedFeatures = CHECKOUT_PLAN_I18N.features(lang, selectedPlanData.id);
+    if (translatedFeatures) {
+        const featuresList = document.getElementById('planFeatures');
+        if (featuresList) {
+            featuresList.innerHTML = translatedFeatures.map(feature => `
+                <li>
+                    <i class="lni lni-checkmark-circle"></i>
+                    <span>${feature}</span>
+                </li>
+            `).join('');
+        }
+    }
+}
+
+document.addEventListener('attomos:langchange', function (e) {
+    applyCheckoutDynamicTranslations(e.detail.lang);
+    updateCountryInputLanguage();
+    // El loop genérico de data-translate acaba de resetear los hints de
+    // teléfono/CP al ejemplo por defecto (MX) — los reaplicamos para el país activo.
+    updateFormatExamples(currentSelectedCountry);
+    updateStripeElementsLocale(e.detail.lang);
+});
+
+// Actualiza el texto del país mostrado en el input (México/Mexico/Мексика...)
+// cuando cambia el idioma, manteniendo la bandera y el país seleccionado.
+function updateCountryInputLanguage() {
+    const selectedOption = document.querySelector('.select-option.selected')
+        || document.querySelector('.select-option[data-value="MX"]');
+    const selectInput = document.getElementById('country');
+    if (!selectedOption || !selectInput) return;
+
+    const flag = selectedOption.getAttribute('data-flag');
+    const nameSpan = selectedOption.querySelector('span:last-child');
+    const name = nameSpan ? nameSpan.textContent : selectedOption.getAttribute('data-name');
+    selectInput.value = `${flag} ${name}`;
+}
 
 // Mapeo de códigos de país a códigos telefónicos
 const COUNTRY_PHONE_CODES = {
@@ -16,7 +131,36 @@ const COUNTRY_PHONE_CODES = {
     'AR': '+54',
     'CO': '+57',
     'CL': '+56',
-    'PE': '+51'
+    'PE': '+51',
+    'RU': '+7',
+    'UZ': '+998',
+    'JP': '+81',
+    'CN': '+86',
+    'FR': '+33',
+    'PT': '+351',
+    'DE': '+49',
+    'KR': '+82'
+};
+
+// Ejemplos de número telefónico (sin lada) y código postal por país,
+// para que el hint en cursiva debajo del campo tenga sentido según el país elegido.
+const COUNTRY_FORMAT_EXAMPLES = {
+    'MX': { phone: '6621234567', postal: '83000' },
+    'US': { phone: '2025551234', postal: '10001' },
+    'CA': { phone: '4165551234', postal: 'M5H 2N2' },
+    'ES': { phone: '612345678', postal: '28001' },
+    'AR': { phone: '91123456789', postal: 'C1002' },
+    'CO': { phone: '3001234567', postal: '110111' },
+    'CL': { phone: '912345678', postal: '8320000' },
+    'PE': { phone: '987654321', postal: '15001' },
+    'RU': { phone: '9161234567', postal: '101000' },
+    'UZ': { phone: '901234567', postal: '100000' },
+    'JP': { phone: '9012345678', postal: '100-0001' },
+    'CN': { phone: '13812345678', postal: '100000' },
+    'FR': { phone: '612345678', postal: '75001' },
+    'PT': { phone: '912345678', postal: '1000-001' },
+    'DE': { phone: '15123456789', postal: '10115' },
+    'KR': { phone: '1012345678', postal: '03187' }
 };
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -56,7 +200,7 @@ async function loadPlansData() {
         const data = await response.json();
         
         if (!response.ok || !data.success) {
-            throw new Error('Error al cargar los datos de los planes');
+            throw new Error(t('checkout_err_load_plans', 'Error al cargar los datos de los planes'));
         }
         
         plansData = data.plans;
@@ -123,11 +267,11 @@ async function loadStripePublicKey() {
             console.log('✅ Stripe public key loaded');
         } else {
             console.error('❌ Error loading Stripe key');
-            alert('Error al configurar el sistema de pagos. Por favor recarga la página.');
+            alert(t('checkout_err_config_payment', 'Error al configurar el sistema de pagos. Por favor recarga la página.'));
         }
     } catch (error) {
         console.error('❌ Error:', error);
-        alert('Error de conexión. Por favor recarga la página.');
+        alert(t('checkout_err_connection', 'Error de conexión. Por favor recarga la página.'));
     }
 }
 
@@ -169,6 +313,17 @@ function initLogoAnimation() {
     const h1 = document.querySelector(".logo-container h1");
     if (h1) {
         lettering(h1);
+
+        // Insertar el átomo (SVG) en el flujo de letras, como la "O" de ATT(O)MOS:
+        // va entre char3 (segunda T) y char4 (M), dentro de un slot inline.
+        const svgEl = document.getElementById('svg');
+        const char3 = h1.querySelector('.char3');
+        if (svgEl && char3) {
+            const slot = document.createElement('span');
+            slot.className = 'atom-slot';
+            char3.after(slot);
+            slot.appendChild(svgEl);
+        }
     }
 
     const ring = document.querySelector("path#ring");
@@ -200,6 +355,16 @@ function initLogoAnimation() {
 // CUSTOM COUNTRY DROPDOWN
 // ============================================
 
+// Ejemplo de teléfono/código postal según país — función global para poder
+// re-aplicarla también cuando cambia el idioma (ver listener attomos:langchange)
+function updateFormatExamples(countryCode) {
+    const example = COUNTRY_FORMAT_EXAMPLES[countryCode] || COUNTRY_FORMAT_EXAMPLES.MX;
+    const phoneHint = document.getElementById('phoneHintExample');
+    const postalHint = document.getElementById('postalHintExample');
+    if (phoneHint) phoneHint.textContent = example.phone;
+    if (postalHint) postalHint.textContent = example.postal;
+}
+
 function initCountryDropdown() {
     const selectWrapper = document.querySelector('.country-select-wrapper');
     const selectInput = document.getElementById('country');
@@ -215,6 +380,7 @@ function initCountryDropdown() {
     }
 
     updatePhoneCode('MX', '+52');
+    updateFormatExamples('MX');
 
     selectInput.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -274,7 +440,8 @@ function initCountryDropdown() {
         const value = option.getAttribute('data-value');
         const flag = option.getAttribute('data-flag');
         const code = option.getAttribute('data-code');
-        const name = option.getAttribute('data-name');
+        const nameSpan = option.querySelector('span:last-child');
+        const name = (nameSpan ? nameSpan.textContent : null) || option.getAttribute('data-name');
 
         selectInput.value = `${flag} ${name}`;
         
@@ -283,6 +450,8 @@ function initCountryDropdown() {
         }
 
         updatePhoneCode(value, code);
+        updateFormatExamples(value);
+        currentSelectedCountry = value;
 
         options.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
@@ -339,10 +508,23 @@ function initPaymentMethodToggle() {
 
 let stripe;
 let cardElement;
+let stripeElementsInstance;
+let currentStripeLocale = null;
 let cardData = {
     complete: false,
     empty: true
 };
+
+// Stripe no soporta 'uz' como locale — usamos 'en' de respaldo para ese caso.
+const STRIPE_LOCALE_MAP = {
+    es: 'es-419', en: 'en', ru: 'ru', uz: 'en', ja: 'ja',
+    zh: 'zh', fr: 'fr', pt: 'pt-BR', de: 'de', ko: 'ko'
+};
+
+function getStripeLocale() {
+    const lang = getCheckoutLang();
+    return STRIPE_LOCALE_MAP[lang] || 'auto';
+}
 
 function initStripeElements() {
     if (!STRIPE_PUBLISHABLE_KEY) {
@@ -351,9 +533,14 @@ function initStripeElements() {
         return;
     }
 
-    stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-    
+    if (!stripe) {
+        stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    }
+
+    currentStripeLocale = getStripeLocale();
+
     const elements = stripe.elements({
+        locale: currentStripeLocale,
         appearance: {
             theme: 'stripe',
             variables: {
@@ -367,6 +554,7 @@ function initStripeElements() {
             }
         }
     });
+    stripeElementsInstance = elements;
 
     cardElement = elements.create('card', {
         style: {
@@ -418,6 +606,25 @@ function initStripeElements() {
     console.log('✅ Stripe Elements initialized');
 }
 
+// Cambia el idioma del placeholder/textos de Stripe Elements ("Número de tarjeta", etc.)
+// Stripe solo permite fijar el locale al crear elements(), así que si cambió,
+// desmontamos y recreamos el campo de tarjeta con el nuevo locale.
+function updateStripeElementsLocale(lang) {
+    const newLocale = getStripeLocale();
+    if (!stripe || newLocale === currentStripeLocale) return;
+
+    try {
+        if (cardElement) {
+            cardElement.unmount();
+            cardElement.destroy();
+        }
+    } catch (e) {
+        console.warn('⚠️ No se pudo desmontar el card element anterior:', e);
+    }
+
+    initStripeElements();
+}
+
 // ============================================
 // FORM VALIDATION
 // ============================================
@@ -445,14 +652,14 @@ function validateInput(input) {
     const value = input.value.trim();
     
     if (input.hasAttribute('required') && !value) {
-        showError(input, 'Este campo es obligatorio');
+        showError(input, t('checkout_err_required_field', 'Este campo es obligatorio'));
         return false;
     }
 
     if (input.type === 'email' && value) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) {
-            showError(input, 'Email inválido');
+            showError(input, t('checkout_err_invalid_email', 'Email inválido'));
             return false;
         }
     }
@@ -534,7 +741,7 @@ function initPaymentForm() {
             });
             
             if (!isValid) {
-                alert('Por favor completa todos los campos requeridos correctamente.');
+                alert(t('checkout_err_fill_required', 'Por favor completa todos los campos requeridos correctamente.'));
                 if (firstErrorField) {
                     firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     firstErrorField.focus();
@@ -543,7 +750,7 @@ function initPaymentForm() {
             }
             
             if (!cardData.complete) {
-                alert('Por favor completa los datos de tu tarjeta.');
+                alert(t('checkout_err_fill_card', 'Por favor completa los datos de tu tarjeta.'));
                 const stripeContainer = document.getElementById('stripe-container');
                 stripeContainer.classList.add('error');
                 setTimeout(() => {
@@ -597,7 +804,7 @@ async function processPayment() {
         
         if (!checkoutResponse.ok) {
             const error = await checkoutResponse.json();
-            throw new Error(error.error || 'Error al crear sesión de pago');
+            throw new Error(error.error || t('checkout_err_create_session', 'Error al crear sesión de pago'));
         }
         
         const checkoutData = await checkoutResponse.json();
@@ -626,7 +833,7 @@ async function processPayment() {
         if (confirmError) {
             hideProcessingModal();
             console.error('❌ Payment error:', confirmError);
-            alert(`Error: ${confirmError.message}`);
+            alert(`${t('checkout_err_generic_prefix', 'Error:')} ${confirmError.message}`);
             return;
         }
 
@@ -666,7 +873,7 @@ async function processPayment() {
         });
         
         if (!confirmResponse.ok) {
-            throw new Error('Error al confirmar pago en el servidor');
+            throw new Error(t('checkout_err_confirm_server', 'Error al confirmar pago en el servidor'));
         }
         
         console.log('✅ Payment confirmed on backend');
@@ -677,7 +884,7 @@ async function processPayment() {
     } catch (error) {
         console.error('❌ Payment error:', error);
         hideProcessingModal();
-        alert(`Error procesando el pago: ${error.message}`);
+        alert(`${t('checkout_err_processing_prefix', 'Error procesando el pago:')} ${error.message}`);
     }
 }
 
@@ -790,6 +997,9 @@ function loadPlanDetails() {
     console.log(`💰 Subtotal: $${subtotal.toFixed(2)} ${currency}`);
     // IVA incluido en precio — removido
     console.log(`💳 Total: $${total.toFixed(2)} ${currency}`);
+
+    // Aplicar traducción del idioma actual al nombre/período/features del plan
+    applyCheckoutDynamicTranslations(getCheckoutLang());
 }
 
 // ============================================
@@ -842,8 +1052,8 @@ function initBillingFields() {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
-            document.getElementById('usoCfdi-selected').textContent = 'Seleccionar uso';
-            document.getElementById('regimenFiscal-selected').textContent = 'Seleccionar régimen';
+            document.getElementById('usoCfdi-selected').textContent = t('checkout_cfdi_use_placeholder', 'Seleccionar uso');
+            document.getElementById('regimenFiscal-selected').textContent = t('checkout_fiscal_regime_placeholder', 'Seleccionar régimen');
         }
         checkFormCompletion();
     });
@@ -955,13 +1165,13 @@ function initCoupon() {
 async function applyCoupon() {
     const code = document.getElementById('coupon-code')?.value.trim();
     if (!code) {
-        showCouponResult('Ingresa un código de descuento', 'error');
+        showCouponResult(t('checkout_coupon_enter_code', 'Ingresa un código de descuento'), 'error');
         return;
     }
 
     const applyBtn = document.getElementById('apply-coupon');
     if (applyBtn) applyBtn.disabled = true;
-    showCouponResult('Validando...', 'loading');
+    showCouponResult(t('checkout_coupon_validating', 'Validando...'), 'loading');
 
     try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -986,15 +1196,15 @@ async function applyCoupon() {
             document.getElementById('discount-breakdown').style.display = 'block';
 
             const nameEl = document.getElementById('coupon-name');
-            if (nameEl) nameEl.textContent = result.coupon_name || 'Cupón aplicado';
+            if (nameEl) nameEl.textContent = result.coupon_name || t('checkout_coupon_applied_default', 'Cupón aplicado');
 
-            showCouponResult(`¡Cupón aplicado! ${result.discount_text || ''}`, 'success');
+            showCouponResult(`${t('checkout_coupon_applied_prefix', '¡Cupón aplicado!')} ${result.discount_text || ''}`, 'success');
             updatePriceDisplay();
         } else {
-            showCouponResult(result.error || 'Código inválido', 'error');
+            showCouponResult(result.error || t('checkout_coupon_invalid', 'Código inválido'), 'error');
         }
     } catch (err) {
-        showCouponResult('Error al validar el código. Intenta de nuevo.', 'error');
+        showCouponResult(t('checkout_coupon_error', 'Error al validar el código. Intenta de nuevo.'), 'error');
     } finally {
         if (applyBtn) applyBtn.disabled = false;
     }

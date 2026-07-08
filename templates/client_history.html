@@ -12,6 +12,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client-history.css">
     <link rel="stylesheet" href="/static/css/sileo.css">
+    <script src="/static/js/translations.js"></script>
 </head>
 <body>
     <div class="decorative-rings">
@@ -32,8 +33,8 @@
                 <!-- Header -->
                 <div class="historial-header">
                     <div>
-                        <h1><i class="lni lni-files"></i> <span id="pageTitle">Historial</span></h1>
-                        <p id="pageSubtitle">Registro completo de todas las visitas y citas sincronizadas</p>
+                        <h1><i class="lni lni-files"></i> <span id="pageTitle" data-translate="hist_title">Historial</span></h1>
+                        <p id="pageSubtitle" data-translate="hist_subtitle">Registro completo de todas las visitas y citas sincronizadas</p>
                     </div>
                     <div style="display:flex;gap:.5rem;">
                         <button class="btn-primary" onclick="exportCSV()" style="background:#f0fdf4;color:#10b981;border:1.5px solid #10b981;box-shadow:none;">
@@ -53,28 +54,28 @@
                         <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
                         <div class="stat-info">
                             <div class="stat-value" id="statVisitas">—</div>
-                            <div class="stat-label">Visitas Totales</div>
+                            <div class="stat-label" data-translate="hist_stat_visits">Visitas Totales</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon cyan"><i class="lni lni-users"></i></div>
                         <div class="stat-info">
                             <div class="stat-value" id="statClientes">—</div>
-                            <div class="stat-label">Clientes Únicos</div>
+                            <div class="stat-label" data-translate="hist_stat_clients">Clientes Únicos</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon purple"><i class="lni lni-calendar"></i></div>
                         <div class="stat-info">
                             <div class="stat-value" id="statMes">—</div>
-                            <div class="stat-label">Visitas este Mes</div>
+                            <div class="stat-label" data-translate="hist_stat_month">Visitas este Mes</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon orange"><i class="lni lni-close"></i></div>
                         <div class="stat-info">
                             <div class="stat-value" id="statCanceladas">—</div>
-                            <div class="stat-label">Canceladas</div>
+                            <div class="stat-label" data-translate="hist_stat_cancelled">Canceladas</div>
                         </div>
                     </div>
                 </div>
@@ -83,31 +84,31 @@
                 <div class="controls-bar">
                     <div class="search-box">
                         <i class="lni lni-search-alt"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar por cliente, teléfono o servicio...">
+                        <input type="text" id="searchInput" placeholder="Buscar por cliente, teléfono o servicio..." data-translate-placeholder="hist_search_placeholder">
                     </div>
 
                     <div class="filter-chip-group" id="typeFilters">
-                        <button class="filter-chip active" data-type="all">Todos</button>
-                        <button class="filter-chip" data-type="visita">Visitas</button>
-                        <button class="filter-chip" data-type="cancelada">Canceladas</button>
+                        <button class="filter-chip active" data-type="all" data-translate="hist_filter_all">Todos</button>
+                        <button class="filter-chip" data-type="visita" data-translate="hist_filter_visits">Visitas</button>
+                        <button class="filter-chip" data-type="cancelada" data-translate="hist_filter_cancelled">Canceladas</button>
                     </div>
 
                     <div class="filter-chip-group" id="rangeFilters">
-                        <button class="filter-chip active" data-range="all">Todo</button>
-                        <button class="filter-chip" data-range="week">7 días</button>
-                        <button class="filter-chip" data-range="month">Mes</button>
-                        <button class="filter-chip" data-range="year">Año</button>
+                        <button class="filter-chip active" data-range="all" data-translate="hist_range_all">Todo</button>
+                        <button class="filter-chip" data-range="week" data-translate="hist_range_week">7 días</button>
+                        <button class="filter-chip" data-range="month" data-translate="hist_range_month">Mes</button>
+                        <button class="filter-chip" data-range="year" data-translate="hist_range_year">Año</button>
                     </div>
 
                     <div class="custom-dropdown-wrapper filter-wrapper" style="min-width: 160px;">
                         <div class="form-input form-dropdown filter-trigger">
-                            <span id="selectedAgent">Todos los Agentes</span>
+                            <span id="selectedAgent" data-translate="hist_all_agents">Todos los Agentes</span>
                             <i class="lni lni-chevron-down dropdown-arrow"></i>
                         </div>
                         <div class="dropdown-menu">
                             <div class="dropdown-options" id="agentFilterOptions">
                                 <div class="dropdown-option selected" onclick="selectAgentFilter(this, 'all')">
-                                    <span>Todos los Agentes</span>
+                                    <span data-translate="hist_all_agents">Todos los Agentes</span>
                                 </div>
                             </div>
                         </div>
@@ -119,14 +120,14 @@
                     <table class="historial-table">
                         <thead>
                             <tr>
-                                <th>Cliente</th>
-                                <th>Servicio</th>
-                                <th>Trabajador</th>
-                                <th>Fecha</th>
-                                <th>Agente</th>
-                                <th>Tipo</th>
-                                <th>Origen</th>
-                                <th>Acciones</th>
+                                <th data-translate="hist_col_client">Cliente</th>
+                                <th data-translate="hist_col_service">Servicio</th>
+                                <th data-translate="hist_col_worker">Trabajador</th>
+                                <th data-translate="hist_col_date">Fecha</th>
+                                <th data-translate="hist_col_agent">Agente</th>
+                                <th data-translate="hist_col_type">Tipo</th>
+                                <th data-translate="hist_col_source">Origen</th>
+                                <th data-translate="hist_col_actions">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="historialBody">
@@ -140,7 +141,7 @@
                     <!-- Paginación -->
                     <div class="pagination" id="paginationBar">
                         <div class="pagination-btns" id="paginationBtnsPrev"></div>
-                        <span id="paginationInfo">Cargando...</span>
+                        <span id="paginationInfo" data-translate="hist_loading">Cargando...</span>
                         <div class="pagination-btns" id="paginationBtns"></div>
                     </div>
                 </div>
@@ -153,11 +154,11 @@
     <div class="client-panel-overlay" id="clientPanelOverlay" onclick="closePanelIfOutside(event)">
         <div class="client-panel" id="clientPanel">
             <div class="panel-header">
-                <div class="panel-title"><i class="lni lni-user"></i> Historial del Cliente</div>
+                <div class="panel-title"><i class="lni lni-user"></i> <span data-translate="hist_panel_title">Historial del Cliente</span></div>
                 <button class="panel-close" onclick="closeClientPanel()"><i class="lni lni-close"></i></button>
             </div>
             <div id="clientPanelContent">
-                <div style="text-align:center;padding:2rem;color:#9ca3af;">Cargando...</div>
+                <div style="text-align:center;padding:2rem;color:#9ca3af;" data-translate="hist_loading">Cargando...</div>
             </div>
         </div>
     </div>

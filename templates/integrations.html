@@ -191,7 +191,7 @@
                     <div class="agent-selector">
                         <label class="selector-label" data-translate="integ_select_label">Selecciona un agente para configurar sus integraciones</label>
                         <div class="custom-select" id="agentSelect">
-                            <div class="select-display" id="agentSelectDisplay">
+                            <div class="select-display" id="agentSelectDisplay" data-translate="integ_select_placeholder">
                                 Selecciona un agente...
                             </div>
                             <i class="lni lni-chevron-down select-arrow"></i>
@@ -239,7 +239,7 @@
                                 <div class="input-group">
                                     <label class="input-label" for="geminiApiKey">
                                         <i class="lni lni-key"></i>
-                                        API Key de Gemini
+                                        <span data-translate="integ_gemini_key_label">API Key de Gemini</span>
                                     </label>
                                     <div class="input-wrapper">
                                         <input 
@@ -266,11 +266,11 @@
                             <div class="connection-info" id="geminiConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
-                                        <span class="connection-label">API Key:</span>
+                                        <span class="connection-label" data-translate="integ_rd_label_apikey">API Key:</span>
                                         <span class="connection-value" style="font-family: monospace; letter-spacing: 0.1em;">••••••••••••••••••••••••</span>
                                     </div>
                                     <div class="connection-detail">
-                                        <span class="connection-label">Estado:</span>
+                                        <span class="connection-label" data-translate="integ_stripe_label_status">Estado:</span>
                                         <span class="connection-value" style="color: #10b981; font-weight: 700;" data-translate="integ_gemini_status_configured">✓ Configurado</span>
                                     </div>
                                 </div>
@@ -293,7 +293,7 @@
                                 <div class="status-badge disconnected" id="metaStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
                             </div>
 
-                            <p class="card-description">
+                            <p class="card-description" data-translate="integ_meta_desc">
                                 Configura las credenciales de Meta WhatsApp Business API para conectar tu agente con WhatsApp de manera oficial.
                             </p>
 
@@ -301,19 +301,19 @@
                                 <ul class="feature-list">
                                     <li class="feature-item">
                                         <i class="lni lni-shield-check"></i>
-                                        API oficial de Meta
+                                        <span data-translate="integ_meta_f1">API oficial de Meta</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-rocket"></i>
-                                        Mayor estabilidad y velocidad
+                                        <span data-translate="integ_meta_f2">Mayor estabilidad y velocidad</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-checkmark-circle"></i>
-                                        Marca verificada de negocio
+                                        <span data-translate="integ_meta_f3">Marca verificada de negocio</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-chart-up"></i>
-                                        Sin límites de mensajes
+                                        <span data-translate="integ_meta_f4">Sin límites de mensajes</span>
                                     </li>
                                 </ul>
                             </div>
@@ -420,15 +420,15 @@
                             <div class="connection-info" id="metaConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
-                                        <span class="connection-label">Número:</span>
+                                        <span class="connection-label" data-translate="integ_meta_label_number">Número:</span>
                                         <span class="connection-value" id="metaDisplayNumber">-</span>
                                     </div>
                                     <div class="connection-detail">
-                                        <span class="connection-label">Nombre verificado:</span>
+                                        <span class="connection-label" data-translate="integ_meta_label_verified">Nombre verificado:</span>
                                         <span class="connection-value" id="metaVerifiedName">-</span>
                                     </div>
                                     <div class="connection-detail">
-                                        <span class="connection-label">Conectado:</span>
+                                        <span class="connection-label" data-translate="integ_meta_label_connected">Conectado:</span>
                                         <span class="connection-value" id="metaConnectedAt">-</span>
                                     </div>
                                 </div>
@@ -467,30 +467,30 @@
                             </div>
 
                             <!-- Descripción — negocio -->
-                            <p class="card-description cal-desc-business">
+                            <p class="card-description cal-desc-business" data-translate="integ_cal_desc_biz">
                                 Sincroniza citas automáticamente con Google Calendar. Tu agente podrá consultar disponibilidad y crear eventos.
                             </p>
                             <!-- Descripción — gobierno -->
-                            <p class="card-description cal-desc-gov" style="display:none;">
+                            <p class="card-description cal-desc-gov" style="display:none;" data-translate="integ_cal_desc_gov">
                                 Sincroniza los eventos y fechas de cursos con Google Calendar institucional. Tu agente podrá informar a los ciudadanos sobre próximas sesiones.
                             </p>
 
                             <!-- Features — negocio -->
                             <div class="card-features cal-feat-business">
                                 <ul class="feature-list">
-                                    <li class="feature-item"><i class="lni lni-calendar"></i>Crear citas automáticamente</li>
-                                    <li class="feature-item"><i class="lni lni-checkmark-circle"></i>Consultar disponibilidad en tiempo real</li>
-                                    <li class="feature-item"><i class="lni lni-timer"></i>Recordatorios automáticos</li>
-                                    <li class="feature-item"><i class="lni lni-sync"></i>Sincronización bidireccional</li>
+                                    <li class="feature-item"><i class="lni lni-calendar"></i><span data-translate="integ_cal_f1_biz">Crear citas automáticamente</span></li>
+                                    <li class="feature-item"><i class="lni lni-checkmark-circle"></i><span data-translate="integ_cal_f2_biz">Consultar disponibilidad en tiempo real</span></li>
+                                    <li class="feature-item"><i class="lni lni-timer"></i><span data-translate="integ_cal_f3_biz">Recordatorios automáticos</span></li>
+                                    <li class="feature-item"><i class="lni lni-sync"></i><span data-translate="integ_cal_f4_biz">Sincronización bidireccional</span></li>
                                 </ul>
                             </div>
                             <!-- Features — gobierno -->
                             <div class="card-features cal-feat-gov" style="display:none;">
                                 <ul class="feature-list">
-                                    <li class="feature-item"><i class="lni lni-calendar"></i>Registrar fechas de cursos y talleres</li>
-                                    <li class="feature-item"><i class="lni lni-checkmark-circle"></i>Informar disponibilidad de sesiones</li>
-                                    <li class="feature-item"><i class="lni lni-timer"></i>Recordatorios a ciudadanos inscritos</li>
-                                    <li class="feature-item"><i class="lni lni-sync"></i>Calendario institucional compartido</li>
+                                    <li class="feature-item"><i class="lni lni-calendar"></i><span data-translate="integ_cal_f1_gov">Registrar fechas de cursos y talleres</span></li>
+                                    <li class="feature-item"><i class="lni lni-checkmark-circle"></i><span data-translate="integ_cal_f2_gov">Informar disponibilidad de sesiones</span></li>
+                                    <li class="feature-item"><i class="lni lni-timer"></i><span data-translate="integ_cal_f3_gov">Recordatorios a ciudadanos inscritos</span></li>
+                                    <li class="feature-item"><i class="lni lni-sync"></i><span data-translate="integ_cal_f4_gov">Calendario institucional compartido</span></li>
                                 </ul>
                             </div>
 
@@ -498,11 +498,11 @@
                             <div class="connection-info" id="googleConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
-                                        <span class="connection-label">Email:</span>
+                                        <span class="connection-label" data-translate="integ_cal_label_email">Email:</span>
                                         <span class="connection-value" id="calendarEmail">-</span>
                                     </div>
                                     <div class="connection-detail">
-                                        <span class="connection-label">Conectado:</span>
+                                        <span class="connection-label" data-translate="integ_cal_label_connected">Conectado:</span>
                                         <span class="connection-value" id="calendarConnectedAt">-</span>
                                     </div>
                                 </div>
@@ -550,30 +550,30 @@
                             </div>
 
                             <!-- Descripción — negocio -->
-                            <p class="card-description sheets-desc-business">
+                            <p class="card-description sheets-desc-business" data-translate="integ_sheets_desc_biz">
                                 Registra todas las citas automáticamente en una hoja de cálculo para llevar un control detallado de tus reservas.
                             </p>
                             <!-- Descripción — gobierno (oculta por defecto) -->
-                            <p class="card-description sheets-desc-gov" style="display:none;">
+                            <p class="card-description sheets-desc-gov" style="display:none;" data-translate="integ_sheets_desc_gov">
                                 Registra automáticamente las inscripciones de ciudadanos a cursos y programas en una hoja de cálculo institucional.
                             </p>
 
                             <!-- Features — negocio -->
                             <div class="card-features sheets-feat-business">
                                 <ul class="feature-list">
-                                    <li class="feature-item"><i class="lni lni-write"></i>Registro automático de citas</li>
-                                    <li class="feature-item"><i class="lni lni-pie-chart"></i>Análisis y estadísticas</li>
-                                    <li class="feature-item"><i class="lni lni-download"></i>Exportación de datos</li>
-                                    <li class="feature-item"><i class="lni lni-users"></i>Acceso compartido al equipo</li>
+                                    <li class="feature-item"><i class="lni lni-write"></i><span data-translate="integ_sheets_f1_biz">Registro automático de citas</span></li>
+                                    <li class="feature-item"><i class="lni lni-pie-chart"></i><span data-translate="integ_sheets_f2_biz">Análisis y estadísticas</span></li>
+                                    <li class="feature-item"><i class="lni lni-download"></i><span data-translate="integ_sheets_f3_biz">Exportación de datos</span></li>
+                                    <li class="feature-item"><i class="lni lni-users"></i><span data-translate="integ_sheets_f4_biz">Acceso compartido al equipo</span></li>
                                 </ul>
                             </div>
                             <!-- Features — gobierno (oculta por defecto) -->
                             <div class="card-features sheets-feat-gov" style="display:none;">
                                 <ul class="feature-list">
-                                    <li class="feature-item"><i class="lni lni-write"></i>Registro de inscripciones ciudadanas</li>
-                                    <li class="feature-item"><i class="lni lni-users"></i>Control de cupos por curso y sede</li>
-                                    <li class="feature-item"><i class="lni lni-pie-chart"></i>Estadísticas de asistencia</li>
-                                    <li class="feature-item"><i class="lni lni-download"></i>Exportación para informes oficiales</li>
+                                    <li class="feature-item"><i class="lni lni-write"></i><span data-translate="integ_sheets_f1_gov">Registro de inscripciones ciudadanas</span></li>
+                                    <li class="feature-item"><i class="lni lni-users"></i><span data-translate="integ_sheets_f2_gov">Control de cupos por curso y sede</span></li>
+                                    <li class="feature-item"><i class="lni lni-pie-chart"></i><span data-translate="integ_sheets_f3_gov">Estadísticas de asistencia</span></li>
+                                    <li class="feature-item"><i class="lni lni-download"></i><span data-translate="integ_sheets_f4_gov">Exportación para informes oficiales</span></li>
                                 </ul>
                             </div>
 
@@ -581,7 +581,7 @@
                             <div class="connection-info" id="sheetsConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
-                                        <span class="connection-label">Sheet:</span>
+                                        <span class="connection-label" data-translate="integ_sheets_label_sheet">Sheet:</span>
                                         <a href="#" id="sheetLink" class="connection-link" target="_blank">
                                             <span class="sheets-link-label-business" data-translate="integ_sheets_link_biz">Ver hoja de citas</span>
                                             <span class="sheets-link-label-gov" style="display:none;" data-translate="integ_sheets_link_gov">Ver hoja de inscripciones</span>
@@ -589,7 +589,7 @@
                                         </a>
                                     </div>
                                     <div class="connection-detail">
-                                        <span class="connection-label">Conectado:</span>
+                                        <span class="connection-label" data-translate="integ_sheets_label_connected">Conectado:</span>
                                         <span class="connection-value" id="sheetsConnectedAt">-</span>
                                     </div>
                                 </div>
@@ -598,12 +598,12 @@
                             <!-- Columnas que se crean — negocio -->
                             <div class="card-note sheets-cols-business">
                                 <i class="lni lni-information"></i>
-                                <span>Google Sheets se conecta automáticamente cuando conectas Google Calendar. Columnas: <strong>Nombre · Servicio · Fecha · Hora · Teléfono · Estado</strong></span>
+                                <span data-translate-html="integ_sheets_cols_biz">Google Sheets se conecta automáticamente cuando conectas Google Calendar. Columnas: <strong>Nombre · Servicio · Fecha · Hora · Teléfono · Estado</strong></span>
                             </div>
                             <!-- Columnas que se crean — gobierno -->
                             <div class="card-note sheets-cols-gov" style="display:none;">
                                 <i class="lni lni-information"></i>
-                                <span>Google Sheets se conecta automáticamente cuando conectas Google. Columnas: <strong>Nombre · Curso · Sede · Fecha inscripción · Teléfono · Email · Estado</strong></span>
+                                <span data-translate-html="integ_sheets_cols_gov">Google Sheets se conecta automáticamente cuando conectas Google. Columnas: <strong>Nombre · Curso · Sede · Fecha inscripción · Teléfono · Email · Estado</strong></span>
                             </div>
                         </div>
 
@@ -623,22 +623,22 @@
                             <div class="status-badge disconnected" id="repairDeskStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                         </div>
 
-                        <p class="card-description">
+                        <p class="card-description" data-translate="integ_rd_desc">
                             Conecta tu cuenta de RepairDesk para sincronizar tu inventario de partes y productos directamente con Attomos.
                         </p>
 
                         <div class="card-features">
                             <ul class="feature-list">
-                                <li class="feature-item"><i class="lni lni-reload"></i>Sincronización automática de inventario</li>
-                                <li class="feature-item"><i class="lni lni-package"></i>Stock y existencias en tiempo real</li>
-                                <li class="feature-item"><i class="lni lni-layers"></i>Control de partes y refacciones</li>
-                                <li class="feature-item"><i class="lni lni-whatsapp"></i>El bot consulta disponibilidad al instante</li>
+                                <li class="feature-item"><i class="lni lni-reload"></i><span data-translate="integ_rd_f1">Sincronización automática de inventario</span></li>
+                                <li class="feature-item"><i class="lni lni-package"></i><span data-translate="integ_rd_f2">Stock y existencias en tiempo real</span></li>
+                                <li class="feature-item"><i class="lni lni-layers"></i><span data-translate="integ_rd_f3">Control de partes y refacciones</span></li>
+                                <li class="feature-item"><i class="lni lni-whatsapp"></i><span data-translate="integ_rd_f4">El bot consulta disponibilidad al instante</span></li>
                             </ul>
                         </div>
 
                         <div class="card-note">
                             <i class="lni lni-information"></i>
-                            <span>Obtén tu API Key en <a href="https://app.repairdesk.co/settings/api" target="_blank" style="color:#f97316;font-weight:600;text-decoration:underline;">RepairDesk → Settings → API</a></span>
+                            <span><span data-translate="integ_rd_note_pre">Obtén tu API Key en</span> <a href="https://app.repairdesk.co/settings/api" target="_blank" style="color:#f97316;font-weight:600;text-decoration:underline;">RepairDesk → Settings → API</a></span>
                         </div>
 
                         <!-- Formulario API Key -->
@@ -646,7 +646,7 @@
                             <div class="input-group">
                                 <label class="input-label" for="repairDeskApiKey">
                                     <i class="lni lni-key"></i>
-                                    API Key de RepairDesk
+                                    <span data-translate="integ_rd_key_label">API Key de RepairDesk</span>
                                 </label>
                                 <div class="input-wrapper">
                                     <input
@@ -660,7 +660,7 @@
                                         <i class="lni lni-eye"></i>
                                     </button>
                                 </div>
-                                <small class="input-hint">Tu API Key se encripta y almacena de forma segura</small>
+                                <small class="input-hint" data-translate="integ_rd_hint">Tu API Key se encripta y almacena de forma segura</small>
                             </div>
                         </div>
 
@@ -676,11 +676,11 @@
                         <div class="connection-info" id="repairDeskConnectionInfo" style="display:none;">
                             <div class="connection-details">
                                 <div class="connection-detail">
-                                    <span class="connection-label">API Key:</span>
+                                    <span class="connection-label" data-translate="integ_rd_label_apikey">API Key:</span>
                                     <span class="connection-value" style="font-family:monospace;letter-spacing:.1em;">••••••••••••••••••••••</span>
                                 </div>
                                 <div class="connection-detail">
-                                    <span class="connection-label">Último sync:</span>
+                                    <span class="connection-label" data-translate="integ_rd_label_lastsync">Último sync:</span>
                                     <span class="connection-value" id="repairDeskLastSync">—</span>
                                 </div>
                             </div>
@@ -718,22 +718,22 @@
                             <div class="status-badge disconnected" id="srStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                         </div>
 
-                        <p class="card-description">
+                        <p class="card-description" data-translate="integ_sr_desc">
                             Conecta tu instancia local de SoftRestaurant para que los pedidos recibidos por el bot lleguen automáticamente a tu sistema de punto de venta.
                         </p>
 
                         <div class="card-features">
                             <ul class="feature-list">
-                                <li class="feature-item"><i class="lni lni-whatsapp"></i>Pedidos del bot → directo a SoftRestaurant</li>
-                                <li class="feature-item"><i class="lni lni-bolt"></i>Envío automático en tiempo real</li>
-                                <li class="feature-item"><i class="lni lni-reload"></i>Sincronización de estado (preparando / listo)</li>
-                                <li class="feature-item"><i class="lni lni-network"></i>Conexión a tu red local interna</li>
+                                <li class="feature-item"><i class="lni lni-whatsapp"></i><span data-translate="integ_sr_f1">Pedidos del bot → directo a SoftRestaurant</span></li>
+                                <li class="feature-item"><i class="lni lni-bolt"></i><span data-translate="integ_sr_f2">Envío automático en tiempo real</span></li>
+                                <li class="feature-item"><i class="lni lni-reload"></i><span data-translate="integ_sr_f3">Sincronización de estado (preparando / listo)</span></li>
+                                <li class="feature-item"><i class="lni lni-network"></i><span data-translate="integ_sr_f4">Conexión a tu red local interna</span></li>
                             </ul>
                         </div>
 
                         <div class="card-note">
                             <i class="lni lni-information"></i>
-                            <span>SoftRestaurant debe estar corriendo en tu red local con la API habilitada. Consulta la documentación de tu versión para obtener el endpoint y el token.</span>
+                            <span data-translate="integ_sr_note">SoftRestaurant debe estar corriendo en tu red local con la API habilitada. Consulta la documentación de tu versión para obtener el endpoint y el token.</span>
                         </div>
 
                         <!-- Formulario de configuración -->
@@ -743,7 +743,7 @@
                             <div class="input-group" style="margin-bottom:1rem;">
                                 <label class="input-label" for="srApiUrl">
                                     <i class="lni lni-network"></i>
-                                    URL de la API local
+                                    <span data-translate="integ_sr_url_label">URL de la API local</span>
                                 </label>
                                 <div class="input-wrapper">
                                     <input
@@ -754,14 +754,14 @@
                                         disabled
                                     />
                                 </div>
-                                <small class="input-hint">Dirección de SoftRestaurant en tu red local (IP del servidor)</small>
+                                <small class="input-hint" data-translate="integ_sr_url_hint">Dirección de SoftRestaurant en tu red local (IP del servidor)</small>
                             </div>
 
                             <!-- Token -->
                             <div class="input-group" style="margin-bottom:1rem;">
                                 <label class="input-label" for="srApiKey">
                                     <i class="lni lni-key"></i>
-                                    API Key / Token
+                                    <span data-translate="integ_sr_token_label">API Key / Token</span>
                                 </label>
                                 <div class="input-wrapper">
                                     <input
@@ -775,7 +775,7 @@
                                         <i class="lni lni-eye"></i>
                                     </button>
                                 </div>
-                                <small class="input-hint">Token de autenticación configurado en SoftRestaurant</small>
+                                <small class="input-hint" data-translate="integ_sr_token_hint">Token de autenticación configurado en SoftRestaurant</small>
                             </div>
 
                             <!-- Fila timeout + toggles -->
@@ -783,7 +783,7 @@
                                 <div class="sr-option-group">
                                     <label class="input-label" for="srTimeout">
                                         <i class="lni lni-timer"></i>
-                                        Timeout (s)
+                                        <span data-translate="integ_sr_timeout">Timeout (s)</span>
                                     </label>
                                     <input type="number" id="srTimeout" class="api-key-input sr-timeout-input" value="10" min="3" max="60" disabled />
                                 </div>
@@ -804,11 +804,11 @@
                         <div class="connection-info" id="srConnectionInfo" style="display:none;">
                             <div class="connection-details">
                                 <div class="connection-detail">
-                                    <span class="connection-label">URL:</span>
+                                    <span class="connection-label" data-translate="integ_sr_label_url">URL:</span>
                                     <span class="connection-value" id="srDisplayUrl" style="font-family:monospace;font-size:.8rem;">—</span>
                                 </div>
                                 <div class="connection-detail">
-                                    <span class="connection-label">Último envío:</span>
+                                    <span class="connection-label" data-translate="integ_sr_label_lastpush">Último envío:</span>
                                     <span class="connection-value" id="srLastPush">—</span>
                                 </div>
                             </div>
@@ -852,12 +852,12 @@
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-credit-cards integration-icon" style="font-size: 2rem; color: #f59e0b;"></i>
-                                    <h2>Pasarela de Pagos</h2>
+                                    <h2 data-translate="integ_payments_title">Pasarela de Pagos</h2>
                                 </div>
                                 <div class="status-badge disconnected" id="paymentsStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_without_config">Sin configurar</span></div>
                             </div>
 
-                            <p class="card-description">
+                            <p class="card-description" data-translate="integ_payments_desc">
                                 Permite que tu bot solicite pagos por WhatsApp. Configura transferencia SPEI y/o tarjeta con Stripe.
                             </p>
 
@@ -865,19 +865,19 @@
                                 <ul class="feature-list">
                                     <li class="feature-item">
                                         <i class="lni lni-bank"></i>
-                                        Transferencia SPEI / CLABE interbancaria
+                                        <span data-translate="integ_payments_f1">Transferencia SPEI / CLABE interbancaria</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-credit-card"></i>
-                                        Tarjeta de crédito/débito con Stripe
+                                        <span data-translate="integ_payments_f2">Tarjeta de crédito/débito con Stripe</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-whatsapp"></i>
-                                        El bot presenta opciones al cliente automáticamente
+                                        <span data-translate="integ_payments_f3">El bot presenta opciones al cliente automáticamente</span>
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-lock"></i>
-                                        Pagos directamente a tu cuenta
+                                        <span data-translate="integ_payments_f4">Pagos directamente a tu cuenta</span>
                                     </li>
                                 </ul>
                             </div>
@@ -900,8 +900,8 @@
                                     </svg>
                                         </div>
                                         <div class="spei-brand-text">
-                                            <span class="spei-title">Transferencia SPEI</span>
-                                            <span class="spei-subtitle">CLABE interbancaria · 18 dígitos</span>
+                                            <span class="spei-title" data-translate="integ_spei_title">Transferencia SPEI</span>
+                                            <span class="spei-subtitle" data-translate="integ_spei_subtitle">CLABE interbancaria · 18 dígitos</span>
                                         </div>
                                     </div>
                                     <div class="status-badge disconnected" id="speiStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
@@ -912,7 +912,7 @@
                                     <div class="spei-input-group">
                                         <label class="input-label" for="clabeNumber">
                                             <i class="lni lni-hash"></i>
-                                            CLABE Interbancaria (18 dígitos)
+                                            <span data-translate="integ_spei_clabe_label">CLABE Interbancaria (18 dígitos)</span>
                                         </label>
                                         <div class="input-wrapper">
                                             <input
@@ -929,21 +929,21 @@
                                         <div class="spei-input-group">
                                             <label class="input-label" for="bankName">
                                                 <i class="lni lni-bank"></i>
-                                                Banco (opcional)
+                                                <span data-translate="integ_spei_bank_label">Banco (opcional)</span>
                                             </label>
                                             <input type="text" id="bankName" class="api-key-input" placeholder="BBVA, Banorte, HSBC..." disabled />
                                         </div>
                                         <div class="spei-input-group">
                                             <label class="input-label" for="accountName">
                                                 <i class="lni lni-user"></i>
-                                                Nombre del titular
+                                                <span data-translate="integ_spei_name_label">Nombre del titular</span>
                                             </label>
                                             <input type="text" id="accountName" class="api-key-input" placeholder="Juan García Martínez" disabled />
                                         </div>
                                     </div>
                                     <small class="input-hint spei-hint">
                                         <i class="lni lni-information"></i>
-                                        Se mostrará al cliente cuando solicite datos para transferencia
+                                        <span data-translate="integ_spei_hint">Se mostrará al cliente cuando solicite datos para transferencia</span>
                                     </small>
                                 </div>
 
@@ -951,15 +951,15 @@
                                 <div class="connection-info" id="speiConnectionInfo" style="display: none;">
                                     <div class="connection-details">
                                         <div class="connection-detail">
-                                            <span class="connection-label">CLABE:</span>
+                                            <span class="connection-label" data-translate="integ_spei_label_clabe">CLABE:</span>
                                             <span class="connection-value" id="speiDisplayClabe" style="font-family: monospace;">-</span>
                                         </div>
                                         <div class="connection-detail">
-                                            <span class="connection-label">Banco:</span>
+                                            <span class="connection-label" data-translate="integ_spei_label_bank">Banco:</span>
                                             <span class="connection-value" id="speiDisplayBank">-</span>
                                         </div>
                                         <div class="connection-detail">
-                                            <span class="connection-label">Titular:</span>
+                                            <span class="connection-label" data-translate="integ_spei_label_holder">Titular:</span>
                                             <span class="connection-value" id="speiDisplayName">-</span>
                                         </div>
                                     </div>
@@ -1002,38 +1002,38 @@
                                         </svg>
                                         </div>
                                         <div class="stripe-brand-text">
-                                            <span class="stripe-title">Tarjeta con Stripe</span>
-                                            <span class="stripe-subtitle">Pagos con tarjeta de crédito / débito</span>
+                                            <span class="stripe-title" data-translate="integ_stripe_title">Tarjeta con Stripe</span>
+                                            <span class="stripe-subtitle" data-translate="integ_stripe_subtitle">Pagos con tarjeta de crédito / débito</span>
                                         </div>
                                     </div>
                                     <div class="status-badge disconnected" id="stripeConnectStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_disconnected">No conectado</span></div>
                                 </div>
 
                                 <!-- Descripción -->
-                                <p class="stripe-description">
+                                <p class="stripe-description" data-translate="integ_stripe_desc">
                                     Conecta tu cuenta Stripe para recibir pagos con tarjeta directamente a tu banco. Los clientes recibirán un link de pago por WhatsApp.
                                 </p>
 
                                 <!-- Chips de características -->
                                 <div class="stripe-chips">
-                                    <span class="stripe-chip"><i class="lni lni-shield-check"></i> Pagos seguros</span>
-                                    <span class="stripe-chip"><i class="lni lni-credit-card"></i> Visa / Mastercard</span>
-                                    <span class="stripe-chip"><i class="lni lni-bolt"></i> Depósito directo</span>
+                                    <span class="stripe-chip"><i class="lni lni-shield-check"></i> <span data-translate="integ_stripe_f1">Pagos seguros</span></span>
+                                    <span class="stripe-chip"><i class="lni lni-credit-card"></i> <span data-translate="integ_stripe_f2">Visa / Mastercard</span></span>
+                                    <span class="stripe-chip"><i class="lni lni-bolt"></i> <span data-translate="integ_stripe_f3">Depósito directo</span></span>
                                 </div>
 
                                 <!-- Info cuando está conectado -->
                                 <div class="connection-info stripe-connected-info" id="stripeConnectInfo" style="display: none;">
                                     <div class="connection-details">
                                         <div class="connection-detail">
-                                            <span class="connection-label">Estado:</span>
+                                            <span class="connection-label" data-translate="integ_stripe_label_status">Estado:</span>
                                             <span class="connection-value" id="stripeConnectStatus">-</span>
                                         </div>
                                         <div class="connection-detail">
-                                            <span class="connection-label">Cobros:</span>
+                                            <span class="connection-label" data-translate="integ_stripe_label_charges">Cobros:</span>
                                             <span class="connection-value" id="stripeChargesStatus">-</span>
                                         </div>
                                         <div class="connection-detail">
-                                            <span class="connection-label">Pagos a cuenta:</span>
+                                            <span class="connection-label" data-translate="integ_stripe_label_payouts">Pagos a cuenta:</span>
                                             <span class="connection-value" id="stripePayoutsStatus">-</span>
                                         </div>
                                     </div>
@@ -1058,7 +1058,7 @@
                             <!-- Nota sobre comportamiento del bot -->
                             <div class="card-note" style="margin-top: 1rem;">
                                 <i class="lni lni-information"></i>
-                                <span>El bot mostrará automáticamente los métodos de pago que hayas configurado cuando un cliente solicite pagar un servicio.</span>
+                                <span data-translate="integ_payments_bot_note">El bot mostrará automáticamente los métodos de pago que hayas configurado cuando un cliente solicite pagar un servicio.</span>
                             </div>
                         </div>
 

@@ -491,15 +491,21 @@ input:checked + .toggle-slider:before {
     position: relative;
 }
 
-.comparison-table th.featured-column::after {
-    content: '⭐ Popular';
-    display: block;
+.comparison-table th.featured-column .popular-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
     font-size: 10px;
     font-weight: 600;
     color: #06b6d4;
     opacity: 0.7;
     margin-top: 3px;
     letter-spacing: 0.05em;
+}
+
+.comparison-table th.featured-column .popular-tag i {
+    font-size: 10px;
 }
 
 /* Body rows — estado inicial invisible para animación de entrada */

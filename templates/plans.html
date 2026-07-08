@@ -41,11 +41,11 @@
 <i class="lni lni-dollar"></i>
 </div>
 <div class="banner-content">
-<div class="banner-title">Plan Actual: <strong>{{.currentPlan}}</strong></div>
+<div class="banner-title"><span data-translate="plans_banner_title">Plan Actual:</span> <strong>{{.currentPlan}}</strong></div>
 <div class="banner-subtitle" data-translate="plans_banner_subtitle">Gestiona tu suscripción y pagos</div>
 </div>
 <a class="banner-link" href="/billing">
-                            Ver Facturación
+<span data-translate="plans_banner_link">Ver Facturación</span>
                             <i class="lni lni-arrow-right"></i>
 </a>
 </div>
@@ -66,21 +66,21 @@
                         {{range .plans}}
                         <div class="pricing-card {{if .popular}}featured{{end}} {{if .isFree}}free-plan{{end}}" data-plan="{{.id}}">
                             {{if .isFree}}
-                            <div class="free-badge">Gratis</div>
+                            <div class="free-badge" data-translate="plans_badge_free">Gratis</div>
                             {{else if .popular}}
-                            <div class="popular-badge">Más Popular</div>
+                            <div class="popular-badge" data-translate="plans_badge_popular">Más Popular</div>
                             {{end}}
                             
                             <h3 class="plan-name">{{.name}}</h3>
 <div class="plan-price">
                                 {{if .isFree}}
                                 <span class="price-amount">$0</span>
-<span class="price-period">/ 30 días</span>
+<span class="price-period" data-translate="plans_period_trial">/ 30 días</span>
                                 {{else}}
                                 <span class="price-amount" data-annual="{{.annual.amount}}" data-annual-price-id="{{.annual.priceId}}" data-monthly="{{.monthly.amount}}" data-monthly-price-id="{{.monthly.priceId}}">
                                     ${{.monthly.amount}}
                                 </span>
-<span class="price-period">/ mes</span>
+<span class="price-period" data-translate="plans_period_month">/ mes</span>
                                 {{end}}
                             </div>
 <p class="plan-description">{{.description}}</p>
@@ -94,11 +94,11 @@
                             </ul>
                             
                             {{if eq $.currentPlan .id}}
-                            <button class="plan-button current-plan" disabled="">Plan Actual</button>
+                            <button class="plan-button current-plan" data-translate="plans_btn_current" disabled="">Plan Actual</button>
                             {{else if .isFree}}
-                            <button class="plan-button free-trial">Probar Gratis</button>
+                            <button class="plan-button free-trial" data-translate="plans_btn_free">Probar Gratis</button>
                             {{else}}
-                            <button class="plan-button upgrade">Actualizar Plan</button>
+                            <button class="plan-button upgrade" data-translate="plans_btn_upgrade">Actualizar Plan</button>
                             {{end}}
                         </div>
                         {{end}}
@@ -111,86 +111,89 @@
 <thead>
 <tr>
 <th class="feature-column" data-translate="plans_feat_chars">Características</th>
-<th>Gratuito</th>
-<th class="featured-column">Protón</th>
-<th>Neutrón</th>
+<th data-translate="plans_feat_free_label">Gratuito</th>
+<th class="featured-column">
+<span data-i18n-plan="proton">Protón</span>
+<span class="popular-tag"><i class="lni lni-star-filled"></i><span data-translate="plans_popular_tag">Popular</span></span>
+</th>
+<th><span data-i18n-plan="neutron">Neutrón</span></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="feature-name">Número de Agentes</td>
+<td class="feature-name" data-translate="plans_feat_agents">Número de Agentes</td>
 <td>1</td>
-<td class="featured-cell">Ilimitados</td>
-<td>Ilimitados</td>
+<td class="featured-cell" data-translate="plans_val_unlimited">Ilimitados</td>
+<td data-translate="plans_val_unlimited">Ilimitados</td>
 </tr>
 <tr>
-<td class="feature-name">WhatsApp</td>
-<td>Web (QR)</td>
-<td class="featured-cell">Business API</td>
-<td>Business API</td>
+<td class="feature-name" data-translate="plans_feat_whatsapp">WhatsApp</td>
+<td data-i18n-term="webQr">Web (QR)</td>
+<td class="featured-cell" data-i18n-term="businessApi">Business API</td>
+<td data-i18n-term="businessApi">Business API</td>
 </tr>
 <tr>
-<td class="feature-name">Mensajes</td>
-<td>Ilimitados</td>
-<td class="featured-cell">Ilimitados</td>
-<td>Ilimitados</td>
+<td class="feature-name" data-translate="plans_feat_msgs_col">Mensajes</td>
+<td data-translate="plans_val_unlimited">Ilimitados</td>
+<td class="featured-cell" data-translate="plans_val_unlimited">Ilimitados</td>
+<td data-translate="plans_val_unlimited">Ilimitados</td>
 </tr>
 <tr>
-<td class="feature-name">IA</td>
-<td>Gemini</td>
-<td class="featured-cell">Gemini Avanzada</td>
-<td>Gemini Avanzada</td>
+<td class="feature-name" data-translate="plans_feat_ai">IA</td>
+<td data-i18n-term="gemini">Gemini</td>
+<td class="featured-cell" data-i18n-term="geminiAdv">Gemini Avanzada</td>
+<td data-i18n-term="geminiAdv">Gemini Avanzada</td>
 </tr>
 <tr>
-<td class="feature-name">CRM</td>
+<td class="feature-name" data-translate="plans_feat_crm">CRM</td>
 <td><i class="lni lni-close"></i></td>
 <td class="featured-cell">Chatwoot</td>
 <td>Chatwoot</td>
 </tr>
 <tr>
-<td class="feature-name">Google Sheets</td>
+<td class="feature-name" data-translate="plans_feat_gsheets">Google Sheets</td>
 <td><i class="lni lni-checkmark"></i></td>
 <td class="featured-cell"><i class="lni lni-close"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
 </tr>
 <tr>
-<td class="feature-name">Google Calendar</td>
+<td class="feature-name" data-translate="plans_feat_gcal">Google Calendar</td>
 <td><i class="lni lni-checkmark"></i></td>
 <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
 </tr>
 <tr>
-<td class="feature-name">Catálogo</td>
-<td>Servicios</td>
-<td class="featured-cell">Servicios</td>
-<td>Productos</td>
+<td class="feature-name" data-translate="plans_feat_catalog">Catálogo</td>
+<td data-translate="plans_services">Servicios</td>
+<td class="featured-cell" data-translate="plans_services">Servicios</td>
+<td data-translate="plans_products">Productos</td>
 </tr>
 <tr>
-<td class="feature-name">Promociones</td>
+<td class="feature-name" data-translate="plans_feat_promos">Promociones</td>
 <td><i class="lni lni-checkmark"></i></td>
 <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
-<td>Packs</td>
+<td data-translate="plans_packs">Packs</td>
 </tr>
 <tr>
-<td class="feature-name">Ofertas de Trabajo</td>
+<td class="feature-name" data-translate="plans_feat_jobs">Ofertas de Trabajo</td>
 <td><i class="lni lni-checkmark"></i></td>
 <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
 </tr>
 <tr>
-<td class="feature-name">Página Web + App</td>
+<td class="feature-name" data-translate="plans_feat_webapp">Página Web + App</td>
 <td><i class="lni lni-close"></i></td>
 <td class="featured-cell"><i class="lni lni-close"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
 </tr>
 <tr>
-<td class="feature-name">Sistema de Inventario</td>
+<td class="feature-name" data-translate="plans_feat_inventory">Sistema de Inventario</td>
 <td><i class="lni lni-close"></i></td>
 <td class="featured-cell"><i class="lni lni-close"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
 </tr>
 <tr>
-<td class="feature-name">Punto de Venta (POS)</td>
+<td class="feature-name" data-translate="plans_feat_pos">Punto de Venta (POS)</td>
 <td><i class="lni lni-close"></i></td>
 <td class="featured-cell"><i class="lni lni-close"></i></td>
 <td><i class="lni lni-checkmark"></i></td>
