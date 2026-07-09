@@ -133,14 +133,14 @@
             {{/* Plan inyectado desde el servidor - evita parpadeo con valor incorrecto */}}
             <div class="user-plan" id="userPlan" data-server-plan="{{.currentPlan}}">
                 {{if .currentPlan}}
-                    {{if eq .currentPlan "gratuito"}}Plan Gratuito
-                    {{else if eq .currentPlan "proton"}}Plan Protón
-                    {{else if eq .currentPlan "neutron"}}Plan Neutrón
-                    {{else if eq .currentPlan "electron"}}Plan Electrón
-                    {{else if eq .currentPlan "pending"}}Pago Pendiente
-                    {{else}}Plan Gratuito
+                    {{if eq .currentPlan "gratuito"}}Free Plan
+                    {{else if eq .currentPlan "proton"}}Proton
+                    {{else if eq .currentPlan "neutron"}}Neutron
+                    {{else if eq .currentPlan "electron"}}Electron
+                    {{else if eq .currentPlan "pending"}}Payment Pending
+                    {{else}}Free Plan
                     {{end}}
-                {{else}}Plan Gratuito{{end}}
+                {{else}}Free Plan{{end}}
             </div>
         </div>
 

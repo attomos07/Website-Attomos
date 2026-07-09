@@ -22,6 +22,14 @@ function t(key, fallback) {
     return window.Translations?.dict?.[getLang()]?.[key] || fallback;
 }
 
+// Re-renderiza el contenido dinámico (tabla/calendario/stats) cuando cambia
+// el idioma, usando los datos ya cargados en memoria (sin volver a pedirlos).
+document.addEventListener('attomos:langchange', function () {
+    updateStats();
+    renderAppointments();
+    if (typeof renderCalendar === 'function' && currentView === 'calendar') renderCalendar();
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 Inicializando página de citas...');
     initializeAppointments();

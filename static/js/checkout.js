@@ -38,18 +38,9 @@ const CHECKOUT_PLAN_I18N = (function () {
         ko: { wa1: 'WhatsApp 에이전트 1개', waweb: 'WhatsApp Web (QR 스캔)', spei: 'SPEI 결제 게이트웨이', card: '카드 결제 게이트웨이', gemini: 'Gemini 기반 AI', gsheets: 'Google Sheets', gcal: 'Google 캘린더', hours: '맞춤형 영업시간', catSvc: '서비스 카탈로그', promoSvc: '서비스 프로모션', photos: '서비스 사진 업로드', promoPeriods: '프로모션 기간', multiBranch: '다중 지점', jobs: '채용 정보 (출시 예정)', agentsUnl: '무제한 에이전트', metaApi: 'Meta WhatsApp Business API', contactsUnl: '무제한 연락처', msgsUnl: '무제한 메시지', chatwoot: 'Chatwoot CRM', catProd: '제품 카탈로그', promoPacks: '프로모션 및 패키지', inventory: '재고 관리 시스템', pos: '포스(POS) 시스템' },
     };
 
-    const NAMES = {
-        es: { gratuito: 'Gratuito', proton: 'Protón', neutron: 'Neutrón' },
-        en: { gratuito: 'Free', proton: 'Proton', neutron: 'Neutron' },
-        ru: { gratuito: 'Бесплатно', proton: 'Proton', neutron: 'Neutron' },
-        uz: { gratuito: 'Bepul', proton: 'Proton', neutron: 'Neutron' },
-        ja: { gratuito: '無料', proton: 'Proton', neutron: 'Neutron' },
-        zh: { gratuito: '免费', proton: 'Proton', neutron: 'Neutron' },
-        fr: { gratuito: 'Gratuit', proton: 'Proton', neutron: 'Neutron' },
-        pt: { gratuito: 'Grátis', proton: 'Proton', neutron: 'Neutron' },
-        de: { gratuito: 'Kostenlos', proton: 'Proton', neutron: 'Neutron' },
-        ko: { gratuito: '무료', proton: 'Proton', neutron: 'Neutron' },
-    };
+    // El nombre del plan mostrado en el checkout es universal (siempre en
+    // inglés), igual que en /plans y en el userbar.
+    const UNIVERSAL_NAMES = { gratuito: 'Free', proton: 'Proton', neutron: 'Neutron' };
 
     function features(lang, planId) {
         const f = F[lang] || F.es;
@@ -60,8 +51,7 @@ const CHECKOUT_PLAN_I18N = (function () {
     }
 
     function getDisplayName(lang, planId) {
-        const names = NAMES[lang] || NAMES.es;
-        return names[planId] || null;
+        return UNIVERSAL_NAMES[planId] || null;
     }
 
     return { features, getDisplayName };

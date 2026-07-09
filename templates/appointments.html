@@ -124,7 +124,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="apptTotalRevenue">$0.00</div>
-                                <div class="stat-label">Venta acumulada</div>
+                                <div class="stat-label" data-translate="appts_stat_sales">Venta acumulada</div>
                             </div>
                         </div>
                     </div>
@@ -144,19 +144,19 @@
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
                                             <span class="status-dot confirmed"></span>
-                                            <span>Confirmadas</span>
+                                            <span data-translate="appts_status_confirmed">Confirmadas</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
                                             <span class="status-dot pending"></span>
-                                            <span>Pendientes</span>
+                                            <span data-translate="appts_status_pending">Pendientes</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
                                             <span class="status-dot cancelled"></span>
-                                            <span>Canceladas</span>
+                                            <span data-translate="appts_status_cancelled">Canceladas</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
                                             <span class="status-dot completed"></span>
-                                            <span>Completadas</span>
+                                            <span data-translate="appts_status_completed">Completadas</span>
                                         </div>
                                     </div>
                                 </div>
@@ -187,13 +187,13 @@
                                             <span data-translate="appts_all_dates">Todas las Fechas</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span>Hoy</span>
+                                            <span data-translate="appts_filter_today">Hoy</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span>Mañana</span>
+                                            <span data-translate="appts_filter_tomorrow">Mañana</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span>Esta Semana</span>
+                                            <span data-translate="appts_filter_week">Esta Semana</span>
                                         </div>
                                     </div>
                                 </div>
@@ -661,9 +661,23 @@
         // Lógica para seleccionar opción
         function selectFilterOption(element, labelId) {
             // Actualizar texto visual
-            const text = element.querySelector('span:last-child').innerText;
-            document.getElementById(labelId).innerText = text;
-            
+            const spanEl = element.querySelector('span:last-child');
+            const text = spanEl.innerText;
+            const labelEl = document.getElementById(labelId);
+            labelEl.innerText = text;
+
+            // Si la opción elegida es traducible (tiene su propio data-translate,
+            // ej. "Todos los Estados" o una opción de estado/fecha concreta),
+            // el trigger hereda esa misma key para poder re-traducirse al
+            // cambiar de idioma. Si no tiene key (ej. nombre de un agente),
+            // se suelta del sistema de traducción.
+            const key = spanEl.getAttribute('data-translate');
+            if (key) {
+                labelEl.setAttribute('data-translate', key);
+            } else {
+                labelEl.removeAttribute('data-translate');
+            }
+
             // Gestionar clase 'selected'
             const parent = element.closest('.dropdown-options');
             parent.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));

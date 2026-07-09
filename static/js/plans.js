@@ -24,17 +24,26 @@ const PLAN_I18N = (function () {
         ko: { wa1: 'WhatsApp 에이전트 1개', waweb: 'WhatsApp Web (QR 스캔)', spei: 'SPEI 결제 게이트웨이', card: '카드 결제 게이트웨이', gemini: 'Gemini 기반 AI', gsheets: 'Google Sheets', gcal: 'Google 캘린더', hours: '맞춤형 영업시간', catSvc: '서비스 카탈로그', promoSvc: '서비스 프로모션', photos: '서비스 사진 업로드', promoPeriods: '프로모션 기간', multiBranch: '다중 지점', jobs: '채용 정보 (출시 예정)', agentsUnl: '무제한 에이전트', metaApi: 'Meta WhatsApp Business API', contactsUnl: '무제한 연락처', msgsUnl: '무제한 메시지', chatwoot: 'Chatwoot CRM', catProd: '제품 카탈로그', promoPacks: '프로모션 및 패키지', inventory: '재고 관리 시스템', pos: '포스(POS) 시스템', geminiAdv: '고급 Gemini', businessApi: 'Business API', webQr: 'Web (QR)' },
     };
 
-    const NAMES = {
-        es: { gratuito: { name: 'Plan Gratuito', desc: 'Perfecto para empezar sin compromisos', display: 'Gratuito' }, proton: { name: 'Plan Protón', desc: 'Ideal para empresas de servicios', display: 'Protón' }, neutron: { name: 'Plan Neutrón', desc: 'Ideal para e-commerce', display: 'Neutrón' } },
-        en: { gratuito: { name: 'Free Plan', desc: 'Perfect for getting started with no commitments', display: 'Free' }, proton: { name: 'Proton Plan', desc: 'Ideal for service businesses', display: 'Proton' }, neutron: { name: 'Neutron Plan', desc: 'Ideal for e-commerce', display: 'Neutron' } },
-        ru: { gratuito: { name: 'Бесплатный тариф', desc: 'Идеально для начала без обязательств', display: 'Бесплатно' }, proton: { name: 'Тариф Proton', desc: 'Идеально для сервисных компаний', display: 'Proton' }, neutron: { name: 'Тариф Neutron', desc: 'Идеально для e-commerce', display: 'Neutron' } },
-        uz: { gratuito: { name: 'Bepul reja', desc: "Majburiyatlarsiz boshlash uchun ideal", display: 'Bepul' }, proton: { name: 'Proton rejasi', desc: "Xizmat ko'rsatuvchi bizneslar uchun ideal", display: 'Proton' }, neutron: { name: 'Neutron rejasi', desc: 'Elektron tijorat uchun ideal', display: 'Neutron' } },
-        ja: { gratuito: { name: '無料プラン', desc: '契約なしで気軽に始められます', display: '無料' }, proton: { name: 'Protonプラン', desc: 'サービス業に最適', display: 'Proton' }, neutron: { name: 'Neutronプラン', desc: 'ECサイトに最適', display: 'Neutron' } },
-        zh: { gratuito: { name: '免费套餐', desc: '轻松起步，无需承诺', display: '免费' }, proton: { name: 'Proton套餐', desc: '适合服务型企业', display: 'Proton' }, neutron: { name: 'Neutron套餐', desc: '适合电商企业', display: 'Neutron' } },
-        fr: { gratuito: { name: 'Plan Gratuit', desc: 'Parfait pour commencer sans engagement', display: 'Gratuit' }, proton: { name: 'Plan Proton', desc: 'Idéal pour les entreprises de services', display: 'Proton' }, neutron: { name: 'Plan Neutron', desc: 'Idéal pour le e-commerce', display: 'Neutron' } },
-        pt: { gratuito: { name: 'Plano Grátis', desc: 'Perfeito para começar sem compromisso', display: 'Grátis' }, proton: { name: 'Plano Proton', desc: 'Ideal para empresas de serviços', display: 'Proton' }, neutron: { name: 'Plano Neutron', desc: 'Ideal para e-commerce', display: 'Neutron' } },
-        de: { gratuito: { name: 'Kostenloser Plan', desc: 'Perfekt für den unverbindlichen Einstieg', display: 'Kostenlos' }, proton: { name: 'Proton-Plan', desc: 'Ideal für Dienstleistungsunternehmen', display: 'Proton' }, neutron: { name: 'Neutron-Plan', desc: 'Ideal für E-Commerce', display: 'Neutron' } },
-        ko: { gratuito: { name: '무료 요금제', desc: '약정 없이 시작하기 좋은 요금제', display: '무료' }, proton: { name: 'Proton 요금제', desc: '서비스 기업에 적합', display: 'Proton' }, neutron: { name: 'Neutron 요금제', desc: '이커머스에 적합', display: 'Neutron' } },
+    // Nombre y "display" del plan son universales (siempre en inglés),
+    // igual que en el userbar — no dependen del idioma de la interfaz.
+    const UNIVERSAL_NAMES = {
+        gratuito: { name: 'Free Plan', display: 'Free' },
+        proton:   { name: 'Proton',    display: 'Proton' },
+        neutron:  { name: 'Neutron',   display: 'Neutron' },
+    };
+
+    // La descripción corta de cada plan sí se mantiene traducida por idioma.
+    const DESCRIPTIONS = {
+        es: { gratuito: 'Perfecto para empezar sin compromisos', proton: 'Ideal para empresas de servicios', neutron: 'Ideal para e-commerce' },
+        en: { gratuito: 'Perfect for getting started with no commitments', proton: 'Ideal for service businesses', neutron: 'Ideal for e-commerce' },
+        ru: { gratuito: 'Идеально для начала без обязательств', proton: 'Идеально для сервисных компаний', neutron: 'Идеально для e-commerce' },
+        uz: { gratuito: "Majburiyatlarsiz boshlash uchun ideal", proton: "Xizmat ko'rsatuvchi bizneslar uchun ideal", neutron: 'Elektron tijorat uchun ideal' },
+        ja: { gratuito: '契約なしで気軽に始められます', proton: 'サービス業に最適', neutron: 'ECサイトに最適' },
+        zh: { gratuito: '轻松起步，无需承诺', proton: '适合服务型企业', neutron: '适合电商企业' },
+        fr: { gratuito: 'Parfait pour commencer sans engagement', proton: 'Idéal pour les entreprises de services', neutron: 'Idéal pour le e-commerce' },
+        pt: { gratuito: 'Perfeito para começar sem compromisso', proton: 'Ideal para empresas de serviços', neutron: 'Ideal para e-commerce' },
+        de: { gratuito: 'Perfekt für den unverbindlichen Einstieg', proton: 'Ideal für Dienstleistungsunternehmen', neutron: 'Ideal für E-Commerce' },
+        ko: { gratuito: '약정 없이 시작하기 좋은 요금제', proton: '서비스 기업에 적합', neutron: '이커머스에 적합' },
     };
 
     function features(lang, planId) {
@@ -46,10 +55,11 @@ const PLAN_I18N = (function () {
     }
 
     function getPlanData(lang, planId) {
-        const langNames = NAMES[lang] || NAMES.es;
-        const n = langNames[planId];
-        if (!n) return null;
-        return { name: n.name, description: n.desc, display: n.display, features: features(lang, planId) };
+        const universal = UNIVERSAL_NAMES[planId];
+        if (!universal) return null;
+        const descByLang = DESCRIPTIONS[lang] || DESCRIPTIONS.es;
+        const desc = descByLang[planId] || DESCRIPTIONS.es[planId];
+        return { name: universal.name, description: desc, display: universal.display, features: features(lang, planId) };
     }
 
     function getTerms(lang) {

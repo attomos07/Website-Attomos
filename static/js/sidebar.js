@@ -10,6 +10,13 @@
     // Guard: si el sidebar no está en esta página, no hacer nada
     if (!document.getElementById('sidebar')) return;
 
+    function getLang() {
+        return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+    }
+    function t(key, fallback) {
+        return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+    }
+
     // Giros de comida — muestra "Pedidos" en lugar de "Citas"
     const GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
                           'taqueria','tacos','hamburguesas','sushi','comida',
@@ -152,10 +159,12 @@
                 const isSalon  = TIPOS_PELUQUERIA.some(t => normalizeStr(userBizType).includes(normalizeStr(t)));
                 if (isClinic) {
                     clientHistoryItem.style.display  = '';
-                    clientHistoryTooltip.textContent = 'Historial Clínico';
+                    clientHistoryTooltip.textContent = t('hist_title_clinic', 'Historial Clínico');
+                    clientHistoryTooltip.setAttribute('data-translate', 'hist_title_clinic');
                 } else if (isSalon) {
                     clientHistoryItem.style.display  = '';
-                    clientHistoryTooltip.textContent = 'Historial Del Cliente';
+                    clientHistoryTooltip.textContent = t('hist_title_salon', 'Historial de Cliente');
+                    clientHistoryTooltip.setAttribute('data-translate', 'hist_title_salon');
                 } else {
                     clientHistoryItem.style.display  = 'none';
                 }

@@ -37,7 +37,7 @@
                                     <line x1="3" x2="21" y1="6" y2="6"/>
                                     <path d="M16 10a4 4 0 0 1-8 0"/>
                                 </svg>
-                                Mis Pedidos
+                                <span data-translate="orders_page_title">Mis Pedidos</span>
                             </h1>
                             <p data-translate="orders_subtitle">Gestiona todos los pedidos de tu negocio</p>
                         </div>
@@ -57,14 +57,14 @@
                                 <line x1="3" x2="21" y1="6" y2="6"/>
                                 <path d="M16 10a4 4 0 0 1-8 0"/>
                             </svg>
-                            Mis Pedidos
+                            <span data-translate="orders_page_title">Mis Pedidos</span>
                         </button>
                         <button type="button" class="orders-tab" data-tab="punto-venta">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
                                 <rect x="2" y="3" width="20" height="14" rx="2"/>
                                 <path d="M8 21h8M12 17v4"/>
                             </svg>
-                            Punto de Venta
+                            <span data-translate="appts_tab_pos">Punto de Venta</span>
                         </button>
                     </div>
 
@@ -107,7 +107,7 @@
                             <div class="stat-icon orange"><i class="lni lni-coin"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statTotal">$0.00</div>
-                                <div class="stat-label">Venta acumulada</div>
+                                <div class="stat-label" data-translate="orders_stat_acc">Venta acumulada</div>
                             </div>
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                                 <div class="dropdown-menu">
                                     <div class="dropdown-options">
                                         <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedStatus','status','all')"><span data-translate="orders_filter_all_status">Todos los estados</span></div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','pending')"><span class="status-dot pending"></span><span>Pendientes</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','pending')"><span class="status-dot pending"></span><span data-translate="orders_stat_pending">Pendientes</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','confirmed')"><span class="status-dot confirmed"></span><span data-translate="orders_status_confirmed">Confirmados</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','preparing')"><span class="status-dot preparing"></span><span data-translate="orders_stat_preparing">En preparación</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','ready')"><span class="status-dot ready"></span><span data-translate="orders_status_ready">Listos</span></div>
@@ -146,19 +146,19 @@
                                         <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedType','type','all')"><span data-translate="orders_filter_all_types">Todos los tipos</span></div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','delivery')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><path d="M12 17h.01M16 17h.01"/></svg>
-                                            <span>A domicilio</span>
+                                            <span data-translate="orders_type_delivery">A domicilio</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','pickup')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                                            <span>Para llevar</span>
+                                            <span data-translate="orders_type_pickup">Para llevar</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','dine_in')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
-                                            <span>En el local</span>
+                                            <span data-translate="orders_type_dine_in">En el local</span>
                                         </div>
                                         <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','local_pickup')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;flex-shrink:0;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                                            <span>Recoger en local</span>
+                                            <span data-translate="orders_type_local_pickup">Recoger en local</span>
                                         </div>
                                     </div>
                                 </div>
@@ -233,17 +233,17 @@
                                             <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                                             <line x1="12" y1="22.08" x2="12" y2="12"/>
                                         </svg>
-                                        Catálogo
+                                        <span data-translate="appts_pos_catalog_title">Catálogo</span>
                                     </h2>
                                     <div class="pos-search-wrap">
                                         <i class="lni lni-search-alt"></i>
-                                        <input type="text" id="posProductSearch" placeholder="Buscar producto...">
+                                        <input type="text" id="posProductSearch" placeholder="Buscar producto..." data-translate-placeholder="appts_pos_search_placeholder">
                                     </div>
                                 </div>
                                 <div class="pos-products-grid" id="posProductsGrid">
                                     <div class="pos-empty-catalog">
                                         <i class="lni lni-package"></i>
-                                        <span>Agrega productos en <strong>Mi Negocio → Servicios / Productos</strong> para verlos aquí.</span>
+                                        <span data-translate-html="orders_empty_catalog_html">Agrega productos en <strong>Mi Negocio → Servicios / Productos</strong> para verlos aquí.</span>
                                     </div>
                                 </div>
                             </div>
@@ -257,7 +257,7 @@
                                             <line x1="3" x2="21" y1="6" y2="6"/>
                                             <path d="M16 10a4 4 0 0 1-8 0"/>
                                         </svg>
-                                        Pedido actual
+                                        <span data-translate="orders_current">Pedido actual</span>
                                     </h2>
                                     <button class="pos-clear-btn" id="posClearBtn" title="Limpiar pedido">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
@@ -269,23 +269,23 @@
 
                                 <!-- Info del cliente -->
                                 <div class="pos-customer-row">
-                                    <input type="text" class="pos-input" id="posCustomerName" placeholder="Nombre del cliente">
-                                    <input type="text" class="pos-input" id="posCustomerPhone" placeholder="Teléfono (opcional)">
+                                    <input type="text" class="pos-input" id="posCustomerName" placeholder="Nombre del cliente" data-translate-placeholder="appts_pos_customer_name">
+                                    <input type="text" class="pos-input" id="posCustomerPhone" placeholder="Teléfono (opcional)" data-translate-placeholder="appts_pos_customer_phone">
                                 </div>
 
                                 <!-- Tipo de pedido -->
                                 <div class="pos-type-row">
                                     <button class="pos-type-btn active" data-type="dine_in">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
-                                        En local
+                                        <span data-translate="orders_type_dine_in">En local</span>
                                     </button>
                                     <button class="pos-type-btn" data-type="pickup">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                                        Para llevar
+                                        <span data-translate="orders_type_pickup">Para llevar</span>
                                     </button>
                                     <button class="pos-type-btn" data-type="delivery">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="0"/><path d="M12 17h.01M16 17h.01"/></svg>
-                                        Domicilio
+                                        <span data-translate="orders_type_delivery_short">Domicilio</span>
                                     </button>
                                 </div>
 
@@ -297,22 +297,22 @@
                                             <line x1="3" x2="21" y1="6" y2="6"/>
                                             <path d="M16 10a4 4 0 0 1-8 0"/>
                                         </svg>
-                                        <span>Agrega productos al pedido</span>
+                                        <span data-translate="orders_add_products">Agrega productos al pedido</span>
                                     </div>
                                 </div>
 
                                 <!-- Totales -->
                                 <div class="pos-totals">
                                     <div class="pos-totals-row">
-                                        <span>Subtotal</span>
+                                        <span data-translate="orders_th_subtotal">Subtotal</span>
                                         <span id="posSubtotal">$0.00</span>
                                     </div>
                                     <div class="pos-totals-row discount-row" id="posDiscountRow" style="display:none;">
-                                        <span>Descuento</span>
+                                        <span data-translate="orders_th_discount">Descuento</span>
                                         <span id="posDiscountAmt" class="discount-val">-$0.00</span>
                                     </div>
                                     <div class="pos-totals-row total-row">
-                                        <span>Total</span>
+                                        <span data-translate="orders_th_total">Total</span>
                                         <span id="posTotal">$0.00</span>
                                     </div>
                                 </div>
@@ -323,33 +323,33 @@
                                     <div class="pos-payment-btns">
                                         <button class="pos-pay-btn active" data-pay="efectivo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-                                            Efectivo
+                                            <span data-translate="pos_cash">Efectivo</span>
                                         </button>
                                         <button class="pos-pay-btn" data-pay="tarjeta">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                                            Tarjeta
+                                            <span data-translate="pos_card">Tarjeta</span>
                                         </button>
                                         <button class="pos-pay-btn" data-pay="transferencia">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
-                                            Transferencia
+                                            <span data-translate="pos_transfer">Transferencia</span>
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Cambio -->
                                 <div class="pos-change-row" id="posChangeRow">
-                                    <label class="pos-label">Cliente paga</label>
+                                    <label class="pos-label" data-translate="orders_client_pays">Cliente paga</label>
                                     <div class="pos-change-input-wrap">
                                         <span class="pos-currency">$</span>
                                         <input type="number" class="pos-input pos-change-input" id="posClientPays" placeholder="0.00" min="0" step="0.01">
                                     </div>
                                     <div class="pos-change-display" id="posChangeDisplay">
-                                        Cambio: <strong id="posChange">$0.00</strong>
+                                        <span data-translate="appts_pos_change">Cambio:</span> <strong id="posChange">$0.00</strong>
                                     </div>
                                 </div>
 
                                 <!-- Notas -->
-                                <textarea class="pos-input pos-notes" id="posNotes" placeholder="Notas del pedido (opcional)..." rows="2"></textarea>
+                                <textarea class="pos-input pos-notes" id="posNotes" placeholder="Notas del pedido (opcional)..." rows="2" data-translate-placeholder="orders_notes_placeholder"></textarea>
 
                                 <!-- Botón crear -->
                                 <button class="pos-submit-btn" id="posSubmitBtn">
@@ -358,7 +358,7 @@
                                         <line x1="3" x2="21" y1="6" y2="6"/>
                                         <path d="M16 10a4 4 0 0 1-8 0"/>
                                     </svg>
-                                    Crear Pedido
+                                    <span data-translate="orders_create_btn">Crear Pedido</span>
                                 </button>
                             </div>
 

@@ -2,6 +2,16 @@
 // USERBAR JAVASCRIPT - FLOATING DESIGN
 // ============================================
 
+// Re-traduce el giro de negocio mostrado (solo en frontend) cuando cambia
+// el idioma. El dato crudo (lastRawBusinessType) nunca se toca ni se
+// vuelve a pedir al backend, solo se recalcula su etiqueta traducida.
+document.addEventListener('attomos:langchange', function () {
+    const userRoleElement = document.getElementById('userRole');
+    if (userRoleElement && lastRawBusinessType !== null) {
+        userRoleElement.textContent = getBusinessTypeLabel(lastRawBusinessType) || 'Negocio';
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Userbar flotante cargado correctamente');
     
@@ -89,6 +99,13 @@ async function initUserbar() {
 var GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
                       'taqueria','tacos','hamburguesas','sushi','comida'];
 
+function getLang() {
+    return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
+}
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
 function applyBusinessTypeMenu(businessType) {
     const bt     = (businessType || '').toLowerCase();
     const isFood = GIROS_COMIDA.some(g => bt.includes(g));
@@ -104,6 +121,8 @@ function applyBusinessTypeMenu(businessType) {
 // ACTUALIZAR UI DEL USERBAR
 // ============================================
 
+let lastRawBusinessType = null;
+
 function updateUserbarUI(user) {
     const userNameElement = document.getElementById('userName');
     if (userNameElement) {
@@ -114,7 +133,8 @@ function updateUserbarUI(user) {
 
     const userRoleElement = document.getElementById('userRole');
     if (userRoleElement) {
-        const businessType = getBusinessTypeLabel(user.businessType) || 'Negocio';
+        lastRawBusinessType = user.businessType || null; // el dato crudo del backend nunca cambia
+        const businessType = getBusinessTypeLabel(lastRawBusinessType) || 'Negocio';
         userRoleElement.textContent = businessType;
         userRoleElement.style.visibility = 'visible';
     }
@@ -151,14 +171,17 @@ function updateUserbarUI(user) {
 // ============================================
 
 function getPlanName(planId) {
+    // Los nombres de plan son universales (siempre en inglés) en el userbar,
+    // independientemente del idioma de la interfaz — mismo criterio que
+    // Proton/Neutron en /plans, pero aquí simplificado: nunca se traducen.
     const planNames = {
-        'gratuito': 'Plan Gratuito',
-        'proton': 'Plan Protón',
-        'neutron': 'Plan Neutrón',
-        'electron': 'Plan Electrón',
-        'pending': 'Pago Pendiente'
+        'gratuito': 'Free Plan',
+        'proton': 'Proton',
+        'neutron': 'Neutron',
+        'electron': 'Electron',
+        'pending': 'Payment Pending'
     };
-    return planNames[planId] || 'Plan Gratuito';
+    return planNames[planId] || 'Free Plan';
 }
 
 // ============================================
@@ -166,35 +189,51 @@ function getPlanName(planId) {
 // ============================================
 
 function getBusinessTypeLabel(businessType) {
-    const businessTypes = {
+    // Mapa de "giro" crudo (tal como lo guarda el backend, sin tocarlo nunca)
+    // a una key de traducción. Varias variantes de un mismo giro comparten
+    // la misma etiqueta traducida (ej. 'pizzeria' y 'pizza' → biz_type_pizzeria).
+    const businessTypeKeys = {
         // Salud
-        'clinica-dental': 'Clínica Dental',
-        'consultorio':    'Consultorio Médico',
-        'veterinaria':    'Veterinaria',
+        'clinica-dental': 'biz_type_clinica_dental',
+        'consultorio':    'biz_type_consultorio',
+        'veterinaria':    'biz_type_veterinaria',
         // Belleza
-        'peluqueria':     'Peluquería',
-        'spa':            'Spa & Wellness',
-        'estetica':       'Estética',
+        'peluqueria':     'biz_type_peluqueria',
+        'spa':            'biz_type_spa',
+        'estetica':       'biz_type_estetica',
         // Comida
-        'restaurante':    'Restaurante',
-        'pizzeria':       'Pizzería',
-        'pizza':          'Pizzería',
-        'mariscos':       'Mariscos',
-        'gorditas':       'Gorditas',
-        'taqueria':       'Taquería',
-        'tacos':          'Taquería',
-        'hamburguesas':   'Hamburguesas',
-        'sushi':          'Sushi',
-        'comida':         'Restaurante',
+        'restaurante':    'biz_type_restaurante',
+        'pizzeria':       'biz_type_pizzeria',
+        'pizza':          'biz_type_pizzeria',
+        'mariscos':       'biz_type_mariscos',
+        'gorditas':       'biz_type_gorditas',
+        'taqueria':       'biz_type_taqueria',
+        'tacos':          'biz_type_taqueria',
+        'hamburguesas':   'biz_type_hamburguesas',
+        'sushi':          'biz_type_sushi',
+        'comida':         'biz_type_restaurante',
         // Otros
-        'escuela':        'Educación',
-        'gym':            'Gimnasio',
-        'hotel':          'Hotel',
-        'tienda':         'Tienda',
-        'agencia':        'Agencia',
-        'otro':           'Otro',
+        'escuela':        'biz_type_escuela',
+        'gym':            'biz_type_gym',
+        'hotel':          'biz_type_hotel',
+        'tienda':         'biz_type_tienda',
+        'agencia':        'biz_type_agencia',
+        'otro':           'biz_type_otro',
     };
-    return businessTypes[businessType] || businessType || 'Negocio';
+    // Fallback en español (por si falta la traducción o el idioma es es)
+    const businessTypesEs = {
+        'clinica-dental': 'Clínica Dental', 'consultorio': 'Consultorio Médico', 'veterinaria': 'Veterinaria',
+        'peluqueria': 'Peluquería', 'spa': 'Spa & Wellness', 'estetica': 'Estética',
+        'restaurante': 'Restaurante', 'pizzeria': 'Pizzería', 'pizza': 'Pizzería',
+        'mariscos': 'Mariscos', 'gorditas': 'Gorditas', 'taqueria': 'Taquería', 'tacos': 'Taquería',
+        'hamburguesas': 'Hamburguesas', 'sushi': 'Sushi', 'comida': 'Restaurante',
+        'escuela': 'Educación', 'gym': 'Gimnasio', 'hotel': 'Hotel', 'tienda': 'Tienda',
+        'agencia': 'Agencia', 'otro': 'Otro',
+    };
+
+    const key = businessTypeKeys[businessType];
+    const fallback = businessTypesEs[businessType] || businessType || 'Negocio';
+    return key ? t(key, fallback) : fallback;
 }
 
 // ============================================

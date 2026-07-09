@@ -18,6 +18,13 @@ function t(key, fallback) {
     return window.Translations?.dict?.[getLang()]?.[key] || fallback;
 }
 
+// Re-renderiza la tabla (con sus badges de tipo/pago/estado generados por t())
+// cuando cambia el idioma, usando los datos ya cargados en memoria.
+document.addEventListener('attomos:langchange', function () {
+    if (typeof renderOrders === 'function') renderOrders();
+    if (typeof updateStats === 'function') updateStats();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     initOrders();
     document.addEventListener('click', e => {
@@ -170,10 +177,10 @@ function createRow(o) {
     const itemsText = itemsToText(o.items);
 
     const typeLabel = {
-        delivery:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><path d="M12 17h.01M16 17h.01"/></svg>A domicilio',
-        pickup:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Para llevar',
-        dine_in:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>En local',
-        local_pickup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Recoger en local',
+        delivery:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><path d="M12 17h.01M16 17h.01"/></svg>' + t('orders_type_delivery','A domicilio'),
+        pickup:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' + t('orders_type_pickup','Para llevar'),
+        dine_in:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>' + t('orders_type_dine_in','En el local'),
+        local_pickup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' + t('orders_type_local_pickup','Recoger en local'),
     };
     const typeCls = {
         delivery:     'type-delivery',
@@ -183,9 +190,9 @@ function createRow(o) {
     };
 
     const payLabel = {
-        cash:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>Efectivo',
-        card:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>Tarjeta',
-        transfer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>Transferencia',
+        cash:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>' + t('pos_cash','Efectivo'),
+        card:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>' + t('pos_card','Tarjeta'),
+        transfer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:middle;margin-right:.25rem;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>' + t('pos_transfer','Transferencia'),
     };
     const payCls   = { cash: 'pay-cash',    card: 'pay-card',   transfer: 'pay-transfer' };
     const payMethod = o.paymentMethod || '';
@@ -194,7 +201,7 @@ function createRow(o) {
     let cambioHtml = '';
     if (payMethod === 'cash' && o.cashReceived && o.cashReceived > 0) {
         const cambio = (o.cashReceived - (o.total || 0));
-        cambioHtml = `<div class="cambio-info">Pagó $${o.cashReceived.toFixed(2)} · Cambio: <strong>$${cambio.toFixed(2)}</strong></div>`;
+        cambioHtml = `<div class="cambio-info">${t('orders_paid_prefix','Pagó')} $${o.cashReceived.toFixed(2)} · ${t('appts_pos_change','Cambio:')} <strong>$${cambio.toFixed(2)}</strong></div>`;
     }
 
     return `
@@ -667,8 +674,21 @@ function sendWhatsApp(phone, name, id) {
 // ==========================================
 
 function selectFilterOption(el, labelId, filterKey, value) {
-    const text = el.querySelector('span:last-child')?.innerText || el.querySelector('span')?.innerText || '';
-    document.getElementById(labelId).innerText = text;
+    const spanEl = el.querySelector('span:last-child') || el.querySelector('span');
+    const text = spanEl?.innerText || '';
+    const labelEl = document.getElementById(labelId);
+    labelEl.innerText = text;
+
+    // Si la opción tiene su propia key de traducción (ej. "Todos los estados"
+    // o un estado/tipo concreto), el trigger la hereda para poder re-traducirse
+    // al cambiar de idioma. Si no (ej. nombre de un agente), se suelta.
+    const key = spanEl?.getAttribute('data-translate');
+    if (key) {
+        labelEl.setAttribute('data-translate', key);
+    } else {
+        labelEl.removeAttribute('data-translate');
+    }
+
     const parent = el.closest('.dropdown-options');
     parent.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
@@ -806,12 +826,18 @@ function itemsToText(items) {
 }
 
 function statusLabel(s) {
-    return { pending:'Pendiente', confirmed:'Confirmado', preparing:'En preparación',
-             ready:'Listo', delivered:'Entregado', cancelled:'Cancelado' }[s] || s;
+    return {
+        pending: t('orders_stat_pending','Pendiente'),
+        confirmed: t('orders_status_confirmed','Confirmado'),
+        preparing: t('orders_stat_preparing','En preparación'),
+        ready: t('orders_status_ready','Listo'),
+        delivered: t('orders_status_delivered','Entregado'),
+        cancelled: t('orders_status_cancelled','Cancelado')
+    }[s] || s;
 }
 
 function sourceLabel(s) {
-    return { manual:'Manual', agent:'WhatsApp Bot', ninda:'Ninda' }[s] || s;
+    return { manual: t('hist_source_manual','Manual'), agent:'WhatsApp Bot', ninda:'Ninda' }[s] || s;
 }
 
 function escHtml(t) {
@@ -821,7 +847,12 @@ function escHtml(t) {
 }
 
 function showNotification(message, type = 'info') {
-    const titles = { success:'Listo', error:'Error', warning:'Aviso', info:'Info' };
+    const titles = {
+        success: t('hist_notif_title_success','Listo'),
+        error:   t('hist_notif_title_error','Error'),
+        warning: t('hist_notif_title_warning','Aviso'),
+        info:    t('hist_notif_title_info','Info')
+    };
     if (typeof Sileo !== 'undefined' && Sileo[type]) {
         Sileo[type]({ title: titles[type], description: message });
     } else {
