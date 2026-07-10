@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -737,7 +738,7 @@ func (s *AtomicBotDeployService) TransferBotFiles(_ uint, botDir string) error {
 
 	for _, file := range filesToTransfer {
 		localPath := filepath.Join(localBotPath, file)
-		remotePath := filepath.Join(botDir, file)
+		remotePath := path.Join(botDir, file) // ruta remota (Linux/SFTP): siempre con "/", nunca filepath (rompe en Windows)
 
 		info, err := os.ReadDir(localPath)
 		if err == nil && len(info) > 0 {
@@ -1336,7 +1337,7 @@ func (s *AtomicBotDeployService) uploadFile(localPath, remotePath string) error 
 	}
 
 	// Crear directorio remoto si no existe
-	remoteDir := filepath.Dir(remotePath)
+	remoteDir := path.Dir(remotePath) // ruta remota (Linux/SFTP)
 	s.executeCommand(fmt.Sprintf("mkdir -p %s", remoteDir))
 
 	// Crear archivo remoto
@@ -1370,7 +1371,7 @@ func (s *AtomicBotDeployService) uploadDirectory(localPath, remotePath string) e
 	// Subir cada archivo/subdirectorio
 	for _, entry := range entries {
 		localEntryPath := filepath.Join(localPath, entry.Name())
-		remoteEntryPath := filepath.Join(remotePath, entry.Name())
+		remoteEntryPath := path.Join(remotePath, entry.Name()) // ruta remota (Linux/SFTP)
 
 		if entry.IsDir() {
 			// Recursivo para subdirectorios

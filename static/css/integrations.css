@@ -985,6 +985,16 @@ body {
     gap: 0.15rem;
 }
 
+/* Click (azul) y Payme (verde-azulado) — mismos wraps que SPEI, colores propios */
+#clickSection .spei-logo-wrap {
+    border-color: rgba(0, 103, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 103, 255, 0.12);
+}
+#paymeSection .spei-logo-wrap {
+    border-color: rgba(0, 201, 167, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 201, 167, 0.12);
+}
+
 .spei-title {
     font-size: 0.95rem;
     font-weight: 700;

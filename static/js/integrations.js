@@ -1306,6 +1306,73 @@ function initPaymentsIntegration() {
 
     // Revisar si venimos de un redirect de Stripe
     checkStripeRedirect();
+
+    // Click (Uzbekistán)
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    const btnEditClick = document.getElementById('btnEditClick');
+    const btnRemoveClick = document.getElementById('btnRemoveClick');
+    const toggleClickSecret = document.getElementById('toggleClickSecret');
+    initToggleVisibility(toggleClickSecret, 'clickSecretKey');
+    initClickInputValidation();
+    if (btnSaveClick) btnSaveClick.addEventListener('click', saveClickConfig);
+    if (btnEditClick) btnEditClick.addEventListener('click', enableClickEdit);
+    if (btnRemoveClick) btnRemoveClick.addEventListener('click', removeClickConfig);
+
+    // Payme (Uzbekistán)
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    const btnEditPayme = document.getElementById('btnEditPayme');
+    const btnRemovePayme = document.getElementById('btnRemovePayme');
+    const togglePaymeSecret = document.getElementById('togglePaymeSecret');
+    initToggleVisibility(togglePaymeSecret, 'paymeSecretKey');
+    initPaymeInputValidation();
+    if (btnSavePayme) btnSavePayme.addEventListener('click', savePaymeConfig);
+    if (btnEditPayme) btnEditPayme.addEventListener('click', enablePaymeEdit);
+    if (btnRemovePayme) btnRemovePayme.addEventListener('click', removePaymeConfig);
+}
+
+// Helper reutilizable para el botón de mostrar/ocultar contraseña (mismo
+// patrón que ya usa Gemini/RepairDesk) — evita duplicar el listener 4 veces.
+function initToggleVisibility(toggleButton, inputId) {
+    if (!toggleButton) return;
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    toggleButton.addEventListener('click', () => {
+        const icon = toggleButton.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'lni lni-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'lni lni-eye';
+        }
+    });
+}
+
+// Habilita el botón de guardar de Click solo cuando los 3 campos tienen datos
+function initClickInputValidation() {
+    const merchantInput = document.getElementById('clickMerchantId');
+    const serviceInput = document.getElementById('clickServiceId');
+    const secretInput = document.getElementById('clickSecretKey');
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    if (!merchantInput || !serviceInput || !secretInput || !btnSaveClick) return;
+
+    const checkValid = () => {
+        btnSaveClick.disabled = !(merchantInput.value.trim() && serviceInput.value.trim() && secretInput.value.trim());
+    };
+    [merchantInput, serviceInput, secretInput].forEach(el => el.addEventListener('input', checkValid));
+}
+
+// Habilita el botón de guardar de Payme solo cuando ambos campos tienen datos
+function initPaymeInputValidation() {
+    const merchantInput = document.getElementById('paymeMerchantId');
+    const secretInput = document.getElementById('paymeSecretKey');
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    if (!merchantInput || !secretInput || !btnSavePayme) return;
+
+    const checkValid = () => {
+        btnSavePayme.disabled = !(merchantInput.value.trim() && secretInput.value.trim());
+    };
+    [merchantInput, secretInput].forEach(el => el.addEventListener('input', checkValid));
 }
 
 // ── Cargar estado de pagos ──────────────────────────────────
@@ -1324,6 +1391,81 @@ async function loadPaymentConfig(branchId) {
         updatePaymentsUI(data);
     } catch (err) {
         console.error('Error cargando pagos:', err);
+    }
+}
+
+function updateClickPaymeUI(data) {
+    // ── Click ─────────────────────────────────────────────────
+    const clickStatusBadge = document.getElementById('clickStatusBadge');
+    const clickConnectionInfo = document.getElementById('clickConnectionInfo');
+    const clickSaveActions = document.getElementById('clickSaveActions');
+    const clickManageActions = document.getElementById('clickManageActions');
+    const clickForm = document.getElementById('clickForm');
+
+    const merchantInput = document.getElementById('clickMerchantId');
+    const serviceInput = document.getElementById('clickServiceId');
+    const secretInput = document.getElementById('clickSecretKey');
+    [merchantInput, serviceInput, secretInput].forEach(el => { if (el) el.disabled = false; });
+
+    if (data.clickEnabled && data.clickMerchantId) {
+        if (clickStatusBadge) {
+            clickStatusBadge.className = 'status-badge connected';
+            clickStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        }
+        if (clickConnectionInfo) {
+            clickConnectionInfo.style.display = 'block';
+            const displayMerchant = document.getElementById('clickDisplayMerchant');
+            const displayService = document.getElementById('clickDisplayService');
+            if (displayMerchant) displayMerchant.textContent = data.clickMerchantId;
+            if (displayService) displayService.textContent = data.clickServiceId || '—';
+        }
+        if (clickForm) clickForm.style.display = 'none';
+        if (clickSaveActions) clickSaveActions.style.display = 'none';
+        if (clickManageActions) clickManageActions.style.display = 'flex';
+    } else {
+        if (clickStatusBadge) {
+            clickStatusBadge.className = 'status-badge disconnected';
+            clickStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
+        }
+        if (clickConnectionInfo) clickConnectionInfo.style.display = 'none';
+        if (clickForm) clickForm.style.display = 'block';
+        if (clickSaveActions) clickSaveActions.style.display = 'flex';
+        if (clickManageActions) clickManageActions.style.display = 'none';
+    }
+
+    // ── Payme ─────────────────────────────────────────────────
+    const paymeStatusBadge = document.getElementById('paymeStatusBadge');
+    const paymeConnectionInfo = document.getElementById('paymeConnectionInfo');
+    const paymeSaveActions = document.getElementById('paymeSaveActions');
+    const paymeManageActions = document.getElementById('paymeManageActions');
+    const paymeForm = document.getElementById('paymeForm');
+
+    const paymeMerchantInput = document.getElementById('paymeMerchantId');
+    const paymeSecretInput = document.getElementById('paymeSecretKey');
+    [paymeMerchantInput, paymeSecretInput].forEach(el => { if (el) el.disabled = false; });
+
+    if (data.paymeEnabled && data.paymeMerchantId) {
+        if (paymeStatusBadge) {
+            paymeStatusBadge.className = 'status-badge connected';
+            paymeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        }
+        if (paymeConnectionInfo) {
+            paymeConnectionInfo.style.display = 'block';
+            const displayMerchant = document.getElementById('paymeDisplayMerchant');
+            if (displayMerchant) displayMerchant.textContent = data.paymeMerchantId;
+        }
+        if (paymeForm) paymeForm.style.display = 'none';
+        if (paymeSaveActions) paymeSaveActions.style.display = 'none';
+        if (paymeManageActions) paymeManageActions.style.display = 'flex';
+    } else {
+        if (paymeStatusBadge) {
+            paymeStatusBadge.className = 'status-badge disconnected';
+            paymeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
+        }
+        if (paymeConnectionInfo) paymeConnectionInfo.style.display = 'none';
+        if (paymeForm) paymeForm.style.display = 'block';
+        if (paymeSaveActions) paymeSaveActions.style.display = 'flex';
+        if (paymeManageActions) paymeManageActions.style.display = 'none';
     }
 }
 
@@ -1418,7 +1560,7 @@ function updatePaymentsUI(data) {
 
     // ── Badge general ─────────────────────────────────────────
     const mainBadge = document.getElementById('paymentsStatusBadge');
-    const anyConfigured = data.speiEnabled || data.stripeEnabled;
+    const anyConfigured = data.speiEnabled || data.stripeEnabled || data.clickEnabled || data.paymeEnabled;
     if (mainBadge) {
         if (anyConfigured) {
             mainBadge.className = 'status-badge connected';
@@ -1428,6 +1570,8 @@ function updatePaymentsUI(data) {
             mainBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_without_config','Sin configurar')}`;
         }
     }
+
+    updateClickPaymeUI(data);
 }
 
 // ── SPEI: guardar ──────────────────────────────────────────
@@ -1533,6 +1677,208 @@ async function removeSPEIConfig() {
         await loadPaymentConfig(branchId);
     } catch (err) {
         showNotification(t('integ_err_spei_remove','Error al eliminar SPEI'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Click: guardar ─────────────────────────────────────────
+
+async function saveClickConfig() {
+    if (!selectedAgentId) {
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
+        return;
+    }
+
+    const merchantId = document.getElementById('clickMerchantId').value.trim();
+    const serviceId = document.getElementById('clickServiceId').value.trim();
+    const secretKey = document.getElementById('clickSecretKey').value.trim();
+
+    if (!merchantId || !serviceId || !secretKey) {
+        showNotification(t('integ_err_fill_fields','Completa todos los campos'), 'error');
+        return;
+    }
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSaveClick');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/click/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                merchantId: merchantId,
+                serviceId: serviceId,
+                secretKey: secretKey,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification(t('integ_click_ok_saved','Click guardado exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Click: editar ──────────────────────────────────────────
+
+function enableClickEdit() {
+    const clickForm = document.getElementById('clickForm');
+    const clickConnectionInfo = document.getElementById('clickConnectionInfo');
+    const clickSaveActions = document.getElementById('clickSaveActions');
+    const clickManageActions = document.getElementById('clickManageActions');
+
+    if (clickForm) clickForm.style.display = 'block';
+    if (clickConnectionInfo) clickConnectionInfo.style.display = 'none';
+    if (clickSaveActions) clickSaveActions.style.display = 'flex';
+    if (clickManageActions) clickManageActions.style.display = 'none';
+
+    ['clickMerchantId', 'clickServiceId', 'clickSecretKey'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
+    });
+    document.getElementById('clickMerchantId')?.focus();
+
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    if (btnSaveClick) btnSaveClick.disabled = true;
+}
+
+// ── Click: eliminar ────────────────────────────────────────
+
+async function removeClickConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm(t('integ_click_confirm_remove', '¿Eliminar la configuración de Click? El bot ya no podrá ofrecer este método de pago.'))) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemoveClick');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/click/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification(t('integ_click_ok_removed','Configuración de Click eliminada'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_click_err_remove','Error al eliminar Click'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Payme: guardar ─────────────────────────────────────────
+
+async function savePaymeConfig() {
+    if (!selectedAgentId) {
+        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
+        return;
+    }
+
+    const merchantId = document.getElementById('paymeMerchantId').value.trim();
+    const secretKey = document.getElementById('paymeSecretKey').value.trim();
+
+    if (!merchantId || !secretKey) {
+        showNotification(t('integ_err_fill_fields','Completa todos los campos'), 'error');
+        return;
+    }
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSavePayme');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/payme/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                merchantId: merchantId,
+                secretKey: secretKey,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification(t('integ_payme_ok_saved','Payme guardado exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Payme: editar ──────────────────────────────────────────
+
+function enablePaymeEdit() {
+    const paymeForm = document.getElementById('paymeForm');
+    const paymeConnectionInfo = document.getElementById('paymeConnectionInfo');
+    const paymeSaveActions = document.getElementById('paymeSaveActions');
+    const paymeManageActions = document.getElementById('paymeManageActions');
+
+    if (paymeForm) paymeForm.style.display = 'block';
+    if (paymeConnectionInfo) paymeConnectionInfo.style.display = 'none';
+    if (paymeSaveActions) paymeSaveActions.style.display = 'flex';
+    if (paymeManageActions) paymeManageActions.style.display = 'none';
+
+    ['paymeMerchantId', 'paymeSecretKey'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
+    });
+    document.getElementById('paymeMerchantId')?.focus();
+
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    if (btnSavePayme) btnSavePayme.disabled = true;
+}
+
+// ── Payme: eliminar ────────────────────────────────────────
+
+async function removePaymeConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm(t('integ_payme_confirm_remove', '¿Eliminar la configuración de Payme? El bot ya no podrá ofrecer este método de pago.'))) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemovePayme');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/payme/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification(t('integ_payme_ok_removed','Configuración de Payme eliminada'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_payme_err_remove','Error al eliminar Payme'), 'error');
         btn.innerHTML = orig;
         btn.disabled = false;
     }

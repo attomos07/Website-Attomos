@@ -9,6 +9,15 @@ function t(key, fallback) {
 
 let agents = [];
 
+// Re-renderiza la tabla (con dropdowns traducidos) cuando cambia el idioma,
+// usando los agentes ya cargados en memoria — sin esto, las filas y menús
+// se quedan "pegados" en el idioma que estaba activo quando se cargó la
+// página, porque createAgentRow() solo corre al hacer fetch, no en cada
+// cambio de idioma.
+document.addEventListener('attomos:langchange', function () {
+    if (agents.length) renderAgentsTable(agents);
+});
+
 // Inicializar página
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 My Agents JS cargado');
@@ -651,7 +660,7 @@ function renderAgentsTable(agents) {
 
 // Crear fila de agente
 function createAgentRow(agent) {
-    const phone = agent.phoneNumber || 'Sin número';
+    const phone = agent.phoneNumber || t('agents_no_number', 'Sin número');
     const statusBadge = getStatusBadge(agent);
 
     return `<tr data-agent-id="${agent.id}">
@@ -696,24 +705,32 @@ function createAgentRow(agent) {
             <div class="actions-dropdown" id="dropdown-${agent.id}">
                 <button class="dropdown-item view" onclick="viewAgentDetails(${agent.id})">
                     <i class="lni lni-eye"></i>
-                    <span>Ver Detalles</span>
+                    <span>${t('agents_dd_view', 'Ver Detalles')}</span>
                 </button>
                 <button class="dropdown-item qr" onclick="showQRModal(${agent.id})">
-                    <i class="lni lni-qr-code"></i>
-                    <span>Ver QR</span>
+                    <svg class="qr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14.5" y="14.5" width="2.5" height="2.5" rx="0.5"/>
+                        <rect x="18.5" y="14.5" width="2.5" height="2.5" rx="0.5"/>
+                        <rect x="14.5" y="18.5" width="2.5" height="2.5" rx="0.5"/>
+                        <rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.5"/>
+                    </svg>
+                    <span>${t('agents_dd_qr', 'Ver QR')}</span>
                 </button>
                 <button class="dropdown-item redeploy" onclick="confirmRedeploy(${agent.id}, '${agent.name}')">
                     <i class="lni lni-reload"></i>
-                    <span>Redeploy</span>
+                    <span>${t('agents_dd_redeploy', 'Redeploy')}</span>
                 </button>
                 <div class="dropdown-divider"></div>
                 <button class="dropdown-item pause" onclick="toggleAgentStatus(${agent.id}, ${agent.isActive})">
                     <i class="lni lni-${agent.isActive ? 'pause' : 'play'}"></i>
-                    <span>${agent.isActive ? 'Pausar' : 'Activar'}</span>
+                    <span>${agent.isActive ? t('ad_pause', 'Pausar') : t('ad_activate', 'Activar')}</span>
                 </button>
                 <button class="dropdown-item delete" onclick="confirmDeleteAgent(${agent.id})">
                     <i class="lni lni-trash-can"></i>
-                    <span>Eliminar</span>
+                    <span>${t('agents_dd_delete', 'Eliminar')}</span>
                 </button>
             </div>
         </div>
@@ -824,18 +841,19 @@ async function toggleAgentStatus(agentId, currentStatus) {
     showConfirmModal({
         type: 'warning',
         icon: currentStatus ? 'lni-pause' : 'lni-play',
-        title: `¿${actionTitle} Agente?`,
-        message: `Estás a punto de ${action} el agente "<strong>${escapeHtml(agent.name)}</strong>"`,
+        title: t('agents_toggle_title', '¿{action} Agente?').replace('{action}', actionTitle),
+        message: t('agents_pause_msg', 'Estás a punto de {action} el agente "{name}"')
+            .replace('{action}', action).replace('{name}', `<strong>${escapeHtml(agent.name)}</strong>`),
         list: currentStatus ? [
-            'El agente dejará de responder mensajes',
-            'Los clientes no recibirán atención automática',
-            'Puedes reactivarlo cuando quieras'
+            t('agents_pause_list1', 'El agente dejará de responder mensajes'),
+            t('agents_pause_list2', 'Los clientes no recibirán atención automática'),
+            t('agents_pause_list3', 'Puedes reactivarlo cuando quieras')
         ] : [
-            'El agente volverá a responder mensajes',
-            'Se reanudará la atención automática',
-            'Los clientes podrán interactuar nuevamente'
+            t('agents_activate_list1', 'El agente volverá a responder mensajes'),
+            t('agents_activate_list2', 'Se reanudará la atención automática'),
+            t('agents_activate_list3', 'Los clientes podrán interactuar nuevamente')
         ],
-        confirmText: `${actionTitle} Agente`,
+        confirmText: t('agents_action_agent_btn', '{action} Agente').replace('{action}', actionTitle),
         confirmClass: 'warning',
         onConfirm: async () => {
             try {
@@ -849,10 +867,10 @@ async function toggleAgentStatus(agentId, currentStatus) {
                 }
 
                 await loadAgents();
-                showNotification(`✅ Agente ${action} exitosamente`, 'success');
+                showNotification(`✅ ${t('agents_toggle_success', 'Agente {action} exitosamente').replace('{action}', action)}`, 'success');
             } catch (error) {
                 console.error('❌ Error:', error);
-                showNotification('❌ Error al cambiar el estado del agente', 'error');
+                showNotification(`❌ ${t('agents_toggle_error', 'Error al cambiar el estado del agente')}`, 'error');
             }
         }
     });
@@ -866,14 +884,15 @@ function confirmDeleteAgent(agentId) {
     showConfirmModal({
         type: 'danger',
         icon: 'lni-trash-can',
-        title: '¿Eliminar Agente?',
-        message: `Estás a punto de eliminar el agente "<strong>${escapeHtml(agent.name)}</strong>"`,
+        title: t('agents_delete_title', '¿Eliminar Agente?'),
+        message: t('agents_delete_msg', 'Estás a punto de eliminar el agente "{name}"')
+            .replace('{name}', `<strong>${escapeHtml(agent.name)}</strong>`),
         list: [
-            'El bot de WhatsApp',
-            'Todas las configuraciones',
-            'El historial de conversaciones'
+            t('agents_delete_list1', 'El bot de WhatsApp'),
+            t('agents_delete_list2', 'Todas las configuraciones'),
+            t('agents_delete_list3', 'El historial de conversaciones')
         ],
-        confirmText: 'Eliminar Agente',
+        confirmText: t('agents_delete_confirm_btn', 'Eliminar Agente'),
         confirmClass: 'danger',
         onConfirm: () => deleteAgent(agentId)
     });
@@ -892,10 +911,10 @@ async function deleteAgent(agentId) {
         }
 
         await loadAgents();
-        showNotification('✅ Agente eliminado exitosamente', 'success');
+        showNotification(`✅ ${t('agents_delete_success', 'Agente eliminado exitosamente')}`, 'success');
     } catch (error) {
         console.error('❌ Error:', error);
-        showNotification('❌ Error al eliminar el agente', 'error');
+        showNotification(`❌ ${t('agents_delete_error', 'Error al eliminar el agente')}`, 'error');
     }
 }
 
@@ -946,7 +965,7 @@ function showConfirmModal(options) {
                 <div class="confirm-actions">
                     <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
                         <i class="lni lni-close"></i>
-                        <span>Cancelar</span>
+                        <span>${t('agents_cancel', 'Cancelar')}</span>
                     </button>
                     <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
                         <i class="lni lni-checkmark"></i>
@@ -1068,13 +1087,13 @@ async function showQRModal(agentId) {
         <div class="qr-overlay" onclick="closeQRModal()"></div>
         <div class="qr-content">
             <div class="qr-header">
-                <h3><i class="lni lni-qr-code"></i> Escanea el QR con WhatsApp</h3>
+                <h3><svg class="qr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14.5" y="14.5" width="2.5" height="2.5" rx="0.5"/><rect x="18.5" y="14.5" width="2.5" height="2.5" rx="0.5"/><rect x="14.5" y="18.5" width="2.5" height="2.5" rx="0.5"/><rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.5"/></svg> ${t('agents_qr_title', 'Escanea el QR con WhatsApp')}</h3>
                 <button class="qr-close" onclick="closeQRModal()"><i class="lni lni-close"></i></button>
             </div>
             <div class="qr-body" id="qrBody">
-                <div class="qr-spinner"><div class="brand-spinner"></div><p>Obteniendo QR...</p></div>
+                <div class="qr-spinner"><div class="brand-spinner"></div><p>${t('agents_qr_getting', 'Obteniendo QR...')}</p></div>
             </div>
-            <p class="qr-hint">Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
+            <p class="qr-hint">${t('agents_qr_hint', 'Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo')}</p>
         </div>`;
 
     modal.classList.add('active');
@@ -1120,15 +1139,15 @@ async function _fetchQR(agentId, onStatusChange) {
             body.innerHTML = `
                 <div class="qr-connected">
                     <i class="lni lni-checkmark-circle"></i>
-                    <p>¡WhatsApp conectado!</p>
+                    <p>${t('agents_qr_connected', '¡WhatsApp conectado!')}</p>
                     <small style="color:#6b7280;font-size:0.8rem;margin-top:0.5rem;display:block;">
-                        Monitoreando conexión cada 15 segundos
+                        ${t('ad_qr_monitoring', 'Monitoreando conexión cada 15 segundos')}
                     </small>
                 </div>`;
             if (onStatusChange) onStatusChange(true);
         } else if (data.qrCode) {
             body.innerHTML = `<pre class="qr-ascii">${escapeHtml(data.qrCode)}</pre>
-                <p class="qr-status"><i class="lni lni-checkmark-circle"></i> QR listo — escanea ahora</p>`;
+                <p class="qr-status"><i class="lni lni-checkmark-circle"></i> ${t('agents_qr_ready', 'QR listo — escanea ahora')}</p>`;
             if (onStatusChange) onStatusChange(false);
         } else {
             // Detectar si fue desvinculado después de estar conectado
@@ -1141,8 +1160,8 @@ async function _fetchQR(agentId, onStatusChange) {
                 body.innerHTML = `
                     <div class="qr-spinner">
                         <div class="brand-spinner"></div>
-                        <p style="color:#f59e0b;">⚠️ Dispositivo desvinculado<br>
-                        <small>El bot se está reiniciando, espera el nuevo QR...</small></p>
+                        <p style="color:#f59e0b;">⚠️ ${t('agents_qr_unlinked', 'Dispositivo desvinculado')}<br>
+                        <small>${t('agents_qr_reconnecting', 'El bot se está reiniciando, espera el nuevo QR...')}</small></p>
                     </div>`;
             } else {
                 body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(msg || t('ad_qr_loading', 'Cargando QR...'))}</p></div>`;
@@ -1151,7 +1170,7 @@ async function _fetchQR(agentId, onStatusChange) {
         }
     } catch (e) {
         const body = document.getElementById('qrBody');
-        if (body) body.innerHTML = `<div class="qr-spinner"><p style="color:#ef4444">Error al obtener QR</p></div>`;
+        if (body) body.innerHTML = `<div class="qr-spinner"><p style="color:#ef4444">${t('agents_qr_error', 'Error al obtener QR')}</p></div>`;
     }
 }
 
@@ -1168,10 +1187,15 @@ function confirmRedeploy(agentId, agentName) {
     showConfirmModal({
         type: 'warning',
         icon: 'lni-reload',
-        title: '¿Redeploy del Agente?',
-        message: `Se reiniciará el bot <strong>${escapeHtml(agentName)}</strong> desde cero. El QR se regenerará y tendrás que volver a escanear.`,
-        list: ['El bot se desconectará momentáneamente', 'Se generará un nuevo QR', 'Los datos del negocio no se perderán'],
-        confirmText: 'Sí, Redeploy',
+        title: t('agents_redeploy_title', '¿Redeploy del Agente?'),
+        message: t('agents_redeploy_msg', 'Se reiniciará el bot {name} desde cero. El QR se regenerará y tendrás que volver a escanear.')
+            .replace('{name}', `<strong>${escapeHtml(agentName)}</strong>`),
+        list: [
+            t('agents_redeploy_list1', 'El bot se desconectará momentáneamente'),
+            t('agents_redeploy_list2', 'Se generará un nuevo QR'),
+            t('agents_redeploy_list3', 'Los datos del negocio no se perderán')
+        ],
+        confirmText: t('agents_redeploy_confirm_btn', 'Sí, Redeploy'),
         confirmClass: 'warning',
         onConfirm: () => redeployAgent(agentId)
     });
@@ -1179,16 +1203,16 @@ function confirmRedeploy(agentId, agentName) {
 
 async function redeployAgent(agentId) {
     try {
-        showNotification('🔄 Iniciando redeploy...', 'info');
+        showNotification(`🔄 ${t('agents_redeploy_starting', 'Iniciando redeploy...')}`, 'info');
         const resp = await fetch(`/api/agents/${agentId}/redeploy`, {
             method: 'POST',
             credentials: 'include'
         });
         if (!resp.ok) throw new Error('Error en redeploy');
-        showNotification('✅ Redeploy iniciado. El bot estará listo en unos segundos.', 'success');
+        showNotification(`✅ ${t('agents_redeploy_success', 'Redeploy iniciado. El bot estará listo en unos segundos.')}`, 'success');
         setTimeout(() => loadAgents(), 3000);
     } catch (e) {
-        showNotification('❌ Error al hacer redeploy', 'error');
+        showNotification(`❌ ${t('agents_redeploy_error', 'Error al hacer redeploy')}`, 'error');
     }
 }
 

@@ -872,6 +872,10 @@
                                         <span data-translate="integ_payments_f2">Tarjeta de crédito/débito con Stripe</span>
                                     </li>
                                     <li class="feature-item">
+                                        <i class="lni lni-world"></i>
+                                        <span data-translate="integ_payments_f5">Click y Payme para Uzbekistán</span>
+                                    </li>
+                                    <li class="feature-item">
                                         <i class="lni lni-whatsapp"></i>
                                         <span data-translate="integ_payments_f3">El bot presenta opciones al cliente automáticamente</span>
                                     </li>
@@ -1053,6 +1057,175 @@
                                     </button>
                                 </div>
 
+                            </div>
+
+                            <!-- ── SECCIÓN CLICK (Uzbekistán) ── -->
+                            <div class="payment-section spei-section" id="clickSection">
+                                <div class="spei-header">
+                                    <div class="spei-brand">
+                                        <div class="spei-logo-wrap" style="color:#0067ff;">
+                                            <svg class="custom-icon-spei" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 8L5 12L9 16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M15 8L19 12L15 16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <line x1="13" y1="5" x2="11" y2="19" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                                            </svg>
+                                        </div>
+                                        <div class="spei-brand-text">
+                                            <span class="spei-title" data-translate="integ_click_title">Click</span>
+                                            <span class="spei-subtitle" data-translate="integ_click_subtitle">Pasarela de pagos de Uzbekistán</span>
+                                        </div>
+                                    </div>
+                                    <div class="status-badge disconnected" id="clickStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
+                                </div>
+
+                                <div id="clickForm" class="spei-form">
+                                    <div class="spei-input-group">
+                                        <label class="input-label" for="clickMerchantId">
+                                            <i class="lni lni-hash"></i>
+                                            <span data-translate="integ_click_merchant_label">Merchant ID</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <input type="text" id="clickMerchantId" class="api-key-input" placeholder="12345" disabled />
+                                        </div>
+                                    </div>
+                                    <div class="spei-input-row">
+                                        <div class="spei-input-group">
+                                            <label class="input-label" for="clickServiceId">
+                                                <i class="lni lni-cog"></i>
+                                                <span data-translate="integ_click_service_label">Service ID</span>
+                                            </label>
+                                            <input type="text" id="clickServiceId" class="api-key-input" placeholder="67890" disabled />
+                                        </div>
+                                        <div class="spei-input-group">
+                                            <label class="input-label" for="clickSecretKey">
+                                                <i class="lni lni-key"></i>
+                                                <span data-translate="integ_click_secret_label">Secret Key</span>
+                                            </label>
+                                            <div class="input-wrapper">
+                                                <input type="password" id="clickSecretKey" class="api-key-input" placeholder="••••••••••••" disabled />
+                                                <button type="button" class="toggle-visibility" id="toggleClickSecret" disabled>
+                                                    <i class="lni lni-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="input-hint spei-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span data-translate="integ_click_hint">Obtén tus credenciales en el panel de comerciante de Click (my.click.uz)</span>
+                                    </small>
+                                </div>
+
+                                <div class="connection-info" id="clickConnectionInfo" style="display: none;">
+                                    <div class="connection-details">
+                                        <div class="connection-detail">
+                                            <span class="connection-label" data-translate="integ_click_label_merchant">Merchant ID:</span>
+                                            <span class="connection-value" id="clickDisplayMerchant" style="font-family: monospace;">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label" data-translate="integ_click_label_service">Service ID:</span>
+                                            <span class="connection-value" id="clickDisplayService" style="font-family: monospace;">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label" data-translate="integ_click_label_secret">Secret Key:</span>
+                                            <span class="connection-value" style="font-family: monospace; letter-spacing: 0.1em;">••••••••••••</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-actions spei-save-actions" id="clickSaveActions">
+                                    <button class="btn btn-connect" id="btnSaveClick" disabled>
+                                        <i class="lni lni-save"></i>
+                                        <span data-translate="integ_click_save">Guardar Click</span>
+                                    </button>
+                                </div>
+                                <div class="card-actions spei-manage-actions" id="clickManageActions" style="display: none;">
+                                    <button class="btn btn-secondary" id="btnEditClick">
+                                        <i class="lni lni-pencil"></i>
+                                        <span data-translate="integ_spei_edit">Editar</span>
+                                    </button>
+                                    <button class="btn btn-disconnect" id="btnRemoveClick">
+                                        <i class="lni lni-trash"></i>
+                                        <span data-translate="integ_spei_remove">Eliminar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- ── SECCIÓN PAYME (Uzbekistán) ── -->
+                            <div class="payment-section spei-section" id="paymeSection">
+                                <div class="spei-header">
+                                    <div class="spei-brand">
+                                        <div class="spei-logo-wrap" style="color:#00c9a7;">
+                                            <svg class="custom-icon-spei" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/>
+                                                <path d="M3 10H21" stroke="currentColor" stroke-width="1.7"/>
+                                                <circle cx="16.5" cy="14.5" r="1.4" fill="currentColor"/>
+                                            </svg>
+                                        </div>
+                                        <div class="spei-brand-text">
+                                            <span class="spei-title" data-translate="integ_payme_title">Payme</span>
+                                            <span class="spei-subtitle" data-translate="integ_payme_subtitle">Pasarela de pagos de Uzbekistán</span>
+                                        </div>
+                                    </div>
+                                    <div class="status-badge disconnected" id="paymeStatusBadge"><span class="status-indicator"></span><span data-translate="integ_status_not_configured">No configurado</span></div>
+                                </div>
+
+                                <div id="paymeForm" class="spei-form">
+                                    <div class="spei-input-group">
+                                        <label class="input-label" for="paymeMerchantId">
+                                            <i class="lni lni-hash"></i>
+                                            <span data-translate="integ_payme_merchant_label">Merchant ID (Cassa ID)</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <input type="text" id="paymeMerchantId" class="api-key-input" placeholder="5f2a1b3c4d5e6f7890abcdef" disabled />
+                                        </div>
+                                    </div>
+                                    <div class="spei-input-group">
+                                        <label class="input-label" for="paymeSecretKey">
+                                            <i class="lni lni-key"></i>
+                                            <span data-translate="integ_payme_secret_label">Secret Key</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <input type="password" id="paymeSecretKey" class="api-key-input" placeholder="••••••••••••" disabled />
+                                            <button type="button" class="toggle-visibility" id="togglePaymeSecret" disabled>
+                                                <i class="lni lni-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="input-hint spei-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span data-translate="integ_payme_hint">Obtén tus credenciales en el panel de comerciante de Payme (business.payme.uz)</span>
+                                    </small>
+                                </div>
+
+                                <div class="connection-info" id="paymeConnectionInfo" style="display: none;">
+                                    <div class="connection-details">
+                                        <div class="connection-detail">
+                                            <span class="connection-label" data-translate="integ_payme_label_merchant">Merchant ID:</span>
+                                            <span class="connection-value" id="paymeDisplayMerchant" style="font-family: monospace;">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label" data-translate="integ_payme_label_secret">Secret Key:</span>
+                                            <span class="connection-value" style="font-family: monospace; letter-spacing: 0.1em;">••••••••••••</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-actions spei-save-actions" id="paymeSaveActions">
+                                    <button class="btn btn-connect" id="btnSavePayme" disabled>
+                                        <i class="lni lni-save"></i>
+                                        <span data-translate="integ_payme_save">Guardar Payme</span>
+                                    </button>
+                                </div>
+                                <div class="card-actions spei-manage-actions" id="paymeManageActions" style="display: none;">
+                                    <button class="btn btn-secondary" id="btnEditPayme">
+                                        <i class="lni lni-pencil"></i>
+                                        <span data-translate="integ_spei_edit">Editar</span>
+                                    </button>
+                                    <button class="btn btn-disconnect" id="btnRemovePayme">
+                                        <i class="lni lni-trash"></i>
+                                        <span data-translate="integ_spei_remove">Eliminar</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Nota sobre comportamiento del bot -->

@@ -3,6 +3,18 @@
 function getLang() {
     return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es';
 }
+function t(key, fallback) {
+    return window.Translations?.dict?.[getLang()]?.[key] || fallback;
+}
+
+// Re-renderiza todo (info básica, configuración, horario, personal) cuando
+// cambia el idioma, usando los datos del agente ya cargados en memoria —
+// sin esto, el texto se queda "pegado" en el idioma que estaba activo la
+// primera vez que cargó la página, porque estos campos se pintan una sola
+// vez al hacer el fetch inicial, no en cada cambio de idioma.
+document.addEventListener('attomos:langchange', function () {
+    if (agent) renderAgentDetails(agent);
+});
 
 let agentId = null;
 let agent = null;
@@ -233,12 +245,12 @@ function displayConnectedMessage() {
             <div class="connected-icon">
                 <i class="lni lni-checkmark-circle"></i>
             </div>
-            <h3>¡WhatsApp Conectado!</h3>
-            <p>Tu bot está conectado y funcionando</p>
+            <h3>${t('ad_qr_connected_title', '¡WhatsApp Conectado!')}</h3>
+            <p>${t('ad_qr_connected_desc', 'Tu bot está conectado y funcionando')}</p>
             <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
                 <p style="margin: 0; color: #065f46; font-size: 0.85rem;">
                     <i class="lni lni-information"></i>
-                    Monitoreando conexión cada 15 segundos
+                    ${t('ad_qr_monitoring', 'Monitoreando conexión cada 15 segundos')}
                 </p>
             </div>
         </div>
@@ -248,42 +260,31 @@ function displayConnectedMessage() {
 // Display QR loading state
 function displayQRLoading(message) {
     const qrContainer = document.getElementById('qrContainer');
-    
-    // Traducir mensajes al español
-    const translations = {
-        'Starting bot, waiting for QR code...': 'Iniciando bot, esperando código QR...',
-        'Waiting for QR code...': 'Esperando código QR...',
-        'bot iniciando, esperando código QR': 'Bot iniciando, esperando código QR...',
-        'This usually takes 5-15 seconds': 'Esto usualmente toma 5-15 segundos'
-    };
-    
+
+    // El backend manda el mensaje en inglés o español según cómo se generó;
+    // lo normalizamos a una key de traducción y mostramos en el idioma activo.
     let translatedMessage = message;
-    for (const [eng, esp] of Object.entries(translations)) {
-        if (message.toLowerCase().includes(eng.toLowerCase())) {
-            translatedMessage = esp;
-            break;
-        }
-    }
-    
-    // Determinar el ícono y color según el mensaje
-    let icon = 'lni-hourglass';
     let statusClass = 'loading';
-    
-    if (translatedMessage.toLowerCase().includes('iniciando')) {
+    let icon = 'lni-hourglass';
+
+    const lower = (message || '').toLowerCase();
+    if (lower.includes('starting') || lower.includes('iniciando')) {
+        translatedMessage = t('ad_qr_starting', 'Iniciando bot, esperando código QR...');
         icon = 'lni-rocket';
         statusClass = 'starting';
-    } else if (translatedMessage.toLowerCase().includes('esperando')) {
+    } else if (lower.includes('waiting') || lower.includes('esperando')) {
+        translatedMessage = t('ad_qr_waiting', 'Esperando código QR...');
         icon = 'lni-timer';
         statusClass = 'waiting';
     }
-    
+
     qrContainer.innerHTML = `
         <div class="qr-loading ${statusClass}">
             <div class="loading-spinner"></div>
             <i class="lni ${icon}" style="font-size: 2rem; color: #06b6d4; margin-top: 1rem;"></i>
             <p>${escapeHtml(translatedMessage)}</p>
             <small style="color: #9ca3af; margin-top: 0.5rem;">
-                Esto usualmente toma 5-15 segundos
+                ${t('ad_qr_5to15', 'Esto usualmente toma 5-15 segundos')}
             </small>
         </div>
     `;
@@ -295,10 +296,10 @@ function displayQRError() {
     qrContainer.innerHTML = `
         <div class="qr-error">
             <i class="lni lni-warning"></i>
-            <p>No se pudo cargar el código QR</p>
+            <p>${t('ad_qr_error', 'No se pudo cargar el código QR')}</p>
             <button class="btn-secondary btn-sm" onclick="loadQRCode()">
                 <i class="lni lni-reload"></i>
-                Reintentar
+                ${t('hist_retry', 'Reintentar')}
             </button>
         </div>
     `;
@@ -361,13 +362,13 @@ function renderSchedule(schedule) {
     
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const dayNames = {
-        monday: 'Lunes',
-        tuesday: 'Martes',
-        wednesday: 'Miércoles',
-        thursday: 'Jueves',
-        friday: 'Viernes',
-        saturday: 'Sábado',
-        sunday: 'Domingo'
+        monday: t('ad_day_monday', 'Lunes'),
+        tuesday: t('ad_day_tuesday', 'Martes'),
+        wednesday: t('ad_day_wednesday', 'Miércoles'),
+        thursday: t('ad_day_thursday', 'Jueves'),
+        friday: t('ad_day_friday', 'Viernes'),
+        saturday: t('ad_day_saturday', 'Sábado'),
+        sunday: t('ad_day_sunday', 'Domingo')
     };
     
     const scheduleHTML = days.map(day => {
@@ -380,7 +381,7 @@ function renderSchedule(schedule) {
                 <div class="schedule-time">
                     ${daySchedule.open 
                         ? `${daySchedule.start} - ${daySchedule.end}`
-                        : '<span class="closed">Cerrado</span>'
+                        : `<span class="closed">${t('ad_closed', 'Cerrado')}</span>`
                     }
                 </div>
             </div>
@@ -450,31 +451,36 @@ function formatWorkDays(days) {
     if (!days || days.length === 0) return window.Translations?.dict?.[getLang()]?.ad_not_configured || 'Sin días configurados';
     
     const dayAbbr = {
-        monday: 'Lun',
-        tuesday: 'Mar',
-        wednesday: 'Mié',
-        thursday: 'Jue',
-        friday: 'Vie',
-        saturday: 'Sáb',
-        sunday: 'Dom'
+        monday: t('ad_day_short_monday', 'Lun'),
+        tuesday: t('ad_day_short_tuesday', 'Mar'),
+        wednesday: t('ad_day_short_wednesday', 'Mié'),
+        thursday: t('ad_day_short_thursday', 'Jue'),
+        friday: t('ad_day_short_friday', 'Vie'),
+        saturday: t('ad_day_short_saturday', 'Sáb'),
+        sunday: t('ad_day_short_sunday', 'Dom')
     };
     
     return days.map(day => `<span class="day-badge">${dayAbbr[day] || day}</span>`).join('');
 }
 
-// Format business type
+// Format business type — traducción solo en frontend (mismo criterio que
+// el userbar), el valor crudo del backend nunca se toca.
 function formatBusinessType(type) {
-    if (!type) return 'No especificado';
+    if (!type) return t('ad_not_configured', 'No especificado');
+    const key = 'biz_type_' + type.replace(/-/g, '_');
+    const translated = t(key, null);
+    if (translated) return translated;
+    // Fallback genérico si no hay key para ese giro específico
     return type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
 // Format tone
 function formatTone(tone) {
-    if (!tone) return 'No especificado';
+    if (!tone) return t('ad_not_configured', 'No especificado');
     const tones = {
-        formal: 'Formal',
-        friendly: 'Amigable',
-        casual: 'Casual'
+        formal: t('ad_tone_formal', 'Formal'),
+        friendly: t('ad_tone_friendly', 'Amigable'),
+        casual: t('ad_tone_casual', 'Casual')
     };
     return tones[tone] || tone.charAt(0).toUpperCase() + tone.slice(1);
 }
@@ -483,9 +489,11 @@ function formatTone(tone) {
 async function toggleAgentStatus() {
     if (!agent) return;
     
-    const action = agent.isActive ? 'pausar' : 'activar';
-    
-    if (!confirm(`¿Estás seguro de que quieres ${action} este agente?`)) {
+    const isPausing = agent.isActive;
+    const actionWord = isPausing ? t('ad_confirm_pause', 'pausar') : t('ad_confirm_activate', 'activar');
+    const confirmMsg = t('ad_confirm_action', '¿Estás seguro de que quieres {action} este agente?').replace('{action}', actionWord);
+
+    if (!confirm(confirmMsg)) {
         return;
     }
     
@@ -500,10 +508,11 @@ async function toggleAgentStatus() {
         }
         
         await loadAgentDetails();
-        alert(`Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`);
+        const pastWord = isPausing ? t('ad_agent_paused', 'pausado') : t('ad_agent_activated', 'activado');
+        alert(`${t('ad_agent_word', 'Agente')} ${pastWord} ${t('ad_successfully', 'exitosamente')}`);
     } catch (error) {
         console.error('❌ Error:', error);
-        alert('Error cambiando el estado del agente. Por favor intenta de nuevo.');
+        alert(t('ad_toggle_error', 'Error cambiando el estado del agente. Por favor intenta de nuevo.'));
     }
 }
 
