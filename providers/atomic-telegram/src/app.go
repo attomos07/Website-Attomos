@@ -501,8 +501,11 @@ func saveAppointment(state *UserState, userID string) string {
 	if h, m, err := ConvertirHoraA24h(backendPayload.Time); err == nil {
 		backendPayload.Time = fmt.Sprintf("%02d:%02d", h, m)
 	}
-	if backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
+	var appointmentID uint
+	if id, backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
 		log.Printf("⚠️  Backend: %v", backendErr)
+	} else {
+		appointmentID = id
 	}
 
 	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada)
@@ -510,7 +513,11 @@ func saveAppointment(state *UserState, userID string) string {
 	if HasPaymentMethods() {
 		servicio := state.Data["servicio"]
 		precio := GetServicePrice(servicio)
-		paymentMsg := BuildPaymentMessage(servicio, precio, "")
+		var orderRef string
+		if appointmentID > 0 {
+			orderRef = formatOrderRef("appt", appointmentID)
+		}
+		paymentMsg := BuildPaymentMessage(servicio, precio, "", orderRef)
 		if paymentMsg != "" {
 			confirmation += "\n\n" + paymentMsg
 		}
@@ -691,7 +698,7 @@ func confirmOrder(state *UserState, userID, userName string) string {
 		sb.WriteString(fmt.Sprintf("• %dx %s — $%.0f\n", item.Quantity, item.Title, item.Price*float64(item.Quantity)))
 		total += item.Price * float64(item.Quantity)
 	}
-	sb.WriteString(fmt.Sprintf("\n💰 <b>Total: $%.0f MXN</b>\n", total))
+	sb.WriteString(fmt.Sprintf("\n💰 <b>Total: $%.0f %s</b>\n", total, currencySuffix()))
 	switch deliveryType {
 	case "domicilio":
 		if address != "" {
@@ -706,14 +713,42 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	}
 	sb.WriteString(fmt.Sprintf("👤 <b>Cliente:</b> %s\n", userName))
 
+	// ── Guardar pedido en backend PRIMERO (síncrono) ─────────────────────────
+	// Necesitamos el ID real antes de generar los links de Click/Payme, para
+	// que el webhook de confirmación pueda reconciliar el pago exacto.
+	orderItems := make([]map[string]interface{}, 0, len(state.Cart))
+	for _, item := range state.Cart {
+		orderItems = append(orderItems, map[string]interface{}{
+			"title": item.Title, "quantity": item.Quantity, "price": item.Price,
+		})
+	}
+	orderType := deliveryType
+	if orderType == "llevar" {
+		orderType = "pickup"
+	}
+	if orderType == "domicilio" {
+		orderType = "delivery"
+	}
+	var orderID uint
+	if id, err := SaveOrderToBackend(BotOrderPayload{
+		ClientName: userName, ClientPhone: userID, Items: orderItems,
+		Total: total, OrderType: orderType, DeliveryAddress: address, Status: "pending",
+	}); err != nil {
+		log.Printf("⚠️  Backend: %v", err)
+	} else {
+		orderID = id
+	}
+
 	if HasPaymentMethods() && len(state.Cart) > 0 {
 		cfg := GetPaymentConfig()
 		hasStripe := cfg.StripeEnabled && cfg.StripeChargesEnabled
 		hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
+		hasClick := cfg.ClickEnabled && cfg.ClickMerchantID != "" && cfg.ClickServiceID != ""
+		hasPayme := cfg.PaymeEnabled && cfg.PaymeMerchantID != ""
 
 		sb.WriteString("\n\n💳 <b>Opciones de pago</b>\n")
 		sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
-		sb.WriteString(fmt.Sprintf("💰 <b>Total:</b> $%.0f MXN\n\n", total))
+		sb.WriteString(fmt.Sprintf("💰 <b>Total:</b> $%.0f %s\n\n", total, currencySuffix()))
 
 		if hasSPEI {
 			sb.WriteString("🏦 <b>Transferencia SPEI</b>\n")
@@ -737,28 +772,30 @@ func confirmOrder(state *UserState, userID, userName string) string {
 				sb.WriteString(fmt.Sprintf("   👉 %s\n", checkoutURL))
 			}
 		}
+		if (hasClick || hasPayme) && orderID > 0 {
+			if hasSPEI || hasStripe {
+				sb.WriteString("\n")
+			}
+			orderRef := formatOrderRef("order", orderID)
+			if hasClick {
+				if clickURL := BuildClickURL(orderRef, total); clickURL != "" {
+					sb.WriteString("🔵 <b>Pagar con Click</b>\n")
+					sb.WriteString(fmt.Sprintf("   👉 %s\n", clickURL))
+				}
+			}
+			if hasClick && hasPayme {
+				sb.WriteString("\n")
+			}
+			if hasPayme {
+				if paymeURL := BuildPaymeURL(orderRef, total); paymeURL != "" {
+					sb.WriteString("🟢 <b>Pagar con Payme</b>\n")
+					sb.WriteString(fmt.Sprintf("   👉 %s\n", paymeURL))
+				}
+			}
+		}
 		sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 	}
 	sb.WriteString("\n\n¡Pedido recibido! Nos pondremos en contacto pronto. 🙌")
-
-	// Guardar pedido en backend
-	orderItems := make([]map[string]interface{}, 0, len(state.Cart))
-	for _, item := range state.Cart {
-		orderItems = append(orderItems, map[string]interface{}{
-			"title": item.Title, "quantity": item.Quantity, "price": item.Price,
-		})
-	}
-	orderType := deliveryType
-	if orderType == "llevar" {
-		orderType = "pickup"
-	}
-	if orderType == "domicilio" {
-		orderType = "delivery"
-	}
-	go SaveOrderToBackend(BotOrderPayload{
-		ClientName: userName, ClientPhone: userID, Items: orderItems,
-		Total: total, OrderType: orderType, DeliveryAddress: address, Status: "pending",
-	})
 
 	state.IsOrdering = false
 	state.Cart = []OrderItem{}
@@ -937,7 +974,7 @@ func buildCartSummary(state *UserState) string {
 		sb.WriteString(fmt.Sprintf("  • %dx %s — $%.0f\n", item.Quantity, item.Title, item.Price*float64(item.Quantity)))
 		total += item.Price * float64(item.Quantity)
 	}
-	sb.WriteString(fmt.Sprintf("💰 Subtotal: $%.0f MXN", total))
+	sb.WriteString(fmt.Sprintf("💰 Subtotal: $%.0f %s", total, currencySuffix()))
 	return sb.String()
 }
 
@@ -968,9 +1005,9 @@ func buildMenuResponse() string {
 		if price == 0 {
 			lines = append(lines, fmt.Sprintf("• <b>%s</b> — Gratis", svc.Title))
 		} else if svc.PriceType == "promotion" && svc.OriginalPrice > 0 {
-			lines = append(lines, fmt.Sprintf("• <b>%s</b> — <s>$%.0f</s> $%.0f MXN 🔥", svc.Title, svc.OriginalPrice, price))
+			lines = append(lines, fmt.Sprintf("• <b>%s</b> — <s>$%.0f</s> $%.0f %s 🔥", svc.Title, svc.OriginalPrice, price, currencySuffix()))
 		} else {
-			lines = append(lines, fmt.Sprintf("• <b>%s</b> — $%.0f MXN", svc.Title, price))
+			lines = append(lines, fmt.Sprintf("• <b>%s</b> — $%.0f %s", svc.Title, price, currencySuffix()))
 		}
 	}
 	if len(lines) == 0 {

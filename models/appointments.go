@@ -69,6 +69,13 @@ type Appointment struct {
 	CalendarEventID string `gorm:"size:500" json:"calendarEventId"` // ID del evento en Google Calendar
 
 	// =============================================
+	// PAGO (Click/Payme — exclusivo Telegram Uzbekistán)
+	// =============================================
+	Paid          bool       `gorm:"default:false;index" json:"paid"`
+	PaidAt        *time.Time `json:"paidAt"`
+	PaymentMethod string     `gorm:"size:50" json:"paymentMethod"` // click | payme | cash | ...
+
+	// =============================================
 	// TIMESTAMPS
 	// =============================================
 	CreatedAt time.Time      `json:"createdAt"`
@@ -155,6 +162,19 @@ func (a *Appointment) HasCalendarEvent() bool {
 // IsPast verifica si la cita ya pasó
 func (a *Appointment) IsPast() bool {
 	return time.Now().After(a.Date)
+}
+
+// IsPaid verifica si la cita ya fue pagada
+func (a *Appointment) IsPaid() bool {
+	return a.Paid
+}
+
+// MarkPaid marca la cita como pagada (llamado desde los webhooks de Click/Payme)
+func (a *Appointment) MarkPaid(method string) {
+	a.Paid = true
+	a.PaymentMethod = method
+	now := time.Now()
+	a.PaidAt = &now
 }
 
 // IsToday verifica si la cita es hoy

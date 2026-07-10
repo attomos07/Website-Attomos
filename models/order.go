@@ -102,8 +102,10 @@ type Order struct {
 	EstimatedTime   int    `gorm:"default:30" json:"estimatedTime"` // minutos
 
 	// ── Pago ─────────────────────────────────
-	PaymentMethod string  `gorm:"size:50;default:'cash'" json:"paymentMethod"` // cash | card | transfer
-	CashReceived  float64 `gorm:"default:0" json:"cashReceived"`               // monto entregado en efectivo
+	PaymentMethod string     `gorm:"size:50;default:'cash'" json:"paymentMethod"` // cash | card | transfer | click | payme
+	CashReceived  float64    `gorm:"default:0" json:"cashReceived"`               // monto entregado en efectivo
+	Paid          bool       `gorm:"default:false;index" json:"paid"`
+	PaidAt        *time.Time `json:"paidAt"`
 
 	// ── Timestamps ───────────────────────────
 	CreatedAt time.Time      `json:"createdAt"`
@@ -121,3 +123,12 @@ func (o *Order) IsPending() bool   { return o.Status == OrderStatusPending }
 func (o *Order) IsReady() bool     { return o.Status == OrderStatusReady }
 func (o *Order) IsCancelled() bool { return o.Status == OrderStatusCancelled }
 func (o *Order) IsDelivery() bool  { return o.OrderType == OrderTypeDelivery }
+func (o *Order) IsPaid() bool      { return o.Paid }
+
+// MarkPaid marca el pedido como pagado (llamado desde los webhooks de Click/Payme)
+func (o *Order) MarkPaid(method string) {
+	o.Paid = true
+	o.PaymentMethod = method
+	now := time.Now()
+	o.PaidAt = &now
+}

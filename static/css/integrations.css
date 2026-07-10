@@ -469,6 +469,52 @@ body {
     margin-bottom: 1.5rem;
 }
 
+/* Banner compacto "no tienes agentes" — invita a crear uno sin
+   ocultar las tarjetas de integración de abajo. */
+.no-agents-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.5rem;
+}
+.no-agents-banner > i {
+    font-size: 1.4rem;
+    color: #d97706;
+    flex-shrink: 0;
+}
+.no-agents-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+}
+.no-agents-banner-text strong {
+    font-size: 0.9rem;
+    color: #78350f;
+}
+.no-agents-banner-text span {
+    font-size: 0.82rem;
+    color: #92400e;
+}
+.no-agents-banner .btn-primary {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+@media (max-width: 640px) {
+    .no-agents-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .no-agents-banner .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 .selector-label {
     font-size: 0.875rem;
     font-weight: 600;

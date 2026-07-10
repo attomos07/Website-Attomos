@@ -52,6 +52,11 @@ func GetPaymentConfig(c *gin.Context) {
 			"stripeAccountStatus":       "",
 			"stripePayoutsEnabled":      false,
 			"stripeChargesEnabled":      false,
+			"clickEnabled":              false,
+			"clickMerchantId":           "",
+			"clickServiceId":            "",
+			"paymeEnabled":              false,
+			"paymeMerchantId":           "",
 			"paymentRequiredForBooking": false,
 		})
 		return
@@ -69,6 +74,11 @@ func GetPaymentConfig(c *gin.Context) {
 		"stripePayoutsEnabled":      cfg.StripePayoutsEnabled,
 		"stripeChargesEnabled":      cfg.StripeChargesEnabled,
 		"stripeConnectedAt":         cfg.StripeConnectedAt,
+		"clickEnabled":              cfg.ClickEnabled,
+		"clickMerchantId":           cfg.ClickMerchantID,
+		"clickServiceId":            cfg.ClickServiceID,
+		"paymeEnabled":              cfg.PaymeEnabled,
+		"paymeMerchantId":           cfg.PaymeMerchantID,
 		"paymentRequiredForBooking": cfg.PaymentRequiredForBooking,
 	})
 }
@@ -179,6 +189,216 @@ func RemoveSPEIConfig(c *gin.Context) {
 		})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Configuración SPEI eliminada"})
+}
+
+// ============================================
+// POST /api/payment-config/click/:branch_id
+// Guarda o actualiza las credenciales de Click (Uzbekistán)
+// ============================================
+
+type ClickRequest struct {
+	MerchantID string `json:"merchantId" binding:"required"`
+	ServiceID  string `json:"serviceId" binding:"required"`
+	SecretKey  string `json:"secretKey" binding:"required"`
+	Enabled    bool   `json:"enabled"`
+}
+
+func SaveClickConfig(c *gin.Context) {
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+
+	branchID := c.Param("branch_id")
+
+	var req ClickRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
+		return
+	}
+
+	merchantID := strings.TrimSpace(req.MerchantID)
+	serviceID := strings.TrimSpace(req.ServiceID)
+	secretKey := strings.TrimSpace(req.SecretKey)
+	if merchantID == "" || serviceID == "" || secretKey == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Completa todos los campos"})
+		return
+	}
+
+	// Verificar que la sucursal pertenece al usuario
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	var cfg models.PaymentConfig
+	result := config.DB.Where("branch_id = ? AND user_id = ?", branch.ID, user.ID).First(&cfg)
+
+	if result.Error != nil {
+		// Crear nueva config
+		cfg = models.PaymentConfig{
+			UserID:          user.ID,
+			BranchID:        branch.ID,
+			ClickEnabled:    req.Enabled,
+			ClickMerchantID: merchantID,
+			ClickServiceID:  serviceID,
+			ClickSecretKey:  secretKey,
+		}
+		if err := config.DB.Create(&cfg).Error; err != nil {
+			log.Printf("❌ [PAYMENT] Error creando config Click: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar configuración"})
+			return
+		}
+	} else {
+		// Actualizar existente
+		cfg.ClickEnabled = req.Enabled
+		cfg.ClickMerchantID = merchantID
+		cfg.ClickServiceID = serviceID
+		cfg.ClickSecretKey = secretKey
+		if err := config.DB.Save(&cfg).Error; err != nil {
+			log.Printf("❌ [PAYMENT] Error actualizando config Click: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar configuración"})
+			return
+		}
+	}
+
+	log.Printf("✅ [PAYMENT] Click guardado para sucursal %d del usuario %d", branch.ID, user.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Configuración de Click guardada exitosamente",
+		"merchantId": cfg.ClickMerchantID,
+		"serviceId":  cfg.ClickServiceID,
+		"enabled":    cfg.ClickEnabled,
+	})
+}
+
+// ============================================
+// DELETE /api/payment-config/click/:branch_id
+// Elimina la configuración de Click
+// ============================================
+
+func RemoveClickConfig(c *gin.Context) {
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+	branchID := c.Param("branch_id")
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	config.DB.Model(&models.PaymentConfig{}).
+		Where("branch_id = ? AND user_id = ?", branch.ID, user.ID).
+		Updates(map[string]interface{}{
+			"click_enabled":     false,
+			"click_merchant_id": "",
+			"click_service_id":  "",
+			"click_secret_key":  "",
+		})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Configuración de Click eliminada"})
+}
+
+// ============================================
+// POST /api/payment-config/payme/:branch_id
+// Guarda o actualiza las credenciales de Payme (Uzbekistán)
+// ============================================
+
+type PaymeRequest struct {
+	MerchantID string `json:"merchantId" binding:"required"`
+	SecretKey  string `json:"secretKey" binding:"required"`
+	Enabled    bool   `json:"enabled"`
+}
+
+func SavePaymeConfig(c *gin.Context) {
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+
+	branchID := c.Param("branch_id")
+
+	var req PaymeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
+		return
+	}
+
+	merchantID := strings.TrimSpace(req.MerchantID)
+	secretKey := strings.TrimSpace(req.SecretKey)
+	if merchantID == "" || secretKey == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Completa todos los campos"})
+		return
+	}
+
+	// Verificar que la sucursal pertenece al usuario
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	var cfg models.PaymentConfig
+	result := config.DB.Where("branch_id = ? AND user_id = ?", branch.ID, user.ID).First(&cfg)
+
+	if result.Error != nil {
+		// Crear nueva config
+		cfg = models.PaymentConfig{
+			UserID:          user.ID,
+			BranchID:        branch.ID,
+			PaymeEnabled:    req.Enabled,
+			PaymeMerchantID: merchantID,
+			PaymeSecretKey:  secretKey,
+		}
+		if err := config.DB.Create(&cfg).Error; err != nil {
+			log.Printf("❌ [PAYMENT] Error creando config Payme: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar configuración"})
+			return
+		}
+	} else {
+		// Actualizar existente
+		cfg.PaymeEnabled = req.Enabled
+		cfg.PaymeMerchantID = merchantID
+		cfg.PaymeSecretKey = secretKey
+		if err := config.DB.Save(&cfg).Error; err != nil {
+			log.Printf("❌ [PAYMENT] Error actualizando config Payme: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar configuración"})
+			return
+		}
+	}
+
+	log.Printf("✅ [PAYMENT] Payme guardado para sucursal %d del usuario %d", branch.ID, user.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Configuración de Payme guardada exitosamente",
+		"merchantId": cfg.PaymeMerchantID,
+		"enabled":    cfg.PaymeEnabled,
+	})
+}
+
+// ============================================
+// DELETE /api/payment-config/payme/:branch_id
+// Elimina la configuración de Payme
+// ============================================
+
+func RemovePaymeConfig(c *gin.Context) {
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+	branchID := c.Param("branch_id")
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	config.DB.Model(&models.PaymentConfig{}).
+		Where("branch_id = ? AND user_id = ?", branch.ID, user.ID).
+		Updates(map[string]interface{}{
+			"payme_enabled":     false,
+			"payme_merchant_id": "",
+			"payme_secret_key":  "",
+		})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Configuración de Payme eliminada"})
 }
 
 // ============================================
@@ -467,9 +687,25 @@ func GetBotPaymentConfig(c *gin.Context) {
 			"stripeAccountId":           "",
 			"stripeAccountStatus":       "",
 			"stripeChargesEnabled":      false,
+			"clickEnabled":              false,
+			"clickMerchantId":           "",
+			"clickServiceId":            "",
+			"clickSecretKey":            "",
+			"paymeEnabled":              false,
+			"paymeMerchantId":           "",
+			"paymeSecretKey":            "",
 			"paymentRequiredForBooking": false,
+			"currency":                  "MXN",
 		})
 		return
+	}
+
+	// Moneda derivada: si el negocio tiene Click o Payme activos, es un
+	// negocio de Uzbekistán → UZS. En cualquier otro caso, MXN (México).
+	// No requiere columna nueva en BD ni cambios en el dashboard.
+	currency := "MXN"
+	if cfg.ClickEnabled || cfg.PaymeEnabled {
+		currency = "UZS"
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -482,7 +718,15 @@ func GetBotPaymentConfig(c *gin.Context) {
 		"stripeAccountId":           cfg.StripeAccountID,
 		"stripeAccountStatus":       cfg.StripeAccountStatus,
 		"stripeChargesEnabled":      cfg.StripeChargesEnabled,
+		"clickEnabled":              cfg.ClickEnabled,
+		"clickMerchantId":           cfg.ClickMerchantID,
+		"clickServiceId":            cfg.ClickServiceID,
+		"clickSecretKey":            cfg.ClickSecretKey, // sin enmascarar — el bot lo necesita para firmar requests
+		"paymeEnabled":              cfg.PaymeEnabled,
+		"paymeMerchantId":           cfg.PaymeMerchantID,
+		"paymeSecretKey":            cfg.PaymeSecretKey, // sin enmascarar — el bot lo necesita para firmar requests
 		"paymentRequiredForBooking": cfg.PaymentRequiredForBooking,
+		"currency":                  currency,
 	})
 }
 

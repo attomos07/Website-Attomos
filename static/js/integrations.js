@@ -91,13 +91,33 @@ let selectedAgentId = null;
 let selectedAgent = null;
 let agents = [];
 
+// Guard compartido para todas las acciones de guardar/conectar que requieren
+// un agente. Da un mensaje distinto según el caso: si el usuario no tiene
+// ningún agente creado, lo manda a crear uno; si ya tiene pero no eligió,
+// le pide que seleccione. Las tarjetas de integración siempre se ven todas
+// desde que entras a la página — esto solo bloquea la ACCIÓN, no la vista.
+function requireAgentSelected() {
+    if (selectedAgentId) return true;
+    if (agents.length === 0) {
+        showNotification(t('integ_err_create_agent_first', 'Primero crea un agente para poder conectar integraciones'), 'error');
+    } else {
+        showNotification(t('integ_err_select_agent', 'Por favor selecciona un agente primero'), 'error');
+    }
+    return false;
+}
+
 // ============================================
 // AGENT SELECTOR
 // ============================================
 
 async function initAgentSelector() {
     console.log('📊 Cargando agentes...');
-    
+
+    // Las tarjetas de integración se ven todas desde el inicio, sin
+    // importar si hay agentes o no — solo GUARDAR/CONECTAR requiere
+    // haber elegido un agente (ver requireAgentSelected()).
+    showIntegrationsGrid();
+
     try {
         const response = await fetch('/api/agents', {
             method: 'GET',
@@ -113,21 +133,21 @@ async function initAgentSelector() {
 
         const data = await response.json();
         agents = data.agents || [];
-        
+
         console.log(`✅ ${agents.length} agentes cargados`, agents);
 
         if (agents.length === 0) {
-            showNoAgentsState();
+            showNoAgentsBanner();
             return;
         }
 
+        hideNoAgentsBanner();
         populateAgentSelector(agents);
         setupAgentSelectorEvents();
-        
+
     } catch (error) {
         console.error('Error cargando agentes:', error);
         showNotification(t('integ_err_load_agents','Error al cargar agentes'), 'error');
-        showNoAgentsState();
     }
 }
 
@@ -267,21 +287,34 @@ function showIntegrationsByBotType(botType) {
 function showIntegrationsGrid() {
     const grid = document.getElementById('integrationsGrid');
     const emptyState = document.getElementById('emptyState');
-    
+
+    // El grid ya es visible por CSS (display:grid) desde que carga la
+    // página — esto solo se asegura de que ningún estado previo lo haya
+    // ocultado, y muestra TODAS las tarjetas por defecto (Gemini y Meta
+    // incluidas) hasta que se sepa el tipo de bot del agente elegido.
     if (grid) grid.style.display = 'grid';
     if (emptyState) emptyState.classList.remove('active');
+
+    const geminiCard = document.getElementById('geminiCard');
+    const metaCard = document.getElementById('metaCard');
+    if (geminiCard) geminiCard.style.display = 'block';
+    if (metaCard) metaCard.style.display = 'block';
 }
 
-function showNoAgentsState() {
-    const grid = document.getElementById('integrationsGrid');
-    const emptyState = document.getElementById('emptyState');
-    const noAgentsState = document.getElementById('noAgentsState');
+function showNoAgentsBanner() {
+    const banner = document.getElementById('noAgentsBanner');
     const agentSelector = document.querySelector('.agent-selector');
-    
-    if (grid) grid.style.display = 'none';
-    if (emptyState) emptyState.classList.remove('active');
-    if (noAgentsState) noAgentsState.style.display = 'block';
+    if (banner) banner.style.display = 'flex';
+    // No hay agentes que elegir — ocultamos el selector (vacío) pero
+    // dejamos las tarjetas de integración visibles debajo del banner.
     if (agentSelector) agentSelector.style.display = 'none';
+}
+
+function hideNoAgentsBanner() {
+    const banner = document.getElementById('noAgentsBanner');
+    const agentSelector = document.querySelector('.agent-selector');
+    if (banner) banner.style.display = 'none';
+    if (agentSelector) agentSelector.style.display = 'block';
 }
 
 // ============================================
@@ -483,10 +516,7 @@ function updateMetaCredentialsUI(data) {
 }
 
 async function saveMetaCredentials() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     const phoneNumberId = document.getElementById('metaPhoneNumberId').value.trim();
     const accessToken = document.getElementById('metaAccessToken').value.trim();
@@ -583,10 +613,7 @@ function enableMetaEdit() {
 }
 
 async function removeMetaCredentials() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta WhatsApp? Esto desconectará tu bot.')) {
         return;
@@ -819,10 +846,7 @@ function updateGeminiUI(data) {
 }
 
 async function saveGeminiKey() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     const apiKey = document.getElementById('geminiApiKey').value.trim();
     
@@ -875,10 +899,7 @@ async function saveGeminiKey() {
 }
 
 async function removeGeminiKey() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     if (!confirm('¿Estás seguro de que quieres eliminar la Gemini API Key?')) {
         return;
@@ -1069,10 +1090,7 @@ function updateGoogleIntegrationUI(data) {
 }
 
 async function connectGoogle() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     console.log(`🔗 Iniciando conexión de Google para agente ${selectedAgentId}...`);
     
@@ -1128,10 +1146,7 @@ async function connectGoogle() {
 }
 
 async function disconnectGoogle() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
     
     if (!confirm('¿Estás seguro de que quieres desconectar Google? Esto eliminará el acceso a tu calendario y hoja de cálculo.')) {
         return;
@@ -1577,10 +1592,7 @@ function updatePaymentsUI(data) {
 // ── SPEI: guardar ──────────────────────────────────────────
 
 async function saveSPEIConfig() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
 
     const clabe = document.getElementById('clabeNumber').value.trim();
     const bank = document.getElementById('bankName').value.trim();
@@ -1685,10 +1697,7 @@ async function removeSPEIConfig() {
 // ── Click: guardar ─────────────────────────────────────────
 
 async function saveClickConfig() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
 
     const merchantId = document.getElementById('clickMerchantId').value.trim();
     const serviceId = document.getElementById('clickServiceId').value.trim();
@@ -1787,10 +1796,7 @@ async function removeClickConfig() {
 // ── Payme: guardar ─────────────────────────────────────────
 
 async function savePaymeConfig() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
 
     const merchantId = document.getElementById('paymeMerchantId').value.trim();
     const secretKey = document.getElementById('paymeSecretKey').value.trim();
@@ -1887,10 +1893,7 @@ async function removePaymeConfig() {
 // ── Stripe Connect: conectar ───────────────────────────────
 
 async function connectStripe() {
-    if (!selectedAgentId) {
-        showNotification(t('integ_err_select_agent','Por favor selecciona un agente primero'), 'error');
-        return;
-    }
+    if (!requireAgentSelected()) return;
 
     const branchId = await getBranchIdForAgent(selectedAgentId);
     if (!branchId) return;
@@ -2548,7 +2551,7 @@ function updateRepairDeskUI(data) {
 }
 
 async function saveRepairDeskKey() {
-    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
+    if (!requireAgentSelected()) return;
     const apiKey = document.getElementById('repairDeskApiKey')?.value.trim();
     if (!apiKey)  { showNotification(t('integ_err_rd_apikey','Ingresa tu API Key de RepairDesk'), 'error'); return; }
 
@@ -2577,7 +2580,7 @@ async function saveRepairDeskKey() {
 }
 
 async function syncRepairDeskNow() {
-    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
+    if (!requireAgentSelected()) return;
     const btn = document.getElementById('btnSyncRepairDesk');
     if (btn) { if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_syncing','Sincronizando...')}</span>` ; btn.disabled = true; }; btn.disabled = true; }
 
@@ -2725,7 +2728,7 @@ function updateSoftRestaurantUI(data) {
 }
 
 async function srTestConnection(isConnected) {
-    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
+    if (!requireAgentSelected()) return;
     const url    = document.getElementById('srApiUrl')?.value.trim();
     const apiKey = document.getElementById('srApiKey')?.value.trim();
     if (!url) { showNotification(t('integ_err_sr_url','Ingresa la URL de la API local'), 'error'); return; }
@@ -2769,7 +2772,7 @@ function srHideTestResult() {
 }
 
 async function srSaveConfig() {
-    if (!selectedAgentId) { showNotification(t('integ_err_select_agent','Selecciona un agente primero'), 'error'); return; }
+    if (!requireAgentSelected()) return;
     const url      = document.getElementById('srApiUrl')?.value.trim();
     const apiKeyRaw= document.getElementById('srApiKey')?.value.trim();
     const timeout  = parseInt(document.getElementById('srTimeout')?.value) || 10;

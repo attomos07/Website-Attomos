@@ -2,6 +2,7 @@ package src
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +25,19 @@ type PaymentConfig struct {
 	StripeAccountStatus       string `json:"stripeAccountStatus"`
 	StripeChargesEnabled      bool   `json:"stripeChargesEnabled"`
 	PaymentRequiredForBooking bool   `json:"paymentRequiredForBooking"`
+
+	// ── Click y Payme (Uzbekistán, exclusivo Telegram) ──────────────────────
+	// A diferencia de Stripe, estos NO requieren llamada al backend para
+	// generar el link: se arma en memoria con datos no-secretos.
+	ClickEnabled    bool   `json:"clickEnabled"`
+	ClickMerchantID string `json:"clickMerchantId"`
+	ClickServiceID  string `json:"clickServiceId"`
+	PaymeEnabled    bool   `json:"paymeEnabled"`
+	PaymeMerchantID string `json:"paymeMerchantId"`
+
+	// Currency indica la moneda del negocio ("MXN" por defecto, "UZS" para
+	// negocios de Uzbekistán). Controla qué métodos y formato de monto se usan.
+	Currency string `json:"currency"`
 }
 
 // paymentConfigCache caché en memoria para no llamar la API en cada mensaje
@@ -88,7 +102,104 @@ func GetPaymentConfig() *PaymentConfig {
 // HasPaymentMethods indica si hay al menos un método de pago configurado
 func HasPaymentMethods() bool {
 	cfg := GetPaymentConfig()
-	return cfg.SPEIEnabled || (cfg.StripeEnabled && cfg.StripeChargesEnabled)
+	return cfg.SPEIEnabled ||
+		(cfg.StripeEnabled && cfg.StripeChargesEnabled) ||
+		(cfg.ClickEnabled && cfg.ClickMerchantID != "" && cfg.ClickServiceID != "") ||
+		(cfg.PaymeEnabled && cfg.PaymeMerchantID != "")
+}
+
+// isUZS indica si el negocio opera en soum uzbeko. Por defecto (Currency
+// vacío) se asume MXN para no romper negocios existentes en México.
+func isUZS() bool {
+	return strings.EqualFold(GetPaymentConfig().Currency, "UZS")
+}
+
+// currencySuffix devuelve el sufijo de moneda a mostrar en los mensajes.
+func currencySuffix() string {
+	if isUZS() {
+		return "UZS"
+	}
+	return "MXN"
+}
+
+// BuildClickURL arma la URL de pago de Click sin llamar al backend —
+// service_id/merchant_id no son secretos, se cachean igual que la CLABE.
+// orderID debe ser una referencia única (idealmente el ID real del
+// pedido/cita en el backend) para que el webhook pueda reconciliar el pago.
+func BuildClickURL(orderID string, amount float64) string {
+	cfg := GetPaymentConfig()
+	if !cfg.ClickEnabled || cfg.ClickMerchantID == "" || cfg.ClickServiceID == "" {
+		return ""
+	}
+	attomosURL := os.Getenv("ATTOMOS_API_URL")
+	branchID := os.Getenv("BRANCH_ID")
+	returnURL := ""
+	if attomosURL != "" && branchID != "" {
+		returnURL = fmt.Sprintf("%s/ninda/%s?paid=1", attomosURL, branchID)
+	}
+	v := url.Values{}
+	v.Set("service_id", cfg.ClickServiceID)
+	v.Set("merchant_id", cfg.ClickMerchantID)
+	v.Set("amount", fmt.Sprintf("%.2f", amount))
+	v.Set("transaction_param", orderID)
+	if returnURL != "" {
+		v.Set("return_url", returnURL)
+	}
+	return "https://my.click.uz/services/pay?" + v.Encode()
+}
+
+// BuildPaymeURL arma la URL de pago de Payme. El SDK de Payme espera el
+// monto en tiyin (1 UZS = 100 tiyin), codificado en base64 dentro del path.
+func BuildPaymeURL(orderID string, amount float64) string {
+	cfg := GetPaymentConfig()
+	if !cfg.PaymeEnabled || cfg.PaymeMerchantID == "" {
+		return ""
+	}
+	amountTiyin := int64(amount * 100)
+	raw := fmt.Sprintf("m=%s;ac.order_id=%s;a=%d", cfg.PaymeMerchantID, orderID, amountTiyin)
+	encoded := base64.StdEncoding.EncodeToString([]byte(raw))
+	return "https://checkout.paycom.uz/" + encoded
+}
+
+// BuildClickPaymeMessage construye el bloque de texto con los links de
+// Click y/o Payme para un pedido/cita. orderID es la referencia de
+// transacción (usar el ID real del backend cuando esté disponible).
+func BuildClickPaymeMessage(orderID string, amount float64) string {
+	cfg := GetPaymentConfig()
+	hasClick := cfg.ClickEnabled && cfg.ClickMerchantID != "" && cfg.ClickServiceID != ""
+	hasPayme := cfg.PaymeEnabled && cfg.PaymeMerchantID != ""
+
+	if !hasClick && !hasPayme {
+		return ""
+	}
+
+	var sb strings.Builder
+	if hasClick {
+		clickURL := BuildClickURL(orderID, amount)
+		if clickURL != "" {
+			sb.WriteString("🔵 *Pagar con Click*\n")
+			sb.WriteString(fmt.Sprintf("   👉 %s\n", clickURL))
+		}
+	}
+	if hasClick && hasPayme {
+		sb.WriteString("\n")
+	}
+	if hasPayme {
+		paymeURL := BuildPaymeURL(orderID, amount)
+		if paymeURL != "" {
+			sb.WriteString("🟢 *Pagar con Payme*\n")
+			sb.WriteString(fmt.Sprintf("   👉 %s\n", paymeURL))
+		}
+	}
+	return sb.String()
+}
+
+// formatOrderRef arma la referencia de transacción que viaja en el link de
+// pago Click/Payme, en formato "order-{id}" o "appt-{id}". El backend
+// (markOrderPaidByReference) la parsea para saber qué registro actualizar
+// cuando el webhook confirma el pago.
+func formatOrderRef(kind string, id uint) string {
+	return fmt.Sprintf("%s-%d", kind, id)
 }
 
 // AskPaymentMethod construye la pregunta de método de pago según lo que tiene configurado el negocio.
@@ -97,6 +208,8 @@ func AskPaymentMethod() string {
 	cfg := GetPaymentConfig()
 	hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
 	hasStripe := cfg.StripeEnabled && cfg.StripeChargesEnabled
+	hasClick := cfg.ClickEnabled && cfg.ClickMerchantID != "" && cfg.ClickServiceID != ""
+	hasPayme := cfg.PaymeEnabled && cfg.PaymeMerchantID != ""
 
 	var sb strings.Builder
 	sb.WriteString("💳 ¿Cómo deseas pagar?\n\n")
@@ -107,21 +220,37 @@ func AskPaymentMethod() string {
 	if hasSPEI {
 		sb.WriteString("• 🏦 *Transferencia SPEI*\n")
 	}
+	if hasClick {
+		sb.WriteString("• 🔵 *Click*\n")
+	}
+	if hasPayme {
+		sb.WriteString("• 🟢 *Payme*\n")
+	}
 	return strings.TrimRight(sb.String(), "\n")
 }
 
 // BuildPaymentMessage construye el mensaje de pago para el cliente.
 //
+// orderRef es la referencia real del pedido/cita ("order-42" / "appt-17"),
+// generada con formatOrderRef() a partir del ID que devolvió el backend al
+// guardar el registro. Se usa para los links de Click/Payme. Si viene vacío,
+// esos links no se generan (evita referencias huérfanas que el webhook no
+// pueda reconciliar).
+//
 // paymentMethod indica el método que el usuario ya eligió:
 //   - "efectivo"       → mensaje de confirmación en efectivo, sin links
 //   - "tarjeta"        → solo muestra el link de Ninda (Stripe)
 //   - "transferencia"  → solo muestra los datos SPEI
+//   - "click"          → solo muestra el link de Click
+//   - "payme"          → solo muestra el link de Payme
 //   - ""               → muestra todos los métodos disponibles (usado en flujo de citas)
-func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) string {
+func BuildPaymentMessage(servicio string, precio float64, paymentMethod string, orderRef string) string {
 	cfg := GetPaymentConfig()
 
 	hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
 	hasTakeApp := cfg.StripeEnabled && cfg.StripeChargesEnabled
+	hasClick := cfg.ClickEnabled && cfg.ClickMerchantID != "" && cfg.ClickServiceID != ""
+	hasPayme := cfg.PaymeEnabled && cfg.PaymeMerchantID != ""
 
 	attomosURL := os.Getenv("ATTOMOS_API_URL")
 	branchID := os.Getenv("BRANCH_ID")
@@ -134,8 +263,10 @@ func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) 
 	// ── Validar que haya algo que mostrar ────────────────────────────────────
 	showSPEI := hasSPEI && (paymentMethod == "" || paymentMethod == "transferencia")
 	showStripe := hasTakeApp && (paymentMethod == "" || paymentMethod == "tarjeta")
+	showClick := hasClick && (paymentMethod == "" || paymentMethod == "click")
+	showPayme := hasPayme && (paymentMethod == "" || paymentMethod == "payme")
 
-	if !showSPEI && !showStripe {
+	if !showSPEI && !showStripe && !showClick && !showPayme {
 		return ""
 	}
 
@@ -144,7 +275,7 @@ func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) 
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 
 	if precio > 0 {
-		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
+		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f %s\n\n", precio, currencySuffix()))
 	}
 
 	// ── SPEI ─────────────────────────────────────────────────────────────────
@@ -159,7 +290,7 @@ func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) 
 		}
 	}
 
-	if showSPEI && showStripe {
+	if showSPEI && (showStripe || showClick || showPayme) {
 		sb.WriteString("\n")
 	}
 
@@ -173,6 +304,29 @@ func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) 
 		)
 		sb.WriteString("💳 *Pagar con tarjeta*\n")
 		sb.WriteString(fmt.Sprintf("   👉 %s\n", nindaURL))
+	}
+
+	if (showStripe) && (showClick || showPayme) {
+		sb.WriteString("\n")
+	}
+
+	// ── Click / Payme (Uzbekistán) ──────────────────────────────────────────
+	if (showClick || showPayme) && orderRef != "" {
+		if showClick {
+			if clickURL := BuildClickURL(orderRef, precio); clickURL != "" {
+				sb.WriteString("🔵 *Pagar con Click*\n")
+				sb.WriteString(fmt.Sprintf("   👉 %s\n", clickURL))
+			}
+		}
+		if showClick && showPayme {
+			sb.WriteString("\n")
+		}
+		if showPayme {
+			if paymeURL := BuildPaymeURL(orderRef, precio); paymeURL != "" {
+				sb.WriteString("🟢 *Pagar con Payme*\n")
+				sb.WriteString(fmt.Sprintf("   👉 %s\n", paymeURL))
+			}
+		}
 	}
 
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
@@ -292,7 +446,7 @@ func BuildStripeOnlyMessage(checkoutURL string, precio float64) string {
 	sb.WriteString("\n💳 *Pago con tarjeta*\n")
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 	if precio > 0 {
-		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
+		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f %s\n\n", precio, currencySuffix()))
 	}
 	sb.WriteString("👉 " + checkoutURL + "\n")
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
@@ -316,12 +470,14 @@ type BotAppointmentPayload struct {
 // SaveAppointmentToBackend guarda la cita en la BD de Attomos vía API REST.
 // Se llama siempre al confirmar una cita, independientemente de si Google Sheets
 // está conectado o no. Así la cita aparece en el panel de Mis Citas.
-func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
+// Devuelve el ID real de la cita creada (para usarlo como referencia en
+// links de pago Click/Payme) o error.
+func SaveAppointmentToBackend(payload BotAppointmentPayload) (uint, error) {
 	attomosURL := os.Getenv("ATTOMOS_API_URL")
 	botToken := os.Getenv("BOT_API_TOKEN")
 
 	if attomosURL == "" || botToken == "" {
-		return fmt.Errorf("ATTOMOS_API_URL o BOT_API_TOKEN no configurados")
+		return 0, fmt.Errorf("ATTOMOS_API_URL o BOT_API_TOKEN no configurados")
 	}
 
 	// Leer agentID y userID desde el entorno si no vienen en el payload
@@ -331,12 +487,12 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
 
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("error serializando cita: %w", err)
+		return 0, fmt.Errorf("error serializando cita: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", attomosURL+"/api/bot/appointments", bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		return fmt.Errorf("error creando request: %w", err)
+		return 0, fmt.Errorf("error creando request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+botToken)
@@ -344,15 +500,23 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error llamando API: %w", err)
+		return 0, fmt.Errorf("error llamando API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+		return 0, fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		ID uint `json:"id"`
+	}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		log.Printf("⚠️  [Backend] Cita guardada pero no se pudo leer el ID: %v", err)
+		return 0, nil
 	}
 
 	log.Printf("✅ [Backend] Cita guardada en BD: %s", string(respBody))
-	return nil
+	return result.ID, nil
 }

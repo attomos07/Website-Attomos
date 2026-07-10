@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bandeja de entrada - Attomos CRM</title>
+<link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --accent:#06b6d4;
+    --accent-dark:#0891b2;
+    --accent-soft:#ecfeff;
+    --accent-soft-border:#a5f3fc;
+    --ink:#1a1a1a;
+    --ink-2:#111827;
+    --gray-700:#374151;
+    --gray-600:#4b5563;
+    --gray-500:#6b7280;
+    --gray-400:#9ca3af;
+    --gray-300:#d1d5db;
+    --gray-200:#e5e7eb;
+    --gray-100:#f3f4f6;
+    --gray-50:#f9fafb;
+    --white:#ffffff;
+    --danger:#ef4444;
+    --danger-dark:#dc2626;
+    --danger-soft:#fee2e2;
+    --warn:#f59e0b;
+    --warn-soft:#fef3c7;
+    --success:#10b981;
+    --success-soft:#dcfce7;
+    --whatsapp:#25D366;
+    --instagram:#E4405F;
+    --messenger:#0084FF;
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:10px;
+    --shadow-sm:0 4px 12px rgba(6,182,212,.08);
+    --shadow-md:0 10px 25px -5px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    height:100%;
+    margin:0;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--gray-50);
+    color:var(--ink);
+    height:100vh;
+    overflow:hidden;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 232px 320px 1fr 300px;
+    height:100%;
+    transition:grid-template-columns .22s ease;
+  }
+  .circle-btn{
+    width:30px;height:30px;border-radius:50%;flex:none;
+    border:1px solid var(--gray-200);background:var(--white);color:var(--gray-500);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .15s ease,color .15s ease;
+  }
+  .circle-btn:hover{background:var(--gray-100);color:var(--gray-700);}
+  .circle-btn.accent{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .circle-btn.accent:hover{background:var(--accent-dark);}
+
+  .nav-rail.collapsed, .detail-col.collapsed{
+    padding:14px 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .nav-rail.collapsed .rail-content,
+  .detail-col.collapsed .detail-content{
+    display:none;
+  }
+  .rail-collapsed-btn, .detail-collapsed-btn{
+    display:none;
+  }
+  .nav-rail.collapsed .rail-collapsed-btn,
+  .detail-col.collapsed .detail-collapsed-btn{
+    display:flex;
+  }
+
+  /* ===== Scrollbars ===== */
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:10px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gray-400);}
+
+  /* ============ COLUMNA 1: Navegación ============ */
+  .nav-rail{
+    background:var(--white);
+    border-right:1px solid var(--gray-200);
+    display:flex;
+    flex-direction:column;
+    padding:18px 14px;
+    overflow-y:auto;
+  }
+  .rail-topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 20px;}
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:15px;
+    box-shadow:var(--shadow-sm);
+    flex:none;
+  }
+  .brand-name{font-weight:700;font-size:15px;color:var(--ink-2);}
+  .nav-section{margin-bottom:22px;}
+  .nav-section-title{
+    font-size:11px;font-weight:700;letter-spacing:.06em;
+    color:var(--gray-400);text-transform:uppercase;
+    padding:0 8px 8px;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 10px;border-radius:var(--radius-sm);
+    color:var(--gray-700);font-size:14px;font-weight:500;
+    cursor:pointer;user-select:none;
+    transition:background .15s ease,color .15s ease;
+  }
+  .nav-item i{font-size:16px;width:18px;text-align:center;color:var(--gray-400);}
+  .nav-item:hover{background:var(--gray-100);}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-dark);}
+  .nav-item.active i{color:var(--accent-dark);}
+  .nav-item .count{
+    margin-left:auto;font-size:11px;font-weight:700;color:var(--gray-400);
+  }
+  .channel-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .tag-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+
+  /* ============ COLUMNA 2: Lista de conversaciones ============ */
+  .list-col{
+    background:var(--white);
+    border-right:1px solid var(--gray-200);
+    display:flex;flex-direction:column;
+    overflow:hidden;
+  }
+  .list-header{
+    padding:16px 16px 12px;
+    border-bottom:1px solid var(--gray-100);
+  }
+  .list-header h2{
+    margin:0 0 12px;font-size:16px;font-weight:700;color:var(--ink-2);
+    display:flex;align-items:center;gap:8px;
+  }
+  .list-header h2 .filter-dot{width:8px;height:8px;border-radius:50%;}
+  .search-box{
+    display:flex;align-items:center;gap:8px;
+    background:var(--gray-100);border-radius:var(--radius-sm);
+    padding:8px 12px;
+  }
+  .search-box i{color:var(--gray-400);font-size:14px;}
+  .search-box input{
+    border:none;background:transparent;outline:none;font-size:13px;width:100%;color:var(--ink);
+  }
+  .tabs{
+    display:flex;gap:4px;padding:10px 16px 0;
+  }
+  .tab{
+    flex:1;text-align:center;padding:8px 4px;border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+    font-size:13px;font-weight:600;color:var(--gray-500);cursor:pointer;
+    border-bottom:2px solid transparent;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .tab .badge{
+    background:var(--gray-200);color:var(--gray-600);
+    font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;
+  }
+  .tab.active{color:var(--accent-dark);border-bottom-color:var(--accent);}
+  .tab.active .badge{background:var(--accent-soft);color:var(--accent-dark);}
+
+  .conv-list{flex:1;overflow-y:auto;padding:6px 8px;}
+  .conv-item{
+    display:flex;gap:10px;padding:12px 10px;border-radius:var(--radius-sm);
+    cursor:pointer;position:relative;
+  }
+  .conv-item:hover{background:var(--gray-50);}
+  .conv-item.active{background:var(--accent-soft);}
+  .avatar{
+    width:40px;height:40px;border-radius:50%;flex:none;
+    background:var(--gray-200);color:var(--gray-600);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;position:relative;
+  }
+  .avatar .ch-badge{
+    position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--white);box-shadow:0 0 0 1px var(--gray-200);
+  }
+  .avatar .ch-badge i{font-size:11px;}
+
+  .contacts-view{
+    display:none;
+    grid-column: 2 / -1;
+    background:var(--white);
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .contacts-view.active{display:flex;}
+  .contacts-header{padding:20px 26px 16px;border-bottom:1px solid var(--gray-100);}
+  .contacts-header h2{margin:0 0 14px;font-size:20px;font-weight:700;color:var(--ink-2);}
+  .contacts-search{max-width:380px;}
+  .contacts-grid{
+    flex:1;overflow-y:auto;padding:22px 26px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:14px;align-content:start;
+  }
+  .contact-card{
+    display:flex;gap:12px;align-items:center;padding:14px;
+    border:1px solid var(--gray-200);border-radius:var(--radius-md);cursor:pointer;
+    transition:box-shadow .15s ease,border-color .15s ease;
+  }
+  .contact-card:hover{border-color:var(--accent-soft-border);box-shadow:var(--shadow-sm);}
+  .contact-card .avatar{width:44px;height:44px;font-size:15px;flex:none;}
+  .contact-card-info{min-width:0;}
+  .contact-card-name{font-weight:700;font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .contact-card-phone{font-size:12.5px;color:var(--gray-500);margin-top:2px;}
+  .conv-info{flex:1;min-width:0;}
+  .conv-top{display:flex;justify-content:space-between;gap:6px;}
+  .conv-name{font-size:13.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .conv-time{font-size:11px;color:var(--gray-400);flex:none;}
+  .conv-snippet{font-size:12.5px;color:var(--gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .conv-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+  .mini-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;}
+  .unread-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin-top:4px;
+  }
+  .empty-list{
+    padding:40px 20px;text-align:center;color:var(--gray-400);font-size:13px;
+  }
+
+  /* ============ COLUMNA 3: Conversación ============ */
+  .chat-col{display:flex;flex-direction:column;background:var(--gray-50);min-width:0;overflow:hidden;}
+  .chat-header{
+    background:var(--white);border-bottom:1px solid var(--gray-200);
+    padding:14px 22px;display:flex;align-items:center;gap:12px;
+  }
+  .chat-header .avatar{width:38px;height:38px;font-size:13px;}
+  .chat-header-name{font-weight:700;font-size:14.5px;color:var(--ink-2);}
+  .chat-header-sub{font-size:12px;color:var(--gray-500);display:flex;align-items:center;gap:5px;}
+  .chat-header-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  .btn-resolve{
+    background:var(--success);color:#fff;border:none;padding:8px 16px;border-radius:var(--radius-sm);
+    font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;
+  }
+  .icon-btn{
+    width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--gray-200);
+    background:var(--white);color:var(--gray-500);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .icon-btn:hover{background:var(--gray-50);}
+
+  .dropdown-wrap{position:relative;}
+  .dropdown-menu{
+    position:absolute;top:calc(100% + 6px);right:0;
+    background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-md);min-width:180px;padding:6px;z-index:20;
+    opacity:0;transform:translateY(-6px) scale(.97);pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .dropdown-menu.open{
+    opacity:1;transform:translateY(0) scale(1);pointer-events:auto;
+  }
+  .dropdown-item{
+    padding:8px 10px;border-radius:var(--radius-sm);font-size:13px;color:var(--gray-700);
+    cursor:pointer;display:flex;align-items:center;gap:8px;
+  }
+  .dropdown-item i{color:var(--gray-400);font-size:15px;}
+  .dropdown-item:hover{background:var(--gray-100);}
+
+  .window-banner{
+    margin:14px 22px 0;background:var(--danger-soft);color:var(--danger-dark);
+    border-radius:var(--radius-sm);padding:10px 14px;font-size:12.5px;display:flex;gap:8px;align-items:flex-start;
+  }
+  .window-banner a{color:var(--danger-dark);font-weight:700;}
+
+  .messages{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:4px;min-height:0;}
+  .msg-row{display:flex;flex-direction:column;max-width:60%;margin-bottom:8px;}
+  .msg-row.in{align-self:flex-start;align-items:flex-start;}
+  .msg-row.out{align-self:flex-end;align-items:flex-end;}
+  @keyframes messageIn{
+    from{opacity:0;transform:translateY(12px) scale(.96);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  .msg-row.sending{animation:messageIn .28s cubic-bezier(.34,1.56,.64,1);}
+  .bubble{
+    padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;
+  }
+  .msg-row.in .bubble{background:var(--white);border:1px solid var(--gray-200);color:var(--ink);border-bottom-left-radius:4px;}
+  .msg-row.out .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+  .msg-time{font-size:10.5px;color:var(--gray-400);margin-top:3px;padding:0 4px;}
+  .sys-note{
+    align-self:center;font-size:11.5px;color:var(--gray-400);background:var(--gray-100);
+    padding:4px 12px;border-radius:999px;margin:6px 0;
+  }
+
+  .composer{
+    background:var(--white);border-top:1px solid var(--gray-200);padding:12px 22px 16px;
+    flex:none;
+  }
+  .ai-control-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--accent-soft);border:1px solid var(--accent-soft-border);
+    border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px;
+    transition:background .2s ease,border-color .2s ease;
+  }
+  .ai-control-bar.human{background:#f5f3ff;border-color:#ddd6fe;}
+  .ai-status{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--accent-dark);}
+  .ai-control-bar.human .ai-status{color:#6d28d9;}
+  .ai-status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;}
+  .ai-control-bar.human .ai-status-dot{background:#8b5cf6;}
+  .ai-control-btn{
+    border:none;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;flex:none;
+  }
+  .ai-control-bar.human .ai-control-btn{background:#7c3aed;}
+  .composer-tabs{display:flex;gap:18px;margin-bottom:8px;}
+  .composer-tab{font-size:13px;font-weight:700;color:var(--gray-400);cursor:pointer;padding-bottom:6px;border-bottom:2px solid transparent;}
+  .composer-tab.active{color:var(--accent-dark);border-bottom-color:var(--accent);}
+  .composer-box{
+    border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:10px 12px;
+  }
+  .composer-box textarea{
+    width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:13.5px;
+    min-height:40px;color:var(--ink);
+  }
+  .attachment-preview:empty{display:none;}
+  .attachment-preview{
+    display:flex;align-items:center;gap:10px;background:var(--gray-50);
+    border:1px solid var(--gray-200);border-radius:var(--radius-sm);
+    padding:6px 10px;margin-bottom:8px;font-size:12.5px;color:var(--gray-700);
+  }
+  .attachment-preview img, .attachment-preview video{
+    width:32px;height:32px;object-fit:cover;border-radius:6px;
+  }
+  .attachment-preview .att-icon{
+    width:32px;height:32px;border-radius:6px;background:var(--accent-soft);color:var(--accent-dark);
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .attachment-preview .att-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .attachment-preview .att-remove{
+    cursor:pointer;color:var(--gray-400);width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .attachment-preview .att-remove:hover{background:var(--gray-200);color:var(--gray-600);}
+  .bubble .att-media{max-width:220px;border-radius:10px;display:block;}
+  .bubble .att-file-chip{
+    display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);
+    border-radius:10px;padding:8px 10px;font-size:12.5px;
+  }
+  .msg-row.in .bubble .att-file-chip{background:var(--gray-100);}
+  .bubble .att-file-chip i{font-size:16px;}
+  .composer-toolbar{display:flex;align-items:center;gap:4px;margin-top:6px;}
+  .composer-toolbar .icon-btn{width:30px;height:30px;border:none;color:var(--gray-400);}
+  .icon-btn.recording{
+    background:var(--danger);color:#fff;
+    animation:micPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes micPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.45);}
+    50%{box-shadow:0 0 0 7px rgba(239,68,68,0);}
+  }
+  .mic-timer{font-size:11.5px;font-weight:700;color:var(--danger-dark);min-width:34px;}
+  .send-btn{
+    margin-left:auto;background:var(--accent);color:#fff;border:none;
+    padding:8px 18px;border-radius:var(--radius-sm);font-weight:700;font-size:13px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+  }
+  .send-btn:hover{background:var(--accent-dark);}
+
+  /* ============ COLUMNA 4: Detalles de contacto ============ */
+  .detail-col{
+    background:var(--white);border-left:1px solid var(--gray-200);
+    overflow-y:auto;padding:16px 18px 20px;
+  }
+  .detail-topbar{display:flex;justify-content:flex-end;margin-bottom:4px;}
+  .detail-profile{text-align:center;padding-bottom:16px;border-bottom:1px solid var(--gray-100);margin-bottom:16px;}
+  .detail-avatar{
+    width:64px;height:64px;border-radius:50%;margin:0 auto 10px;
+    background:var(--gray-200);color:var(--gray-600);font-weight:700;font-size:22px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .detail-name{font-weight:700;font-size:15px;color:var(--ink-2);}
+  .detail-status{font-size:11.5px;color:var(--gray-400);margin-top:2px;}
+  .detail-row{
+    display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--gray-600);
+    padding:6px 0;
+  }
+  .detail-row i{color:var(--gray-400);width:16px;text-align:center;}
+  .detail-quick-actions{display:flex;justify-content:center;gap:8px;margin-top:12px;}
+
+  .section{margin-bottom:18px;}
+  .section-title{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;
+    margin-bottom:10px;cursor:pointer;
+  }
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:11.5px;font-weight:600;color:var(--gray-500);margin-bottom:5px;}
+  .select-like{
+    border:1px solid var(--gray-200);border-radius:var(--radius-sm);
+    padding:8px 10px;font-size:13px;color:var(--gray-700);
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--gray-50);
+  }
+  .select-like i{color:var(--gray-400);font-size:12px;}
+
+  .tag-chip{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    font-size:11.5px;font-weight:600;margin:0 6px 6px 0;
+  }
+  .tag-chip .dot{width:7px;height:7px;border-radius:50%;}
+  .add-tag-box{border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px;color:var(--gray-400);margin-top:6px;cursor:text;}
+
+  .note-box{
+    border:1px dashed var(--gray-300);border-radius:var(--radius-sm);padding:10px;
+    font-size:12px;color:var(--gray-400);text-align:center;
+  }
+
+  /* Utility badges for colors */
+  .bg-coaching{background:var(--gray-100);color:var(--gray-600);}
+  .bg-descremado{background:var(--danger-soft);color:var(--danger-dark);}
+  .bg-empresa{background:var(--success-soft);color:#166534;}
+  .bg-humano{background:var(--danger-soft);color:var(--danger-dark);}
+  .bg-no_cualificado{background:var(--accent-soft);color:var(--accent-dark);}
+  .dot-coaching{background:var(--gray-400);}
+  .dot-descremado{background:var(--danger);}
+  .dot-empresa{background:var(--success);}
+  .dot-humano{background:var(--danger);}
+  .dot-no_cualificado{background:var(--accent);}
+
+  /* ===== Submenu de Configuración ===== */
+  .nav-item.has-submenu{cursor:pointer;}
+  .nav-item .chevron{
+    margin-left:auto;font-size:11px;color:var(--gray-400);
+    transition:transform .2s ease;
+  }
+  .nav-item.has-submenu.open .chevron{transform:rotate(90deg);}
+  .nav-submenu{
+    max-height:0;overflow:hidden;margin-left:8px;
+    border-left:2px solid var(--gray-100);
+    transition:max-height .2s ease;
+  }
+  .nav-submenu.open{max-height:220px;}
+  .nav-subitem{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 10px 8px 18px;border-radius:var(--radius-sm);
+    color:var(--gray-600);font-size:13px;font-weight:500;cursor:pointer;
+  }
+  .nav-subitem i{font-size:14px;width:16px;text-align:center;color:var(--gray-400);}
+  .nav-subitem:hover{background:var(--gray-100);}
+
+  /* ===== Modal Exportar ===== */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(17,24,39,.45);
+    display:none;align-items:center;justify-content:center;z-index:100;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--white);border-radius:var(--radius-lg);
+    width:420px;max-width:92vw;max-height:86vh;overflow-y:auto;
+    box-shadow:var(--shadow-md);padding:22px;
+  }
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .modal-header h3{margin:0;font-size:17px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;}
+  .export-section{border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px;margin-bottom:14px;}
+  .export-section:last-child{margin-bottom:0;}
+  .export-section h4{margin:0 0 4px;font-size:13.5px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:8px;}
+  .export-section p{margin:0 0 12px;font-size:12px;color:var(--gray-500);}
+  .export-format-row{display:flex;gap:8px;}
+  .format-btn{
+    flex:1;border:1px solid var(--gray-200);background:var(--gray-50);
+    border-radius:var(--radius-sm);padding:10px 8px;font-size:12.5px;font-weight:700;
+    color:var(--gray-600);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+    transition:border-color .15s ease,background .15s ease,color .15s ease;
+  }
+  .format-btn i{font-size:18px;}
+  .format-btn:hover{border-color:var(--accent-soft-border);background:var(--accent-soft);color:var(--accent-dark);}
+  .export-status{font-size:11.5px;color:var(--success);margin-top:8px;display:none;align-items:center;gap:5px;}
+  .export-status.show{display:flex;}
+
+  /* ===== Grabar video (cámara) ===== */
+  .video-record-box{width:460px;}
+  .video-record-stage{
+    position:relative;background:#111827;border-radius:var(--radius-md);
+    overflow:hidden;aspect-ratio:16/10;margin-bottom:14px;
+  }
+  .video-record-stage video{width:100%;height:100%;object-fit:cover;display:block;}
+  .video-record-timer{
+    position:absolute;top:10px;right:10px;background:var(--danger);color:#fff;
+    font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;
+    display:none;align-items:center;gap:6px;
+  }
+  .video-record-timer::before{
+    content:"";width:7px;height:7px;border-radius:50%;background:#fff;
+    animation:micPulse 1.2s ease-in-out infinite;
+  }
+  .video-record-actions{display:flex;gap:8px;}
+
+  /* ===== Icono personalizado para canales sin marca en Lineicons ===== */
+  .chan-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;line-height:0;}
+  .chan-icon svg{display:block;}
+
+  /* ===== Arrastrar y soltar archivos en el chat ===== */
+  .chat-col{position:relative;}
+  .drop-overlay{
+    position:absolute;inset:0;z-index:60;
+    background:rgba(6,182,212,.10);
+    border:3px dashed var(--accent);border-radius:var(--radius-md);
+    display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    pointer-events:none;
+  }
+  .drop-overlay.active{display:flex;}
+  .drop-overlay i{font-size:36px;color:var(--accent-dark);}
+  .drop-overlay span{font-size:14px;font-weight:700;color:var(--accent-dark);}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ COLUMNA 1 ============ -->
+  <div class="nav-rail" id="navRail">
+    <div class="rail-content">
+      <div class="rail-topbar">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div class="brand-name">Attomos</div>
+        </div>
+        <button class="circle-btn" onclick="toggleLeft()" title="Ocultar navegación">
+          <i class="lni lni-chevron-left"></i>
+        </button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item active" data-scope="all" onclick="selectScope('all', this)">
+          <i class="lni lni-comments"></i> Conversaciones
+          <span class="count" id="countAll">0</span>
+        </div>
+        <div class="nav-item" data-scope="contacts" onclick="selectContacts(this)">
+          <i class="lni lni-users"></i> Contactos
+          <span class="count" id="countContacts">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Canales</div>
+        <div class="nav-item" data-channel="whatsapp" onclick="selectChannel('whatsapp', this)">
+          <i class="lni lni-whatsapp" style="color:#25D366"></i> WhatsApp
+          <span class="count" id="countWhatsapp">0</span>
+        </div>
+        <div class="nav-item" data-channel="instagram" onclick="selectChannel('instagram', this)">
+          <i class="lni lni-instagram" style="color:#E4405F"></i> Instagram
+          <span class="count" id="countInstagram">0</span>
+        </div>
+        <div class="nav-item" data-channel="messenger" onclick="selectChannel('messenger', this)">
+          <i class="lni lni-facebook-messenger" style="color:#0084FF"></i> Messenger
+          <span class="count" id="countMessenger">0</span>
+        </div>
+        <div class="nav-item" data-channel="telegram" onclick="selectChannel('telegram', this)">
+          <i class="lni lni-telegram" style="color:#229ED9"></i> Telegram
+          <span class="count" id="countTelegram">0</span>
+        </div>
+        <div class="nav-item" data-channel="wechat" onclick="selectChannel('wechat', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.3 3.4C4.9 3.4 1.4 6.3 1.4 9.8c0 2 1.1 3.8 2.9 5l-.7 2.2 2.5-1.2c.8.2 1.7.3 2.6.3h.4a5.9 5.9 0 0 1-.2-1.5c0-3.6 3.5-6.5 7.9-6.5h.3C16.6 5.2 13.2 3.4 9.3 3.4z" fill="#07C160"/><circle cx="6.4" cy="8.5" r="1" fill="#fff"/><circle cx="11.3" cy="8.5" r="1" fill="#fff"/><path d="M16.9 10c-3.8 0-6.9 2.6-6.9 5.7 0 3.2 3.1 5.7 6.9 5.7.7 0 1.5-.1 2.1-.3l2.2 1.1-.6-1.9c1.4-1 2.4-2.5 2.4-4.1 0-3.2-3.1-6.2-6.9-6.2z" fill="#07C160"/><circle cx="15" cy="15.1" r="0.9" fill="#fff"/><circle cx="18.9" cy="15.1" r="0.9" fill="#fff"/></svg></span> WeChat
+          <span class="count" id="countWechat">0</span>
+        </div>
+        <div class="nav-item" data-channel="kakaotalk" onclick="selectChannel('kakaotalk', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#FEE500"/><path d="M12 5.6c-4.4 0-8 2.8-8 6.3 0 2.2 1.5 4.2 3.7 5.3l-.9 3.1 3.5-2c.5.1 1.1.1 1.7.1 4.4 0 8-2.8 8-6.5s-3.6-6.3-8-6.3z" fill="#3C1E1E"/></svg></span> KakaoTalk
+          <span class="count" id="countKakaotalk">0</span>
+        </div>
+        <div class="nav-item" data-channel="line" onclick="selectChannel('line', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#00C300"/><path d="M12 5.2c-4.4 0-8 2.9-8 6.4 0 3.1 2.8 5.7 6.6 6.3-.3.9-.6 2.3-.6 2.5 0 .2.1.2.3.1.2-.1 2.6-1.7 3.6-2.4.6.1 1.3.1 2 .1h.1c4.4 0 8-2.9 8-6.6s-3.6-6.4-8-6.4z" fill="#fff"/></svg></span> Line
+          <span class="count" id="countLine">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Etiquetas</div>
+        <div class="nav-item" data-tag="coaching" onclick="selectTag('coaching', this)">
+          <span class="tag-dot dot-coaching"></span> coaching
+        </div>
+        <div class="nav-item" data-tag="descremado" onclick="selectTag('descremado', this)">
+          <span class="tag-dot dot-descremado"></span> descremado
+        </div>
+        <div class="nav-item" data-tag="empresa" onclick="selectTag('empresa', this)">
+          <span class="tag-dot dot-empresa"></span> empresa
+        </div>
+        <div class="nav-item" data-tag="humano" onclick="selectTag('humano', this)">
+          <span class="tag-dot dot-humano"></span> humano
+        </div>
+        <div class="nav-item" data-tag="no_cualificado" onclick="selectTag('no_cualificado', this)">
+          <span class="tag-dot dot-no_cualificado"></span> no_cualificado
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Ajustes</div>
+        <div class="nav-item has-submenu" id="configNavItem" onclick="toggleConfigMenu(this)">
+          <i class="lni lni-cog"></i> Configuración
+          <i class="lni lni-chevron-right chevron"></i>
+        </div>
+        <div class="nav-submenu" id="configSubmenu">
+          <div class="nav-subitem" onclick="event.stopPropagation(); openExportModal();">
+            <i class="lni lni-download"></i> Exportar
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail-collapsed-btn">
+      <button class="circle-btn accent" onclick="toggleLeft()" title="Mostrar navegación">
+        <i class="lni lni-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ COLUMNA 2 ============ -->
+  <div class="list-col">
+    <div class="list-header">
+      <h2><span class="filter-dot" id="scopeDot" style="background:var(--accent)"></span><span id="scopeTitle">Todos los canales</span></h2>
+      <div class="search-box">
+        <i class="lni lni-search-alt"></i>
+        <input type="text" placeholder="Buscar conversación..." oninput="renderList()" id="searchInput">
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-filter="mias" onclick="selectFilter('mias', this)">Mías <span class="badge" id="badgeMias">0</span></div>
+      <div class="tab" data-filter="sin" onclick="selectFilter('sin', this)">Sin asignar <span class="badge" id="badgeSin">0</span></div>
+      <div class="tab" data-filter="todos" onclick="selectFilter('todos', this)">Todos <span class="badge" id="badgeTodos">0</span></div>
+    </div>
+    <div class="conv-list" id="convList"></div>
+  </div>
+
+  <!-- ============ COLUMNA 3 ============ -->
+  <div class="chat-col">
+    <div class="chat-header">
+      <div class="avatar" id="chatAvatar">FC</div>
+      <div>
+        <div class="chat-header-name" id="chatName">Facundo Corengia</div>
+        <div class="chat-header-sub"><span id="chatChannel">WhatsApp Business</span></div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="btn-resolve"><i class="lni lni-checkmark-circle"></i> Resolver</button>
+        <div class="dropdown-wrap">
+          <button class="icon-btn" onclick="toggleHeaderMenu(event)" title="Más opciones"><i class="lni lni-more-alt"></i></button>
+          <div class="dropdown-menu" id="headerMenu">
+            <div class="dropdown-item" onclick="toggleRight(); closeHeaderMenu();"><i class="lni lni-user"></i> Info de contacto</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window-banner" id="windowBanner">
+      <i class="lni lni-warning"></i>
+      <div>Sólo puede responder a esta conversación usando una plantilla de mensaje debido a la <a href="#">restricción de la ventana de 24 horas</a>.</div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="ai-control-bar" id="aiControlBar">
+        <div class="ai-status">
+          <span class="ai-status-dot" id="aiStatusDot"></span>
+          <span id="aiStatusText">La IA está respondiendo esta conversación</span>
+        </div>
+        <button class="ai-control-btn" id="aiControlBtn" onclick="toggleAIControl()">
+          <i class="lni lni-user" id="aiControlIcon"></i>
+          <span id="aiControlLabel">Tomar control</span>
+        </button>
+      </div>
+      <div class="composer-tabs">
+        <div class="composer-tab active" data-ctab="responder" onclick="selectComposerTab('responder', this)">Responder</div>
+        <div class="composer-tab" data-ctab="nota" onclick="selectComposerTab('nota', this)">Nota privada</div>
+      </div>
+      <div class="composer-box">
+        <div class="attachment-preview" id="attachmentPreview"></div>
+        <textarea id="composerText" placeholder="Escribe un mensaje... (Shift + Enter para nueva línea)" onkeydown="handleComposerKeydown(event)"></textarea>
+        <input type="file" id="fileImage" accept="image/*" style="display:none" onchange="handleFileSelect(event,'image')">
+        <input type="file" id="fileVideo" accept="video/*" style="display:none" onchange="handleFileSelect(event,'video')">
+        <input type="file" id="fileDoc" style="display:none" onchange="handleFileSelect(event,'file')">
+        <div class="composer-toolbar">
+          <button class="icon-btn" title="Adjuntar imagen" onclick="document.getElementById('fileImage').click()"><i class="lni lni-image"></i></button>
+          <div class="dropdown-wrap">
+            <button class="icon-btn" title="Adjuntar video" onclick="toggleVideoAttachMenu(event)"><i class="lni lni-video"></i></button>
+            <div class="dropdown-menu" id="videoAttachMenu">
+              <div class="dropdown-item" onclick="closeVideoAttachMenu(); openVideoRecordModal();"><i class="lni lni-camera"></i> Grabar video</div>
+              <div class="dropdown-item" onclick="closeVideoAttachMenu(); document.getElementById('fileVideo').click();"><i class="lni lni-upload"></i> Subir archivo</div>
+            </div>
+          </div>
+          <button class="icon-btn" id="micBtn" title="Grabar nota de voz" onclick="toggleVoiceRecording()"><i class="lni lni-microphone"></i></button>
+          <span class="mic-timer" id="micTimer"></span>
+          <button class="icon-btn" title="Adjuntar archivo" onclick="document.getElementById('fileDoc').click()"><i class="lni lni-paperclip"></i></button>
+          <button class="icon-btn" title="Emoji"><i class="lni lni-emoji-smile"></i></button>
+          <button class="send-btn" onclick="sendMessage()">Enviar <i class="lni lni-telegram-original"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drop-overlay" id="dropOverlay">
+      <i class="lni lni-cloud-upload"></i>
+      <span>Suelta el archivo aquí para adjuntarlo</span>
+    </div>
+  </div>
+
+  <!-- ============ COLUMNA 4 ============ -->
+  <div class="detail-col" id="detailCol">
+    <div class="detail-content">
+      <div class="detail-topbar">
+        <button class="circle-btn" onclick="toggleRight()" title="Ocultar detalles">
+          <i class="lni lni-close"></i>
+        </button>
+      </div>
+
+      <div class="detail-profile">
+        <div class="detail-avatar" id="detailAvatar">FC</div>
+        <div class="detail-name" id="detailName">Facundo Corengia</div>
+        <div class="detail-status" id="detailStatus">● No disponible</div>
+        <div class="detail-quick-actions">
+          <button class="icon-btn"><i class="lni lni-envelope"></i></button>
+          <button class="icon-btn"><i class="lni lni-pencil-alt"></i></button>
+          <button class="icon-btn"><i class="lni lni-trash"></i></button>
+        </div>
+      </div>
+
+      <div class="detail-row"><i class="lni lni-phone"></i> <span id="detailPhone">+54 911 2761 9724</span></div>
+      <div class="detail-row"><i class="lni lni-map-marker"></i> <span id="detailAvail">No disponible</span></div>
+
+      <div class="section">
+        <div class="section-title">Acciones de conversación</div>
+        <div class="field">
+          <label>Agente asignado</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+        <div class="field">
+          <label>Equipo asignado</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+        <div class="field">
+          <label>Prioridad</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Etiquetas de conversación</div>
+        <div id="detailTags">
+          <span class="tag-chip bg-coaching"><span class="dot dot-coaching"></span>coaching</span>
+        </div>
+        <div class="add-tag-box"><i class="lni lni-plus"></i> Añadir etiquetas</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Notas de contacto <i class="lni lni-plus" style="font-size:11px;color:var(--gray-400)"></i></div>
+        <div class="note-box">Sin notas todavía</div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ============ VISTA CONTACTOS (pantalla completa) ============ -->
+  <div class="contacts-view" id="contactsView">
+    <div class="contacts-header">
+      <h2>Contactos</h2>
+      <div class="search-box contacts-search">
+        <i class="lni lni-search-alt"></i>
+        <input type="text" placeholder="Buscar contacto..." oninput="renderContactsGrid()" id="contactsSearchInput">
+      </div>
+    </div>
+    <div class="contacts-grid" id="contactsGrid"></div>
+  </div>
+
+</div>
+
+<!-- ============ MODAL: EXPORTAR ============ -->
+<div class="modal-overlay" id="exportModal" onclick="if(event.target===this) closeExportModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="lni lni-download" style="margin-right:8px;color:var(--accent-dark)"></i>Exportar</h3>
+      <button class="circle-btn" onclick="closeExportModal()"><i class="lni lni-close"></i></button>
+    </div>
+
+    <div class="export-section">
+      <h4><i class="lni lni-comments" style="color:var(--gray-400)"></i> Exportar chats</h4>
+      <p>Descarga el historial completo de todas las conversaciones.</p>
+      <div class="export-format-row">
+        <button class="format-btn" onclick="exportChatsPdf()"><i class="lni lni-file-empty"></i> PDF</button>
+        <button class="format-btn" onclick="exportChatsTxt()"><i class="lni lni-write"></i> TXT</button>
+      </div>
+      <div class="export-status" id="chatsStatus"><i class="lni lni-checkmark-circle"></i> Exportación completada</div>
+    </div>
+
+    <div class="export-section">
+      <h4><i class="lni lni-users" style="color:var(--gray-400)"></i> Exportar contactos</h4>
+      <p>Descarga la lista de contactos con su información.</p>
+      <div class="export-format-row">
+        <button class="format-btn" onclick="exportContactsExcel()"><i class="lni lni-file-empty"></i> Excel</button>
+        <button class="format-btn" onclick="exportContactsPdf()"><i class="lni lni-file-empty"></i> PDF</button>
+      </div>
+      <div class="export-status" id="contactsStatus"><i class="lni lni-checkmark-circle"></i> Exportación completada</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: GRABAR VIDEO ============ -->
+<div class="modal-overlay" id="videoRecordModal" onclick="if(event.target===this) closeVideoRecordModal()">
+  <div class="modal-box video-record-box">
+    <div class="modal-header">
+      <h3><i class="lni lni-video" style="margin-right:8px;color:var(--accent-dark)"></i>Grabar video</h3>
+      <button class="circle-btn" onclick="closeVideoRecordModal()"><i class="lni lni-close"></i></button>
+    </div>
+    <div class="video-record-stage">
+      <video id="videoRecordPreview" autoplay muted playsinline></video>
+      <div class="video-record-timer" id="videoRecordTimer">00:00</div>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsIdle">
+      <button class="ai-control-btn" style="width:100%;justify-content:center;" onclick="startVideoRecording()"><i class="lni lni-video"></i> Iniciar grabación</button>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsRecording" style="display:none">
+      <button class="ai-control-btn" style="width:100%;justify-content:center;background:var(--danger)" onclick="stopVideoRecording()"><i class="lni lni-stop"></i> Detener</button>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsReview" style="display:none">
+      <button class="format-btn" onclick="retakeVideoRecording()"><i class="lni lni-reload"></i> Grabar de nuevo</button>
+      <button class="format-btn" style="border-color:var(--accent-soft-border);background:var(--accent-soft);color:var(--accent-dark)" onclick="useRecordedVideo()"><i class="lni lni-checkmark-circle"></i> Usar video</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DATOS DE EJEMPLO =====================
+const conversations = [
+  {
+    id: 1, name:"Facundo Corengia", initials:"FC", channel:"whatsapp",
+    scope:"mias", phone:"+54 911 2761 9724", availability:"No disponible",
+    tags:["coaching"], time:"5:43 PM", snippet:"vi que estabas interesado en ingresar a la academia...",
+    windowRestricted:true,
+    messages:[
+      {from:"in", text:"Hola Facundo, estoy interesado en ingresar a la academia.", time:"5:43 PM"},
+      {from:"out", text:"buenas", time:"5:43 PM"},
+      {from:"out", text:"como estas?", time:"5:43 PM"},
+      {from:"out", text:"vi que estabas interesado en ingresar a la academia, contame un poco de vos, si ya llevas tiempo en la IA o no", time:"5:43 PM"},
+      {from:"out", text:"tambien queria saber que estabas buscando conseguir con mi ayuda, asi se si realmente te puedo ayudar", time:"5:43 PM"},
+      {from:"in", text:"Hola Facundo, estoy interesado en ingresar a la academia.", time:"7:29 PM"},
+      {from:"sys", text:"Facundo Corengia eliminó a humano"},
+      {from:"sys", text:"Facundo Corengia eliminó a coaching"},
+    ]
+  },
+  {
+    id: 2, name:"Marina López", initials:"ML", channel:"instagram",
+    scope:"sin", phone:"+52 662 371 0899", availability:"Disponible",
+    tags:["empresa","no_cualificado"], time:"2:10 PM", snippet:"¿Tienen planes para negocios pequeños?",
+    windowRestricted:false,
+    messages:[
+      {from:"in", text:"Hola! vi su anuncio en Instagram", time:"2:05 PM"},
+      {from:"in", text:"¿Tienen planes para negocios pequeños?", time:"2:10 PM"},
+    ]
+  },
+  {
+    id: 3, name:"Carlos Mendez", initials:"CM", channel:"messenger",
+    scope:"todos", phone:"+52 662 555 1122", availability:"No disponible",
+    tags:["humano"], time:"11:02 AM", snippet:"Gracias, quedo atento a la propuesta.",
+    windowRestricted:false,
+    messages:[
+      {from:"out", text:"Aquí tienes la propuesta que armamos para tu negocio", time:"10:55 AM"},
+      {from:"in", text:"Gracias, quedo atento a la propuesta.", time:"11:02 AM"},
+    ]
+  },
+  {
+    id: 4, name:"Renata Gómez", initials:"RG", channel:"whatsapp",
+    scope:"mias", phone:"+52 662 118 4477", availability:"Disponible",
+    tags:["descremado"], time:"Ayer", snippet:"No me interesa por ahora, gracias.",
+    windowRestricted:false,
+    messages:[
+      {from:"in", text:"No me interesa por ahora, gracias.", time:"Ayer"},
+    ]
+  },
+];
+
+const tagStyles = {
+  coaching:"bg-coaching", descremado:"bg-descremado", empresa:"bg-empresa",
+  humano:"bg-humano", no_cualificado:"bg-no_cualificado"
+};
+const customChannelSvg = {
+  wechat: '<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.3 3.4C4.9 3.4 1.4 6.3 1.4 9.8c0 2 1.1 3.8 2.9 5l-.7 2.2 2.5-1.2c.8.2 1.7.3 2.6.3h.4a5.9 5.9 0 0 1-.2-1.5c0-3.6 3.5-6.5 7.9-6.5h.3C16.6 5.2 13.2 3.4 9.3 3.4z" fill="#07C160"/><circle cx="6.4" cy="8.5" r="1" fill="#fff"/><circle cx="11.3" cy="8.5" r="1" fill="#fff"/><path d="M16.9 10c-3.8 0-6.9 2.6-6.9 5.7 0 3.2 3.1 5.7 6.9 5.7.7 0 1.5-.1 2.1-.3l2.2 1.1-.6-1.9c1.4-1 2.4-2.5 2.4-4.1 0-3.2-3.1-6.2-6.9-6.2z" fill="#07C160"/><circle cx="15" cy="15.1" r="0.9" fill="#fff"/><circle cx="18.9" cy="15.1" r="0.9" fill="#fff"/></svg>',
+  kakaotalk: '<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#FEE500"/><path d="M12 5.6c-4.4 0-8 2.8-8 6.3 0 2.2 1.5 4.2 3.7 5.3l-.9 3.1 3.5-2c.5.1 1.1.1 1.7.1 4.4 0 8-2.8 8-6.5s-3.6-6.3-8-6.3z" fill="#3C1E1E"/></svg>',
+  line: '<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#00C300"/><path d="M12 5.2c-4.4 0-8 2.9-8 6.4 0 3.1 2.8 5.7 6.6 6.3-.3.9-.6 2.3-.6 2.5 0 .2.1.2.3.1.2-.1 2.6-1.7 3.6-2.4.6.1 1.3.1 2 .1h.1c4.4 0 8-2.9 8-6.6s-3.6-6.4-8-6.4z" fill="#fff"/></svg>',
+};
+
+const channelIcons = {
+  whatsapp:{icon:"lni-whatsapp", brand:"#25D366", label:"WhatsApp Business"},
+  instagram:{icon:"lni-instagram", brand:"#E4405F", label:"Instagram Direct"},
+  messenger:{icon:"lni-facebook-messenger", brand:"#0084FF", label:"Messenger"},
+  telegram:{icon:"lni-telegram", brand:"#229ED9", label:"Telegram"},
+  wechat:{svg:"wechat", brand:"#07C160", label:"WeChat"},
+  kakaotalk:{svg:"kakaotalk", brand:"#FEE500", label:"KakaoTalk"},
+  line:{svg:"line", brand:"#00C300", label:"Line"},
+};
+
+function channelBadgeHtml(channelKey){
+  const ch = channelIcons[channelKey];
+  if(ch.icon){
+    return `<i class="lni ${ch.icon}" style="color:${ch.brand}"></i>`;
+  }
+  return `<span class="chan-icon">${customChannelSvg[ch.svg]}</span>`;
+}
+
+let state = { channel:null, tag:null, filter:"mias", activeId: conversations[0].id };
+let contactsViewActive = false;
+
+function getContacts(){
+  const map = new Map();
+  conversations.forEach(c=>{ if(!map.has(c.name)) map.set(c.name, c); });
+  return Array.from(map.values());
+}
+
+function filtered(){
+  return conversations.filter(c=>{
+    if(state.channel && c.channel !== state.channel) return false;
+    if(state.tag && !c.tags.includes(state.tag)) return false;
+    if(state.filter==="mias" && c.scope!=="mias") return false;
+    if(state.filter==="sin" && c.scope!=="sin") return false;
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if(q && !c.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function updateCounts(){
+  document.getElementById('countAll').textContent = conversations.length;
+  document.getElementById('countWhatsapp').textContent = conversations.filter(c=>c.channel==="whatsapp").length;
+  document.getElementById('countInstagram').textContent = conversations.filter(c=>c.channel==="instagram").length;
+  document.getElementById('countMessenger').textContent = conversations.filter(c=>c.channel==="messenger").length;
+  document.getElementById('countTelegram').textContent = conversations.filter(c=>c.channel==="telegram").length;
+  document.getElementById('countWechat').textContent = conversations.filter(c=>c.channel==="wechat").length;
+  document.getElementById('countKakaotalk').textContent = conversations.filter(c=>c.channel==="kakaotalk").length;
+  document.getElementById('countLine').textContent = conversations.filter(c=>c.channel==="line").length;
+  document.getElementById('badgeMias').textContent = conversations.filter(c=>c.scope==="mias").length;
+  document.getElementById('badgeSin').textContent = conversations.filter(c=>c.scope==="sin").length;
+  document.getElementById('badgeTodos').textContent = conversations.length;
+  document.getElementById('countContacts').textContent = getContacts().length;
+}
+
+function renderList(){
+  const list = filtered();
+  const el = document.getElementById('convList');
+  el.innerHTML = "";
+  if(list.length===0){
+    el.innerHTML = '<div class="empty-list">No hay conversaciones activas en este grupo.</div>';
+    return;
+  }
+  list.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = "conv-item" + (c.id===state.activeId ? " active" : "");
+    const ch = channelIcons[c.channel];
+    div.innerHTML = `
+      <div class="avatar">${c.initials}
+        <span class="ch-badge">${channelBadgeHtml(c.channel)}</span>
+      </div>
+      <div class="conv-info">
+        <div class="conv-top">
+          <span class="conv-name">${c.name}</span>
+          <span class="conv-time">${c.time}</span>
+        </div>
+        <div class="conv-snippet">${c.snippet}</div>
+        <div class="conv-tags">
+          ${c.tags.map(t=>`<span class="mini-tag ${tagStyles[t]}">${t}</span>`).join("")}
+        </div>
+      </div>`;
+    div.onclick = ()=>{ state.activeId = c.id; renderList(); renderChat(); };
+    el.appendChild(div);
+  });
+}
+
+function renderChat(){
+  const c = conversations.find(x=>x.id===state.activeId);
+  if(!c){
+    document.getElementById('messages').innerHTML = '<div class="empty-list">Selecciona una conversación.</div>';
+    return;
+  }
+  const ch = channelIcons[c.channel];
+  document.getElementById('chatAvatar').textContent = c.initials;
+  document.getElementById('chatName').textContent = c.name;
+  document.getElementById('chatChannel').innerHTML = `${channelBadgeHtml(c.channel)} ${ch.label}`;
+  document.getElementById('windowBanner').style.display = c.windowRestricted ? "flex" : "none";
+
+  const msgsEl = document.getElementById('messages');
+  msgsEl.innerHTML = "";
+  c.messages.forEach(m=>{
+    if(m.from==="sys"){
+      const d = document.createElement('div');
+      d.className = "sys-note";
+      d.textContent = m.text;
+      msgsEl.appendChild(d);
+      return;
+    }
+    const row = document.createElement('div');
+    row.className = "msg-row " + m.from + (m._new ? " sending" : "");
+    const attHtml = m.attachment ? attachmentBubbleHtml(m.attachment, !!m.text) : "";
+    row.innerHTML = `<div class="bubble">${attHtml}${m.text || ""}</div><div class="msg-time">${m.time}</div>`;
+    msgsEl.appendChild(row);
+    delete m._new;
+  });
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  // Panel derecho
+  document.getElementById('detailAvatar').textContent = c.initials;
+  document.getElementById('detailName').textContent = c.name;
+  document.getElementById('detailStatus').textContent = "● " + c.availability;
+  document.getElementById('detailPhone').textContent = c.phone;
+  document.getElementById('detailAvail').textContent = c.availability;
+  document.getElementById('detailTags').innerHTML = c.tags.map(t=>
+    `<span class="tag-chip ${tagStyles[t]}"><span class="dot dot-${t}"></span>${t}</span>`
+  ).join("") || '<span style="font-size:12px;color:var(--gray-400)">Sin etiquetas</span>';
+}
+
+function showContactsView(){
+  contactsViewActive = true;
+  document.getElementById('contactsView').classList.add('active');
+  document.querySelector('.list-col').style.display = 'none';
+  document.querySelector('.chat-col').style.display = 'none';
+  document.getElementById('detailCol').style.display = 'none';
+  renderContactsGrid();
+}
+
+function hideContactsView(){
+  contactsViewActive = false;
+  document.getElementById('contactsView').classList.remove('active');
+  document.querySelector('.list-col').style.display = '';
+  document.querySelector('.chat-col').style.display = '';
+  applyGrid();
+}
+
+function renderContactsGrid(){
+  const el = document.getElementById('contactsGrid');
+  el.innerHTML = "";
+  const q = document.getElementById('contactsSearchInput').value.trim().toLowerCase();
+  const contacts = getContacts().filter(c=>!q || c.name.toLowerCase().includes(q));
+  if(contacts.length===0){
+    el.innerHTML = '<div class="empty-list">No hay contactos.</div>';
+    return;
+  }
+  contacts.forEach(c=>{
+    const ch = channelIcons[c.channel];
+    const div = document.createElement('div');
+    div.className = "contact-card";
+    div.innerHTML = `
+      <div class="avatar">${c.initials}
+        <span class="ch-badge">${channelBadgeHtml(c.channel)}</span>
+      </div>
+      <div class="contact-card-info">
+        <div class="contact-card-name">${c.name}</div>
+        <div class="contact-card-phone">${c.phone}</div>
+      </div>`;
+    div.onclick = ()=>{ openContact(c); };
+    el.appendChild(div);
+  });
+}
+
+function openContact(c){
+  hideContactsView();
+  state.filter = "todos"; state.channel = null; state.tag = null;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.tab[data-filter="todos"]').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.nav-item[data-scope="all"]').classList.add('active');
+  document.getElementById('scopeTitle').textContent = "Todos los canales";
+  document.getElementById('scopeDot').style.background = "var(--accent)";
+  state.activeId = c.id;
+  renderList();
+  renderChat();
+}
+
+function selectContacts(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  showContactsView();
+}
+
+function selectScope(scope, el){
+  if(contactsViewActive) hideContactsView();
+  state.channel = null; state.tag = null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('scopeTitle').textContent = "Todos los canales";
+  document.getElementById('scopeDot').style.background = "var(--accent)";
+  renderList();
+}
+function selectChannel(channel, el){
+  if(contactsViewActive) hideContactsView();
+  state.channel = channel; state.tag = null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('scopeTitle').textContent = channelIcons[channel].label;
+  document.getElementById('scopeDot').style.background = channelIcons[channel].brand;
+  renderList();
+}
+function selectTag(tag, el){
+  if(contactsViewActive) hideContactsView();
+  state.tag = tag; state.channel = null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('scopeTitle').textContent = "#" + tag;
+  document.getElementById('scopeDot').style.background = "var(--gray-400)";
+  renderList();
+}
+function selectFilter(filter, el){
+  state.filter = filter;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+function selectComposerTab(tab, el){
+  document.querySelectorAll('.composer-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('composerText').placeholder = tab==="nota"
+    ? "Escribe una nota privada (solo visible para tu equipo)..."
+    : "Escribe un mensaje... (Shift + Enter para nueva línea)";
+}
+function handleComposerKeydown(e){
+  if(e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendMessage(){
+  const textEl = document.getElementById('composerText');
+  const text = textEl.value.trim();
+  if(!text && !pendingAttachment) return;
+  const c = conversations.find(x=>x.id===state.activeId);
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+  const attLabels = {image:"📷 Imagen", video:"🎥 Video", audio:"🎵 Audio", file:"📎 " + (pendingAttachment ? pendingAttachment.name : "")};
+  c.messages.push({from:"out", text, time, _new:true, attachment: pendingAttachment});
+  c.snippet = text || attLabels[pendingAttachment.type];
+  c.time = time;
+  textEl.value = "";
+  pendingAttachment = null;
+  renderAttachmentPreview();
+  renderChat();
+  renderList();
+}
+
+function toggleHeaderMenu(e){
+  e.stopPropagation();
+  document.getElementById('headerMenu').classList.toggle('open');
+}
+function closeHeaderMenu(){
+  document.getElementById('headerMenu').classList.remove('open');
+}
+document.addEventListener('click', closeHeaderMenu);
+
+/* ===== Configuración: submenu y exportación ===== */
+function toggleConfigMenu(el){
+  el.classList.toggle('open');
+  document.getElementById('configSubmenu').classList.toggle('open');
+}
+
+function openExportModal(){
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeExportModal(){
+  document.getElementById('exportModal').classList.remove('open');
+  document.querySelectorAll('.export-status').forEach(s=>s.classList.remove('show'));
+}
+
+function showExportStatus(id){
+  const el = document.getElementById(id);
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+function downloadBlob(content, filename, type){
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildChatsText(){
+  let out = "";
+  conversations.forEach(c=>{
+    out += `===== ${c.name} (${channelIcons[c.channel].label}) =====\n`;
+    c.messages.forEach(m=>{
+      if(m.from==="sys"){ out += `[Sistema] ${m.text}\n`; return; }
+      const who = m.from==="out" ? "Yo" : c.name;
+      const body = m.text || (m.attachment ? `[${m.attachment.type}] ${m.attachment.name}` : "");
+      out += `${m.time} - ${who}: ${body}\n`;
+    });
+    out += "\n";
+  });
+  return out;
+}
+
+function exportChatsTxt(){
+  downloadBlob(buildChatsText(), "chats_attomos.txt", "text/plain;charset=utf-8");
+  showExportStatus('chatsStatus');
+}
+
+function exportChatsPdf(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(10);
+  const lines = doc.splitTextToSize(buildChatsText(), 180);
+  let y = 15;
+  lines.forEach(line=>{
+    if(y > 285){ doc.addPage(); y = 15; }
+    doc.text(line, 10, y);
+    y += 6;
+  });
+  doc.save("chats_attomos.pdf");
+  showExportStatus('chatsStatus');
+}
+
+function exportContactsExcel(){
+  const rows = getContacts().map(c=>({
+    Nombre: c.name,
+    Telefono: c.phone,
+    Canal: channelIcons[c.channel].label,
+    Disponibilidad: c.availability,
+    Etiquetas: c.tags.join(", ")
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Contactos");
+  XLSX.writeFile(wb, "contactos_attomos.xlsx");
+  showExportStatus('contactsStatus');
+}
+
+function exportContactsPdf(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text("Contactos - Attomos CRM", 10, 15);
+  doc.setFontSize(10);
+  let y = 26;
+  getContacts().forEach(c=>{
+    if(y > 280){ doc.addPage(); y = 15; }
+    doc.text(`${c.name}  |  ${c.phone}  |  ${channelIcons[c.channel].label}  |  ${c.tags.join(", ")}`, 10, y);
+    y += 7;
+  });
+  doc.save("contactos_attomos.pdf");
+  showExportStatus('contactsStatus');
+}
+
+/* ===== Adjuntar video: menú (grabar o subir) ===== */
+function toggleVideoAttachMenu(e){
+  e.stopPropagation();
+  document.getElementById('videoAttachMenu').classList.toggle('open');
+}
+function closeVideoAttachMenu(){
+  document.getElementById('videoAttachMenu').classList.remove('open');
+}
+document.addEventListener('click', closeVideoAttachMenu);
+
+/* ===== Grabar video desde la cámara del dispositivo ===== */
+let videoMediaRecorder = null;
+let videoRecordedChunks = [];
+let videoLiveStream = null;
+let videoRecordingStartTime = null;
+let videoRecordingTimerInterval = null;
+let recordedVideoUrl = null;
+
+async function openVideoRecordModal(){
+  document.getElementById('videoRecordModal').classList.add('open');
+  document.getElementById('videoRecordActionsIdle').style.display = 'flex';
+  document.getElementById('videoRecordActionsRecording').style.display = 'none';
+  document.getElementById('videoRecordActionsReview').style.display = 'none';
+  document.getElementById('videoRecordTimer').style.display = 'none';
+  const preview = document.getElementById('videoRecordPreview');
+  preview.muted = true;
+  preview.controls = false;
+  preview.src = "";
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert("Este navegador no permite grabar video desde la cámara.");
+    closeVideoRecordModal();
+    return;
+  }
+  try{
+    videoLiveStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+    preview.srcObject = videoLiveStream;
+  } catch(err){
+    alert("No se pudo acceder a la cámara. Revisa los permisos del navegador.");
+    closeVideoRecordModal();
+  }
+}
+
+function startVideoRecording(){
+  if(!videoLiveStream) return;
+  videoRecordedChunks = [];
+  videoMediaRecorder = new MediaRecorder(videoLiveStream);
+  videoMediaRecorder.ondataavailable = e => { if(e.data.size > 0) videoRecordedChunks.push(e.data); };
+  videoMediaRecorder.onstop = () => {
+    const blob = new Blob(videoRecordedChunks, { type: videoMediaRecorder.mimeType || "video/webm" });
+    recordedVideoUrl = URL.createObjectURL(blob);
+    const preview = document.getElementById('videoRecordPreview');
+    if(videoLiveStream){ videoLiveStream.getTracks().forEach(t=>t.stop()); videoLiveStream = null; }
+    preview.srcObject = null;
+    preview.src = recordedVideoUrl;
+    preview.muted = false;
+    preview.controls = true;
+    preview.play();
+    document.getElementById('videoRecordActionsRecording').style.display = 'none';
+    document.getElementById('videoRecordActionsReview').style.display = 'flex';
+    document.getElementById('videoRecordTimer').style.display = 'none';
+  };
+  videoMediaRecorder.start();
+  videoRecordingStartTime = Date.now();
+  document.getElementById('videoRecordActionsIdle').style.display = 'none';
+  document.getElementById('videoRecordActionsRecording').style.display = 'flex';
+  const timerEl = document.getElementById('videoRecordTimer');
+  timerEl.style.display = 'flex';
+  videoRecordingTimerInterval = setInterval(()=>{
+    const secs = Math.floor((Date.now() - videoRecordingStartTime) / 1000);
+    const m = String(Math.floor(secs / 60)).padStart(2,'0');
+    const s = String(secs % 60).padStart(2,'0');
+    timerEl.textContent = `${m}:${s}`;
+  }, 500);
+}
+
+function stopVideoRecording(){
+  if(videoMediaRecorder && videoMediaRecorder.state === "recording"){
+    videoMediaRecorder.stop();
+  }
+  clearInterval(videoRecordingTimerInterval);
+}
+
+function retakeVideoRecording(){
+  if(recordedVideoUrl){ URL.revokeObjectURL(recordedVideoUrl); recordedVideoUrl = null; }
+  openVideoRecordModal();
+}
+
+function useRecordedVideo(){
+  if(!recordedVideoUrl) return;
+  pendingAttachment = { type:"video", name:"Video grabado.webm", url: recordedVideoUrl };
+  renderAttachmentPreview();
+  recordedVideoUrl = null;
+  closeVideoRecordModal();
+}
+
+function closeVideoRecordModal(){
+  document.getElementById('videoRecordModal').classList.remove('open');
+  clearInterval(videoRecordingTimerInterval);
+  if(videoMediaRecorder && videoMediaRecorder.state === "recording"){
+    videoMediaRecorder.stop();
+  }
+  if(videoLiveStream){
+    videoLiveStream.getTracks().forEach(t=>t.stop());
+    videoLiveStream = null;
+  }
+  const preview = document.getElementById('videoRecordPreview');
+  if(preview){
+    preview.pause();
+    preview.srcObject = null;
+  }
+}
+
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingStream = null;
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+
+function toggleVoiceRecording(){
+  if(mediaRecorder && mediaRecorder.state === "recording"){
+    stopVoiceRecording();
+  } else {
+    startVoiceRecording();
+  }
+}
+
+async function startVoiceRecording(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert("Este navegador no permite grabar audio desde el micrófono.");
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    recordingStream = stream;
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+      const url = URL.createObjectURL(blob);
+      pendingAttachment = { type:"audio", name:"Nota de voz.webm", url };
+      renderAttachmentPreview();
+      recordingStream.getTracks().forEach(t => t.stop());
+      recordingStream = null;
+    };
+    mediaRecorder.start();
+    recordingStartTime = Date.now();
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micBtn').title = "Detener grabación";
+    recordingTimerInterval = setInterval(()=>{
+      const secs = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const m = String(Math.floor(secs / 60)).padStart(2,'0');
+      const s = String(secs % 60).padStart(2,'0');
+      document.getElementById('micTimer').textContent = `${m}:${s}`;
+    }, 500);
+  } catch(err){
+    alert("No se pudo acceder al micrófono. Revisa los permisos del navegador.");
+  }
+}
+
+function stopVoiceRecording(){
+  if(mediaRecorder && mediaRecorder.state === "recording"){
+    mediaRecorder.stop();
+  }
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micBtn').title = "Grabar nota de voz";
+  clearInterval(recordingTimerInterval);
+  document.getElementById('micTimer').textContent = "";
+}
+
+let pendingAttachment = null;
+const attIcons = { image:"lni-image", video:"lni-video", audio:"lni-microphone", file:"lni-paperclip" };
+
+function handleFileSelect(event, type){
+  const file = event.target.files[0];
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  pendingAttachment = { type, name:file.name, url };
+  renderAttachmentPreview();
+  event.target.value = "";
+}
+
+function clearAttachment(){
+  pendingAttachment = null;
+  renderAttachmentPreview();
+}
+
+/* ===== Arrastrar y soltar archivos sobre el chat ===== */
+(function setupChatDragAndDrop(){
+  const chatCol = document.querySelector('.chat-col');
+  const overlay = document.getElementById('dropOverlay');
+  let dragDepth = 0;
+
+  function guessType(file){
+    if(file.type.startsWith('image/')) return 'image';
+    if(file.type.startsWith('video/')) return 'video';
+    if(file.type.startsWith('audio/')) return 'audio';
+    return 'file';
+  }
+
+  chatCol.addEventListener('dragenter', (e)=>{
+    e.preventDefault();
+    dragDepth++;
+    overlay.classList.add('active');
+  });
+  chatCol.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+  });
+  chatCol.addEventListener('dragleave', (e)=>{
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if(dragDepth === 0) overlay.classList.remove('active');
+  });
+  chatCol.addEventListener('drop', (e)=>{
+    e.preventDefault();
+    dragDepth = 0;
+    overlay.classList.remove('active');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!file) return;
+    const url = URL.createObjectURL(file);
+    pendingAttachment = { type: guessType(file), name: file.name, url };
+    renderAttachmentPreview();
+  });
+})();
+
+function renderAttachmentPreview(){
+  const el = document.getElementById('attachmentPreview');
+  if(!pendingAttachment){ el.innerHTML = ""; return; }
+  const a = pendingAttachment;
+  let thumb = `<div class="att-icon"><i class="lni ${attIcons[a.type]}"></i></div>`;
+  if(a.type === 'image') thumb = `<img src="${a.url}">`;
+  if(a.type === 'video') thumb = `<video src="${a.url}"></video>`;
+  el.innerHTML = `${thumb}<span class="att-name">${a.name}</span><span class="att-remove" onclick="clearAttachment()"><i class="lni lni-close"></i></span>`;
+}
+
+function attachmentBubbleHtml(a, hasText){
+  const margin = hasText ? 'margin-bottom:6px;' : '';
+  if(a.type === 'image') return `<img class="att-media" style="${margin}" src="${a.url}">`;
+  if(a.type === 'video') return `<video class="att-media" style="${margin}" src="${a.url}" controls></video>`;
+  if(a.type === 'audio') return `<audio style="${margin}display:block;" src="${a.url}" controls></audio>`;
+  return `<div class="att-file-chip" style="${margin}"><i class="lni lni-paperclip"></i> ${a.name}</div>`;
+}
+
+let panelState = { left:true, right:true };
+
+function applyGrid(){
+  const left = panelState.left ? '232px' : '44px';
+  const right = panelState.right ? '300px' : '0px';
+  document.querySelector('.app').style.gridTemplateColumns = `${left} 320px 1fr ${right}`;
+  document.getElementById('navRail').classList.toggle('collapsed', !panelState.left);
+  document.getElementById('detailCol').style.display = panelState.right ? '' : 'none';
+}
+function toggleLeft(){ panelState.left = !panelState.left; applyGrid(); }
+function toggleRight(){ panelState.right = !panelState.right; applyGrid(); }
+
+let aiInControl = true;
+function toggleAIControl(){
+  aiInControl = !aiInControl;
+  const bar = document.getElementById('aiControlBar');
+  const text = document.getElementById('aiStatusText');
+  const label = document.getElementById('aiControlLabel');
+  const icon = document.getElementById('aiControlIcon');
+  if(aiInControl){
+    bar.classList.remove('human');
+    text.textContent = "La IA está respondiendo esta conversación";
+    label.textContent = "Tomar control";
+    icon.className = "lni lni-user";
+  }else{
+    bar.classList.add('human');
+    text.textContent = "Tienes el control de esta conversación";
+    label.textContent = "Dejar control a la IA";
+    icon.className = "lni lni-cog";
+  }
+}
+
+updateCounts();
+renderList();
+renderChat();
+applyGrid();
+</script>
+</body>
+</html>

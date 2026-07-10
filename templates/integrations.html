@@ -203,10 +203,23 @@
                         </div>
                     </div>
 
+                    <!-- No Agents Banner — invita a crear un agente pero NO bloquea la vista de integraciones -->
+                    <div class="no-agents-banner" id="noAgentsBanner" style="display: none;">
+                        <i class="lni lni-bulb"></i>
+                        <div class="no-agents-banner-text">
+                            <strong data-translate="integ_no_agents_title">No tienes agentes creados</strong>
+                            <span data-translate="integ_no_agents_desc">Crea tu primer agente para comenzar a usar las integraciones</span>
+                        </div>
+                        <button type="button" class="btn-primary" onclick="openOnboardingModal()">
+                            <i class="lni lni-plus"></i>
+                            <span data-translate="integ_create_agent">Crear Agente</span>
+                        </button>
+                    </div>
+
                     <!-- Integrations Grid -->
                     <div class="integrations-grid" id="integrationsGrid">
                         <!-- Gemini API Key Card (Solo plan gratuito - AtomicBot) -->
-                        <div class="integration-card" id="geminiCard" style="display: none;">
+                        <div class="integration-card" id="geminiCard">
                             <div class="card-header">
                                 <div class="card-title">
                                     <svg class="custom-icon-gemini-svg integration-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -284,7 +297,7 @@
                         </div>
 
                         <!-- Meta WhatsApp Business API Card (Solo planes de pago - OrbitalBot) -->
-                        <div class="integration-card" id="metaCard" style="display: none;">
+                        <div class="integration-card" id="metaCard">
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-whatsapp integration-icon" style="font-size: 2rem; color: #25D366;"></i>
@@ -610,7 +623,7 @@
                     </div>
 
                     <!-- ── REPAIRDESK CARD ── -->
-                    <div class="integration-card" id="repairDeskCard" style="display: none;">
+                    <div class="integration-card" id="repairDeskCard">
                         <div class="card-header">
                             <div class="card-title">
                                 <svg class="integration-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:2rem;height:2rem;color:#f97316;">
@@ -705,7 +718,7 @@
                     <!-- /REPAIRDESK CARD -->
 
                     <!-- ── SOFTRESTAURANT CARD ── -->
-                    <div class="integration-card" id="softRestaurantCard" style="display: none;">
+                    <div class="integration-card" id="softRestaurantCard">
                         <div class="card-header">
                             <div class="card-title">
                                 <svg class="integration-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:2rem;height:2rem;color:#f97316;">
@@ -848,7 +861,7 @@
                     <!-- /SOFTRESTAURANT CARD -->
 
                     <!-- Pasarela de Pagos Card (visible para todos los tipos de bot) -->
-                        <div class="integration-card" id="paymentsCard" style="display: none;">
+                        <div class="integration-card" id="paymentsCard">
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-credit-cards integration-icon" style="font-size: 2rem; color: #f59e0b;"></i>
@@ -1236,32 +1249,8 @@
                         </div>
 
 
-                    <!-- No Agents State -->
-                    <div class="empty-state" id="noAgentsState" style="display: none;">
-                        <div class="empty-icon">
-                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="32" y1="8" x2="32" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <circle cx="32" cy="6" r="2.5" fill="currentColor"/>
-                                <rect x="18" y="14" width="28" height="24" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                                <circle cx="26" cy="24" r="3" fill="currentColor"/>
-                                <circle cx="38" cy="24" r="3" fill="currentColor"/>
-                                <path d="M 24 31 Q 32 34 40 31" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                                <rect x="20" y="38" width="24" height="18" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                                <rect x="28" y="42" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-                                <circle cx="32" cy="46" r="1.5" fill="currentColor"/>
-                                <rect x="12" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                                <rect x="46" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                                <rect x="24" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                                <rect x="34" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                            </svg>
-                        </div>
-                        <h3 data-translate="integ_no_agents_title">No tienes agentes creados</h3>
-                        <p data-translate="integ_no_agents_desc">Crea tu primer agente para comenzar a usar las integraciones</p>
-                        <button type="button" class="btn-primary" onclick="openOnboardingModal()" style="margin-top: 0.5rem;">
-                            <i class="lni lni-plus"></i>
-                            <span data-translate="integ_create_agent">Crear Agente</span>
-                        </button>
-                    </div>
+                    <!-- No Agents Banner — invita a crear un agente pero NO bloquea la vista de integraciones -->
+                    <!-- Nota: ya está renderizado arriba, justo después del selector de agente -->
                 </div>
             </div>
         </div>

@@ -45,16 +45,17 @@ func main() {
 		&models.Subscription{},
 		&models.Payment{},
 		&models.GoogleCloudProject{},
-		&models.GlobalServer{},      // ← Servidor compartido global para AtomicBots
-		&models.Appointment{},       // ← Citas (manual + Google Sheets + agente)
-		&models.MyBusinessInfo{},    // ← Perfil de negocio del usuario
-		&models.Invoice{},           // ← Solicitudes de factura
-		&models.PaymentConfig{},     // ← Config de pagos del bot (CLABE + Stripe Connect)
-		&models.Order{},             // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
-		&models.MyAgencyInfo{},      // ← Perfil de dependencia gubernamental
-		&models.AgencyInscription{}, // ← Inscripciones ciudadanas a cursos
-		&handlers.Flow{},            // ← Flujos de automatización (gubernamental)
-		&handlers.FlowOption{},      // ← Opciones de respuesta de cada flujo
+		&models.GlobalServer{},          // ← Servidor compartido global para AtomicBots
+		&models.Appointment{},           // ← Citas (manual + Google Sheets + agente)
+		&models.MyBusinessInfo{},        // ← Perfil de negocio del usuario
+		&models.Invoice{},               // ← Solicitudes de factura
+		&models.PaymentConfig{},         // ← Config de pagos del bot (CLABE + Stripe Connect)
+		&models.Order{},                 // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
+		&models.MyAgencyInfo{},          // ← Perfil de dependencia gubernamental
+		&models.AgencyInscription{},     // ← Inscripciones ciudadanas a cursos
+		&models.ClickPaymeTransaction{}, // ← Transacciones Click/Payme (Uzbekistán, Telegram)
+		&handlers.Flow{},                // ← Flujos de automatización (gubernamental)
+		&handlers.FlowOption{},          // ← Opciones de respuesta de cada flujo
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -162,6 +163,10 @@ func main() {
 	// ============================================
 	router.POST("/webhook/stripe", handlers.StripeWebhookHandler)
 	log.Println("✅ Stripe Webhook configurado en: /webhook/stripe")
+
+	router.POST("/webhook/click/:branch_id", handlers.ClickWebhookHandler)
+	router.POST("/webhook/payme/:branch_id", handlers.PaymeWebhookHandler)
+	log.Println("✅ Click/Payme Webhooks configurados en: /webhook/click/:branch_id y /webhook/payme/:branch_id")
 
 	// ============================================
 	// 🔧 WEBHOOK PROXY - Meta WhatsApp (PÚBLICO)
@@ -323,13 +328,17 @@ func main() {
 		protected.DELETE("/meta/credentials/remove/:agent_id", handlers.RemoveMetaCredentials)
 
 		// ============================================
-		// 💳 PAYMENT CONFIG - Pasarela de pagos del bot (CLABE + Stripe Connect)
+		// 💳 PAYMENT CONFIG - Pasarela de pagos del bot (CLABE + Stripe Connect + Click/Payme)
 		// ============================================
 		protected.GET("/payment-config/:branch_id", handlers.GetPaymentConfig)
 		protected.POST("/payment-config/spei/:branch_id", handlers.SaveSPEIConfig)
 		protected.DELETE("/payment-config/spei/:branch_id", handlers.RemoveSPEIConfig)
 		protected.POST("/payment-config/stripe/connect/:branch_id", handlers.InitiateStripeConnect)
 		protected.DELETE("/payment-config/stripe/:branch_id", handlers.DisconnectStripeConnect)
+		protected.POST("/payment-config/click/:branch_id", handlers.SaveClickConfig)
+		protected.DELETE("/payment-config/click/:branch_id", handlers.RemoveClickConfig)
+		protected.POST("/payment-config/payme/:branch_id", handlers.SavePaymeConfig)
+		protected.DELETE("/payment-config/payme/:branch_id", handlers.RemovePaymeConfig)
 		protected.PATCH("/payment-config/settings/:branch_id", handlers.UpdatePaymentSettings)
 
 		// ============================================

@@ -28,6 +28,17 @@ type PaymentConfig struct {
 	StripeChargesEnabled bool       `gorm:"default:false" json:"stripeChargesEnabled"`
 	StripeConnectedAt    *time.Time `json:"stripeConnectedAt"`
 
+	// ── Click (Uzbekistán) ──────────────────────────────────────────────────
+	ClickEnabled    bool   `gorm:"default:false" json:"clickEnabled"`
+	ClickMerchantID string `gorm:"size:100" json:"clickMerchantId"`
+	ClickServiceID  string `gorm:"size:100" json:"clickServiceId"`
+	ClickSecretKey  string `gorm:"size:255" json:"clickSecretKey"` // nunca se manda al frontend sin enmascarar
+
+	// ── Payme (Uzbekistán) ──────────────────────────────────────────────────
+	PaymeEnabled    bool   `gorm:"default:false" json:"paymeEnabled"`
+	PaymeMerchantID string `gorm:"size:100" json:"paymeMerchantId"` // Cassa ID
+	PaymeSecretKey  string `gorm:"size:255" json:"paymeSecretKey"`  // nunca se manda al frontend sin enmascarar
+
 	// ── Configuración general ───────────────────────────────────────────────
 	// Cuándo mostrar opciones de pago en el bot
 	PaymentRequiredForBooking bool `gorm:"default:false" json:"paymentRequiredForBooking"` // Si true, el bot pide pago antes de confirmar cita
