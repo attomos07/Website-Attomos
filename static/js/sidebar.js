@@ -73,8 +73,15 @@
     const messagesLink    = document.getElementById('messagesLink');
     const messagesText    = messagesLink?.querySelector('.messages-text');
     const messagesLoading = messagesLink?.querySelector('.messages-loading');
+    const crmItem         = document.getElementById('crmMenuItem');
     const buttons         = document.querySelectorAll('.icon-button');
     let   isMobile        = window.innerWidth <= 768;
+
+    // ✅ CRM: disponible para todos los planes desde el arranque, incluido
+    // el plan gratuito. Antes solo se agregaba por defecto con plan Proton;
+    // esto es un display explícito, no depende de checkUserPlan() ni de que
+    // el fetch a /api/me responda (incluso si falla, el CRM sigue visible).
+    if (crmItem) crmItem.style.display = '';
 
     // ── Chatwoot ─────────────────────────────────────────────────────
     async function loadChatwootInfo() {
@@ -137,6 +144,9 @@
 
             // ✅ FIX: "Mi Negocio" siempre visible, sin importar si tiene agentes
             if (myBusinessItem) myBusinessItem.style.display = '';
+
+            // ✅ CRM: siempre visible, sin importar el plan (incluido gratuito)
+            if (crmItem) crmItem.style.display = '';
 
             // Portfolio y Mensajes según plan
             if (plan === 'gratuito') {

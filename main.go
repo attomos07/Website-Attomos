@@ -401,6 +401,10 @@ func main() {
 		c.HTML(200, "integrations.html", nil)
 	})
 
+	router.GET("/crm", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "crm.html", nil)
+	})
+
 	router.GET("/business-portfolio", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "business-portfolio.html", nil)
 	})
