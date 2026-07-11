@@ -12,6 +12,8 @@ import (
 
 	"github.com/google/generative-ai-go/genai"
 	"go.mau.fi/whatsmeow"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
 
@@ -120,6 +122,18 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		senderName = "Cliente"
 	}
 
+	// ── Nota de voz: transcribir con Gemini y procesar como si fuera texto ───
+	if audioMsg := msg.Message.GetAudioMessage(); audioMsg != nil {
+		handleAudioMessage(msg, client, audioMsg, phoneNumber, senderName)
+		return
+	}
+
+	// ── Imagen: analizarla con Gemini Vision y responder directamente ────────
+	if imageMsg := msg.Message.GetImageMessage(); imageMsg != nil {
+		handleImageMessage(msg, client, imageMsg, phoneNumber, senderName)
+		return
+	}
+
 	// Obtener texto del mensaje
 	var messageText string
 	if msg.Message.GetConversation() != "" {
@@ -138,11 +152,18 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 	log.Printf("   💬 Texto: %s", messageText)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
+	respondToText(msg.Info.Chat, messageText, phoneNumber, senderName)
+}
+
+// respondToText corre el pipeline normal de Gemini/flows (ProcessMessage) sobre
+// un texto y envía la respuesta resultante. Se usa tanto para mensajes escritos
+// como para notas de voz ya transcritas — así agendar, pedidos, cancelaciones,
+// etc. funcionan igual sin importar si el cliente escribió o habló.
+func respondToText(chat types.JID, messageText, phoneNumber, senderName string) {
 	// Procesar mensaje — Gemini es quien decide qué hacer
 	response := ProcessMessage(messageText, phoneNumber, senderName)
 
 	// ── Interceptar SEND_MENU: Gemini decidió enviar el menú como archivo ───
-	// Necesitamos el JID aquí para poder enviar imagen/documento.
 	if strings.Contains(response, "SEND_MENU") {
 		if BusinessCfg != nil && BusinessCfg.MenuUrl != "" {
 			menuURL := BusinessCfg.MenuUrl
@@ -150,7 +171,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 			menuFileName := "Menú - " + BusinessCfg.AgentName
 			var sendErr error
 			if strings.HasSuffix(urlLower, ".pdf") {
-				sendErr = SendDocument(msg.Info.Chat, menuURL, menuFileName+".pdf", "")
+				sendErr = SendDocument(chat, menuURL, menuFileName+".pdf", "")
 			} else {
 				for _, e := range []string{".jpg", ".jpeg", ".png", ".webp"} {
 					if strings.HasSuffix(urlLower, e) {
@@ -158,17 +179,17 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 						break
 					}
 				}
-				sendErr = SendImage(msg.Info.Chat, menuURL, "")
+				sendErr = SendImage(chat, menuURL, "")
 			}
 			if sendErr != nil {
 				log.Printf("❌ Error enviando menú: %v", sendErr)
-				SendMessage(msg.Info.Chat, "Aquí te lo dejo: "+menuURL)
+				SendMessage(chat, "Aquí te lo dejo: "+menuURL)
 			} else {
 				log.Printf("✅ Menú enviado como archivo")
 			}
 		} else {
 			// No hay MenuUrl — enviar el menú en texto
-			SendMessage(msg.Info.Chat, buildMenuResponse())
+			SendMessage(chat, buildMenuResponse())
 		}
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		return
@@ -211,7 +232,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 
 			if matched != nil && len(matched.ImageUrls) > 0 {
 				for _, imgURL := range matched.ImageUrls {
-					if err := SendImage(msg.Info.Chat, imgURL, ""); err != nil {
+					if err := SendImage(chat, imgURL, ""); err != nil {
 						log.Printf("❌ Error enviando foto de servicio: %v", err)
 					}
 				}
@@ -221,7 +242,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		}
 		if !sent {
 			log.Printf("⚠️  Servicio '%s' no encontrado o sin fotos", serviceTitle)
-			SendMessage(msg.Info.Chat, "No encontré fotos de ese producto. ¿Puedes ser más específico?")
+			SendMessage(chat, "No encontré fotos de ese producto. ¿Puedes ser más específico?")
 		}
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		return
@@ -234,7 +255,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 	// Enviar respuesta
 	if response != "" {
 		log.Printf("📤 ENVIANDO RESPUESTA a %s...", senderName)
-		if err := SendMessage(msg.Info.Chat, response); err != nil {
+		if err := SendMessage(chat, response); err != nil {
 			log.Printf("❌ ERROR enviando mensaje: %v", err)
 		} else {
 			log.Printf("✅ RESPUESTA ENVIADA correctamente")
@@ -242,6 +263,109 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		}
 	} else {
 		log.Printf("⚠️  No se generó respuesta para este mensaje")
+	}
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+}
+
+// handleAudioMessage descarga una nota de voz de WhatsApp, la transcribe con
+// Gemini y continúa el flujo normal como si el cliente hubiera escrito el texto.
+func handleAudioMessage(msg *events.Message, client *whatsmeow.Client, audioMsg *waProto.AudioMessage, phoneNumber, senderName string) {
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("🎙️  NOTA DE VOZ RECIBIDA de %s (%s)", senderName, phoneNumber)
+	log.Printf("   ⏱️  Duración: %ds", audioMsg.GetSeconds())
+
+	audioBytes, err := client.Download(context.Background(), audioMsg)
+	if err != nil {
+		log.Printf("❌ Error descargando nota de voz: %v", err)
+		SendMessage(msg.Info.Chat, "No pude escuchar tu audio 😕 ¿Puedes escribirme tu mensaje?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	// El mimetype de WhatsApp suele venir como "audio/ogg; codecs=opus" —
+	// nos quedamos solo con el tipo base para Gemini.
+	mimeType := audioMsg.GetMimetype()
+	if idx := strings.Index(mimeType, ";"); idx != -1 {
+		mimeType = strings.TrimSpace(mimeType[:idx])
+	}
+	if mimeType == "" {
+		mimeType = "audio/ogg"
+	}
+
+	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(audioBytes), mimeType)
+
+	transcribed, err := TranscribeAudio(audioBytes, mimeType)
+	if err != nil || strings.TrimSpace(transcribed) == "" {
+		log.Printf("❌ Error transcribiendo audio: %v", err)
+		SendMessage(msg.Info.Chat, "No logré entender bien tu audio 😕 ¿Me lo puedes escribir?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	log.Printf("   📝 Transcripción: %s", transcribed)
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	respondToText(msg.Info.Chat, transcribed, phoneNumber, senderName)
+}
+
+// handleImageMessage descarga una imagen de WhatsApp, la analiza con Gemini
+// Vision usando el contexto/catálogo del negocio y responde directamente
+// (ej. "¿tienes este auto?" con una foto adjunta).
+func handleImageMessage(msg *events.Message, client *whatsmeow.Client, imageMsg *waProto.ImageMessage, phoneNumber, senderName string) {
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("🖼️  IMAGEN RECIBIDA de %s (%s)", senderName, phoneNumber)
+
+	caption := imageMsg.GetCaption()
+	log.Printf("   💬 Caption: %s", caption)
+
+	imageBytes, err := client.Download(context.Background(), imageMsg)
+	if err != nil {
+		log.Printf("❌ Error descargando imagen: %v", err)
+		SendMessage(msg.Info.Chat, "No pude abrir tu imagen 😕 ¿Puedes reenviarla?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	mimeType := imageMsg.GetMimetype()
+	if mimeType == "" {
+		mimeType = "image/jpeg"
+	}
+
+	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(imageBytes), mimeType)
+
+	state := GetUserState(phoneNumber)
+	state.LastMessageTime = time.Now().Unix()
+
+	question := caption
+	if question == "" {
+		question = "El cliente envió esta imagen sin comentario. Descríbela brevemente y pregunta en qué le puedes ayudar respecto a ella."
+	}
+
+	answer, err := AnalyzeImage(imageBytes, mimeType, question, joinHistory(state.ConversationHistory))
+	if err != nil {
+		log.Printf("❌ Error analizando imagen con Gemini: %v", err)
+		SendMessage(msg.Info.Chat, "Recibí tu imagen pero no pude analizarla en este momento 😕 ¿Puedes describirme lo que necesitas?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	// Guardar en el historial para mantener contexto en la conversación
+	histEntry := "Usuario: [envió una imagen]"
+	if caption != "" {
+		histEntry += " " + caption
+	}
+	state.ConversationHistory = append(state.ConversationHistory, histEntry)
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+answer)
+
+	answer = strings.ReplaceAll(answer, "**", "*")
+	answer = cleanBoldSpaces(answer)
+
+	log.Printf("📤 ENVIANDO RESPUESTA DE IMAGEN a %s...", senderName)
+	if err := SendMessage(msg.Info.Chat, answer); err != nil {
+		log.Printf("❌ ERROR enviando respuesta de imagen: %v", err)
+	} else {
+		log.Printf("✅ RESPUESTA DE IMAGEN ENVIADA correctamente")
+		log.Printf("   📝 Contenido: %s", answer)
 	}
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }

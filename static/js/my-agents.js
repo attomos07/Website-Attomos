@@ -24,7 +24,27 @@ document.addEventListener('DOMContentLoaded', function () {
     loadAgents();
     initializeDropdowns();
     initializeCreateAgentButton();
+
+    // ¿Venimos de "Editar" en agent-details.html? (/my-agents?editAgent=123)
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('editAgent');
+    if (editId) {
+        openOnboardingModalForEdit(editId);
+        // Limpiar el query param para que un refresh no vuelva a abrir el modal
+        history.replaceState(null, '', window.location.pathname);
+    }
 });
+
+// Abre el modal de onboarding en modo edición para un agente existente.
+// Reutiliza toda la infraestructura de openOnboardingModal() (crea el modal,
+// carga onboarding.html/css/js); reinitializeOnboardingEvents() detecta el
+// flag _pendingEditAgentId y precarga el agente en el momento correcto
+// (después de inicializar todas las secciones, para no pisar nada).
+function openOnboardingModalForEdit(agentId) {
+    document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
+    window._pendingEditAgentId = agentId;
+    openOnboardingModal();
+}
 
 // Inicializar botón de crear agente (onclick en HTML)
 function initializeCreateAgentButton() {
@@ -33,6 +53,18 @@ function initializeCreateAgentButton() {
 
 // Abrir modal de onboarding
 function openOnboardingModal() {
+    // Si quedó un editingAgentId de una edición anterior sin guardar (ej. el
+    // usuario cerró el modal sin terminar), lo limpiamos para que "Crear
+    // Agente" no termine editando por accidente el agente anterior.
+    if (typeof window.agentData !== 'undefined' && window.agentData) {
+        window.agentData.editingAgentId = null;
+    }
+    window.editingAgentId = null;
+    const existingTitle = document.querySelector('.onboarding-modal-title span');
+    if (existingTitle) existingTitle.textContent = t('agents_create_modal_title', 'Crear Nuevo Agente');
+    const existingNotice = document.getElementById('editPlatformNotice');
+    if (existingNotice) existingNotice.remove();
+
     // Crear modal si no existe
     let modal = document.getElementById('onboardingModal');
     if (!modal) {
@@ -304,10 +336,16 @@ async function loadOnboardingContent() {
 async function reinitializeOnboardingEvents() {
     console.log('🔄 Reinicializando modal del agente (my-agents)');
 
-    if (typeof agentData !== 'undefined') { agentData.social=''; agentData.name=''; agentData.phoneNumber=''; agentData.config={tone:'formal',customTone:'',languages:[],additionalLanguages:[],specialInstructions:'',schedule:{monday:{open:true,start:'09:00',end:'18:00'},tuesday:{open:true,start:'09:00',end:'18:00'},wednesday:{open:true,start:'09:00',end:'18:00'},thursday:{open:true,start:'09:00',end:'18:00'},friday:{open:true,start:'09:00',end:'18:00'},saturday:{open:false,start:'09:00',end:'14:00'},sunday:{open:false,start:'09:00',end:'14:00'}}}; }
-    // Resetear radio buttons de plataforma para que el usuario deba elegir de nuevo
-    document.querySelectorAll('input[name="social"]').forEach(r => r.checked = false);
-    const btnStep1 = document.getElementById('btnStep1'); if (btnStep1) btnStep1.disabled = true;
+    // ¿Se abrió este modal para editar un agente existente? (ver openOnboardingModalForEdit)
+    const _editingAgentId = window._pendingEditAgentId || null;
+    window._pendingEditAgentId = null;
+
+    if (!_editingAgentId) {
+        if (typeof agentData !== 'undefined') { agentData.social=''; agentData.name=''; agentData.phoneNumber=''; agentData.config={tone:'formal',customTone:'',languages:[],additionalLanguages:[],specialInstructions:'',schedule:{monday:{open:true,start:'09:00',end:'18:00'},tuesday:{open:true,start:'09:00',end:'18:00'},wednesday:{open:true,start:'09:00',end:'18:00'},thursday:{open:true,start:'09:00',end:'18:00'},friday:{open:true,start:'09:00',end:'18:00'},saturday:{open:false,start:'09:00',end:'14:00'},sunday:{open:false,start:'09:00',end:'14:00'}}}; }
+        // Resetear radio buttons de plataforma para que el usuario deba elegir de nuevo
+        document.querySelectorAll('input[name="social"]').forEach(r => r.checked = false);
+        const btnStep1 = document.getElementById('btnStep1'); if (btnStep1) btnStep1.disabled = true;
+    }
     if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
 
     const modal = document.getElementById('onboardingModal');
@@ -328,12 +366,18 @@ async function reinitializeOnboardingEvents() {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
-    // Mostrar step1 (selección de red social) primero
-    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
-    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    if (_editingAgentId) {
+        // Modo edición: no existe el paso 1 (la plataforma ya está definida)
+        if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+        if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+    } else {
+        // Mostrar step1 (selección de red social) primero
+        if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+        if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    }
     // Ocultar nav de secciones hasta que se complete step1
     const sectionNavEl = document.getElementById('sectionNavigation');
-    if (sectionNavEl) sectionNavEl.style.display = 'none';
+    if (sectionNavEl) sectionNavEl.style.display = _editingAgentId ? '' : 'none';
 
     // ── Habilitar Continuar al seleccionar red social (SINCRÓNICO, antes de cualquier await) ──
     (function setupSocialSelectionEarly() {
@@ -418,12 +462,14 @@ async function reinitializeOnboardingEvents() {
     if (typeof initializeToneSelection==='function') initializeToneSelection();
     if (typeof initializeLanguageSelection==='function') initializeLanguageSelection();
     setTimeout(() => {
-        if (typeof fetchUserData==='function') fetchUserData();
+        if (!_editingAgentId) {
+            if (typeof fetchUserData==='function') fetchUserData();
+        }
         if (typeof initBusinessTimePickers==='function') initBusinessTimePickers();
         if (typeof initHolidayDatePickers==='function') initHolidayDatePickers();
         if (typeof initWorkerTimePickers==='function') initWorkerTimePickers();
         // Cargar bizType para negocios normales
-        if (!_isGovModal) {
+        if (!_isGovModal && !_editingAgentId) {
             (async () => {
                 try {
                     let bizType = '';
@@ -600,6 +646,18 @@ async function reinitializeOnboardingEvents() {
     }
     // También llamar initializeSocialSelection si ya está disponible
     if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
+
+    // ── Modo edición: ir directo a "Info. Básica" y precargar el agente ────
+    if (_editingAgentId) {
+        if (typeof window._modalGoToSection === 'function') {
+            window._modalGoToSection('section-basic');
+        }
+        if (typeof window.enterAgentEditMode === 'function') {
+            window.enterAgentEditMode(_editingAgentId);
+        } else {
+            console.error('❌ enterAgentEditMode no está disponible (onboarding.js no cargó bien)');
+        }
+    }
 }
 
 
@@ -734,7 +792,15 @@ function renderAgentsTable(agents) {
 
 // Crear fila de agente
 function createAgentRow(agent) {
-    const phone = agent.phoneNumber || t('agents_no_number', 'Sin número');
+    const botType = (agent.botType || '').toLowerCase();
+    // Los bots de WhatsApp Web (plan gratuito, QR con whatsmeow) nunca tienen
+    // un número registrado — usan el número personal vinculado por QR, no uno
+    // dado de alta vía Meta. "Sin número" ahí suena a error; aclaramos que es
+    // por diseño. Solo WhatsApp Business (orbital/builderbot) y Telegram usan
+    // un número/token real, y ahí sí "Sin número" indica algo pendiente.
+    const isWhatsAppWeb = botType === 'atomic';
+    const phone = agent.phoneNumber
+        || (isWhatsAppWeb ? t('agents_whatsapp_web_number', 'WhatsApp Web') : t('agents_no_number', 'Sin número'));
     const statusBadge = getStatusBadge(agent);
 
     return `<tr data-agent-id="${agent.id}">
@@ -780,6 +846,10 @@ function createAgentRow(agent) {
                 <button class="dropdown-item view" onclick="viewAgentDetails(${agent.id})">
                     <i class="lni lni-eye"></i>
                     <span>${t('agents_dd_view', 'Ver Detalles')}</span>
+                </button>
+                <button class="dropdown-item edit" onclick="openOnboardingModalForEdit(${agent.id})">
+                    <i class="lni lni-pencil"></i>
+                    <span>${t('agents_dd_edit', 'Editar Agente')}</span>
                 </button>
                 <button class="dropdown-item qr" onclick="showQRModal(${agent.id}, '${escapeHtml(agent.name).replace(/'/g, "\\'")}')">
                     <svg class="qr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

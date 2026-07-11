@@ -342,6 +342,170 @@ RESPONDE EN JSON:
 	return &analysis, nil
 }
 
+// TranscribeAudio transcribe una nota de voz de WhatsApp a texto usando Gemini.
+// Se usa como paso previo: el texto resultante se procesa exactamente igual que
+// si el cliente lo hubiera escrito, así todos los flujos existentes (agendar,
+// pedidos, cancelaciones, etc.) funcionan también cuando el cliente manda audio.
+func TranscribeAudio(audioBytes []byte, mimeType string) (string, error) {
+	if !geminiEnabled {
+		log.Println("⚠️  TranscribeAudio llamado pero Gemini no está habilitado")
+		return "", fmt.Errorf("Gemini no está habilitado")
+	}
+
+	if geminiClient == nil {
+		log.Println("❌ TranscribeAudio: geminiClient es nil")
+		return "", fmt.Errorf("Gemini no inicializado")
+	}
+
+	log.Printf("🎙️  Transcribiendo nota de voz con Gemini (%d bytes, %s)...\n", len(audioBytes), mimeType)
+
+	ctx := context.Background()
+
+	prompt := `Transcribe este audio de WhatsApp a texto, tal como lo diría la persona que habla.
+
+REGLAS:
+- Devuelve ÚNICAMENTE la transcripción del audio, sin comillas, sin explicaciones, sin comentarios adicionales.
+- Transcribe en el mismo idioma en el que habla la persona.
+- Si el audio no contiene voz humana entendible (silencio, puro ruido, música sin letra, etc.), responde EXACTAMENTE esto y nada más: SIN_AUDIO_VALIDO
+
+TRANSCRIPCIÓN:`
+
+	t0 := time.Now()
+	resp, err := geminiModel.GenerateContent(ctx,
+		genai.Blob{MIMEType: mimeType, Data: audioBytes},
+		genai.Text(prompt),
+	)
+	latency := time.Since(t0)
+	log.Printf("⏱️  [TranscribeAudio] Gemini tardó: %dms", latency.Milliseconds())
+
+	if err != nil {
+		log.Printf("❌ Error transcribiendo audio: %v\n", err)
+		return "", fmt.Errorf("error transcribiendo audio: %w", err)
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 {
+		log.Println("❌ Gemini no retornó candidatos en transcripción")
+		return "", fmt.Errorf("Gemini no retornó transcripción")
+	}
+
+	var sb strings.Builder
+	for _, cand := range resp.Candidates {
+		if cand.Content != nil {
+			for _, part := range cand.Content.Parts {
+				sb.WriteString(fmt.Sprintf("%v", part))
+			}
+		}
+	}
+
+	text := strings.TrimSpace(sb.String())
+
+	if text == "" || strings.Contains(text, "SIN_AUDIO_VALIDO") {
+		log.Println("⚠️  El audio no contiene voz entendible")
+		return "", fmt.Errorf("audio sin voz entendible")
+	}
+
+	log.Printf("✅ Transcripción generada: %s\n", text)
+	return text, nil
+}
+
+// AnalyzeImage analiza una imagen enviada por el cliente (ej. foto de un
+// producto, de un auto, de un platillo, de un comprobante de pago, etc.)
+// usando Gemini Vision y responde de forma natural comparándola contra el
+// catálogo/servicios del negocio cuando aplica.
+func AnalyzeImage(imageBytes []byte, mimeType, question, conversationHistory string) (string, error) {
+	if !geminiEnabled {
+		log.Println("⚠️  AnalyzeImage llamado pero Gemini no está habilitado")
+		return "", fmt.Errorf("Gemini no está habilitado")
+	}
+
+	if geminiClient == nil {
+		log.Println("❌ AnalyzeImage: geminiClient es nil")
+		return "", fmt.Errorf("Gemini no inicializado")
+	}
+
+	log.Printf("🖼️  Analizando imagen con Gemini Vision (%d bytes, %s)...\n", len(imageBytes), mimeType)
+	log.Printf("   💬 Pregunta/caption del cliente: %s\n", question)
+
+	ctx := context.Background()
+	systemPrompt := GetSystemPrompt()
+
+	// Catálogo del negocio para poder comparar la imagen contra lo que se ofrece
+	catalogInfo := ""
+	if BusinessCfg != nil && len(BusinessCfg.Services) > 0 {
+		catalogInfo = "CATÁLOGO / SERVICIOS / PRODUCTOS DEL NEGOCIO:\n"
+		for _, svc := range BusinessCfg.Services {
+			catalogInfo += fmt.Sprintf("- %s", svc.Title)
+			if svc.Price > 0 {
+				catalogInfo += fmt.Sprintf(" ($%.0f MXN)", svc.Price)
+			}
+			catalogInfo += "\n"
+		}
+	}
+
+	fullPrompt := fmt.Sprintf(`%s
+%s
+HISTORIAL DE CONVERSACIÓN:
+%s
+
+El cliente envió una imagen y escribió junto a ella: "%s"
+
+INSTRUCCIONES:
+- Observa la imagen con atención. Puede ser un producto, un vehículo, un platillo, un comprobante de pago, una foto de referencia, etc.
+- Si el cliente pregunta si tienes ese producto/artículo/vehículo/platillo, compara lo que ves en la imagen contra el catálogo del negocio y responde con honestidad: di si tienes exactamente eso, algo similar, o si no lo manejas.
+- Si mencionas una coincidencia, usa el nombre EXACTO tal como aparece en el catálogo.
+- Si no hay forma de saber con certeza si hay coincidencia exacta, dilo claramente y ofrece la opción más parecida.
+- NUNCA inventes productos, modelos o servicios que no estén en el catálogo.
+- Máximo 3-4 líneas de respuesta.
+- Sé natural, directo y útil, en el mismo tono del negocio.
+
+RESPUESTA:`,
+		systemPrompt,
+		catalogInfo,
+		conversationHistory,
+		question)
+
+	t0 := time.Now()
+	resp, err := geminiModel.GenerateContent(ctx,
+		genai.Blob{MIMEType: mimeType, Data: imageBytes},
+		genai.Text(fullPrompt),
+	)
+	latency := time.Since(t0)
+	log.Printf("⏱️  [AnalyzeImage] Gemini tardó: %dms", latency.Milliseconds())
+
+	if err != nil {
+		log.Printf("❌ Error analizando imagen: %v\n", err)
+		return "", fmt.Errorf("error analizando imagen: %w", err)
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 {
+		log.Println("❌ Gemini no retornó candidatos en análisis de imagen")
+		return "", fmt.Errorf("Gemini no retornó análisis de imagen")
+	}
+
+	var sb strings.Builder
+	for _, cand := range resp.Candidates {
+		if cand.Content != nil {
+			for _, part := range cand.Content.Parts {
+				sb.WriteString(fmt.Sprintf("%v", part))
+			}
+		}
+	}
+
+	result := strings.TrimSpace(sb.String())
+
+	if len(result) > 500 {
+		result = result[:450] + "..."
+	}
+
+	if result == "" {
+		log.Println("❌ Gemini generó respuesta vacía para la imagen")
+		return "Recibí tu imagen, pero no logré identificar bien de qué se trata. ¿Puedes contarme un poco más? 🙂", nil
+	}
+
+	log.Printf("✅ Análisis de imagen generado: %s\n", result)
+	return result, nil
+}
+
 // fallbackAnalysis análisis simple sin Gemini
 func fallbackAnalysis(message string) *AppointmentAnalysis {
 	log.Println("🔄 Usando análisis fallback (sin Gemini)")

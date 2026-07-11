@@ -406,7 +406,7 @@
                           <span class="form-help" data-translate="onb_basic_agent_name_help">Este nombre identificará a tu agente en el dashboard</span>
                         </div>
 
-                        <div class="toggle-container">
+                        <div class="toggle-container" id="phoneToggleContainer">
                           <div class="toggle-info">
                             <div class="toggle-title" data-translate="onb_phone_toggle_title">¿Usar un número de teléfono diferente?</div>
                             <div class="toggle-description" id="phoneToggleDesc" data-translate="onb_phone_toggle_desc">El agente puede usar tu número registrado o uno diferente</div>
@@ -455,7 +455,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="en" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">US</span> <span data-translate="onb_lang_en">Inglés</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#B22234"/><g fill="#fff"><rect y="1.08" width="20" height="1.08"/><rect y="3.23" width="20" height="1.08"/><rect y="5.38" width="20" height="1.08"/><rect y="7.54" width="20" height="1.08"/><rect y="9.69" width="20" height="1.08"/><rect y="11.85" width="20" height="1.08"/></g><rect width="8.6" height="7.54" fill="#3C3B6E"/></svg> <span data-translate="onb_lang_en">Inglés</span></span
                               >
                             </label>
 
@@ -467,7 +467,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="fr" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">FR</span> <span data-translate="onb_lang_fr">Francés</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#ED2939"/><rect width="13.33" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#002395"/></svg> <span data-translate="onb_lang_fr">Francés</span></span
                               >
                             </label>
 
@@ -479,7 +479,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="pt" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">BR</span> <span data-translate="onb_lang_pt">Portugués</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#009739"/><polygon points="10,2 18,7 10,12 2,7" fill="#FEDD00"/><circle cx="10" cy="7" r="3" fill="#012169"/></svg> <span data-translate="onb_lang_pt">Portugués</span></span
                               >
                             </label>
 
@@ -491,7 +491,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="de" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">DE</span> <span data-translate="onb_lang_de">Alemán</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="4.67" fill="#000"/><rect y="4.67" width="20" height="4.67" fill="#DD0000"/><rect y="9.33" width="20" height="4.67" fill="#FFCE00"/></svg> <span data-translate="onb_lang_de">Alemán</span></span
                               >
                             </label>
 
@@ -503,7 +503,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="it" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">IT</span> <span data-translate="onb_lang_it">Italiano</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="6.67" height="14" fill="#009246"/><rect x="6.67" width="6.67" height="14" fill="#fff"/><rect x="13.33" width="6.67" height="14" fill="#CE2B37"/></svg> <span data-translate="onb_lang_it">Italiano</span></span
                               >
                             </label>
 
@@ -515,7 +515,7 @@
                                 class="checkbox-input"
                               />
                               <span class="language-checkbox-label"
-                                ><span class="lang-flag-svg" data-flag-lang="zh" style="font-size:0.7rem;color:#64748b;font-weight:600;vertical-align:middle">CN</span> <span data-translate="onb_lang_zh">Chino</span></span
+                                ><svg class="lang-flag-icon" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#DE2910"/><g fill="#FFDE00"><polygon points="4,2 4.6,3.8 6.5,3.8 5,5 5.6,6.8 4,5.7 2.4,6.8 3,5 1.5,3.8 3.4,3.8"/><polygon points="8,1.2 8.3,1.8 9,1.8 8.45,2.2 8.65,2.9 8,2.5 7.35,2.9 7.55,2.2 7,1.8 7.7,1.8"/><polygon points="9.6,3 9.9,3.6 10.6,3.6 10.05,4 10.25,4.7 9.6,4.3 8.95,4.7 9.15,4 8.6,3.6 9.3,3.6"/><polygon points="9.6,5.6 9.9,6.2 10.6,6.2 10.05,6.6 10.25,7.3 9.6,6.9 8.95,7.3 9.15,6.6 8.6,6.2 9.3,6.2"/><polygon points="8,7.6 8.3,8.2 9,8.2 8.45,8.6 8.65,9.3 8,8.9 7.35,9.3 7.55,8.6 7,8.2 7.7,8.2"/></g></svg> <span data-translate="onb_lang_zh">Chino</span></span
                               >
                             </label>
                           </div>

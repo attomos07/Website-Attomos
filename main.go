@@ -54,6 +54,7 @@ func main() {
 		&models.MyAgencyInfo{},          // ← Perfil de dependencia gubernamental
 		&models.AgencyInscription{},     // ← Inscripciones ciudadanas a cursos
 		&models.ClickPaymeTransaction{}, // ← Transacciones Click/Payme (Uzbekistán, Telegram)
+		&models.PasswordReset{},         // ← Códigos/tokens de recuperación de contraseña
 		&handlers.Flow{},                // ← Flujos de automatización (gubernamental)
 		&handlers.FlowOption{},          // ← Opciones de respuesta de cada flujo
 	); err != nil {
@@ -512,6 +513,8 @@ func main() {
 
 	// API — el usuario no está autenticado, va fuera del grupo protected
 	router.POST("/api/user/password-reset", handlers.RequestPasswordReset)
+	router.POST("/api/user/password-reset/verify", handlers.VerifyPasswordResetCode)
+	router.POST("/api/user/password-reset/confirm", handlers.ResetPassword)
 
 	// ============================================
 	// ADMIN PANEL
@@ -544,6 +547,9 @@ func main() {
 		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
 		adminGroup.POST("/api/companies", handlers.AdminCreateCompany)
 		adminGroup.PUT("/api/companies/:id/plan", handlers.AdminUpdateCompanyPlan)
+		adminGroup.PUT("/api/companies/:id/email", handlers.AdminUpdateCompanyEmail)
+		adminGroup.PUT("/api/companies/:id/password", handlers.AdminUpdateCompanyPassword)
+		adminGroup.DELETE("/api/companies/:id", handlers.AdminDeleteCompany)
 	}
 
 	// ============================================

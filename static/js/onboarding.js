@@ -2193,6 +2193,100 @@ function initializeSocialSelection() {
 }
 
 // ============================================
+// DETECCIÓN DE NÚMERO DUPLICADO (plan Protón en adelante)
+// ============================================
+// El toggle "usar un número diferente" es para WhatsApp Business (API oficial
+// de Meta, planes Protón+) — ahí sí puede chocar con el número de otro agente.
+// WhatsApp Web (plan gratuito, QR con whatsmeow) no tiene este problema
+// porque no da de alta un número, solo vincula el que escanea el QR.
+let phoneNumberHasConflict = false;
+let _agentsForPhoneCheckCache = null;
+let _phoneCheckDebounce = null;
+
+async function loadAgentsForPhoneCheck() {
+  if (_agentsForPhoneCheckCache) return _agentsForPhoneCheckCache;
+  try {
+    const resp = await fetch('/api/agents', { credentials: 'include' });
+    if (!resp.ok) { _agentsForPhoneCheckCache = []; return []; }
+    const data = await resp.json();
+    _agentsForPhoneCheckCache = data.agents || [];
+  } catch (e) {
+    console.error('❌ No se pudo revisar agentes existentes para el número:', e);
+    _agentsForPhoneCheckCache = [];
+  }
+  return _agentsForPhoneCheckCache;
+}
+
+function _normalizePhoneDigits(str) {
+  return (str || '').replace(/[^\d]/g, '');
+}
+
+function schedulePhoneConflictCheck() {
+  clearTimeout(_phoneCheckDebounce);
+  _phoneCheckDebounce = setTimeout(checkPhoneNumberConflict, 350);
+}
+
+async function checkPhoneNumberConflict() {
+  const numberInput = document.getElementById('phoneNumber');
+  const countryCode = document.getElementById('countryCode')?.value || '';
+  if (!numberInput) return;
+
+  const rawNumber = numberInput.value.trim();
+  if (!rawNumber) {
+    phoneNumberHasConflict = false;
+    hidePhoneConflictWarning();
+    numberInput.classList.remove('input-error');
+    return;
+  }
+
+  const fullNumber = _normalizePhoneDigits(countryCode + rawNumber);
+  const agents = await loadAgentsForPhoneCheck();
+  const editingId = agentData.editingAgentId || null;
+
+  const conflict = agents.find(a =>
+    a.id !== editingId &&
+    a.phoneNumber &&
+    _normalizePhoneDigits(a.phoneNumber) === fullNumber
+  );
+
+  if (conflict) {
+    phoneNumberHasConflict = true;
+    showPhoneConflictWarning(conflict);
+    numberInput.classList.add('input-error');
+  } else {
+    phoneNumberHasConflict = false;
+    hidePhoneConflictWarning();
+    numberInput.classList.remove('input-error');
+  }
+}
+
+function showPhoneConflictWarning(agent) {
+  let warningEl = document.getElementById('phoneConflictWarning');
+  if (!warningEl) {
+    warningEl = document.createElement('div');
+    warningEl.id = 'phoneConflictWarning';
+    warningEl.className = 'phone-conflict-warning';
+    const phoneGroup = document.getElementById('phoneNumber')?.closest('.phone-input-group');
+    if (phoneGroup && phoneGroup.parentNode) {
+      phoneGroup.parentNode.insertBefore(warningEl, phoneGroup.nextSibling);
+    }
+  }
+
+  // Si el backend nos da el nombre de la sucursal del agente, lo mostramos también
+  const branchLabel = agent.branchName
+    ? ` en la sucursal <strong>"${agent.branchName}"</strong>`
+    : '';
+
+  warningEl.innerHTML = `<i class="lni lni-warning"></i><span>Este número ya lo está usando el agente <strong>"${agent.name || 'sin nombre'}"</strong>${branchLabel}. Por favor usa otro número.</span>`;
+  warningEl.style.display = 'flex';
+}
+
+function hidePhoneConflictWarning() {
+  const warningEl = document.getElementById('phoneConflictWarning');
+  if (warningEl) warningEl.style.display = 'none';
+}
+
+// ============================================
 // PHONE TOGGLE
 // ============================================
 function initializePhoneToggle() {
@@ -2205,12 +2299,60 @@ function initializePhoneToggle() {
       if (differentPhoneSection) {
         if (this.checked) {
           differentPhoneSection.style.display = 'block';
+          loadAgentsForPhoneCheck(); // precargar mientras el usuario escribe
         } else {
           differentPhoneSection.style.display = 'none';
+          phoneNumberHasConflict = false;
+          hidePhoneConflictWarning();
         }
       }
     });
   }
+
+  const phoneNumberInput = document.getElementById('phoneNumber');
+  const countryCodeSelect = document.getElementById('countryCode');
+  if (phoneNumberInput) phoneNumberInput.addEventListener('input', schedulePhoneConflictCheck);
+  if (countryCodeSelect) countryCodeSelect.addEventListener('change', schedulePhoneConflictCheck);
+
+  applyPhoneToggleVisibilityByPlan();
+}
+
+// El toggle "usar un número diferente" es para WhatsApp Business (API oficial
+// de Meta, disponible en Protón en adelante) — en el plan Gratuito el agente
+// usa WhatsApp Web (QR con whatsmeow) y no da de alta ningún número, así que
+// el toggle no aplica y se oculta por completo.
+function applyPhoneToggleVisibilityByPlan() {
+  const container = document.getElementById('phoneToggleContainer');
+  if (!container) return;
+
+  const setVisible = (isPaidPlan) => {
+    container.style.display = isPaidPlan ? '' : 'none';
+    if (!isPaidPlan) {
+      // Asegurar que quede apagado y oculto si el plan no lo permite
+      const toggle = document.getElementById('phoneToggle');
+      const section = document.getElementById('differentPhoneSection');
+      if (toggle && toggle.checked) toggle.checked = false;
+      if (section) section.style.display = 'none';
+      agentData.useDifferentPhone = false;
+    }
+  };
+
+  const isPaid = (plan) => !!plan && plan !== 'gratuito' && plan !== 'pending';
+
+  // 1) Mostrar de inmediato con lo que haya en caché (mismo patrón que userbar.js)
+  try {
+    const cached = JSON.parse(localStorage.getItem('userData') || 'null');
+    if (cached && cached.currentPlan) setVisible(isPaid(cached.currentPlan));
+  } catch (e) { /* caché corrupta, ignorar */ }
+
+  // 2) Confirmar con el backend (fuente de verdad) — mismo endpoint que usa el userbar
+  fetch('/api/me', { credentials: 'include' })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      const plan = data?.user?.currentPlan;
+      if (plan) setVisible(isPaid(plan));
+    })
+    .catch(err => console.error('❌ No se pudo confirmar el plan del usuario:', err));
 }
 
 // ============================================
@@ -3254,6 +3396,8 @@ function nextStep() {
 
 function previousStep() {
   if (currentStep === 1) return;
+  // En modo edición no existe el paso 1 (la plataforma no se puede cambiar)
+  if (currentStep === 2 && agentData.editingAgentId) return;
 
   currentStep--;
   updateStepDisplay();
@@ -3276,6 +3420,10 @@ function validateStep2() {
       alert('Por favor ingresa el número de teléfono');
       document.getElementById('phoneNumber').focus();
       return false;
+    }
+    if (phoneNumberHasConflict) {
+      document.getElementById('phoneNumber').focus();
+      return false; // el aviso inline ya explica el problema, no hace falta un alert encima
     }
   }
 
@@ -3332,6 +3480,160 @@ function animatePercentage(start, end, element) {
   }
   
   requestAnimationFrame(update);
+}
+
+// ============================================
+// MODO EDICIÓN DE AGENTE (llamado desde my-agents.js vía ?editAgent=ID)
+// Reutiliza toda la maquinaria de creación (secciones, addServiceWithData,
+// addWorkerWithData, addHolidayWithData) pero precargada con los datos del
+// agente existente, y al guardar hace PUT en vez de POST.
+// ============================================
+window.editingAgentId = null;
+
+window.enterAgentEditMode = async function (agentIdToEdit) {
+  try {
+    const resp = await fetch(`/api/agents/${agentIdToEdit}`, { credentials: 'include' });
+    if (!resp.ok) throw new Error('No se pudo cargar el agente');
+    const data = await resp.json();
+    prefillAgentForEdit(data.agent);
+  } catch (err) {
+    console.error('❌ Error cargando agente para editar:', err);
+    alert('No se pudo cargar la información del agente para editar. Intenta de nuevo.');
+  }
+};
+
+function prefillAgentForEdit(agent) {
+  window.editingAgentId = agent.id;
+  agentData.editingAgentId = agent.id;
+  agentData.name = agent.name || '';
+  agentData.phoneNumber = agent.phoneNumber || '';
+  if (agent.businessType) agentData.businessType = agent.businessType;
+  if (agent.branchId) agentData.branchId = agent.branchId;
+
+  // ── Plataforma: fijar y bloquear (no se puede cambiar tras creado) ──────
+  const botType = (agent.botType || '').toLowerCase();
+  const socialValue = botType === 'telegram' ? 'telegram' : 'whatsapp';
+  agentData.social = socialValue;
+  window.selectedSocial = socialValue;
+  selectedSocial = socialValue; // la variable local es la que realmente lee nextStep()
+  document.querySelectorAll('input[name="social"]').forEach(r => {
+    r.checked = (r.value === socialValue);
+    r.disabled = true;
+  });
+
+  // Editar un agente no permite cambiar de plataforma, así que el paso 1
+  // (elegir red social) no aplica — saltamos directo al paso 2.
+  currentStep = 2;
+  updateStepDisplay();
+  updateProgressBar();
+
+  // ── Nombre ────────────────────────────────────────────────────────────
+  const nameInput = document.getElementById('agentName');
+  if (nameInput) nameInput.value = agentData.name;
+
+  // ── Teléfono personalizado / token de Telegram ───────────────────────
+  if (socialValue === 'telegram') {
+    const tokenInput = document.getElementById('telegramBotToken');
+    if (tokenInput) tokenInput.value = agent.phoneNumber || '';
+  } else if (agent.phoneNumber) {
+    const toggle = document.getElementById('phoneToggle');
+    if (toggle) {
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event('change'));
+    }
+    const countryCodeSelect = document.getElementById('countryCode');
+    const numberInput = document.getElementById('phoneNumber');
+    if (countryCodeSelect && numberInput) {
+      const codes = Array.from(countryCodeSelect.options).map(o => o.value).sort((a, b) => b.length - a.length);
+      const matched = codes.find(c => agent.phoneNumber.startsWith(c));
+      if (matched) {
+        countryCodeSelect.value = matched;
+        numberInput.value = agent.phoneNumber.slice(matched.length);
+      } else {
+        numberInput.value = agent.phoneNumber;
+      }
+    }
+  }
+
+  const cfg = agent.config || {};
+
+  // ── Tono ──────────────────────────────────────────────────────────────
+  if (cfg.tone) {
+    agentData.config.tone = cfg.tone;
+    const toneRadio = document.querySelector(`input[name="tone"][value="${cfg.tone}"]`);
+    if (toneRadio) {
+      toneRadio.checked = true;
+      toneRadio.dispatchEvent(new Event('change'));
+    }
+    if (cfg.tone === 'custom' && cfg.customTone) {
+      agentData.config.customTone = cfg.customTone;
+      const editor = document.getElementById('editorContent');
+      if (editor) editor.innerHTML = cfg.customTone;
+    }
+  }
+
+  // ── Idiomas adicionales ───────────────────────────────────────────────
+  if (Array.isArray(cfg.additionalLanguages)) {
+    agentData.config.additionalLanguages = [...cfg.additionalLanguages];
+    document.querySelectorAll('input[name="additionalLanguage"]').forEach(cb => {
+      cb.checked = cfg.additionalLanguages.includes(cb.value);
+    });
+  }
+
+  // ── Instrucciones especiales ─────────────────────────────────────────
+  if (cfg.specialInstructions) {
+    agentData.config.specialInstructions = cfg.specialInstructions;
+    const special = document.getElementById('specialInstructionsInput');
+    if (special) special.value = cfg.specialInstructions;
+  }
+
+  // ── Horario ───────────────────────────────────────────────────────────
+  if (cfg.schedule) {
+    agentData.config.schedule = JSON.parse(JSON.stringify(cfg.schedule));
+    Object.entries(cfg.schedule).forEach(([day, sched]) => {
+      const checkbox   = document.getElementById(`day-${day}`);
+      const openInput  = document.getElementById(`time-${day}-open`);
+      const closeInput = document.getElementById(`time-${day}-close`);
+      if (checkbox) {
+        checkbox.checked = !!sched.open;
+        checkbox.dispatchEvent(new Event('change'));
+      }
+      if (openInput)  openInput.value  = sched.start || '09:00';
+      if (closeInput) closeInput.value = sched.end   || '18:00';
+    });
+  }
+
+  // ── Servicios ─────────────────────────────────────────────────────────
+  if (Array.isArray(cfg.services) && cfg.services.length) {
+    const list = document.getElementById('servicesList');
+    if (list) list.innerHTML = '';
+    cfg.services.forEach(s => addServiceWithData(s));
+    agentData.config.services = cfg.services;
+  }
+
+  // ── Personal ──────────────────────────────────────────────────────────
+  if (Array.isArray(cfg.workers) && cfg.workers.length) {
+    const list = document.getElementById('workersList');
+    if (list) list.innerHTML = '';
+    cfg.workers.forEach(w => addWorkerWithData(w));
+    agentData.config.workers = cfg.workers;
+  }
+
+  // ── Días festivos ─────────────────────────────────────────────────────
+  if (Array.isArray(cfg.holidays) && cfg.holidays.length) {
+    cfg.holidays.forEach(h => addHolidayWithData(h.date || `${h.day}/${h.month}`, h.name));
+  }
+
+  // ── Textos del modal: "Editar" en vez de "Crear" ────────────────────
+  const modalTitle = document.querySelector('.onboarding-modal-title span');
+  if (modalTitle) modalTitle.textContent = `Editar Agente — ${agentData.name}`;
+  const btnCreateAgent = document.getElementById('btnCreateAgent');
+  if (btnCreateAgent) {
+    const label = btnCreateAgent.querySelector('span') || btnCreateAgent;
+    label.textContent = 'Guardar Cambios';
+  }
+
+  console.log('✏️ Agente precargado para edición:', agent.id, agentData);
 }
 
 function collectFormData() {
@@ -4266,6 +4568,11 @@ async function uploadPendingServiceImages() {
 // CREATE AGENT
 // ============================================
 async function createAgent() {
+  // Modo edición: el usuario abrió el modal desde "Editar" en agent-details.html
+  if (agentData.editingAgentId) {
+    return updateAgent();
+  }
+
   console.log('🚀 Iniciando creación de agente...');
   
   // Cerrar el modal del onboarding si existe (cuando se abre desde el dashboard)
@@ -4330,6 +4637,60 @@ async function createAgent() {
     console.error('❌ Error:', error);
     creatingModal.classList.remove('show');
     alert(t('onb_err_creating','Error al crear el agente. Por favor intenta de nuevo.'));
+  }
+}
+
+// ============================================
+// ACTUALIZAR AGENTE EXISTENTE (modo edición)
+// Guarda los cambios con PUT y muestra el mismo modal de progreso → QR que
+// usa el redeploy manual, para que el usuario vea que se están aplicando.
+// ============================================
+async function updateAgent() {
+  console.log('✏️ Guardando cambios del agente', agentData.editingAgentId, '...');
+
+  const onboardingModal = document.getElementById('onboardingModal');
+  if (onboardingModal && typeof closeOnboardingModal === 'function') {
+    closeOnboardingModal();
+  }
+
+  const creatingModal = document.getElementById('creatingModal') || (ensureModalsExist(), document.getElementById('creatingModal'));
+  if (!creatingModal) {
+    console.error('❌ Modal de progreso no encontrado');
+    alert('Error: No se pudo mostrar el modal de progreso');
+    return;
+  }
+
+  const editedAgentId = agentData.editingAgentId;
+  const editedAgentName = agentData.name;
+
+  try {
+    await uploadPendingServiceImages();
+
+    const response = await fetch(`/api/agents/${editedAgentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: agentData.name,
+        phoneNumber: agentData.phoneNumber,
+        config: agentData.config
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Error al actualizar el agente');
+
+    // Salir del modo edición para no afectar la próxima vez que se cree un agente
+    agentData.editingAgentId = null;
+    window.editingAgentId = null;
+
+    console.log('✅ Agente actualizado, mostrando progreso...');
+    watchAgentRedeploy(editedAgentId, editedAgentName);
+
+  } catch (error) {
+    console.error('❌ Error actualizando agente:', error);
+    creatingModal.classList.remove('show');
+    alert('Error al guardar los cambios. Por favor intenta de nuevo.');
   }
 }
 

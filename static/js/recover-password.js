@@ -1,7 +1,10 @@
 // ============================================
-// Recover Password Page — JavaScript (solo vista)
+// Recover Password Page — JavaScript
 // Flujo: correo -> código de 4 dígitos -> nueva contraseña -> éxito
-// Sin conexión a backend todavía — solo navegación entre estados.
+// Conectado a:
+//   POST /api/user/password-reset          {email}
+//   POST /api/user/password-reset/verify   {email, code}   -> {resetToken}
+//   POST /api/user/password-reset/confirm  {resetToken, newPassword}
 // ============================================
 
 // ── Estados (secciones) ──────────────────────
@@ -19,9 +22,24 @@ function showState(stateEl) {
     stateEl.style.display = 'block';
 }
 
-// Guarda el email a través del flujo (solo para mostrarlo en pantalla)
+// Se guardan a través del flujo
 let recoveryEmail = '';
+let resetToken    = '';
 let resendTimerInterval = null;
+
+// Helper genérico para poner un botón en estado "cargando"
+function setBtnLoading(btn, iconEl, textEl, loadingText) {
+    btn.disabled = true;
+    iconEl.dataset.prevClass = iconEl.className;
+    iconEl.className = 'lni lni-spinner-arrow';
+    textEl.dataset.prevText = textEl.textContent;
+    textEl.textContent = loadingText;
+}
+function clearBtnLoading(btn, iconEl, textEl) {
+    btn.disabled = false;
+    if (iconEl.dataset.prevClass) iconEl.className = iconEl.dataset.prevClass;
+    if (textEl.dataset.prevText) textEl.textContent = textEl.dataset.prevText;
+}
 
 // ============================================
 // Estado 1: Formulario de correo
@@ -30,8 +48,26 @@ const form       = document.getElementById('recoverForm');
 const errorMsg   = document.getElementById('errorMsg');
 const errorText  = document.getElementById('errorText');
 const emailInput = document.getElementById('emailInput');
+const submitBtn  = document.getElementById('submitBtn');
+const btnIcon    = document.getElementById('btnIcon');
+const btnText    = document.getElementById('btnText');
 
-form.addEventListener('submit', (e) => {
+// Pide el código al backend. El backend siempre responde "éxito genérico"
+// exista o no el correo (para no revelar si una cuenta existe).
+async function requestResetCode(email) {
+    const resp = await fetch('/api/user/password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+        throw new Error(data.error || 'No se pudo enviar el código. Inténtalo de nuevo.');
+    }
+    return data;
+}
+
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const email = emailInput.value.trim();
@@ -46,9 +82,19 @@ form.addEventListener('submit', (e) => {
         return;
     }
 
-    recoveryEmail = email;
-    document.getElementById('codeSentEmail').textContent = email;
-    enterCodeState();
+    setBtnLoading(submitBtn, btnIcon, btnText, 'Enviando...');
+
+    try {
+        await requestResetCode(email);
+        recoveryEmail = email;
+        document.getElementById('codeSentEmail').textContent = email;
+        enterCodeState();
+    } catch (err) {
+        errorText.textContent = err.message;
+        errorMsg.style.display = 'flex';
+    } finally {
+        clearBtnLoading(submitBtn, btnIcon, btnText);
+    }
 });
 
 emailInput.addEventListener('input', () => {
@@ -59,10 +105,13 @@ emailInput.addEventListener('input', () => {
 // ============================================
 // Estado 2: Código de 4 dígitos
 // ============================================
-const codeForm        = document.getElementById('codeForm');
+const codeForm         = document.getElementById('codeForm');
 const codeInputs       = Array.from(document.querySelectorAll('.code-input'));
 const codeErrorMsg     = document.getElementById('codeErrorMsg');
 const codeErrorText    = document.getElementById('codeErrorText');
+const codeSubmitBtn    = document.getElementById('codeSubmitBtn');
+const codeBtnIcon      = document.getElementById('codeBtnIcon');
+const codeBtnText      = document.getElementById('codeBtnText');
 const resendLink       = document.getElementById('resendLink');
 const resendTimerEl    = document.getElementById('resendTimer');
 const backToEmailLink  = document.getElementById('backToEmailLink');
@@ -173,7 +222,7 @@ function maybeAutoSubmit() {
     }
 }
 
-codeForm.addEventListener('submit', (e) => {
+codeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const code = getCodeValue();
@@ -186,19 +235,50 @@ codeForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Vista solamente: pasa directo a la pantalla de nueva contraseña
-    showState(passwordState);
-    document.getElementById('newPasswordInput').focus();
+    setBtnLoading(codeSubmitBtn, codeBtnIcon, codeBtnText, 'Verificando...');
+
+    try {
+        const resp = await fetch('/api/user/password-reset/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: recoveryEmail, code })
+        });
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            throw new Error(data.error || 'Código incorrecto. Inténtalo de nuevo.');
+        }
+
+        resetToken = data.resetToken;
+        clearInterval(resendTimerInterval);
+        showState(passwordState);
+        document.getElementById('newPasswordInput').focus();
+    } catch (err) {
+        codeInputs.forEach(i => i.classList.add('error'));
+        codeErrorText.textContent = err.message;
+        codeErrorMsg.style.display = 'flex';
+    } finally {
+        clearBtnLoading(codeSubmitBtn, codeBtnIcon, codeBtnText);
+    }
 });
 
-// Reenviar código (solo vista: reinicia el temporizador)
-resendLink.addEventListener('click', (e) => {
+// Reenviar código
+resendLink.addEventListener('click', async (e) => {
     e.preventDefault();
     if (resendLink.classList.contains('disabled')) return;
 
-    clearCodeInputs();
-    codeInputs[0].focus();
-    startResendTimer(60);
+    resendLink.classList.add('disabled');
+    try {
+        await requestResetCode(recoveryEmail);
+        clearCodeInputs();
+        codeErrorMsg.style.display = 'none';
+        codeInputs[0].focus();
+    } catch (err) {
+        codeErrorText.textContent = err.message;
+        codeErrorMsg.style.display = 'flex';
+    } finally {
+        startResendTimer(60);
+    }
 });
 
 function startResendTimer(seconds) {
@@ -236,6 +316,9 @@ const newPasswordInput     = document.getElementById('newPasswordInput');
 const confirmPasswordInput = document.getElementById('confirmPasswordInput');
 const passwordErrorMsg     = document.getElementById('passwordErrorMsg');
 const passwordErrorText    = document.getElementById('passwordErrorText');
+const passwordSubmitBtn    = document.getElementById('passwordSubmitBtn');
+const passwordBtnIcon      = document.getElementById('passwordBtnIcon');
+const passwordBtnText      = document.getElementById('passwordBtnText');
 
 [newPasswordInput, confirmPasswordInput].forEach(inp => {
     inp.addEventListener('input', () => {
@@ -244,7 +327,7 @@ const passwordErrorText    = document.getElementById('passwordErrorText');
     });
 });
 
-passwordForm.addEventListener('submit', (e) => {
+passwordForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const password = newPasswordInput.value;
@@ -268,6 +351,25 @@ passwordForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Vista solamente: pasa directo a la pantalla de éxito
-    showState(successState);
+    setBtnLoading(passwordSubmitBtn, passwordBtnIcon, passwordBtnText, 'Actualizando...');
+
+    try {
+        const resp = await fetch('/api/user/password-reset/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resetToken, newPassword: password })
+        });
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            throw new Error(data.error || 'Ocurrió un error al actualizar la contraseña.');
+        }
+
+        showState(successState);
+    } catch (err) {
+        passwordErrorText.textContent = err.message;
+        passwordErrorMsg.style.display = 'flex';
+    } finally {
+        clearBtnLoading(passwordSubmitBtn, passwordBtnIcon, passwordBtnText);
+    }
 });

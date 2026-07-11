@@ -939,6 +939,18 @@ input:checked + .toggle-slider:before {
   color: #1a1a1a;
   cursor: pointer;
   user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lang-flag-icon {
+  width: 20px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  vertical-align: middle;
 }
 
 /* ========================================
@@ -3145,6 +3157,33 @@ input:checked + .toggle-slider:before {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+/* Aviso: el número que se está intentando usar ya lo tiene otro agente */
+.phone-conflict-warning {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #9a3412;
+}
+.phone-conflict-warning i {
+  color: #f59e0b;
+  font-size: 1rem;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.phone-conflict-warning strong { color: #7c2d12; }
+
+#phoneNumber.input-error {
+  border-color: #f59e0b !important;
+  background: #fffbeb;
 }
 
 @media (max-width: 600px) {

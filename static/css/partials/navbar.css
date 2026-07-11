@@ -97,12 +97,22 @@
   justify-self: center;
 }
 
-/* Right group (auth + lang) — columna derecha, alineada al extremo */
+/* Envoltura del extremo derecho del grid: agrupa nav-right-group (idioma)
+   y #navAuthUser (campana + avatar) como una sola pieza en la 3ra columna,
+   para que el grid de 3 columnas no mande el userbar a una fila nueva. */
+.nav-right-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+  flex-shrink: 0;
+}
+
+/* Right group (auth + lang) — ya no necesita justify-self, lo hereda de .nav-right-end */
 .nav-right-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-self: end;
   flex-shrink: 0;
 }
 

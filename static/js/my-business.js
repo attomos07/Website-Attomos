@@ -1154,7 +1154,10 @@ async function saveProfile(opts = {}) {
                 updateMenuLabel();
             }
 
-            if (!opts.silent) showNotification('¡Cambios guardados exitosamente!', 'success');
+            if (!opts.silent) {
+                showNotification('¡Cambios guardados exitosamente!', 'success');
+                maybeOfferAgentRedeploy();
+            }
         } else {
             throw new Error(result.error || 'Error desconocido');
         }
@@ -1162,6 +1165,108 @@ async function saveProfile(opts = {}) {
         console.error('❌ Error:', error);
         if (!opts.silent) { saveBtn.innerHTML = originalText; saveBtn.disabled = false; }
         showNotification(error.message || 'Error al guardar', 'error');
+    }
+}
+
+// ============================================
+// REDEPLOY DE AGENTES TRAS ACTUALIZAR EL NEGOCIO
+// ============================================
+let pendingRedeployAgents = [];
+let _onboardingScriptLoadedForBusiness = false;
+
+// onboarding.js trae watchAgentRedeploy/ensureModalsExist (el mismo modal de
+// progreso + QR que usa "Mis Agentes" al hacer redeploy). Se carga bajo
+// demanda porque my-business.html no lo incluye por defecto.
+async function ensureOnboardingScriptLoadedForBusiness() {
+    if (_onboardingScriptLoadedForBusiness || typeof window.watchAgentRedeploy === 'function') {
+        _onboardingScriptLoadedForBusiness = true;
+        return;
+    }
+    await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = '/static/js/onboarding.js?v=' + Date.now();
+        script.onload  = () => { _onboardingScriptLoadedForBusiness = true; resolve(); };
+        script.onerror = () => resolve(); // si falla, watchAgentRedeploy no existirá y hacemos fallback
+        document.body.appendChild(script);
+    });
+}
+
+// Tras guardar cambios del negocio, si el usuario tiene agentes, se le
+// pregunta si quiere actualizarlos (redeploy) para que tomen la nueva info.
+async function maybeOfferAgentRedeploy() {
+    try {
+        const res = await fetch('/api/agents', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const agents = data.agents || [];
+        if (!agents.length) return;
+
+        pendingRedeployAgents = agents;
+
+        const textEl = document.getElementById('redeployPromptText');
+        if (textEl) {
+            textEl.textContent = agents.length === 1
+                ? `Guardaste cambios en tu negocio. ¿Quieres actualizar tu agente "${agents[0].name || 'principal'}" ahora para que use la nueva información? Se reiniciará brevemente.`
+                : `Guardaste cambios en tu negocio. Tienes ${agents.length} agentes activos — ¿quieres actualizarlos ahora para que usen la nueva información? Se reiniciarán brevemente.`;
+        }
+
+        const modal = document.getElementById('redeployPromptModal');
+        if (modal) modal.style.display = 'flex';
+    } catch (err) {
+        console.error('No se pudo revisar agentes para ofrecer redeploy:', err);
+    }
+}
+
+function closeRedeployPromptModal() {
+    const modal = document.getElementById('redeployPromptModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function confirmRedeployAgents() {
+    const agents = pendingRedeployAgents.slice();
+    closeRedeployPromptModal();
+    if (!agents.length) return;
+
+    // Un solo agente → mostramos el flujo completo: animación de progreso y,
+    // si es de WhatsApp, el modal de QR automáticamente al terminar.
+    if (agents.length === 1) {
+        const agent = agents[0];
+        try {
+            const resp = await fetch(`/api/agents/${agent.id}/redeploy`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (!resp.ok) throw new Error('Error al iniciar el redeploy');
+
+            if (agent.botType === 'atomic') {
+                await ensureOnboardingScriptLoadedForBusiness();
+                if (typeof window.ensureModalsExist === 'function') window.ensureModalsExist();
+                if (typeof window.watchAgentRedeploy === 'function') {
+                    window.watchAgentRedeploy(agent.id, agent.name);
+                    return; // el propio modal se encarga de avisar cuando termine
+                }
+            }
+            showNotification('Agente actualizado, los cambios tomarán unos segundos en aplicarse.', 'success');
+        } catch (err) {
+            console.error('Error en redeploy de agente:', err);
+            showNotification('No se pudo actualizar el agente, intenta de nuevo desde "Mis Agentes".', 'error');
+        }
+        return;
+    }
+
+    // Varios agentes → redeploy en lote (sin apilar varios modales de QR).
+    // Los que sean de WhatsApp mostrarán su QR automáticamente al entrar a
+    // "Mis Agentes", gracias a la detección que ya corre en esa página.
+    showNotification(`Actualizando ${agents.length} agentes...`, 'info');
+    const results = await Promise.allSettled(
+        agents.map(a => fetch(`/api/agents/${a.id}/redeploy`, { method: 'POST', credentials: 'include' }))
+    );
+    const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok)).length;
+
+    if (failed === 0) {
+        showNotification(`${agents.length} agentes actualizándose. Ve a "Mis Agentes" para vincular el WhatsApp de los que lo necesiten.`, 'success');
+    } else {
+        showNotification(`${agents.length - failed} de ${agents.length} agentes se actualizaron correctamente.`, 'warning');
     }
 }
 

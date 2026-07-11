@@ -163,8 +163,8 @@ function renderTable() {
             <td>${statusDot(c.status)}</td>
             <td>${formatDate(c.createdAt)}</td>
             <td>
-                <button class="action-btn" title="Ver detalle" onclick="openModal(${JSON.stringify(c).replace(/"/g, '&quot;')})">
-                    <i class="lni lni-eye"></i>
+                <button class="action-btn" title="Más acciones" onclick="toggleRowActions(event, '${c.id}')">
+                    <i class="lni lni-more-alt"></i>
                 </button>
             </td>
         </tr>`;
@@ -172,6 +172,67 @@ function renderTable() {
 
     renderPagination(total, totalPages);
 }
+
+// ── Menú de acciones por fila (3 puntos) ───────────────────
+// Un solo menú compartido en el DOM (ver admin-database.html), reposicionado
+// con position:fixed en cada apertura — evita que lo corte el overflow:hidden
+// de la tarjeta de la tabla.
+let rowActionsTargetId = null;
+
+function getCompanyById(id) {
+    return allCompanies.find(c => String(c.id) === String(id));
+}
+
+function toggleRowActions(e, id) {
+    e.stopPropagation();
+    const menu = document.getElementById('rowActionsMenu');
+    if (!menu) return;
+
+    const alreadyOpenForThisRow = menu.classList.contains('open') && rowActionsTargetId === id;
+    closeRowActions();
+    if (alreadyOpenForThisRow) return;
+
+    rowActionsTargetId = id;
+    const btn  = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+
+    menu.classList.add('open'); // para poder medir su tamaño real
+    const menuWidth  = menu.offsetWidth  || 195;
+    const menuHeight = menu.offsetHeight || 180;
+
+    let left = rect.right - menuWidth;
+    if (left < 8) left = 8;
+
+    let top = rect.bottom + 6;
+    if (top + menuHeight > window.innerHeight - 8) {
+        top = rect.top - 6 - menuHeight; // no cabe abajo, mostrar arriba del botón
+    }
+
+    menu.style.left = `${left}px`;
+    menu.style.top  = `${top}px`;
+}
+
+function closeRowActions() {
+    const menu = document.getElementById('rowActionsMenu');
+    if (menu) menu.classList.remove('open');
+    rowActionsTargetId = null;
+}
+
+function handleRowAction(action) {
+    const id = rowActionsTargetId;
+    closeRowActions();
+    const company = getCompanyById(id);
+    if (!company) return;
+
+    if (action === 'detail')   openModal(company);
+    if (action === 'email')    { if (typeof openAdminEmailModal    === 'function') openAdminEmailModal(company); }
+    if (action === 'password') { if (typeof openAdminPasswordModal === 'function') openAdminPasswordModal(company); }
+    if (action === 'delete')   { if (typeof openAdminDeleteModal   === 'function') openAdminDeleteModal(company); }
+}
+
+document.addEventListener('click', closeRowActions);
+window.addEventListener('scroll', closeRowActions, true);
+window.addEventListener('resize', closeRowActions);
 
 // ── Paginación ───────────────────────────────────────────────
 function renderPagination(total, totalPages) {

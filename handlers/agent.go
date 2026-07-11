@@ -702,24 +702,48 @@ func UpdateAgent(c *gin.Context) {
 	}
 
 	type UpdateRequest struct {
-		Name   string             `json:"name"`
-		Config models.AgentConfig `json:"config"`
+		Name        string             `json:"name"`
+		PhoneNumber string             `json:"phoneNumber"`
+		Config      models.AgentConfig `json:"config"`
 	}
 	var req UpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
 		return
 	}
+
 	if req.Name != "" {
 		agent.Name = req.Name
 	}
-	if req.Config.WelcomeMessage != "" || len(req.Config.Services) > 0 {
-		agent.Config = req.Config
-	}
+
+	// El teléfono sí se sobreescribe siempre (incluso si viene vacío), para
+	// permitir quitar un número personalizado y volver a "usar el registrado"
+	// — mismo criterio que CreateAgent.
+	agent.PhoneNumber = req.PhoneNumber
+
+	// El config se guarda completo siempre que venga en el body — antes solo
+	// se guardaba si cambiaba el mensaje de bienvenida o los servicios, lo
+	// que perdía cambios de tono, idiomas, horario, personal, etc.
+	agent.Config = req.Config
+
 	if err := config.DB.Save(&agent).Error; err != nil {
+		log.Printf("❌ [Agent %s] Error guardando actualización: %v", agentID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el agente"})
 		return
 	}
+
+	// Reflejar los cambios de horario/servicios/personal en la sucursal
+	// asociada, igual que hace CreateAgent al crear el agente.
+	if agent.BranchID > 0 {
+		if isGovBusinessType(agent.BusinessType) {
+			go syncOnboardingToAgency(user.ID, agent.BranchID, agent.Config)
+		} else {
+			go syncOnboardingToBranch(agent.BranchID, agent.Config)
+		}
+	}
+
+	log.Printf("✅ [Agent %s] Actualizado por user %d", agentID, user.ID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Agente actualizado exitosamente", "agent": agent})
 }
 

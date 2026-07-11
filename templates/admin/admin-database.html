@@ -433,6 +433,44 @@
             color: #ef4444;
         }
 
+        /* ── Menú de acciones por fila (3 puntos) ──
+           Un solo menú compartido, reposicionado con position:fixed en JS —
+           así no lo corta el overflow:hidden de .table-card / .table-responsive */
+        .row-actions-menu {
+            position: fixed;
+            display: none;
+            flex-direction: column;
+            min-width: 195px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 34px rgba(0,0,0,0.14);
+            padding: 6px;
+            z-index: 3000;
+        }
+        .row-actions-menu.open { display: flex; }
+        .row-actions-menu button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink2);
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s, color 0.15s;
+        }
+        .row-actions-menu button:hover { background: var(--surface); color: var(--ink); }
+        .row-actions-menu button i { font-size: 15px; width: 16px; text-align: center; }
+        .row-actions-menu button.danger { color: #ef4444; }
+        .row-actions-menu button.danger:hover { background: #fef2f2; color: #ef4444; }
+        .row-actions-divider { height: 1px; background: var(--border); margin: 5px 6px; }
+
         /* ── Pagination ── */
         .pagination {
             display: flex;
@@ -1020,6 +1058,85 @@
         </div>
     </div>
 
+    <!-- Menú de acciones por fila (compartido, se reposiciona junto al botón que lo abre) -->
+    <div class="row-actions-menu" id="rowActionsMenu">
+        <button onclick="handleRowAction('detail')"><i class="lni lni-eye"></i> Ver detalle</button>
+        <button onclick="handleRowAction('email')"><i class="lni lni-envelope"></i> Cambiar correo</button>
+        <button onclick="handleRowAction('password')"><i class="lni lni-lock"></i> Cambiar contraseña</button>
+        <div class="row-actions-divider"></div>
+        <button class="danger" onclick="handleRowAction('delete')"><i class="lni lni-trash-can"></i> Eliminar empresa</button>
+    </div>
+
+    <!-- Modal cambiar correo -->
+    <div class="modal-backdrop" id="adminEmailModal" onclick="if(event.target===this)closeAdminEmailModal()">
+        <div class="modal" style="max-width:440px;">
+            <h3>Cambiar correo</h3>
+            <p id="adminEmailCompanyLabel" style="color:var(--muted);">—</p>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label>Correo actual</label>
+                    <input type="email" id="adminEmailCurrent" disabled/>
+                </div>
+                <div class="form-group">
+                    <label>Nuevo correo *</label>
+                    <input type="email" id="adminEmailNew" placeholder="nuevo@correo.com"/>
+                    <span class="form-error" id="errAdminEmail">Ingresa un correo electrónico válido</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeAdminEmailModal()">Cancelar</button>
+                <button class="btn-primary" id="adminEmailSaveBtn" onclick="saveAdminEmail()">
+                    <i class="lni lni-save"></i> Guardar correo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal cambiar contraseña -->
+    <div class="modal-backdrop" id="adminPasswordModal" onclick="if(event.target===this)closeAdminPasswordModal()">
+        <div class="modal" style="max-width:440px;">
+            <h3>Cambiar contraseña</h3>
+            <p id="adminPasswordCompanyLabel" style="color:var(--muted);">—</p>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label>Nueva contraseña *</label>
+                    <input type="password" id="adminPasswordNew" placeholder="Mínimo 8 caracteres"/>
+                    <span class="form-error" id="errAdminPassword">Mínimo 8 caracteres</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeAdminPasswordModal()">Cancelar</button>
+                <button class="btn-primary" id="adminPasswordSaveBtn" onclick="saveAdminPassword()">
+                    <i class="lni lni-save"></i> Guardar contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal eliminar empresa -->
+    <div class="modal-backdrop" id="adminDeleteModal" onclick="if(event.target===this)closeAdminDeleteModal()">
+        <div class="modal" style="max-width:460px;">
+            <h3 style="color:#ef4444;"><i class="lni lni-warning"></i> Eliminar empresa</h3>
+            <p>
+                Estás a punto de eliminar <strong id="adminDeleteCompanyName">—</strong>
+                (<span id="adminDeleteCompanyEmail">—</span>) <strong>definitivamente</strong> de la base de datos,
+                junto con sus agentes, suscripciones y todo lo relacionado. Esta acción no se puede deshacer.
+            </p>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label>Escribe <strong>ELIMINAR</strong> para confirmar</label>
+                    <input type="text" id="adminDeleteConfirmInput" placeholder="ELIMINAR" autocomplete="off"/>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeAdminDeleteModal()">Cancelar</button>
+                <button class="btn-primary" id="adminDeleteConfirmBtn" style="background:#ef4444;" onclick="confirmAdminDelete()">
+                    <i class="lni lni-trash-can"></i> Eliminar definitivamente
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -1135,6 +1252,127 @@
             showToast(err.message, 'error');
         } finally {
             btn.disabled = false; btn.innerHTML = '<i class="lni lni-save"></i> Guardar plan';
+        }
+    }
+
+    // ── Cambiar correo (admin) ──────────────────────────────
+    let adminActionTargetId = null;
+
+    function openAdminEmailModal(company) {
+        adminActionTargetId = company.id;
+        document.getElementById('adminEmailCompanyLabel').textContent = company.businessName || company.email || '—';
+        document.getElementById('adminEmailCurrent').value = company.email || '';
+        document.getElementById('adminEmailNew').value = '';
+        document.getElementById('errAdminEmail').style.display = 'none';
+        document.getElementById('adminEmailModal').classList.add('open');
+    }
+    function closeAdminEmailModal() {
+        document.getElementById('adminEmailModal').classList.remove('open');
+    }
+    async function saveAdminEmail() {
+        const newEmail = document.getElementById('adminEmailNew').value.trim();
+        const errEl = document.getElementById('errAdminEmail');
+        if (!newEmail || !newEmail.includes('@')) {
+            errEl.style.display = 'block';
+            return;
+        }
+        errEl.style.display = 'none';
+
+        const btn = document.getElementById('adminEmailSaveBtn');
+        btn.disabled = true; btn.innerHTML = '<i class="lni lni-reload"></i> Guardando…';
+        try {
+            const res = await fetch(`/admin/api/companies/${adminActionTargetId}/email`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ newEmail })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar correo');
+            closeAdminEmailModal();
+            showToast('Correo actualizado correctamente ✓');
+            if (typeof loadCompanies === 'function') loadCompanies();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false; btn.innerHTML = '<i class="lni lni-save"></i> Guardar correo';
+        }
+    }
+
+    // ── Cambiar contraseña (admin) ──────────────────────────
+    function openAdminPasswordModal(company) {
+        adminActionTargetId = company.id;
+        document.getElementById('adminPasswordCompanyLabel').textContent = company.businessName || company.email || '—';
+        document.getElementById('adminPasswordNew').value = '';
+        document.getElementById('errAdminPassword').style.display = 'none';
+        document.getElementById('adminPasswordModal').classList.add('open');
+    }
+    function closeAdminPasswordModal() {
+        document.getElementById('adminPasswordModal').classList.remove('open');
+    }
+    async function saveAdminPassword() {
+        const newPassword = document.getElementById('adminPasswordNew').value;
+        const errEl = document.getElementById('errAdminPassword');
+        if (newPassword.length < 8) {
+            errEl.style.display = 'block';
+            return;
+        }
+        errEl.style.display = 'none';
+
+        const btn = document.getElementById('adminPasswordSaveBtn');
+        btn.disabled = true; btn.innerHTML = '<i class="lni lni-reload"></i> Guardando…';
+        try {
+            const res = await fetch(`/admin/api/companies/${adminActionTargetId}/password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ newPassword })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar contraseña');
+            closeAdminPasswordModal();
+            showToast('Contraseña actualizada correctamente ✓');
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false; btn.innerHTML = '<i class="lni lni-save"></i> Guardar contraseña';
+        }
+    }
+
+    // ── Eliminar empresa (admin, definitivo) ────────────────
+    function openAdminDeleteModal(company) {
+        adminActionTargetId = company.id;
+        document.getElementById('adminDeleteCompanyName').textContent  = company.businessName || '(sin nombre)';
+        document.getElementById('adminDeleteCompanyEmail').textContent = company.email || '—';
+        document.getElementById('adminDeleteConfirmInput').value = '';
+        document.getElementById('adminDeleteModal').classList.add('open');
+    }
+    function closeAdminDeleteModal() {
+        document.getElementById('adminDeleteModal').classList.remove('open');
+    }
+    async function confirmAdminDelete() {
+        const confirmText = document.getElementById('adminDeleteConfirmInput').value.trim();
+        if (confirmText !== 'ELIMINAR') {
+            showToast('Escribe ELIMINAR para confirmar', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('adminDeleteConfirmBtn');
+        btn.disabled = true; btn.innerHTML = '<i class="lni lni-reload"></i> Eliminando…';
+        try {
+            const res = await fetch(`/admin/api/companies/${adminActionTargetId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar empresa');
+            closeAdminDeleteModal();
+            showToast('Empresa eliminada correctamente ✓');
+            if (typeof loadCompanies === 'function') loadCompanies();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false; btn.innerHTML = '<i class="lni lni-trash-can"></i> Eliminar definitivamente';
         }
     }
     </script>

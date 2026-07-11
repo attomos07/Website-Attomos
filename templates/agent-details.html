@@ -26,9 +26,11 @@
             <div class="content-wrapper">
                 <div class="details-layout">
                     <!-- Back Button -->
-                    <a href="/my-agents" class="back-button" data-translate="ad_back">
-                        <i class="lni lni-chevron-left"></i>
-                        <span>Volver a Agentes</span>
+                    <a href="/my-agents" class="back-button">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 8H3M3 8L7.5 3.5M3 8L7.5 12.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span data-translate="ad_back">Volver a Agentes</span>
                     </a>
 
                     <!-- Agent Header -->
@@ -154,7 +156,7 @@
                                         <div class="config-value" id="configLanguages">--</div>
                                     </div>
                                     <div class="config-item full-width">
-                                        <label data-translate="ad_welcome_label">Mensaje de Bienvenida</label>
+                                        <label id="configWelcomeLabel" data-translate="ad_welcome_label">Mensaje de Bienvenida</label>
                                         <div class="config-value message" id="configWelcome">--</div>
                                     </div>
                                 </div>

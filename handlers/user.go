@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"attomos/config"
 	"attomos/models"
@@ -420,7 +424,28 @@ func VerifyPassword(c *gin.Context) {
 	})
 }
 
-// RequestPasswordReset solicita un restablecimiento de contraseña
+// ============================================
+// RECUPERACIÓN DE CONTRASEÑA (código de 4 dígitos por correo)
+// ============================================
+
+func generateResetCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%04d", n.Int64()), nil
+}
+
+func generateResetToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// RequestPasswordReset genera un código de 4 dígitos, lo guarda hasheado y
+// lo envía por correo (Zoho SMTP). Nunca revela si el correo existe o no.
 func RequestPasswordReset(c *gin.Context) {
 	type ResetRequest struct {
 		Email string `json:"email" binding:"required,email"`
@@ -429,48 +454,192 @@ func RequestPasswordReset(c *gin.Context) {
 	var req ResetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Email inválido",
+			"error": "Correo inválido",
 		})
 		return
 	}
+
+	genericResp := gin.H{
+		"message": "Si el correo existe, te enviamos un código de verificación",
+	}
+
+	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	var user models.User
-	if err := config.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		// No revelar si el email existe o no (seguridad)
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Si el email existe, recibirás instrucciones para restablecer tu contraseña",
+	if err := config.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		// No revelar si el correo existe o no (seguridad)
+		c.JSON(http.StatusOK, genericResp)
+		return
+	}
+
+	// Debounce: si ya se pidió un código hace menos de 60s, no reenviar
+	// (evita spam y coincide con el temporizador de "Reenviar" del frontend)
+	var recent models.PasswordReset
+	cutoff := time.Now().Add(-60 * time.Second)
+	if err := config.DB.Where("user_id = ? AND created_at > ?", user.ID, cutoff).
+		Order("created_at DESC").First(&recent).Error; err == nil {
+		c.JSON(http.StatusOK, genericResp)
+		return
+	}
+
+	code, err := generateResetCode()
+	if err != nil {
+		log.Printf("❌ Error generando código de reset: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al generar código"})
+		return
+	}
+
+	codeHash, err := bcrypt.GenerateFromPassword([]byte(code), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("❌ Error hasheando código de reset: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al generar código"})
+		return
+	}
+
+	// Invalidar códigos previos sin usar de este usuario
+	config.DB.Where("user_id = ? AND verified = ?", user.ID, false).Delete(&models.PasswordReset{})
+
+	pr := models.PasswordReset{
+		UserID:    user.ID,
+		Email:     user.Email,
+		CodeHash:  string(codeHash),
+		ExpiresAt: time.Now().Add(30 * time.Minute),
+	}
+	if err := config.DB.Create(&pr).Error; err != nil {
+		log.Printf("❌ Error guardando código de reset: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al generar código"})
+		return
+	}
+
+	emailService := services.NewEmailService()
+	if err := emailService.SendPasswordResetCode(user.Email, code); err != nil {
+		log.Printf("❌ [User %d] Error enviando correo de recuperación: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "No se pudo enviar el correo, intenta de nuevo en unos minutos",
 		})
 		return
 	}
 
-	// TODO: Implementar envío de email con token de restablecimiento
-	log.Printf("📧 [User %d] Solicitud de restablecimiento de contraseña: %s", user.ID, user.Email)
+	log.Printf("📧 [User %d] Código de recuperación enviado a %s", user.ID, user.Email)
+	c.JSON(http.StatusOK, genericResp)
+}
+
+// VerifyPasswordResetCode valida el código de 4 dígitos y, si es correcto,
+// entrega un token de un solo uso (válido 10 min) para completar el cambio.
+func VerifyPasswordResetCode(c *gin.Context) {
+	type VerifyRequest struct {
+		Email string `json:"email" binding:"required,email"`
+		Code  string `json:"code" binding:"required,len=4"`
+	}
+
+	var req VerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ingresa el código completo de 4 dígitos"})
+		return
+	}
+
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	var pr models.PasswordReset
+	err := config.DB.Where("email = ? AND verified = ?", email, false).
+		Order("created_at DESC").First(&pr).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Código inválido o expirado, solicita uno nuevo"})
+		return
+	}
+
+	if time.Now().After(pr.ExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El código expiró, solicita uno nuevo"})
+		return
+	}
+
+	if pr.Attempts >= 5 {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Demasiados intentos fallidos, solicita un nuevo código"})
+		return
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(pr.CodeHash), []byte(req.Code)) != nil {
+		pr.Attempts++
+		config.DB.Save(&pr)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Código incorrecto"})
+		return
+	}
+
+	token, err := generateResetToken()
+	if err != nil {
+		log.Printf("❌ Error generando token de reset: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al verificar código"})
+		return
+	}
+
+	pr.Verified = true
+	pr.Token = token
+	pr.ExpiresAt = time.Now().Add(10 * time.Minute) // ventana corta para completar el cambio de contraseña
+	if err := config.DB.Save(&pr).Error; err != nil {
+		log.Printf("❌ Error guardando verificación de código: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al verificar código"})
+		return
+	}
+
+	log.Printf("✅ [User %d] Código de recuperación verificado", pr.UserID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Si el email existe, recibirás instrucciones para restablecer tu contraseña",
+		"message":    "Código verificado",
+		"resetToken": token,
 	})
 }
 
-// ResetPassword restablece la contraseña con un token
+// ResetPassword completa la recuperación: valida el resetToken emitido por
+// VerifyPasswordResetCode y actualiza la contraseña del usuario.
 func ResetPassword(c *gin.Context) {
 	type ResetPasswordRequest struct {
-		Token       string `json:"token" binding:"required"`
+		ResetToken  string `json:"resetToken" binding:"required"`
 		NewPassword string `json:"newPassword" binding:"required,min=8"`
 	}
 
 	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Datos inválidos",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
 		return
 	}
 
-	// TODO: Implementar validación de token y actualización de contraseña
-	log.Printf("🔐 Intento de restablecimiento de contraseña con token: %s", req.Token)
+	var pr models.PasswordReset
+	if err := config.DB.Where("token = ? AND verified = ?", req.ResetToken, true).First(&pr).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El enlace de recuperación es inválido, solicita uno nuevo"})
+		return
+	}
 
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Funcionalidad no implementada aún",
+	if time.Now().After(pr.ExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El enlace de recuperación expiró, solicita uno nuevo"})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, pr.UserID).Error; err != nil {
+		log.Printf("❌ Error obteniendo usuario %d para reset: %v", pr.UserID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar contraseña"})
+		return
+	}
+
+	if err := user.HashPassword(req.NewPassword); err != nil {
+		log.Printf("❌ Error hasheando nueva contraseña: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar contraseña"})
+		return
+	}
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		log.Printf("❌ Error guardando nueva contraseña: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar contraseña"})
+		return
+	}
+
+	// Invalidar cualquier código/token pendiente de este usuario
+	config.DB.Where("user_id = ?", user.ID).Delete(&models.PasswordReset{})
+
+	log.Printf("✅ [User %d] Contraseña restablecida vía recuperación por correo", user.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Contraseña actualizada exitosamente",
 	})
 }
 

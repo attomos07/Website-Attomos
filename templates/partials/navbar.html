@@ -64,6 +64,11 @@
             </li>
         </ul>
 
+        <!-- Envoltura del extremo derecho del grid: aquí van juntos el
+             selector de idioma y (si hay sesión) el userbar, para que el
+             grid de 3 columnas los trate como una sola pieza -->
+        <div class="nav-right-end">
+
         <!-- Grupo derecho: idioma + auth (siempre en la derecha, menú centrado) -->
         <div class="nav-right-group">
 
@@ -103,13 +108,6 @@
                 </div>
             </div>
 
-        </div><!-- /nav-right-group -->
-            <div id="navAuthGuest" class="nav-auth-guest" style="display:none;">
-                <a href="/login" class="nav-link nav-login" data-translate="nav_login">Iniciar sesión</a>
-                <a href="/register" class="nav-link nav-cta" data-translate="nav_register">Registrarse</a>
-            </div>
-
-            </div><!-- /nav-auth -->
         </div><!-- /nav-right-group -->
 
         <!-- USER: fuera del grupo derecho para poder posicionarse en mobile -->
@@ -201,7 +199,9 @@
                 </div>
 
             </div><!-- /navAuthUser -->
-        
+
+        </div><!-- /nav-right-end -->
+
         <!-- Botón de menú móvil - iOS Style -->
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menú" aria-expanded="false">
             <div class="menu-icon">

@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/sha256"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"attomos/config"
 	"attomos/models"
+	"attomos/services"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -223,6 +225,192 @@ func AdminUpdateCompanyPlan(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": fmt.Sprintf("Plan actualizado a %s.", body.Plan),
+	})
+}
+
+// AdminUpdateCompanyEmail — PUT /admin/api/companies/:id/email
+// Body: { newEmail }
+func AdminUpdateCompanyEmail(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido."})
+		return
+	}
+
+	var body struct {
+		NewEmail string `json:"newEmail" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Correo inválido."})
+		return
+	}
+
+	newEmail := strings.ToLower(strings.TrimSpace(body.NewEmail))
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Empresa no encontrada."})
+		return
+	}
+
+	if newEmail == strings.ToLower(user.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ese ya es el correo actual."})
+		return
+	}
+
+	// El Email tiene uniqueIndex en BD — verificar que no esté en uso por otro usuario
+	var existing models.User
+	if err := config.DB.Where("email = ? AND id != ?", newEmail, user.ID).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Ese correo ya está en uso por otra cuenta."})
+		return
+	}
+
+	oldEmail := user.Email
+	user.Email = newEmail
+	if err := config.DB.Save(&user).Error; err != nil {
+		log.Printf("❌ [Admin] Error actualizando correo de user %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar correo."})
+		return
+	}
+
+	log.Printf("✅ [Admin] Correo de user %d actualizado: %s → %s", user.ID, oldEmail, newEmail)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Correo actualizado exitosamente.",
+		"email":   user.Email,
+	})
+}
+
+// AdminUpdateCompanyPassword — PUT /admin/api/companies/:id/password
+// Body: { newPassword }
+func AdminUpdateCompanyPassword(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido."})
+		return
+	}
+
+	var body struct {
+		NewPassword string `json:"newPassword" binding:"required,min=8"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La contraseña debe tener al menos 8 caracteres."})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Empresa no encontrada."})
+		return
+	}
+
+	if err := user.HashPassword(body.NewPassword); err != nil {
+		log.Printf("❌ [Admin] Error hasheando contraseña de user %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar contraseña."})
+		return
+	}
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		log.Printf("❌ [Admin] Error guardando contraseña de user %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar contraseña."})
+		return
+	}
+
+	log.Printf("✅ [Admin] Contraseña de user %d actualizada por un administrador", user.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Contraseña actualizada exitosamente.",
+	})
+}
+
+// AdminDeleteCompany — DELETE /admin/api/companies/:id
+// Elimina al usuario y todo lo relacionado de forma DEFINITIVA (hard delete,
+// no soft-delete), a diferencia de DeleteAccount (self-service) que sí deja
+// rastro con deleted_at. Pensado para limpiar cuentas de prueba/spam desde
+// el panel de administración.
+func AdminDeleteCompany(c *gin.Context) {
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido."})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Empresa no encontrada."})
+		return
+	}
+
+	log.Printf("🗑️  [Admin] Iniciando eliminación DEFINITIVA de user %d: %s", user.ID, user.Email)
+
+	// ── PASO 1: Agentes ──────────────────────────────────────
+	var agents []models.Agent
+	config.DB.Where("user_id = ?", user.ID).Find(&agents)
+	if err := config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Agent{}).Error; err != nil {
+		log.Printf("❌ [Admin] Error eliminando agentes de user %d: %v", user.ID, err)
+	} else {
+		log.Printf("✅ [Admin] %d agentes eliminados definitivamente (user %d)", len(agents), user.ID)
+	}
+
+	// ── PASO 2: Suscripciones y pagos ────────────────────────
+	var subscriptions []models.Subscription
+	config.DB.Where("user_id = ?", user.ID).Find(&subscriptions)
+
+	for _, sub := range subscriptions {
+		if sub.StripeSubscriptionID != "" {
+			stripeService, err := services.NewStripeService()
+			if err != nil {
+				log.Printf("⚠️  [Admin] Error inicializando Stripe (user %d): %v", user.ID, err)
+				continue
+			}
+			if _, err := stripeService.CancelSubscription(sub.StripeSubscriptionID); err != nil {
+				log.Printf("⚠️  [Admin] Error cancelando suscripción Stripe %s (user %d): %v",
+					sub.StripeSubscriptionID, user.ID, err)
+			} else {
+				log.Printf("✅ [Admin] Suscripción Stripe cancelada: %s (user %d)", sub.StripeSubscriptionID, user.ID)
+			}
+		}
+	}
+
+	config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Subscription{})
+	config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Payment{})
+	log.Printf("✅ [Admin] Suscripciones y pagos eliminados definitivamente (user %d)", user.ID)
+
+	// ── PASO 3: Proyecto Google Cloud ────────────────────────
+	var gcpProject models.GoogleCloudProject
+	if err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error; err == nil && gcpProject.ProjectID != "" {
+		gcpService, err := services.NewGoogleCloudAutomation()
+		if err != nil {
+			log.Printf("⚠️  [Admin] Error inicializando GCP (user %d): %v", user.ID, err)
+		} else if err := gcpService.DeleteProject(gcpProject.ProjectID); err != nil {
+			log.Printf("⚠️  [Admin] Error eliminando proyecto GCP %s (user %d): %v", gcpProject.ProjectID, user.ID, err)
+		} else {
+			log.Printf("✅ [Admin] Proyecto GCP eliminado: %s (user %d)", gcpProject.ProjectID, user.ID)
+		}
+	}
+	config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.GoogleCloudProject{})
+
+	// ── PASO 4: Info de negocio(s) y códigos de recuperación ─
+	config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.MyBusinessInfo{})
+	config.DB.Unscoped().Where("user_id = ?", user.ID).Delete(&models.PasswordReset{})
+
+	// ── PASO 5: Usuario (hard delete) ────────────────────────
+	if err := config.DB.Unscoped().Delete(&user).Error; err != nil {
+		log.Printf("❌ [Admin] Error eliminando user %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar la empresa."})
+		return
+	}
+
+	log.Printf("🎉 [Admin] User %d (%s) eliminado DEFINITIVAMENTE de la base de datos", user.ID, user.Email)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Empresa eliminada definitivamente.",
 	})
 }
 

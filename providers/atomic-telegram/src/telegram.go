@@ -13,6 +13,7 @@ package src
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -78,6 +79,24 @@ func HandleTelegramUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 	}
 
+	// ── Nota de voz: transcribir con Gemini y procesar como si fuera texto ───
+	if msg.Voice != nil {
+		handleTelegramVoice(bot, msg, chatID, userID, userName)
+		return
+	}
+
+	// ── Archivo de audio (música, nota grabada reenviada, etc.) ──────────────
+	if msg.Audio != nil {
+		handleTelegramAudio(bot, msg, chatID, userID, userName)
+		return
+	}
+
+	// ── Foto: analizarla con Gemini Vision y responder directamente ──────────
+	if len(msg.Photo) > 0 {
+		handleTelegramPhoto(bot, msg, chatID, userID, userName)
+		return
+	}
+
 	// Extraer texto del mensaje
 	text := extractMessageText(msg)
 	if text == "" {
@@ -93,6 +112,15 @@ func HandleTelegramUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	// Indicador de "escribiendo..."
 	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
 
+	respondToTelegramText(bot, chatID, userID, userName, text)
+}
+
+// respondToTelegramText corre el pipeline normal (ProcessMessage/ProcessAgencyMessage)
+// sobre un texto y envía la respuesta, incluyendo la intercepción de SEND_MENU
+// y SEND_PHOTOS. Se usa tanto para mensajes escritos como para notas de voz o
+// audios ya transcritos — así agendar, pedidos, cancelaciones, etc. funcionan
+// igual sin importar si el cliente escribió o habló.
+func respondToTelegramText(bot *tgbotapi.BotAPI, chatID int64, userID, userName, text string) {
 	// Delegar en el núcleo compartido con WhatsApp
 	var response string
 	if IsAgencyMode() {
@@ -132,6 +160,169 @@ func HandleTelegramUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	if response != "" {
 		sendTelegramMessage(bot, chatID, response)
 	}
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+}
+
+// downloadTelegramFile obtiene la URL directa de un archivo de Telegram
+// (foto, nota de voz, audio, documento) y descarga sus bytes.
+func downloadTelegramFile(bot *tgbotapi.BotAPI, fileID string) ([]byte, error) {
+	fileURL, err := bot.GetFileDirectURL(fileID)
+	if err != nil {
+		return nil, fmt.Errorf("error obteniendo URL del archivo: %w", err)
+	}
+
+	resp, err := http.Get(fileURL) //nolint:noctx
+	if err != nil {
+		return nil, fmt.Errorf("error descargando archivo: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("descarga retornó status %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error leyendo bytes del archivo: %w", err)
+	}
+
+	return data, nil
+}
+
+// handleTelegramVoice descarga una nota de voz de Telegram, la transcribe con
+// Gemini y continúa el flujo normal como si el cliente hubiera escrito el texto.
+func handleTelegramVoice(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, chatID int64, userID, userName string) {
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("🎙️  NOTA DE VOZ RECIBIDA de %s (%s)", userName, userID)
+	log.Printf("   ⏱️  Duración: %ds", msg.Voice.Duration)
+
+	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
+
+	audioBytes, err := downloadTelegramFile(bot, msg.Voice.FileID)
+	if err != nil {
+		log.Printf("❌ Error descargando nota de voz: %v", err)
+		sendTelegramMessage(bot, chatID, "No pude escuchar tu audio 😕 ¿Puedes escribirme tu mensaje?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	mimeType := msg.Voice.MimeType
+	if mimeType == "" {
+		mimeType = "audio/ogg"
+	}
+
+	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(audioBytes), mimeType)
+
+	transcribed, err := TranscribeAudio(audioBytes, mimeType)
+	if err != nil || strings.TrimSpace(transcribed) == "" {
+		log.Printf("❌ Error transcribiendo audio: %v", err)
+		sendTelegramMessage(bot, chatID, "No logré entender bien tu audio 😕 ¿Me lo puedes escribir?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	log.Printf("   📝 Transcripción: %s", transcribed)
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
+	respondToTelegramText(bot, chatID, userID, userName, transcribed)
+}
+
+// handleTelegramAudio es igual a handleTelegramVoice pero para archivos de
+// audio "normales" (music/Audio de Telegram, en vez de una nota de voz).
+func handleTelegramAudio(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, chatID int64, userID, userName string) {
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("🎵 AUDIO RECIBIDO de %s (%s)", userName, userID)
+	log.Printf("   ⏱️  Duración: %ds", msg.Audio.Duration)
+
+	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
+
+	audioBytes, err := downloadTelegramFile(bot, msg.Audio.FileID)
+	if err != nil {
+		log.Printf("❌ Error descargando audio: %v", err)
+		sendTelegramMessage(bot, chatID, "No pude escuchar tu audio 😕 ¿Puedes escribirme tu mensaje?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	mimeType := msg.Audio.MimeType
+	if mimeType == "" {
+		mimeType = "audio/mpeg"
+	}
+
+	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(audioBytes), mimeType)
+
+	transcribed, err := TranscribeAudio(audioBytes, mimeType)
+	if err != nil || strings.TrimSpace(transcribed) == "" {
+		log.Printf("❌ Error transcribiendo audio: %v", err)
+		sendTelegramMessage(bot, chatID, "No logré entender bien tu audio 😕 ¿Me lo puedes escribir?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	log.Printf("   📝 Transcripción: %s", transcribed)
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
+	respondToTelegramText(bot, chatID, userID, userName, transcribed)
+}
+
+// handleTelegramPhoto descarga la foto de mayor resolución enviada, la analiza
+// con Gemini Vision usando el contexto/catálogo del negocio y responde
+// directamente (ej. "¿venden esto?" con una foto adjunta).
+func handleTelegramPhoto(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, chatID int64, userID, userName string) {
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("🖼️  IMAGEN RECIBIDA de %s (%s)", userName, userID)
+
+	caption := msg.Caption
+	log.Printf("   💬 Caption: %s", caption)
+
+	sendChatAction(bot, chatID, tgbotapi.ChatTyping)
+
+	// Telegram manda varias resoluciones de la misma foto — la última es la de mayor tamaño
+	photo := msg.Photo[len(msg.Photo)-1]
+
+	imageBytes, err := downloadTelegramFile(bot, photo.FileID)
+	if err != nil {
+		log.Printf("❌ Error descargando imagen: %v", err)
+		sendTelegramMessage(bot, chatID, "No pude abrir tu imagen 😕 ¿Puedes reenviarla?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	// Telegram siempre re-comprime las fotos a JPEG
+	mimeType := "image/jpeg"
+
+	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(imageBytes), mimeType)
+
+	state := GetUserState(userID)
+	state.LastMessageTime = time.Now().Unix()
+
+	question := caption
+	if question == "" {
+		question = "El cliente envió esta imagen sin comentario. Descríbela brevemente y pregunta en qué le puedes ayudar respecto a ella."
+	}
+
+	answer, err := AnalyzeImage(imageBytes, mimeType, question, joinHistory(state.ConversationHistory))
+	if err != nil {
+		log.Printf("❌ Error analizando imagen con Gemini: %v", err)
+		sendTelegramMessage(bot, chatID, "Recibí tu imagen pero no pude analizarla en este momento 😕 ¿Puedes describirme lo que necesitas?")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
+	// Guardar en el historial para mantener contexto en la conversación
+	histEntry := "Usuario: [envió una imagen]"
+	if caption != "" {
+		histEntry += " " + caption
+	}
+	state.ConversationHistory = append(state.ConversationHistory, histEntry)
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+answer)
+
+	answer = whatsappToTelegramMarkdown(answer)
+
+	log.Printf("📤 ENVIANDO RESPUESTA DE IMAGEN a %s...", userName)
+	sendTelegramMessage(bot, chatID, answer)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }
 

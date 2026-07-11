@@ -88,7 +88,18 @@ function renderAgentDetails(agent) {
     
     // Basic Info
     document.getElementById('infoName').textContent = agent.name;
-    document.getElementById('infoPhone').textContent = agent.phoneNumber || (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
+
+    // Teléfono: en el plan Gratuito (WhatsApp Web / QR con whatsmeow) nunca
+    // hay un número dado de alta — no es un error, es el diseño. Solo
+    // WhatsApp Business (Meta API, Protón+) y Telegram usan un número/token
+    // real, y ahí sí "No configurado" indica algo pendiente.
+    const botTypeForPhone = (agent.botType || '').toLowerCase();
+    const isWhatsAppWebAgent = botTypeForPhone === 'atomic';
+    document.getElementById('infoPhone').textContent = agent.phoneNumber
+        || (isWhatsAppWebAgent
+            ? (window.Translations?.dict?.[getLang()]?.ad_whatsapp_web_number || 'WhatsApp Web')
+            : (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado'));
+
     document.getElementById('infoBusinessType').textContent = formatBusinessType(agent.businessType);
     document.getElementById('infoPort').textContent = agent.port || '--';
     
@@ -98,11 +109,25 @@ function renderAgentDetails(agent) {
         
         const languages = [...(agent.config.languages || []), ...(agent.config.additionalLanguages || [])];
         document.getElementById('configLanguages').textContent = languages.length > 0 
-            ? languages.join(', ') 
+            ? languages.map(formatLanguageName).join(', ') 
             : (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
         
-        document.getElementById('configWelcome').textContent = 
-            agent.config.welcomeMessage || (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
+        // "Mensaje de Bienvenida": si el tono es Personalizado, mostrar la
+        // descripción de personalidad que se escribió ahí (antes se quedaba
+        // vacía porque customTone y welcomeMessage son campos distintos).
+        const isCustomToneDescription = agent.config.tone === 'custom' && !!agent.config.customTone;
+        const descriptionText = isCustomToneDescription
+            ? stripHtml(agent.config.customTone)
+            : agent.config.welcomeMessage;
+        document.getElementById('configWelcome').textContent =
+            descriptionText || (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado');
+
+        const welcomeLabel = document.getElementById('configWelcomeLabel');
+        if (welcomeLabel) {
+            welcomeLabel.textContent = isCustomToneDescription
+                ? t('ad_personality_desc_label', 'Descripción de Personalidad')
+                : t('ad_welcome_label', 'Mensaje de Bienvenida');
+        }
         
         // Schedule
         renderSchedule(agent.config.schedule);
@@ -113,6 +138,34 @@ function renderAgentDetails(agent) {
         // Workers
         renderWorkers(agent.config.workers);
     }
+}
+
+// Quita etiquetas HTML del editor enriquecido de "tono personalizado" para
+// mostrarlo como texto plano en el resumen de detalles.
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return (tmp.textContent || tmp.innerText || '').trim();
+}
+
+// Nombre completo del idioma a partir de su código (mismos idiomas que
+// ofrece el onboarding: es, en, fr, pt, de, it, zh, además de ru/uz/ja/ko
+// por si vienen de otras partes de la app).
+function formatLanguageName(code) {
+    const names = {
+        es: t('lang_name_es', 'Español'),
+        en: t('lang_name_en', 'Inglés'),
+        fr: t('lang_name_fr', 'Francés'),
+        pt: t('lang_name_pt', 'Portugués'),
+        de: t('lang_name_de', 'Alemán'),
+        it: t('lang_name_it', 'Italiano'),
+        zh: t('lang_name_zh', 'Chino'),
+        ru: t('lang_name_ru', 'Ruso'),
+        uz: t('lang_name_uz', 'Uzbeko'),
+        ja: t('lang_name_ja', 'Japonés'),
+        ko: t('lang_name_ko', 'Coreano'),
+    };
+    return names[(code || '').toLowerCase()] || code;
 }
 
 // Update status badge
@@ -480,39 +533,144 @@ function formatTone(tone) {
     const tones = {
         formal: t('ad_tone_formal', 'Formal'),
         friendly: t('ad_tone_friendly', 'Amigable'),
-        casual: t('ad_tone_casual', 'Casual')
+        casual: t('ad_tone_casual', 'Casual'),
+        custom: t('ad_tone_custom', 'Personalizado')
     };
     return tones[tone] || tone.charAt(0).toUpperCase() + tone.slice(1);
 }
 
+// Editar agente — abre el mismo modal de onboarding (crear/editar) que
+// "Mis Agentes", precargado con los datos de este agente. La lógica de
+// precarga vive en onboarding.js/my-agents.js para no duplicar toda esa
+// infraestructura aquí.
+function editAgent() {
+    if (!agentId) return;
+    window.location.href = `/my-agents?editAgent=${encodeURIComponent(agentId)}`;
+}
+
 // Toggle agent status
-async function toggleAgentStatus() {
+function toggleAgentStatus() {
     if (!agent) return;
-    
+
     const isPausing = agent.isActive;
     const actionWord = isPausing ? t('ad_confirm_pause', 'pausar') : t('ad_confirm_activate', 'activar');
-    const confirmMsg = t('ad_confirm_action', '¿Estás seguro de que quieres {action} este agente?').replace('{action}', actionWord);
+    const actionTitle = isPausing ? t('ad_pause', 'Pausar') : t('ad_activate', 'Activar');
 
-    if (!confirm(confirmMsg)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/agents/${agentId}/toggle`, {
-            method: 'PATCH',
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Error cambiando estado del agente');
+    showConfirmModal({
+        type: 'warning',
+        icon: isPausing ? 'lni-pause' : 'lni-play',
+        title: t('agents_toggle_title', '¿{action} Agente?').replace('{action}', actionTitle),
+        message: t('agents_pause_msg', 'Estás a punto de {action} el agente "{name}"')
+            .replace('{action}', actionWord).replace('{name}', `<strong>${escapeHtml(agent.name)}</strong>`),
+        list: isPausing ? [
+            t('agents_pause_list1', 'El agente dejará de responder mensajes'),
+            t('agents_pause_list2', 'Los clientes no recibirán atención automática'),
+            t('agents_pause_list3', 'Puedes reactivarlo cuando quieras')
+        ] : [
+            t('agents_activate_list1', 'El agente volverá a responder mensajes'),
+            t('agents_activate_list2', 'Se reanudará la atención automática'),
+            t('agents_activate_list3', 'Los clientes podrán interactuar nuevamente')
+        ],
+        confirmText: t('agents_action_agent_btn', '{action} Agente').replace('{action}', actionTitle),
+        confirmClass: 'warning',
+        onConfirm: async () => {
+            const response = await fetch(`/api/agents/${agentId}/toggle`, {
+                method: 'PATCH',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Error cambiando estado del agente');
+            }
+
+            await loadAgentDetails();
+            const pastWord = isPausing ? t('ad_agent_paused', 'pausado') : t('ad_agent_activated', 'activado');
+            if (typeof showNotification === 'function') {
+                showNotification(`✅ ${t('ad_agent_word', 'Agente')} ${pastWord} ${t('ad_successfully', 'exitosamente')}`, 'success');
+            }
         }
-        
-        await loadAgentDetails();
-        const pastWord = isPausing ? t('ad_agent_paused', 'pausado') : t('ad_agent_activated', 'activado');
-        alert(`${t('ad_agent_word', 'Agente')} ${pastWord} ${t('ad_successfully', 'exitosamente')}`);
-    } catch (error) {
-        console.error('❌ Error:', error);
-        alert(t('ad_toggle_error', 'Error cambiando el estado del agente. Por favor intenta de nuevo.'));
+    });
+}
+
+// Modal de confirmación (mismo diseño que "Mis Agentes" — ver my-agents.js)
+function showConfirmModal(options) {
+    const {
+        type = 'warning',
+        icon = 'lni-warning',
+        title = '¿Estás seguro?',
+        message = '',
+        list = [],
+        confirmText = 'Confirmar',
+        confirmClass = 'danger',
+        onConfirm = () => {}
+    } = options;
+
+    let modal = document.getElementById('confirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'confirm-modal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="confirm-overlay" onclick="closeConfirmModal()"></div>
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <div class="confirm-icon ${type}">
+                    <i class="lni ${icon}"></i>
+                </div>
+                <h3 class="confirm-title">${title}</h3>
+                <p class="confirm-message">${message}</p>
+            </div>
+            <div class="confirm-body">
+                ${list.length > 0 ? `
+                    <div class="confirm-list">
+                        ${list.map(item => `
+                            <div class="confirm-list-item">
+                                <i class="lni lni-close"></i>
+                                <span>${item}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="confirm-actions">
+                    <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
+                        <i class="lni lni-close"></i>
+                        <span>${t('agents_cancel', 'Cancelar')}</span>
+                    </button>
+                    <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
+                        <i class="lni lni-checkmark"></i>
+                        <span>${confirmText}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.add('active');
+
+    document.getElementById('confirmActionBtn').addEventListener('click', async function () {
+        this.innerHTML = `<div class="loading-spinner-small"></div><span>${t('agents_processing', 'Procesando...')}</span>`;
+        this.disabled = true;
+
+        try {
+            await onConfirm();
+            closeConfirmModal();
+        } catch (error) {
+            console.error('Error en confirmación:', error);
+            alert(t('ad_toggle_error', 'Error cambiando el estado del agente. Por favor intenta de nuevo.'));
+            this.disabled = false;
+            this.innerHTML = `<i class="lni lni-checkmark"></i><span>${confirmText}</span>`;
+        }
+    });
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
     }
 }
 
