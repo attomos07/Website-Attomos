@@ -81,6 +81,52 @@ function closeOnboardingModal() {
     }
 }
 
+// ============================================
+// MOSTRAR AUTOMÁTICAMENTE EL QR DE AGENTES WHATSAPP SIN VINCULAR
+// Ya no depende de localStorage: el backend persiste `whatsappConnected` en
+// el agente (ver /api/agents/:id/qr en agent.go). Cada vez que se carga la
+// tabla de Mis Agentes — desde cualquier navegador o dispositivo — si hay un
+// agente WhatsApp que ya terminó de desplegar pero todavía no está
+// vinculado, se le muestra el modal del QR automáticamente.
+// ============================================
+const _whatsappModalShownFor = new Set(); // evita reabrir el mismo agente varias veces en la misma sesión de pestaña
+
+function ensureOnboardingScriptLoaded() {
+    return new Promise((resolve) => {
+        if (_onboardingScriptLoaded || typeof window.watchAgentDeployment === 'function') {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = '/static/js/onboarding.js?v=' + Date.now();
+        script.onload = () => { _onboardingScriptLoaded = true; resolve(); };
+        script.onerror = () => resolve(); // no bloquear el resto de la página si falla
+        document.body.appendChild(script);
+    });
+}
+
+async function checkUnlinkedWhatsAppAgents(agentsList) {
+    if (!Array.isArray(agentsList) || !agentsList.length) return;
+
+    const pending = agentsList.find(a =>
+        a.botType === 'atomic' &&
+        a.deployStatus === 'running' &&
+        a.isActive &&
+        !a.whatsappConnected &&
+        !_whatsappModalShownFor.has(a.id)
+    );
+    if (!pending) return;
+
+    _whatsappModalShownFor.add(pending.id);
+
+    await ensureOnboardingScriptLoaded();
+    if (typeof window.ensureModalsExist !== 'function' || typeof window.startQRPolling !== 'function') return;
+
+    console.log('📱 Agente WhatsApp sin vincular detectado — mostrando QR:', pending.id);
+    window.ensureModalsExist();
+    window.startQRPolling(pending.id, pending.name);
+}
+
 // Cargar contenido del onboarding (con caché)
 let _onboardingHTMLCache = null;
 let _onboardingScriptLoaded = false;
@@ -153,6 +199,33 @@ async function loadOnboardingContent() {
     }
 
                     .form-input[readonly]:not(.form-select){background:#f8fafc;color:#64748b;cursor:not-allowed;border-color:#e2e8f0;}
+
+                    /* Scrollbar delgado color cian, consistente con el resto de la app */
+                    #onboardingModal, #onboardingModalBody, .onboarding-modal-content {
+                        scrollbar-width: thin;
+                        scrollbar-color: #06b6d4 transparent;
+                    }
+                    #onboardingModal::-webkit-scrollbar,
+                    #onboardingModalBody::-webkit-scrollbar,
+                    .onboarding-modal-content::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    #onboardingModal::-webkit-scrollbar-track,
+                    #onboardingModalBody::-webkit-scrollbar-track,
+                    .onboarding-modal-content::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    #onboardingModal::-webkit-scrollbar-thumb,
+                    #onboardingModalBody::-webkit-scrollbar-thumb,
+                    .onboarding-modal-content::-webkit-scrollbar-thumb {
+                        background-color: #06b6d4;
+                        border-radius: 999px;
+                    }
+                    #onboardingModal::-webkit-scrollbar-thumb:hover,
+                    #onboardingModalBody::-webkit-scrollbar-thumb:hover,
+                    .onboarding-modal-content::-webkit-scrollbar-thumb:hover {
+                        background-color: #0891b2;
+                    }
                 `;
                 document.head.appendChild(fix);
             }
@@ -615,6 +688,7 @@ async function loadAgents() {
 
         updateStats(agents);
         renderAgentsTable(agents);
+        checkUnlinkedWhatsAppAgents(agents);
     } catch (error) {
         console.error('❌ Error:', error);
         showEmptyState();
@@ -707,7 +781,7 @@ function createAgentRow(agent) {
                     <i class="lni lni-eye"></i>
                     <span>${t('agents_dd_view', 'Ver Detalles')}</span>
                 </button>
-                <button class="dropdown-item qr" onclick="showQRModal(${agent.id})">
+                <button class="dropdown-item qr" onclick="showQRModal(${agent.id}, '${escapeHtml(agent.name).replace(/'/g, "\\'")}')">
                     <svg class="qr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
                         <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -719,7 +793,7 @@ function createAgentRow(agent) {
                     </svg>
                     <span>${t('agents_dd_qr', 'Ver QR')}</span>
                 </button>
-                <button class="dropdown-item redeploy" onclick="confirmRedeploy(${agent.id}, '${agent.name}')">
+                <button class="dropdown-item redeploy" onclick="confirmRedeploy(${agent.id}, '${escapeHtml(agent.name).replace(/'/g, "\\'")}', '${agent.botType || ''}')">
                     <i class="lni lni-reload"></i>
                     <span>${t('agents_dd_redeploy', 'Redeploy')}</span>
                 </button>
@@ -1069,120 +1143,30 @@ function escapeHtml(text) {
 
 
 // ─── QR Modal ────────────────────────────────────────────────
-let _qrPollInterval = null;
-
-async function showQRModal(agentId) {
-
+// Usa el mismo modal / flujo que el QR automático de onboarding.js
+// (ensureModalsExist + startQRPolling) para que el usuario vea siempre
+// la misma UI, sin importar si el QR se abrió automáticamente al
+// detectar un agente sin vincular, o manualmente desde el dropdown.
+async function showQRModal(agentId, agentName) {
     document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
 
-    let modal = document.getElementById('qrModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'qrModal';
-        modal.className = 'qr-modal';
-        document.body.appendChild(modal);
+    // Evita que el auto-detect (checkUnlinkedWhatsAppAgents) abra un segundo
+    // polling duplicado para este mismo agente más tarde en la sesión.
+    _whatsappModalShownFor.add(agentId);
+
+    await ensureOnboardingScriptLoaded();
+
+    if (typeof window.ensureModalsExist !== 'function' || typeof window.startQRPolling !== 'function') {
+        showNotification(`❌ ${t('agents_qr_error', 'Error al obtener QR')}`, 'error');
+        return;
     }
 
-    modal.innerHTML = `
-        <div class="qr-overlay" onclick="closeQRModal()"></div>
-        <div class="qr-content">
-            <div class="qr-header">
-                <h3><svg class="qr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14.5" y="14.5" width="2.5" height="2.5" rx="0.5"/><rect x="18.5" y="14.5" width="2.5" height="2.5" rx="0.5"/><rect x="14.5" y="18.5" width="2.5" height="2.5" rx="0.5"/><rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.5"/></svg> ${t('agents_qr_title', 'Escanea el QR con WhatsApp')}</h3>
-                <button class="qr-close" onclick="closeQRModal()"><i class="lni lni-close"></i></button>
-            </div>
-            <div class="qr-body" id="qrBody">
-                <div class="qr-spinner"><div class="brand-spinner"></div><p>${t('agents_qr_getting', 'Obteniendo QR...')}</p></div>
-            </div>
-            <p class="qr-hint">${t('agents_qr_hint', 'Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo')}</p>
-        </div>`;
-
-    modal.classList.add('active');
-    _startQRPolling(agentId);
-}
-
-function _startQRPolling(agentId) {
-    if (_qrPollInterval) clearInterval(_qrPollInterval);
-    _fetchQR(agentId);
-
-    // Usar intervalo adaptativo: rápido mientras espera QR, lento cuando conectado
-    let _pollConnected = false;
-    _qrPollInterval = setInterval(() => {
-        const modal = document.getElementById('qrModal');
-        if (!modal || !modal.classList.contains('active')) {
-            clearInterval(_qrPollInterval);
-            _qrPollInterval = null;
-            return;
-        }
-        _fetchQR(agentId, (connected) => {
-            if (connected !== _pollConnected) {
-                _pollConnected = connected;
-                // Ajustar intervalo: 15s si conectado, 8s si esperando QR
-                clearInterval(_qrPollInterval);
-                _qrPollInterval = setInterval(() => {
-                    const m = document.getElementById('qrModal');
-                    if (!m || !m.classList.contains('active')) { clearInterval(_qrPollInterval); return; }
-                    _fetchQR(agentId);
-                }, _pollConnected ? 15000 : 8000);
-            }
-        });
-    }, 8000);
-}
-
-async function _fetchQR(agentId, onStatusChange) {
-    try {
-        const resp = await fetch(`/api/agents/${agentId}/qr`, { credentials: 'include' });
-        const data = await resp.json();
-        const body = document.getElementById('qrBody');
-        if (!body) return;
-
-        if (data.connected) {
-            body.innerHTML = `
-                <div class="qr-connected">
-                    <i class="lni lni-checkmark-circle"></i>
-                    <p>${t('agents_qr_connected', '¡WhatsApp conectado!')}</p>
-                    <small style="color:#6b7280;font-size:0.8rem;margin-top:0.5rem;display:block;">
-                        ${t('ad_qr_monitoring', 'Monitoreando conexión cada 15 segundos')}
-                    </small>
-                </div>`;
-            if (onStatusChange) onStatusChange(true);
-        } else if (data.qrCode) {
-            body.innerHTML = `<pre class="qr-ascii">${escapeHtml(data.qrCode)}</pre>
-                <p class="qr-status"><i class="lni lni-checkmark-circle"></i> ${t('agents_qr_ready', 'QR listo — escanea ahora')}</p>`;
-            if (onStatusChange) onStatusChange(false);
-        } else {
-            // Detectar si fue desvinculado después de estar conectado
-            const msg = data.message || data.error || '';
-            const wasDisconnected = msg.toLowerCase().includes('desconectado') ||
-                msg.toLowerCase().includes('desvinculado') ||
-                msg.toLowerCase().includes('reconexión');
-
-            if (wasDisconnected) {
-                body.innerHTML = `
-                    <div class="qr-spinner">
-                        <div class="brand-spinner"></div>
-                        <p style="color:#f59e0b;">⚠️ ${t('agents_qr_unlinked', 'Dispositivo desvinculado')}<br>
-                        <small>${t('agents_qr_reconnecting', 'El bot se está reiniciando, espera el nuevo QR...')}</small></p>
-                    </div>`;
-            } else {
-                body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(msg || t('ad_qr_loading', 'Cargando QR...'))}</p></div>`;
-            }
-            if (onStatusChange) onStatusChange(false);
-        }
-    } catch (e) {
-        const body = document.getElementById('qrBody');
-        if (body) body.innerHTML = `<div class="qr-spinner"><p style="color:#ef4444">${t('agents_qr_error', 'Error al obtener QR')}</p></div>`;
-    }
-}
-
-
-function closeQRModal() {
-    if (_qrPollInterval) { clearInterval(_qrPollInterval); _qrPollInterval = null; }
-    const modal = document.getElementById('qrModal');
-    if (modal) modal.classList.remove('active');
+    window.ensureModalsExist();
+    window.startQRPolling(agentId, agentName || '');
 }
 
 // ─── Redeploy ────────────────────────────────────────────────
-function confirmRedeploy(agentId, agentName) {
+function confirmRedeploy(agentId, agentName, botType) {
     document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
     showConfirmModal({
         type: 'warning',
@@ -1197,11 +1181,11 @@ function confirmRedeploy(agentId, agentName) {
         ],
         confirmText: t('agents_redeploy_confirm_btn', 'Sí, Redeploy'),
         confirmClass: 'warning',
-        onConfirm: () => redeployAgent(agentId)
+        onConfirm: () => redeployAgent(agentId, agentName, botType)
     });
 }
 
-async function redeployAgent(agentId) {
+async function redeployAgent(agentId, agentName, botType) {
     try {
         showNotification(`🔄 ${t('agents_redeploy_starting', 'Iniciando redeploy...')}`, 'info');
         const resp = await fetch(`/api/agents/${agentId}/redeploy`, {
@@ -1209,7 +1193,19 @@ async function redeployAgent(agentId) {
             credentials: 'include'
         });
         if (!resp.ok) throw new Error('Error en redeploy');
-        showNotification(`✅ ${t('agents_redeploy_success', 'Redeploy iniciado. El bot estará listo en unos segundos.')}`, 'success');
+        showNotification(`✅ ${t('agents_redeploy_success', 'Redeploy iniciado.')}`, 'success');
+
+        // Si es un agente de WhatsApp (AtomicBot), mostrar la animación de
+        // progreso (misma que al crear un agente) y, cuando detecte que el
+        // bot volvió a "running", abrir automáticamente el modal de QR.
+        if (botType === 'atomic') {
+            await ensureOnboardingScriptLoaded();
+            if (typeof window.watchAgentRedeploy === 'function') {
+                _whatsappModalShownFor.add(agentId); // evita que el auto-detect abra un QR duplicado
+                window.watchAgentRedeploy(agentId, agentName);
+            }
+        }
+
         setTimeout(() => loadAgents(), 3000);
     } catch (e) {
         showNotification(`❌ ${t('agents_redeploy_error', 'Error al hacer redeploy')}`, 'error');

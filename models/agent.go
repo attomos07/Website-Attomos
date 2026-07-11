@@ -156,6 +156,11 @@ type Agent struct {
 	IsActive     bool        `gorm:"default:false" json:"isActive"`
 	BotType      string      `gorm:"size:50;default:orbital" json:"botType"`
 
+	// WhatsApp Web (AtomicBot) — indica si el dispositivo ya está vinculado.
+	// Se actualiza en GetAgentQRCode cuando detecta la sesión conectada, y se
+	// resetea a false en ResetAgentSession/RedeployAgent (requieren nuevo QR).
+	WhatsappConnected bool `gorm:"column:whatsapp_connected;default:false" json:"whatsappConnected"`
+
 	// Servidor individual (OrbitalBot)
 	ServerID       int    `gorm:"default:0" json:"serverId"`
 	ServerIP       string `gorm:"size:50" json:"serverIp"`

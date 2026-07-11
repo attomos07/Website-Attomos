@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"attomos/config"
 	"attomos/models"
@@ -11,14 +12,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type UpdatePasswordRequest struct {
-	CurrentPassword string `json:"currentPassword" binding:"required"`
-	NewPassword     string `json:"newPassword" binding:"required,min=8"`
+	NewPassword string `json:"newPassword" binding:"required,min=8"`
 }
 
-// UpdatePassword actualiza la contraseña del usuario
+// UpdatePassword actualiza la contraseña del usuario.
+// NOTA: por decisión de producto, ya NO se exige la contraseña actual —
+// el usuario ya está autenticado (cookie de sesión) al llegar a este
+// endpoint, así que basta con eso para permitirle cambiarla. Esto cubre
+// el caso de clientes que perdieron su contraseña y no hay forma de
+// verificarla de otra manera.
 func UpdatePassword(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -35,14 +41,6 @@ func UpdatePassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Datos inválidos",
 			"details": err.Error(),
-		})
-		return
-	}
-
-	// Verificar contraseña actual
-	if !user.CheckPassword(req.CurrentPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Contraseña actual incorrecta",
 		})
 		return
 	}
@@ -314,6 +312,78 @@ func UpdateUserProfile(c *gin.Context) {
 			"businessSize": user.BusinessSize,
 			"phoneNumber":  user.PhoneNumber,
 		},
+	})
+}
+
+// UpdateEmailRequest payload para cambiar el correo del usuario
+type UpdateEmailRequest struct {
+	NewEmail string `json:"newEmail" binding:"required,email"`
+}
+
+// UpdateEmail actualiza el correo con el que el usuario inicia sesión.
+// Al igual que UpdatePassword, no exige contraseña actual: basta con la
+// sesión autenticada.
+func UpdateEmail(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "No autenticado",
+		})
+		return
+	}
+
+	user := userInterface.(*models.User)
+
+	var req UpdateEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Correo inválido",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	newEmail := strings.ToLower(strings.TrimSpace(req.NewEmail))
+
+	if newEmail == strings.ToLower(user.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Ese ya es tu correo actual",
+		})
+		return
+	}
+
+	// Verificar que el correo no esté en uso por otro usuario (Email tiene uniqueIndex en BD)
+	var existing models.User
+	err := config.DB.Where("email = ? AND id != ?", newEmail, user.ID).First(&existing).Error
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "Ese correo ya está en uso por otra cuenta",
+		})
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		log.Printf("❌ [User %d] Error verificando correo duplicado: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Error al actualizar correo",
+		})
+		return
+	}
+
+	oldEmail := user.Email
+	user.Email = newEmail
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		log.Printf("❌ [User %d] Error guardando nuevo correo: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Error al actualizar correo",
+		})
+		return
+	}
+
+	log.Printf("✅ [User %d] Correo actualizado: %s → %s", user.ID, oldEmail, newEmail)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Correo actualizado exitosamente",
+		"email":   user.Email,
 	})
 }
 

@@ -22,6 +22,22 @@ function showMessage(element, duration = 5000) {
     }, duration);
 }
 
+// ─── Cargar correo actual (para el card de "Cambiar Correo Electrónico") ──
+document.addEventListener('DOMContentLoaded', async () => {
+    const currentEmailDisplay = document.getElementById('currentEmailDisplay');
+    if (!currentEmailDisplay) return;
+
+    try {
+        const resp = await fetch('/api/me', { credentials: 'include' });
+        if (!resp.ok) throw new Error('No se pudo obtener el usuario');
+        const data = await resp.json();
+        currentEmailDisplay.value = data.email || '';
+    } catch (error) {
+        console.error('Error cargando correo actual:', error);
+        currentEmailDisplay.placeholder = t('settings_email_load_error', 'No se pudo cargar');
+    }
+});
+
 // ─── Toggle Password Visibility ─────────────
 function togglePassword(inputId, btn) {
     const field = document.getElementById(inputId);
@@ -71,7 +87,6 @@ function togglePassword(inputId, btn) {
 document.getElementById('passwordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const currentPassword = document.getElementById('currentPassword').value;
     const newPassword     = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const submitBtn       = e.target.querySelector('button[type="submit"]');
@@ -113,7 +128,7 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ currentPassword, newPassword })
+            body: JSON.stringify({ newPassword })
         });
 
         const data = await response.json();
@@ -134,6 +149,61 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
         submitBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('settings_update_pw', 'Actualizar Contraseña')}</span>`;
     }
 });
+
+// ─── Email Form ───────────────────────────────
+const emailFormEl = document.getElementById('emailForm');
+if (emailFormEl) {
+    emailFormEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const newEmail        = document.getElementById('newEmail').value.trim();
+        const submitBtn       = e.target.querySelector('button[type="submit"]');
+        const successMessage  = document.getElementById('emailSuccess');
+        const errorMessage    = document.getElementById('emailError');
+        const errorText       = document.getElementById('emailErrorText');
+
+        successMessage.style.display = 'none';
+        errorMessage.style.display   = 'none';
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+            errorText.textContent = t('settings_email_invalid', 'Ingresa un correo electrónico válido');
+            showMessage(errorMessage);
+            return;
+        }
+
+        submitBtn.classList.add('loading');
+        submitBtn.innerHTML = `<i class="lni lni-spinner"></i><span>${t('settings_email_updating', 'Actualizando...')}</span>`;
+
+        try {
+            const response = await fetch('/api/user/email', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ newEmail })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showMessage(successMessage);
+                const currentEmailDisplay = document.getElementById('currentEmailDisplay');
+                if (currentEmailDisplay) currentEmailDisplay.value = newEmail;
+                document.getElementById('newEmail').value = '';
+            } else {
+                errorText.textContent = data.error || t('settings_email_error_default', 'Error al actualizar el correo');
+                showMessage(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error updating email:', error);
+            errorText.textContent = t('settings_email_error_default', 'Ocurrió un error al actualizar el correo');
+            showMessage(errorMessage);
+        } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('settings_update_email', 'Actualizar Correo')}</span>`;
+        }
+    });
+}
 
 // ─── Delete Account Modal ────────────────────
 function showDeleteModal() {

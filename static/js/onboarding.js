@@ -1,4 +1,61 @@
 // ============================================
+// SCROLLBAR PERSONALIZADO (delgado, cian) PARA LOS MODALES
+// ============================================
+(function injectAttomosModalScrollbarStyles() {
+  if (document.getElementById('attomos-modal-scrollbar-style')) return;
+  const style = document.createElement('style');
+  style.id = 'attomos-modal-scrollbar-style';
+  style.textContent = `
+    /* Firefox */
+    #qrModal, #creatingModal, #successModal, .creating-content {
+      scrollbar-width: thin;
+      scrollbar-color: #06b6d4 transparent;
+    }
+    /* Chrome / Edge / Safari */
+    #qrModal::-webkit-scrollbar,
+    #creatingModal::-webkit-scrollbar,
+    #successModal::-webkit-scrollbar,
+    .creating-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    #qrModal::-webkit-scrollbar-track,
+    #creatingModal::-webkit-scrollbar-track,
+    #successModal::-webkit-scrollbar-track,
+    .creating-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #qrModal::-webkit-scrollbar-thumb,
+    #creatingModal::-webkit-scrollbar-thumb,
+    #successModal::-webkit-scrollbar-thumb,
+    .creating-content::-webkit-scrollbar-thumb {
+      background-color: #06b6d4;
+      border-radius: 999px;
+    }
+    #qrModal::-webkit-scrollbar-thumb:hover,
+    #creatingModal::-webkit-scrollbar-thumb:hover,
+    #successModal::-webkit-scrollbar-thumb:hover,
+    .creating-content::-webkit-scrollbar-thumb:hover {
+      background-color: #0891b2;
+    }
+
+    /* Resaltado al arrastrar una foto sobre el área de imágenes de un producto/servicio */
+    .service-images-grid.service-img-drag-over {
+      outline: 2px dashed #06b6d4;
+      outline-offset: 4px;
+      border-radius: 12px;
+      background: rgba(6, 182, 212, 0.06);
+      transition: background 0.15s ease;
+    }
+    .service-images-grid.service-img-drag-over .service-img-add-btn {
+      border-color: #06b6d4 !important;
+      color: #0891b2 !important;
+      background: rgba(6, 182, 212, 0.08) !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ============================================
 // STATE MANAGEMENT
 // ============================================
 let currentStep = 1;
@@ -2032,8 +2089,8 @@ function addServiceWithData(s) {
     if (promoPeriodBlock) promoPeriodBlock.style.display = 'block';
     const origEl = item.querySelector('.service-original-price');
     const promoEl = item.querySelector('.service-promo-price');
-    if (origEl) origEl.value = s.originalPrice || '';
-    if (promoEl) promoEl.value = s.promoPrice || '';
+    if (origEl) origEl.value = s.originalPrice ? _formatPriceNumber(s.originalPrice) : '';
+    if (promoEl) promoEl.value = s.promoPrice ? _formatPriceNumber(s.promoPrice) : '';
 
     // ── Periodo de promo ──────────────────────────────────────────────────
     const periodType = s.promoPeriodType || 'days';
@@ -2059,7 +2116,7 @@ function addServiceWithData(s) {
     }
   } else {
     const priceEl = item.querySelector('.service-price');
-    if (priceEl) priceEl.value = s.price || '';
+    if (priceEl) priceEl.value = s.price ? _formatPriceNumber(s.price) : '';
   }
 }
 
@@ -2368,6 +2425,59 @@ function updateHolidaysData() {
 // ============================================
 // SERVICES MANAGEMENT
 // ============================================
+// ============================================
+// FORMATEO DE PRECIO (comas de miles en vivo, ej. 25000 -> 25,000)
+// ============================================
+
+// Convierte un número (o string con comas) a texto formateado "25,000" / "25,000.50"
+function _formatPriceNumber(num) {
+  if (num === null || num === undefined || num === '') return '';
+  const n = typeof num === 'number' ? num : parseFloat(String(num).replace(/,/g, ''));
+  if (isNaN(n)) return '';
+  const hasDecimals = n % 1 !== 0;
+  return n.toLocaleString('en-US', { minimumFractionDigits: hasDecimals ? 2 : 0, maximumFractionDigits: 2 });
+}
+
+// Quita las comas y devuelve el número real para guardar/enviar al backend
+function _parsePriceValue(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(/,/g, '')) || 0;
+}
+
+// Reformatea el input mientras el usuario escribe, preservando la posición del cursor
+function _formatPriceInputValue(el) {
+  const cursorPos = el.selectionStart == null ? el.value.length : el.selectionStart;
+  const digitsBeforeCursor = el.value.slice(0, cursorPos).replace(/[^\d]/g, '').length;
+
+  let raw = el.value.replace(/[^\d.]/g, '');
+  const firstDot = raw.indexOf('.');
+  if (firstDot !== -1) {
+    raw = raw.slice(0, firstDot + 1) + raw.slice(firstDot + 1).replace(/\./g, '');
+  }
+
+  let [intPart, decPart] = raw.split('.');
+  intPart = (intPart || '').replace(/^0+(?=\d)/, '');
+  if (decPart !== undefined) decPart = decPart.slice(0, 2);
+
+  const intFormatted = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '';
+  let newValue = intFormatted;
+  if (decPart !== undefined) newValue += '.' + decPart;
+  else if (raw.endsWith('.')) newValue += '.';
+
+  el.value = newValue;
+
+  if (digitsBeforeCursor === 0) {
+    el.setSelectionRange(0, 0);
+    return;
+  }
+  let digitsSeen = 0, newPos = newValue.length;
+  for (let i = 0; i < newValue.length; i++) {
+    if (/\d/.test(newValue[i])) digitsSeen++;
+    if (digitsSeen === digitsBeforeCursor) { newPos = i + 1; break; }
+  }
+  el.setSelectionRange(newPos, newPos);
+}
+
 function initializeServices() {
   const addServiceBtn = document.getElementById('addServiceBtn');
   
@@ -2434,7 +2544,7 @@ function addService() {
         <label class="form-label">${t('onb_svc_price_amount','Precio')} *</label>
         <div class="price-input-wrapper">
           <span class="price-currency">$</span>
-          <input type="number" class="form-input service-price price-input" placeholder="0.00" step="0.01" required>
+          <input type="text" inputmode="decimal" class="form-input service-price price-input" placeholder="0.00" required>
         </div>
       </div>
       
@@ -2443,14 +2553,14 @@ function addService() {
           <label class="form-label">${t('onb_svc_price_original','Precio Original')} <span class="form-label-required">*</span></label>
           <div class="price-input-wrapper">
             <span class="price-currency">$</span>
-            <input type="number" class="form-input service-original-price price-input" placeholder="0.00" step="0.01">
+            <input type="text" inputmode="decimal" class="form-input service-original-price price-input" placeholder="0.00">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">${t('onb_svc_price_promo_amount','Precio Promoción')} <span class="form-label-required">*</span></label>
           <div class="price-input-wrapper">
             <span class="price-currency">$</span>
-            <input type="number" class="form-input service-promo-price price-input" placeholder="0.00" step="0.01">
+            <input type="text" inputmode="decimal" class="form-input service-promo-price price-input" placeholder="0.00">
           </div>
         </div>
       </div>
@@ -2551,6 +2661,10 @@ function addService() {
     });
   });
   
+  serviceItem.querySelectorAll('.price-input').forEach(input => {
+    input.addEventListener('input', function() { _formatPriceInputValue(this); });
+  });
+
   serviceItem.querySelectorAll('input, textarea').forEach(input => {
     input.addEventListener('input', updateServicesData);
   });
@@ -2612,8 +2726,9 @@ function addService() {
     }
   });
 
-  _fileInput.addEventListener('change', async function() {
-    const files = [...this.files];
+  // ── Procesa una lista de archivos (vengan del input o de un drag & drop) ──
+  async function _processImageFiles(fileList) {
+    const files = [...fileList].filter(f => f.type && f.type.startsWith('image/'));
     if (!files.length) return;
     const oversize = files.filter(f => f.size > 5 * 1024 * 1024);
     if (oversize.length) {
@@ -2635,7 +2750,39 @@ function addService() {
       });
     }
     _syncUrls();
+  }
+
+  _fileInput.addEventListener('change', async function() {
+    await _processImageFiles(this.files);
     _fileInput.value = '';
+  });
+
+  // ── Drag & drop de fotos directamente sobre el área de imágenes ───────────
+  ['dragenter', 'dragover'].forEach(evt => {
+    _grid.addEventListener(evt, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      _grid.classList.add('service-img-drag-over');
+    });
+  });
+
+  _grid.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    // Solo quitar el resaltado si de verdad salimos del área (no de un hijo interno)
+    if (!_grid.contains(e.relatedTarget)) {
+      _grid.classList.remove('service-img-drag-over');
+    }
+  });
+
+  _grid.addEventListener('drop', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    _grid.classList.remove('service-img-drag-over');
+    const dtFiles = e.dataTransfer && e.dataTransfer.files;
+    if (dtFiles && dtFiles.length) {
+      await _processImageFiles(dtFiles);
+    }
   });
 
   // url puede ser un data-URL (pendiente) o una URL real (ya subida / precargada)
@@ -2686,8 +2833,8 @@ function updateServicesData() {
     let promoPeriodType = 'days', promoDays = [], promoDateStart = '', promoDateEnd = '';
 
     if (priceType === 'promotion') {
-      originalPrice = parseFloat(item.querySelector('.service-original-price').value) || 0;
-      promoPrice = parseFloat(item.querySelector('.service-promo-price').value) || 0;
+      originalPrice = _parsePriceValue(item.querySelector('.service-original-price').value);
+      promoPrice = _parsePriceValue(item.querySelector('.service-promo-price').value);
 
       const activePeriodBtn = item.querySelector('.period-tab-btn.active');
       if (activePeriodBtn) promoPeriodType = activePeriodBtn.dataset.period;
@@ -2700,7 +2847,7 @@ function updateServicesData() {
         promoDateEnd   = item.querySelector('.promo-date-end')?.value   || '';
       }
     } else {
-      price = parseFloat(item.querySelector('.service-price').value) || 0;
+      price = _parsePriceValue(item.querySelector('.service-price').value);
     }
     
     if (title) {
@@ -3571,15 +3718,15 @@ function ensureModalsExist() {
       <div class="creating-content">
         <div class="creating-icon-wrapper">
           <div class="creating-icon robot-icon">
-            <i class="lni lni-bot"></i>
+            <i class="lni lni-bot" id="creatingModalIcon"></i>
           </div>
           <div class="pulse-ring"></div>
           <div class="pulse-ring"></div>
           <div class="pulse-ring"></div>
         </div>
 
-        <h2 class="creating-title">Creando tu Agente</h2>
-        <p class="creating-subtitle">
+        <h2 class="creating-title" id="creatingModalTitle">Creando tu Agente</h2>
+        <p class="creating-subtitle" id="creatingModalSubtitle">
           Configurando infraestructura y desplegando el bot
         </p>
 
@@ -3643,7 +3790,7 @@ function ensureModalsExist() {
           <div class="creating-note-icon">
             <i class="lni lni-information"></i>
           </div>
-          <p class="creating-note-text">
+          <p class="creating-note-text" id="creatingModalNote">
             Este proceso toma entre 10 y 20 minutos. Estamos configurando tu
             infraestructura en la nube y desplegando tu bot personalizado.
           </p>
@@ -3659,7 +3806,12 @@ function ensureModalsExist() {
     qrModal.id = 'qrModal';
     qrModal.className = 'overlay creating-modal';
     qrModal.innerHTML = `
-      <div class="creating-content success-modal-content" style="max-width:420px">
+      <div class="creating-content success-modal-content" style="max-width:420px;position:relative">
+        <button type="button" id="qrModalCloseBtn" aria-label="Cerrar" style="
+          position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;
+          border-radius:50%;background:#f3f4f6;color:#6b7280;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;font-size:1rem;
+        "><i class="lni lni-close"></i></button>
         <div class="success-icon-large">
           <i class="lni lni-whatsapp" style="color:#25d366;font-size:3rem"></i>
         </div>
@@ -3691,6 +3843,24 @@ function ensureModalsExist() {
             background:#f59e0b;flex-shrink:0;display:inline-block
           "></span>
           <span id="qrStatusText">Esperando escaneo...</span>
+        </div>
+
+        <!-- Aviso cuando el QR tarda demasiado en generarse -->
+        <div id="qrStuckPanel" style="display:none;margin-top:0.5rem;padding:1rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;text-align:center;">
+          <div style="color:#c2410c;font-weight:700;font-size:0.85rem;margin-bottom:0.35rem;">
+            <i class="lni lni-warning"></i> Esto está tardando más de lo normal
+          </div>
+          <p style="color:#9a3412;font-size:0.8rem;margin:0 0 0.75rem;line-height:1.4;">
+            No pudimos generar el código QR. Intenta un redeploy del agente o crea un nuevo agente.
+          </p>
+          <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+            <button type="button" id="qrStuckRedeployBtn" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f97316;color:#fff;font-weight:600;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
+              <i class="lni lni-reload"></i> Redeploy
+            </button>
+            <button type="button" id="qrStuckNewAgentBtn" style="padding:0.5rem 1rem;border:1px solid #f97316;border-radius:8px;background:#fff;color:#f97316;font-weight:600;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
+              <i class="lni lni-plus"></i> Crear otro agente
+            </button>
+          </div>
         </div>
 
         <div class="creating-note" style="margin-top:1rem">
@@ -3766,9 +3936,36 @@ function startQRPolling(agentId, agentName) {
   const qrImage        = document.getElementById('qrImage');
   const qrStatusDot    = document.getElementById('qrStatusDot');
   const qrStatusText   = document.getElementById('qrStatusText');
+  const qrStuckPanel   = document.getElementById('qrStuckPanel');
   if (!qrModal) return;
 
   qrModal.classList.add('show');
+  if (qrStuckPanel) qrStuckPanel.style.display = 'none';
+  console.log('📡 [QR] Iniciando polling para agente', agentId, '— aviso de atascado a los', 45, 's');
+
+  // ── Aviso de "atascado" ─────────────────────────────────────────────────
+  // Si después de un buen rato el backend sigue sin devolver QR ni conexión
+  // (ver logs "Sin QR ni conexión, esperando"), el usuario se queda viendo
+  // el spinner para siempre. Avisamos y ofrecemos redeploy o crear otro agente,
+  // sin dejar de sondear por si el bot se recupera solo.
+  const QR_STUCK_THRESHOLD_MS = 45000; // 45s
+  let _pollStartedAt = Date.now();
+  let _stuckShown = false;
+
+  function showStuckPanel() {
+    if (_stuckShown || !qrStuckPanel) return;
+    _stuckShown = true;
+    console.log('⏳ [QR] Sin QR después de', Math.round((Date.now() - _pollStartedAt) / 1000) + 's — mostrando aviso para agente', agentId);
+    qrStuckPanel.style.display = 'block';
+    if (qrStatusDot) qrStatusDot.style.background = '#ef4444';
+    if (qrStatusText) qrStatusText.textContent = 'No se pudo generar el QR';
+  }
+
+  function hideStuckPanel() {
+    if (!_stuckShown || !qrStuckPanel) return;
+    _stuckShown = false;
+    qrStuckPanel.style.display = 'none';
+  }
 
   let _qrPollTimer = null;
 
@@ -3787,6 +3984,7 @@ function startQRPolling(agentId, agentName) {
       if (contentType.includes('image/')) {
         const blob = await resp.blob();
         const objectUrl = URL.createObjectURL(blob);
+        hideStuckPanel();
         qrSpinner.style.display        = 'none';
         qrImage.src                    = objectUrl;
         qrImage.style.display          = 'block';
@@ -3810,6 +4008,7 @@ function startQRPolling(agentId, agentName) {
         data.message === 'connected' || data.message === 'linked';
 
       if (isLinked) {
+        hideStuckPanel();
         clearInterval(_qrPollTimer);
         qrModal.classList.remove('show');
         showSuccessModal(agentName, 'whatsapp');
@@ -3830,6 +4029,7 @@ function startQRPolling(agentId, agentName) {
       const qrCode = qrField || '';
 
       if (qrCode) {
+        hideStuckPanel();
         qrSpinner.style.display = 'none';
 
         // Quitar prefijo data-URI si lo tiene, para inspeccionar el contenido crudo
@@ -3865,6 +4065,10 @@ function startQRPolling(agentId, agentName) {
 
         qrStatusDot.style.background = '#f59e0b';
         qrStatusText.textContent     = 'Esperando escaneo...';
+      } else if (!_stuckShown && (Date.now() - _pollStartedAt) >= QR_STUCK_THRESHOLD_MS) {
+        // Llevamos más de QR_STUCK_THRESHOLD_MS sin QR ni conexión (backend
+        // reporta "Sin QR ni conexión, esperando" indefinidamente) — avisar.
+        showStuckPanel();
       }
 
     } catch (err) {
@@ -3899,6 +4103,65 @@ function startQRPolling(agentId, agentName) {
       }
     } catch (_) {}
   }, 4000);
+
+  // ── Botón cerrar: detiene el polling y oculta el modal sin cancelar el
+  // agente — el usuario puede volver a vincularlo luego desde el dropdown,
+  // o se le va a volver a mostrar solo la próxima vez que cargue Mis Agentes
+  // (mientras siga sin vincular).
+  const closeBtn = document.getElementById('qrModalCloseBtn');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      clearInterval(_qrPollTimer);
+      clearInterval(_agentStatusTimer);
+      qrModal.classList.remove('show');
+    };
+  }
+
+  // ── Botones del aviso de "atascado" ───────────────────────────────────
+  const stuckRedeployBtn = document.getElementById('qrStuckRedeployBtn');
+  if (stuckRedeployBtn) {
+    stuckRedeployBtn.onclick = async () => {
+      stuckRedeployBtn.disabled = true;
+      stuckRedeployBtn.innerHTML = '<i class="lni lni-spinner-arrow"></i> Redeployando...';
+      try {
+        const resp = await fetch(`/api/agents/${agentId}/redeploy`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        if (!resp.ok) throw new Error('redeploy failed');
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('✅ Redeploy iniciado.', 'success');
+        }
+        // Cerramos el QR y mostramos la animación de progreso (igual que al
+        // crear un agente); cuando detecte que el bot volvió a "running",
+        // esta misma función reabre el modal de QR automáticamente.
+        clearInterval(_qrPollTimer);
+        clearInterval(_agentStatusTimer);
+        qrModal.classList.remove('show');
+        stuckRedeployBtn.disabled = false;
+        stuckRedeployBtn.innerHTML = '<i class="lni lni-reload"></i> Redeploy';
+        watchAgentRedeploy(agentId, agentName);
+      } catch (e) {
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('❌ Error al hacer redeploy', 'error');
+        }
+        stuckRedeployBtn.disabled = false;
+        stuckRedeployBtn.innerHTML = '<i class="lni lni-reload"></i> Redeploy';
+      }
+    };
+  }
+
+  const stuckNewAgentBtn = document.getElementById('qrStuckNewAgentBtn');
+  if (stuckNewAgentBtn) {
+    // Solo mostrar la opción si estamos en un contexto donde existe el flujo de creación
+    stuckNewAgentBtn.style.display = (typeof window.openOnboardingModal === 'function') ? '' : 'none';
+    stuckNewAgentBtn.onclick = () => {
+      clearInterval(_qrPollTimer);
+      clearInterval(_agentStatusTimer);
+      qrModal.classList.remove('show');
+      if (typeof window.openOnboardingModal === 'function') window.openOnboardingModal();
+    };
+  }
 }
 
 // ============================================
@@ -4011,27 +4274,13 @@ async function createAgent() {
     console.log('🔒 Cerrando modal del onboarding...');
     closeOnboardingModal();
   }
-  
-  // Asegurar que los modales existen
-  ensureModalsExist();
-  
-  const creatingModal = document.getElementById('creatingModal');
+
+  const creatingModal = document.getElementById('creatingModal') || (ensureModalsExist(), document.getElementById('creatingModal'));
   if (!creatingModal) {
     console.error('❌ Modal de creación no encontrado');
     alert('Error: No se pudo mostrar el modal de creación');
     return;
   }
-  
-  console.log('✅ Mostrando modal de creación...');
-  creatingModal.classList.add('show');
-  
-  let elapsedSeconds = 0;
-  const maxSeconds = 1200;
-  
-  const timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    updateTimer(elapsedSeconds, maxSeconds);
-  }, 1000);
 
   try {
     console.log('📤 Enviando petición de creación de agente...');
@@ -4066,80 +4315,213 @@ async function createAgent() {
     const data = await response.json();
     console.log('📥 Respuesta recibida:', data);
 
-    if (response.status === 202) {
-      const agentId = data.agent.id;
-      console.log('✅ Agente creado con ID:', agentId);
-      
-      const agentNameDisplay = document.getElementById('agentNameDisplay');
-      if (agentNameDisplay) {
-        agentNameDisplay.textContent = data.agent.name;
-      }
-      
-      const checkInterval = setInterval(async () => {
-        try {
-          console.log('🔍 Verificando estado del agente...');
-          const statusResp = await fetch(`/api/agents/${agentId}`, {
-            credentials: 'include'
-          });
-          
-          if (!statusResp.ok) {
-            console.error('❌ Error al verificar estado:', statusResp.status);
-            return;
-          }
-          
-          const statusData = await statusResp.json();
-          console.log('📊 Estado actual:', statusData.agent.deployStatus);
-          
-          updateCreationStatus(statusData.agent.deployStatus);
-          
-          if (statusData.agent.deployStatus === 'running') {
-            console.log('🎉 ¡Agente completado exitosamente!');
-            clearInterval(checkInterval);
-            clearInterval(timerInterval);
-            
-            creatingModal.classList.remove('show');
-
-            const platform = (agentData.social || '').toLowerCase(); // 'whatsapp' | 'meta' | 'telegram'
-
-            if (platform === 'whatsapp') {
-              // ── Flujo 1: AtomicBot ─ mostrar QR para vincular WhatsApp ──────
-              console.log('📱 Plataforma AtomicBot – iniciando flujo QR');
-              startQRPolling(agentId, statusData.agent.name);
-            } else if (platform === 'telegram') {
-              // ── Flujo 3: TelegramBot ─ éxito directo (no requiere QR) ──────
-              console.log('✈️ Plataforma TelegramBot – mostrando éxito directo');
-              showSuccessModal(statusData.agent.name, 'telegram');
-            } else {
-              // ── Flujo 2: OrbitalBot ─ mostrar pantalla de éxito directo ────
-              console.log('🚀 Plataforma OrbitalBot – mostrando éxito directo');
-              showSuccessModal(statusData.agent.name, platform);
-            }
-            
-          } else if (statusData.agent.deployStatus === 'error') {
-            console.error('❌ Error en el despliegue del agente');
-            clearInterval(checkInterval);
-            clearInterval(timerInterval);
-            
-            creatingModal.classList.remove('show');
-            alert('Error al crear el agente. Por favor contacta a soporte.');
-          }
-        } catch (error) {
-          console.error('❌ Error verificando estado:', error);
-        }
-      }, 5000);
-      
-    } else {
-      clearInterval(timerInterval);
+    if (response.status !== 202) {
       throw new Error(data.error || 'Error al crear agente');
     }
-    
+
+    const agentId = data.agent.id;
+    const agentName = data.agent.name;
+    const platform = (agentData.social || '').toLowerCase(); // 'whatsapp' | 'meta' | 'telegram'
+    console.log('✅ Agente creado con ID:', agentId);
+
+    watchAgentDeployment(agentId, agentName, platform);
+
   } catch (error) {
-    clearInterval(timerInterval);
     console.error('❌ Error:', error);
     creatingModal.classList.remove('show');
     alert(t('onb_err_creating','Error al crear el agente. Por favor intenta de nuevo.'));
   }
 }
+
+// ============================================
+// WATCH AGENT DEPLOYMENT (compartido entre createAgent() y la lógica de
+// "retomar" en my-agents.js cuando el usuario vuelve a la página)
+// ============================================
+function watchAgentDeployment(agentId, agentName, platform) {
+  ensureModalsExist();
+  const creatingModal = document.getElementById('creatingModal');
+  if (!creatingModal) return;
+
+  console.log('✅ Mostrando modal de creación...');
+  setCreatingModalMode('create', agentName);
+  creatingModal.classList.add('show');
+
+  const agentNameDisplay = document.getElementById('agentNameDisplay');
+  if (agentNameDisplay) agentNameDisplay.textContent = agentName;
+
+  let elapsedSeconds = 0;
+  const maxSeconds = 1200;
+  const timerInterval = setInterval(() => {
+    elapsedSeconds++;
+    updateTimer(elapsedSeconds, maxSeconds);
+  }, 1000);
+
+  const checkInterval = setInterval(async () => {
+    try {
+      console.log('🔍 Verificando estado del agente...');
+      const statusResp = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
+
+      if (!statusResp.ok) {
+        console.error('❌ Error al verificar estado:', statusResp.status);
+        return;
+      }
+
+      const statusData = await statusResp.json();
+      console.log('📊 Estado actual:', statusData.agent.deployStatus);
+
+      updateCreationStatus(statusData.agent.deployStatus, 'create');
+
+      if (statusData.agent.deployStatus === 'running') {
+        console.log('🎉 ¡Agente completado exitosamente!');
+        clearInterval(checkInterval);
+        clearInterval(timerInterval);
+
+        creatingModal.classList.remove('show');
+
+        if (platform === 'whatsapp') {
+          // ── Flujo 1: AtomicBot ─ mostrar QR para vincular WhatsApp ──────
+          console.log('📱 Plataforma AtomicBot – iniciando flujo QR');
+          startQRPolling(agentId, statusData.agent.name);
+        } else if (platform === 'telegram') {
+          // ── Flujo 3: TelegramBot ─ éxito directo (no requiere QR) ──────
+          console.log('✈️ Plataforma TelegramBot – mostrando éxito directo');
+          showSuccessModal(statusData.agent.name, 'telegram');
+        } else {
+          // ── Flujo 2: OrbitalBot ─ mostrar pantalla de éxito directo ────
+          console.log('🚀 Plataforma OrbitalBot – mostrando éxito directo');
+          showSuccessModal(statusData.agent.name, platform);
+        }
+
+      } else if (statusData.agent.deployStatus === 'error') {
+        console.error('❌ Error en el despliegue del agente');
+        clearInterval(checkInterval);
+        clearInterval(timerInterval);
+
+        creatingModal.classList.remove('show');
+        alert('Error al crear el agente. Por favor contacta a soporte.');
+      }
+    } catch (error) {
+      console.error('❌ Error verificando estado:', error);
+    }
+  }, 5000);
+}
+window.watchAgentDeployment = watchAgentDeployment;
+
+// ============================================
+// MODO DEL MODAL DE PROGRESO: 'create' (crear agente) vs 'redeploy'
+// Reutiliza el mismo modal #creatingModal cambiando textos/ícono, para no
+// duplicar el diseño (spinner, anillos, barra de progreso, pasos...).
+// ============================================
+function setCreatingModalMode(mode, agentName) {
+  const titleEl    = document.getElementById('creatingModalTitle');
+  const subtitleEl = document.getElementById('creatingModalSubtitle');
+  const noteEl     = document.getElementById('creatingModalNote');
+  const iconEl     = document.getElementById('creatingModalIcon');
+  const nameEl     = document.getElementById('agentNameDisplay');
+
+  if (nameEl) nameEl.textContent = agentName || '';
+
+  if (mode === 'redeploy') {
+    if (titleEl) titleEl.textContent = 'Redeployando tu Agente';
+    if (subtitleEl) subtitleEl.textContent = 'Reiniciando la infraestructura y reconectando el bot';
+    if (noteEl) noteEl.textContent = 'Esto normalmente toma unos minutos. Tu configuración e historial no se pierden — solo tendrás que volver a escanear el QR.';
+    if (iconEl) iconEl.className = 'lni lni-reload';
+  } else {
+    if (titleEl) titleEl.textContent = 'Creando tu Agente';
+    if (subtitleEl) subtitleEl.textContent = 'Configurando infraestructura y desplegando el bot';
+    if (noteEl) noteEl.textContent = 'Este proceso toma entre 10 y 20 minutos. Estamos configurando tu infraestructura en la nube y desplegando tu bot personalizado.';
+    if (iconEl) iconEl.className = 'lni lni-bot';
+  }
+}
+
+const CREATE_STATUS_MESSAGES = {
+  'pending':      { text: 'Preparando creación...',              icon: 'lni-hourglass',        step: 0 },
+  'creating':     { text: 'Creando infraestructura...',           icon: 'lni-apartment',        step: 1 },
+  'provisioning': { text: 'Inicializando sistema operativo...',   icon: 'lni-cog',              step: 2 },
+  'initializing': { text: 'Instalando dependencias...',           icon: 'lni-package',          step: 2 },
+  'deploying':    { text: 'Desplegando y configurando bot...',    icon: 'lni-bot',              step: 3 },
+  'running':      { text: '¡Agente listo y funcionando!',         icon: 'lni-checkmark-circle', step: 4 },
+  'error':        { text: 'Error en la creación',                 icon: 'lni-cross-circle',     step: 0 }
+};
+
+const REDEPLOY_STATUS_MESSAGES = {
+  'pending':      { text: 'Preparando redeploy...',               icon: 'lni-hourglass',        step: 0 },
+  'creating':     { text: 'Deteniendo el bot actual...',          icon: 'lni-power-switch',     step: 1 },
+  'provisioning': { text: 'Reiniciando infraestructura...',       icon: 'lni-cog',              step: 2 },
+  'initializing': { text: 'Reinstalando dependencias...',         icon: 'lni-package',          step: 2 },
+  'deploying':    { text: 'Reconectando el bot...',               icon: 'lni-bot',              step: 3 },
+  'running':      { text: '¡Bot reiniciado y funcionando!',       icon: 'lni-checkmark-circle', step: 4 },
+  'error':        { text: 'Error en el redeploy',                 icon: 'lni-cross-circle',     step: 0 }
+};
+
+const CREATE_STEPS = [
+  { icon: 'lni-apartment',  text: 'Creando infraestructura' },
+  { icon: 'lni-cog',        text: 'Inicializando sistema' },
+  { icon: 'lni-bot',        text: 'Desplegando bot' },
+  { icon: 'lni-checkmark',  text: 'Completado' }
+];
+
+const REDEPLOY_STEPS = [
+  { icon: 'lni-power-switch', text: 'Deteniendo bot' },
+  { icon: 'lni-cog',          text: 'Reiniciando infraestructura' },
+  { icon: 'lni-bot',          text: 'Reconectando bot' },
+  { icon: 'lni-checkmark',    text: 'Completado' }
+];
+
+// ============================================
+// WATCH AGENT REDEPLOY (mismo modal que watchAgentDeployment, con textos
+// de "redeploy" en vez de "creación"). Al detectar deployStatus === 'running'
+// abre automáticamente el modal de QR para volver a vincular WhatsApp.
+// ============================================
+function watchAgentRedeploy(agentId, agentName) {
+  ensureModalsExist();
+  const creatingModal = document.getElementById('creatingModal');
+  if (!creatingModal) return;
+
+  console.log('🔄 Mostrando modal de redeploy...');
+  setCreatingModalMode('redeploy', agentName);
+  creatingModal.classList.add('show');
+  updateCreationStatus('pending', 'redeploy');
+
+  let elapsedSeconds = 0;
+  const maxSeconds = 300; // ~5 min estimados para un redeploy (vs ~20 min de creación)
+  const timerInterval = setInterval(() => {
+    elapsedSeconds++;
+    updateTimer(elapsedSeconds, maxSeconds);
+  }, 1000);
+  updateTimer(0, maxSeconds);
+
+  const checkInterval = setInterval(async () => {
+    try {
+      const statusResp = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
+      if (!statusResp.ok) return;
+
+      const statusData = await statusResp.json();
+      updateCreationStatus(statusData.agent.deployStatus, 'redeploy');
+
+      if (statusData.agent.deployStatus === 'running') {
+        console.log('🎉 ¡Redeploy completado! Mostrando QR...');
+        clearInterval(checkInterval);
+        clearInterval(timerInterval);
+        creatingModal.classList.remove('show');
+        startQRPolling(agentId, statusData.agent.name || agentName);
+      } else if (statusData.agent.deployStatus === 'error') {
+        console.error('❌ Error en el redeploy');
+        clearInterval(checkInterval);
+        clearInterval(timerInterval);
+        creatingModal.classList.remove('show');
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('❌ Error al hacer redeploy del agente', 'error');
+        } else {
+          alert('Error al hacer redeploy del agente. Por favor contacta a soporte.');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error verificando estado del redeploy:', error);
+    }
+  }, 3000);
+}
+window.watchAgentRedeploy = watchAgentRedeploy;
 
 function updateTimer(elapsed, max) {
   const minutes = Math.floor(elapsed / 60);
@@ -4164,45 +4546,8 @@ function updateTimer(elapsed, max) {
   }
 }
 
-function updateCreationStatus(status) {
-  const statusMessages = {
-    'pending': {
-      text: 'Preparando creación...',
-      icon: 'lni-hourglass',
-      step: 0
-    },
-    'creating': {
-      text: 'Creando infraestructura...',
-      icon: 'lni-apartment',
-      step: 1
-    },
-    'provisioning': {
-      text: 'Inicializando sistema operativo...',
-      icon: 'lni-cog',
-      step: 2
-    },
-    'initializing': {
-      text: 'Instalando dependencias...',
-      icon: 'lni-package',
-      step: 2
-    },
-    'deploying': {
-      text: 'Desplegando y configurando bot...',
-      icon: 'lni-bot',
-      step: 3
-    },
-    'running': {
-      text: '¡Agente listo y funcionando!',
-      icon: 'lni-checkmark-circle',
-      step: 4
-    },
-    'error': {
-      text: 'Error en la creación',
-      icon: 'lni-cross-circle',
-      step: 0
-    }
-  };
-  
+function updateCreationStatus(status, mode) {
+  const statusMessages = mode === 'redeploy' ? REDEPLOY_STATUS_MESSAGES : CREATE_STATUS_MESSAGES;
   const statusInfo = statusMessages[status] || statusMessages['pending'];
   
   const statusTextEl = document.getElementById('currentStatusText');
@@ -4215,16 +4560,11 @@ function updateCreationStatus(status) {
     iconElement.className = `lni ${statusInfo.icon} status-icon`;
   }
   
-  updateStatusSteps(statusInfo.step);
+  updateStatusSteps(statusInfo.step, mode);
 }
 
-function updateStatusSteps(currentStep) {
-  const steps = [
-    { icon: 'lni-apartment', text: 'Creando infraestructura' },
-    { icon: 'lni-cog', text: 'Inicializando sistema' },
-    { icon: 'lni-bot', text: 'Desplegando bot' },
-    { icon: 'lni-checkmark', text: 'Completado' }
-  ];
+function updateStatusSteps(currentStep, mode) {
+  const steps = mode === 'redeploy' ? REDEPLOY_STEPS : CREATE_STEPS;
   
   const container = document.getElementById('statusStepsContainer');
   if (!container) return;

@@ -658,6 +658,9 @@ func GetAgents(c *gin.Context) {
 			agentData["serverIp"] = agent.ServerIP
 			agentData["serverStatus"] = agent.ServerStatus
 		}
+		if agent.IsAtomicBot() {
+			agentData["whatsappConnected"] = agent.WhatsappConnected
+		}
 		response[i] = agentData
 	}
 
@@ -875,8 +878,9 @@ func ResetAgentSession(c *gin.Context) {
 	}
 
 	config.DB.Model(&agent).Updates(map[string]interface{}{
-		"deploy_status": "deploying",
-		"is_active":     false,
+		"deploy_status":      "deploying",
+		"is_active":          false,
+		"whatsapp_connected": false,
 	})
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Redeploy iniciado, generando nuevo QR..."})
 
@@ -963,6 +967,9 @@ func GetAgentQRCode(c *gin.Context) {
 		return
 	}
 	if connected {
+		if !agent.WhatsappConnected {
+			config.DB.Model(&agent).Update("whatsapp_connected", true)
+		}
 		c.JSON(http.StatusOK, gin.H{"connected": true, "qrCode": nil, "message": "WhatsApp conectado exitosamente"})
 		return
 	}
@@ -993,7 +1000,7 @@ func RedeployAgent(c *gin.Context) {
 		return
 	}
 
-	config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": "deploying", "is_active": false})
+	config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": "deploying", "is_active": false, "whatsapp_connected": false})
 
 	go func() {
 		serverManager := services.GetGlobalServerManager()

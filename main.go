@@ -203,6 +203,7 @@ func main() {
 		protected.GET("/me", handlers.GetCurrentUser)
 		protected.GET("/project-status", handlers.GetProjectStatus)
 		protected.PUT("/user/password", handlers.UpdatePassword)
+		protected.PUT("/user/email", handlers.UpdateEmail)
 		protected.DELETE("/user/account", handlers.DeleteAccount)
 
 		// Agentes
