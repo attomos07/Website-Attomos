@@ -153,6 +153,7 @@ function renderChat(){
   document.getElementById('chatName').textContent = c.name;
   document.getElementById('chatChannel').innerHTML = `${channelBadgeHtml(c.channel)} ${ch.label}`;
   document.getElementById('windowBanner').style.display = c.windowRestricted ? "flex" : "none";
+  renderAIControlBar(c);
 
   const msgsEl = document.getElementById('messages');
   msgsEl.innerHTML = "";
@@ -299,6 +300,16 @@ function sendMessage(){
   const text = textEl.value.trim();
   if(!text && !pendingAttachment) return;
   const c = conversations.find(x=>x.id===state.activeId);
+
+  // ── Conversación real de WhatsApp: mandar por el backend, no localmente ──
+  // El mensaje aparece en el chat cuando llega de vuelta por el stream (SSE),
+  // así todas las pestañas del CRM (y este humano) ven exactamente lo mismo.
+  if(c.channel === "whatsapp" && c.live && text && !pendingAttachment){
+    sendWhatsAppMessage(c.phone, text);
+    textEl.value = "";
+    return;
+  }
+
   const now = new Date();
   const time = now.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
   const attLabels = {image:"📷 Imagen", video:"🎥 Video", audio:"🎵 Audio", file:"📎 " + (pendingAttachment ? pendingAttachment.name : "")};
@@ -673,12 +684,28 @@ function toggleRight(){ panelState.right = !panelState.right; applyGrid(); }
 
 let aiInControl = true;
 function toggleAIControl(){
-  aiInControl = !aiInControl;
+  const c = conversations.find(x=>x.id===state.activeId);
+  if(!c) return;
+
+  const goingHuman = (c.aiControl !== false); // true → estaba en IA, ahora pasa a humano
+  c.aiControl = !goingHuman;
+
+  renderAIControlBar(c);
+
+  // Conversación real de WhatsApp → avisar al bot para que pause/reanude de verdad
+  if(c.channel === "whatsapp" && c.live){
+    controlWhatsAppConversation(c.phone, goingHuman ? "pause" : "resume");
+  }
+}
+
+function renderAIControlBar(c){
   const bar = document.getElementById('aiControlBar');
   const text = document.getElementById('aiStatusText');
   const label = document.getElementById('aiControlLabel');
   const icon = document.getElementById('aiControlIcon');
-  if(aiInControl){
+  const inControl = c.aiControl !== false;
+  aiInControl = inControl;
+  if(inControl){
     bar.classList.remove('human');
     text.textContent = "La IA está respondiendo esta conversación";
     label.textContent = "Tomar control";
@@ -690,6 +717,138 @@ function toggleAIControl(){
     icon.className = "lni lni-cog";
   }
 }
+
+// ===================== WHATSAPP EN VIVO (CRM ↔ Bot) =====================
+// Todo lo de abajo conecta este CRM con el bot de WhatsApp Web real, vía el
+// hub del backend (crm_hub.go). Las demás pestañas del sidebar (Instagram,
+// Messenger, etc.) siguen usando los datos de ejemplo de arriba por ahora.
+//
+// ⚠️ Verifica la forma real de la respuesta de GET /api/agents en tu backend
+// (aquí se asume un array plano o {agents:[...]}) y ajusta `list` si difiere.
+
+let crmAgentId = null;
+let crmEventSource = null;
+let nextLocalConvId = -1; // ids negativos para no chocar con los ids 1-4 de ejemplo
+
+async function initWhatsAppCRM(){
+  try{
+    const res = await fetch('/api/agents');
+    if(!res.ok) return;
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.agents || []);
+    const waAgent = list.find(a => a.botType === "atomic");
+    if(!waAgent){
+      console.log("[CRM] No hay un agente de WhatsApp Web (atomic) configurado todavía.");
+      return;
+    }
+    crmAgentId = waAgent.id;
+    connectWhatsAppStream();
+  }catch(err){
+    console.error("[CRM] Error obteniendo agentes:", err);
+  }
+}
+
+function connectWhatsAppStream(){
+  if(!crmAgentId) return;
+  if(crmEventSource) crmEventSource.close();
+
+  crmEventSource = new EventSource(`/api/agents/${crmAgentId}/crm/stream`);
+
+  crmEventSource.addEventListener('status', (e)=>{
+    const data = JSON.parse(e.data);
+    console.log("[CRM] Bot", data.botConnected ? "conectado" : "desconectado");
+  });
+
+  crmEventSource.addEventListener('message', (e)=>{
+    upsertWhatsAppMessage(JSON.parse(e.data));
+  });
+
+  crmEventSource.addEventListener('control', (e)=>{
+    const evt = JSON.parse(e.data);
+    const c = findWhatsAppConversation(evt.phone);
+    if(!c) return;
+    c.aiControl = evt.text === "resume";
+    if(c.id === state.activeId) renderAIControlBar(c);
+  });
+
+  crmEventSource.onerror = ()=>{
+    // EventSource reintenta la conexión solo; no hace falta reconectar a mano.
+    console.log("[CRM] Stream desconectado, reintentando...");
+  };
+}
+
+function findWhatsAppConversation(phone){
+  return conversations.find(c => c.channel === "whatsapp" && c.live && c.phone === phone);
+}
+
+function initialsFromName(name){
+  return name.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("") || "?";
+}
+
+function upsertWhatsAppMessage(evt){
+  let c = findWhatsAppConversation(evt.phone);
+  const time = new Date(evt.timestamp || Date.now()).toLocaleTimeString('es-MX', {hour:'numeric', minute:'2-digit'});
+
+  if(!c){
+    const name = evt.contactName || evt.phone;
+    c = {
+      id: nextLocalConvId--,
+      name, initials: initialsFromName(name),
+      channel: "whatsapp", scope: "mias", phone: evt.phone,
+      availability: "Disponible", tags: [], time, snippet: "",
+      windowRestricted: false, aiControl: true, live: true,
+      messages: []
+    };
+    conversations.unshift(c);
+  }
+
+  c.messages.push({ from: evt.direction === "in" ? "in" : "out", text: evt.text, time, _new: true });
+  c.snippet = evt.text;
+  c.time = time;
+  if(evt.contactName) c.name = evt.contactName;
+
+  // Reflejar quién tiene el control sin esperar al evento "control" aparte
+  // (por si esta misma pestaña disparó el envío).
+  if(evt.direction === "out" && evt.from === "human") c.aiControl = false;
+  if(evt.direction === "out" && evt.from === "bot") c.aiControl = true;
+
+  updateCounts();
+  renderList();
+  if(c.id === state.activeId) renderChat();
+}
+
+async function sendWhatsAppMessage(phone, text){
+  if(!crmAgentId) return;
+  try{
+    const res = await fetch(`/api/agents/${crmAgentId}/crm/send`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({phone, text})
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      alert(err.error || "No se pudo enviar el mensaje. ¿El bot está conectado?");
+    }
+  }catch(err){
+    console.error("[CRM] Error enviando mensaje:", err);
+    alert("No se pudo enviar el mensaje.");
+  }
+}
+
+async function controlWhatsAppConversation(phone, action){
+  if(!crmAgentId) return;
+  try{
+    await fetch(`/api/agents/${crmAgentId}/crm/control`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({phone, action})
+    });
+  }catch(err){
+    console.error("[CRM] Error cambiando control:", err);
+  }
+}
+
+initWhatsAppCRM();
 
 updateCounts();
 renderList();

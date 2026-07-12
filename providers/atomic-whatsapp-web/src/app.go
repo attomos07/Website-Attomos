@@ -160,6 +160,15 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 // como para notas de voz ya transcritas — así agendar, pedidos, cancelaciones,
 // etc. funcionan igual sin importar si el cliente escribió o habló.
 func respondToText(chat types.JID, messageText, phoneNumber, senderName string) {
+	// ── Reportar el mensaje entrante al CRM en vivo (si está conectado) ──────
+	NotifyCRM("in", phoneNumber, senderName, messageText, "customer")
+
+	// ── Si un humano tomó esta conversación desde el CRM, el bot se calla ───
+	if IsHumanControlled(phoneNumber) {
+		log.Printf("🙋 Conversación con %s en manos de un humano — el bot no responde", phoneNumber)
+		return
+	}
+
 	// Procesar mensaje — Gemini es quien decide qué hacer
 	response := ProcessMessage(messageText, phoneNumber, senderName)
 
@@ -191,6 +200,7 @@ func respondToText(chat types.JID, messageText, phoneNumber, senderName string) 
 			// No hay MenuUrl — enviar el menú en texto
 			SendMessage(chat, buildMenuResponse())
 		}
+		NotifyCRM("out", phoneNumber, "", "[Menú enviado]", "bot")
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		return
 	}
@@ -244,6 +254,7 @@ func respondToText(chat types.JID, messageText, phoneNumber, senderName string) 
 			log.Printf("⚠️  Servicio '%s' no encontrado o sin fotos", serviceTitle)
 			SendMessage(chat, "No encontré fotos de ese producto. ¿Puedes ser más específico?")
 		}
+		NotifyCRM("out", phoneNumber, "", "[Fotos enviadas: "+serviceTitle+"]", "bot")
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		return
 	}
@@ -260,6 +271,7 @@ func respondToText(chat types.JID, messageText, phoneNumber, senderName string) 
 		} else {
 			log.Printf("✅ RESPUESTA ENVIADA correctamente")
 			log.Printf("   📝 Contenido: %s", response)
+			NotifyCRM("out", phoneNumber, "", response, "bot")
 		}
 	} else {
 		log.Printf("⚠️  No se generó respuesta para este mensaje")
@@ -333,6 +345,18 @@ func handleImageMessage(msg *events.Message, client *whatsmeow.Client, imageMsg 
 
 	log.Printf("   📦 Tamaño: %d bytes | MIME: %s", len(imageBytes), mimeType)
 
+	imageLabel := "[Imagen]"
+	if caption != "" {
+		imageLabel += " " + caption
+	}
+	NotifyCRM("in", phoneNumber, senderName, imageLabel, "customer")
+
+	if IsHumanControlled(phoneNumber) {
+		log.Printf("🙋 Conversación con %s en manos de un humano — el bot no analiza la imagen", phoneNumber)
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
 	state := GetUserState(phoneNumber)
 	state.LastMessageTime = time.Now().Unix()
 
@@ -366,6 +390,7 @@ func handleImageMessage(msg *events.Message, client *whatsmeow.Client, imageMsg 
 	} else {
 		log.Printf("✅ RESPUESTA DE IMAGEN ENVIADA correctamente")
 		log.Printf("   📝 Contenido: %s", answer)
+		NotifyCRM("out", phoneNumber, "", answer, "bot")
 	}
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }

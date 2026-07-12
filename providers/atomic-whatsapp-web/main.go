@@ -119,6 +119,11 @@ func main() {
 		log.Println("ℹ️  No hay métodos de pago configurados en este negocio")
 	}
 
+	// Conectar con el CRM en vivo (hub del backend) — reporta cada mensaje y
+	// permite que un humano tome la conversación desde el CRM. Se reconecta
+	// solo si se cae; no bloquea el arranque si no está configurado.
+	src.InitCRMBridge()
+
 	// Iniciar watchdog para recargar configuración
 	go configWatchdog()
 

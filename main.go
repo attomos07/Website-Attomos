@@ -220,6 +220,11 @@ func main() {
 		protected.POST("/agents/:id/redeploy", handlers.RedeployAgent)
 		protected.POST("/agents/:id/reset-session", handlers.ResetAgentSession)
 
+		// CRM en vivo — puente en tiempo real con el bot de WhatsApp del agente
+		protected.GET("/agents/:id/crm/stream", handlers.StreamAgentCRM)
+		protected.POST("/agents/:id/crm/send", handlers.SendCRMMessage)
+		protected.POST("/agents/:id/crm/control", handlers.ControlCRMConversation)
+
 		// Mi Negocio / Sucursales
 		protected.GET("/my-business", handlers.GetMyBusiness)
 		protected.POST("/my-business", handlers.SaveMyBusiness)
@@ -257,6 +262,9 @@ func main() {
 		// Bot endpoints (no requieren JWT, usan BOT_API_TOKEN)
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
+
+		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
+		router.GET("/ws/bot/crm", handlers.BotCRMSocket)
 
 		// ============================================
 		// 🔀 FLOWS — Flujos de automatización (gubernamental)
