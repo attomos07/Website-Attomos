@@ -151,13 +151,10 @@ function setActiveNavLink() {
         if (guest)  guest.style.display  = 'none';
         if (logged) logged.style.display = 'flex';
 
-        // Mobile items: ocultar solo si estamos en mobile (en desktop el CSS ya los oculta)
-        if (window.innerWidth <= 768) {
-            const mobileLogin = document.getElementById('mobileNavLogin');
-            const mobileReg   = document.getElementById('mobileNavRegister');
-            if (mobileLogin) mobileLogin.style.display = 'none';
-            if (mobileReg)   mobileReg.style.display   = 'none';
-        }
+        // Ocultar botones auth del menú mobile: lo controla el CSS vía la clase is-logged-in
+        // (evita depender de window.innerWidth, que solo se evalúa una vez al cargar)
+        const navbarEl = document.getElementById('navbar');
+        if (navbarEl) navbarEl.classList.add('is-logged-in');
 
         // Nombre
         const nameEl = document.getElementById('userName');
@@ -210,13 +207,10 @@ function setActiveNavLink() {
         if (guest)  guest.style.display = 'flex';
         if (logged) logged.style.display = 'none';
 
-        // Mobile items: solo mostrar en pantallas pequeñas
-        if (window.innerWidth <= 768) {
-            const mobileLogin = document.getElementById('mobileNavLogin');
-            const mobileReg   = document.getElementById('mobileNavRegister');
-            if (mobileLogin) mobileLogin.style.display = 'block';
-            if (mobileReg)   mobileReg.style.display   = 'block';
-        }
+        // Mostrar botones auth del menú mobile: quitamos la clase is-logged-in,
+        // el CSS ya se encarga de mostrarlos solo en viewport mobile
+        const navbarEl = document.getElementById('navbar');
+        if (navbarEl) navbarEl.classList.remove('is-logged-in');
 
         window._navbarUBInitialized = false;
         localStorage.removeItem('userData');

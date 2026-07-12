@@ -847,6 +847,81 @@ input:checked + .toggle-slider:before {
   }
 }
 
+/* ── Horario de Atención: mobile layout ── */
+@media (max-width: 640px) {
+  .schedule-day {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name toggle"
+      "times times";
+    align-items: center;
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .day-name {
+    grid-area: name;
+    font-size: 14px;
+  }
+
+  .day-toggle {
+    grid-area: toggle;
+  }
+
+  .day-times {
+    grid-area: times;
+    width: 100%;
+  }
+
+  .day-times .time-picker-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .time-input-display {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .time-display-value {
+    font-size: 0.82rem;
+  }
+
+  .time-separator {
+    flex-shrink: 0;
+  }
+
+  /* keep the hour/minute/period dropdown from overflowing the viewport */
+  .time-dropdown {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(260px, 88vw);
+  }
+
+  .time-dropdown-content {
+    padding: 10px 4px;
+  }
+
+  .toggle-label {
+    font-size: 12px;
+  }
+
+  .toggle-switch {
+    width: 42px;
+    height: 24px;
+  }
+
+  .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+  }
+
+  input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+  }
+}
+
 /* ============================================
    ANIMATIONS
    ============================================ */

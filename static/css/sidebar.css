@@ -281,8 +281,11 @@
     position: fixed;
     top: 0;
     left: 0;
+    bottom: 0;
     width: 260px;
     height: 100vh;
+    height: 100dvh; /* fallback más preciso en navegadores móviles con barra de UI dinámica */
+    max-height: none; /* anula el max-height del sidebar de escritorio (calc(100vh - 200px)) */
     padding: 80px 8px 16px 8px;
     display: flex;
     flex-direction: column;

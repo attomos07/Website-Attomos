@@ -357,10 +357,10 @@
   /* Container en mobile */
   .nav-container {
     display: flex;
+    align-items: center;
+    justify-content: flex-end;
     padding: 0.9rem 1rem;
-    justify-content: center;
     height: 60px;
-    grid-template-columns: none;
   }
 
   /* Ocultar divider en mobile */
@@ -368,9 +368,11 @@
     display: none;
   }
 
-  /* Ocultar nav-right-group en mobile (lang está dentro del menú hamburguesa) */
+  /* Selector de idioma: se muestra en la esquina derecha también en mobile
+     (nav-auth y el divider siguen ocultos por sus propias reglas, así que
+     solo queda visible el lang-selector dentro de este grupo) */
   .nav-right-group {
-    display: none;
+    display: flex !important;
   }
 
   /* Botón hamburguesa a la IZQUIERDA - Estilo iOS */
@@ -378,7 +380,10 @@
     display: flex;
     position: absolute;
     left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     background: rgba(6, 182, 212, 0.08);
+    z-index: 1001;
   }
 
   .mobile-menu-btn.active {
@@ -389,12 +394,13 @@
     background: #06b6d4;
   }
 
-  /* Logo CENTRADO en mobile */
+  /* Logo CENTRADO en mobile (centrado real respecto a la pantalla, no al espacio libre) */
   .nav-logo {
-    position: relative;
-    left: auto;
-    right: auto;
-    transform: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
   }
 
   .nav-logo img {
@@ -410,19 +416,22 @@
   .nav-menu .nav-item.mobile-only {
     display: block;
     width: 100%;
-    max-width: 400px;
+    max-width: none;
   }
 
   /* MENU MOBILE - iOS Style */
   .nav-menu {
     position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
+    top: 0;
+    left: 50%;
+    right: auto;
+    width: 100vw;
+    margin-left: -50vw;
 
-    /* ELIMINADO: bottom: 0 */
-    height: calc(100vh - 60px) !important; /* Altura forzada */
+    height: 100vh !important; /* Cubre toda la pantalla, incluyendo el logo */
     overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
 
     /* CAMBIO IMPORTANTE: Fondo blanco forzado */
     background-color: #ffffff !important;
@@ -431,7 +440,7 @@
     justify-content: flex-start;
     align-items: center;
     gap: 0;
-    padding: 60px 20px 40px;
+    padding: 90px 20px 40px;
 
     /* Estado inicial - OCULTO */
     opacity: 0;
@@ -441,7 +450,7 @@
     transition:
       opacity 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
       visibility 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: 999;
+    z-index: 1000;
   }
 
   /* Estado activo - VISIBLE */
@@ -455,7 +464,7 @@
   /* Items del menú mobile - iOS Style */
   .nav-item {
     width: 100%;
-    max-width: 400px;
+    max-width: none;
 
     /* Animación inicial */
     opacity: 0;
@@ -544,7 +553,7 @@
   .nav-menu::before {
     content: "";
     width: 100%;
-    max-width: 400px;
+    max-width: none;
     height: 1px;
     background: rgba(6, 182, 212, 0.15);
     margin: 12px 0;
@@ -569,8 +578,13 @@
     box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
   }
 
-  .mobile-only:nth-child(6) {
+  #mobileNavLogin {
     order: 6;
+  }
+
+  /* Ocultar login/register en mobile cuando hay sesión activa (evita duplicar con el userbar) */
+  .navbar.is-logged-in .nav-menu .nav-item.mobile-only {
+    display: none;
   }
 
   .nav-login:active {
@@ -592,7 +606,7 @@
     margin-top: 8px;
   }
 
-  .mobile-only:nth-child(7) {
+  #mobileNavRegister {
     order: 7;
   }
 
@@ -1231,8 +1245,9 @@ html {
     .nav-menu .nav-item.mobile-lang-item {
         display: block;
         width: 100%;
-        max-width: 400px;
-        order: 8;
+        max-width: none;
+        order: -1;
+        margin-bottom: 12px;
     }
 
     .lang-selector-mobile {

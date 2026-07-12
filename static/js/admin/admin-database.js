@@ -147,7 +147,7 @@ function renderTable() {
         const color    = avatarColor(c.businessName || '');
         return `
         <tr>
-            <td>
+            <td data-label="Empresa">
                 <div class="company-cell">
                     <div class="company-avatar" style="background:${color};">${initials}</div>
                     <div>
@@ -156,13 +156,13 @@ function renderTable() {
                     </div>
                 </div>
             </td>
-            <td>${c.phoneNumber || '—'}</td>
-            <td>${getTypeName(c.businessType)}</td>
-            <td>${c.businessSize || '—'}</td>
-            <td>${planBadge(c.plan)}</td>
-            <td>${statusDot(c.status)}</td>
-            <td>${formatDate(c.createdAt)}</td>
-            <td>
+            <td data-label="Teléfono">${c.phoneNumber || '—'}</td>
+            <td data-label="Tipo">${getTypeName(c.businessType)}</td>
+            <td data-label="Tamaño">${c.businessSize || '—'}</td>
+            <td data-label="Plan">${planBadge(c.plan)}</td>
+            <td data-label="Estado">${statusDot(c.status)}</td>
+            <td data-label="Registro">${formatDate(c.createdAt)}</td>
+            <td data-label="Acciones">
                 <button class="action-btn" title="Más acciones" onclick="toggleRowActions(event, '${c.id}')">
                     <i class="lni lni-more-alt"></i>
                 </button>

@@ -140,6 +140,7 @@ body {
     width: 32px;
     height: 32px;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .status-badge {
@@ -1121,6 +1122,7 @@ body {
     height: 22px;
     color: #635BFF;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .custom-icon-spei {
@@ -1128,6 +1130,7 @@ body {
     height: 20px;
     color: #10b981;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .custom-icon-gemini-svg {
@@ -1135,6 +1138,7 @@ body {
     height: 32px;
     color: #8E44AD;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .custom-icon-calendar {
@@ -1142,13 +1146,14 @@ body {
     height: 22px;
     color: #4285F4;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 /* Tamaños dentro de logo-wrap */
 .stripe-logo-wrap .custom-icon-stripe,
 .spei-logo-wrap .custom-icon-spei {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
 }
 
 .custom-icon-sheets {
@@ -1156,4 +1161,5 @@ body {
     height: 32px;
     color: #0F9D58;
     flex-shrink: 0;
+    object-fit: contain;
 }
