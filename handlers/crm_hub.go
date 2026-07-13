@@ -29,13 +29,14 @@ import (
 
 // CRMEvent es el mensaje que viaja tanto bot→hub como hub→navegador.
 type CRMEvent struct {
-	Type        string `json:"type"`                // "message"
-	Direction   string `json:"direction,omitempty"` // "in" (cliente) | "out" (bot/humano)
-	From        string `json:"from,omitempty"`      // "customer" | "bot" | "human"
-	Phone       string `json:"phone"`
-	ContactName string `json:"contactName,omitempty"`
-	Text        string `json:"text"`
-	Timestamp   int64  `json:"timestamp"`
+	Type         string `json:"type"`                // "message" | "status"
+	Direction    string `json:"direction,omitempty"` // "in" (cliente) | "out" (bot/humano)
+	From         string `json:"from,omitempty"`      // "customer" | "bot" | "human"
+	Phone        string `json:"phone"`
+	ContactName  string `json:"contactName,omitempty"`
+	Text         string `json:"text"`
+	Timestamp    int64  `json:"timestamp"`
+	BotConnected *bool  `json:"botConnected,omitempty"` // solo presente en Type == "status"
 }
 
 // crmSendCommand es lo que el hub manda AL bot: enviar un mensaje, o pausar
@@ -62,19 +63,38 @@ var CRMHub = &crmHub{
 
 func (h *crmHub) registerBot(agentID uint, conn *websocket.Conn) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	if old, ok := h.bots[agentID]; ok {
 		old.Close()
 	}
 	h.bots[agentID] = conn
+	h.mu.Unlock()
+
+	h.broadcastStatus(agentID, true)
 }
 
 func (h *crmHub) unregisterBot(agentID uint, conn *websocket.Conn) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
+	removed := false
 	if current, ok := h.bots[agentID]; ok && current == conn {
 		delete(h.bots, agentID)
+		removed = true
 	}
+	h.mu.Unlock()
+
+	if removed {
+		h.broadcastStatus(agentID, false)
+	}
+}
+
+// broadcastStatus avisa a todas las pestañas del CRM abiertas para este
+// agente que el bot se conectó o desconectó, en el momento en que pasa —
+// no solo cuando la pestaña se abre por primera vez.
+func (h *crmHub) broadcastStatus(agentID uint, connected bool) {
+	h.broadcast(agentID, CRMEvent{
+		Type:         "status",
+		BotConnected: &connected,
+		Timestamp:    time.Now().UnixMilli(),
+	})
 }
 
 func (h *crmHub) subscribe(agentID uint) chan CRMEvent {
@@ -254,7 +274,11 @@ func StreamAgentCRM(c *gin.Context) {
 			if !open {
 				return
 			}
-			c.SSEvent("message", evt)
+			if evt.Type == "status" {
+				c.SSEvent("status", evt)
+			} else {
+				c.SSEvent("message", evt)
+			}
 			c.Writer.Flush()
 		case <-ticker.C:
 			// keep-alive para que proxies (Railway incluido) no cierren la conexión
