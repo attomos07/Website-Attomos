@@ -736,12 +736,16 @@ async function initWhatsAppCRM(){
     if(!res.ok) return;
     const data = await res.json();
     const list = Array.isArray(data) ? data : (data.agents || []);
-    const waAgent = list.find(a => a.botType === "atomic");
-    if(!waAgent){
+    const waAgents = list.filter(a => a.botType === "atomic");
+    if(waAgents.length === 0){
       console.log("[CRM] No hay un agente de WhatsApp Web (atomic) configurado todavía.");
       return;
     }
+    // Tomamos el más reciente (mayor id), no el primero que aparezca —
+    // así si tienes varios agentes de WhatsApp, el CRM sigue al último creado.
+    const waAgent = waAgents.reduce((a, b) => (b.id > a.id ? b : a));
     crmAgentId = waAgent.id;
+    console.log(`[CRM] Usando agente atomic id=${crmAgentId} (de ${waAgents.length} disponibles: ${waAgents.map(a=>a.id).join(", ")})`);
     connectWhatsAppStream();
   }catch(err){
     console.error("[CRM] Error obteniendo agentes:", err);
@@ -752,7 +756,9 @@ function connectWhatsAppStream(){
   if(!crmAgentId) return;
   if(crmEventSource) crmEventSource.close();
 
-  crmEventSource = new EventSource(`/api/agents/${crmAgentId}/crm/stream`);
+  const streamUrl = `/api/agents/${crmAgentId}/crm/stream`;
+  console.log(`[CRM] Abriendo stream: ${streamUrl}`);
+  crmEventSource = new EventSource(streamUrl);
 
   crmEventSource.addEventListener('status', (e)=>{
     const data = JSON.parse(e.data);

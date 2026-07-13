@@ -178,6 +178,29 @@ func BotCRMSocket(c *gin.Context) {
 		return nil
 	})
 
+	// ⚠️ Esto era lo que faltaba: el PongHandler de arriba renueva el
+	// deadline cuando llega un Pong, pero nadie mandaba el Ping que lo
+	// dispara. Sin este ticker, el ReadDeadline de 90s siempre expiraba
+	// solo — por eso el bot se desconectaba y reconectaba cada ~90s aunque
+	// todo estuviera sano.
+	stopPing := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(45 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					return
+				}
+			case <-stopPing:
+				return
+			}
+		}
+	}()
+	defer close(stopPing)
+
 	for {
 		var evt CRMEvent
 		if err := conn.ReadJSON(&evt); err != nil {
