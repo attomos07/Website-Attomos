@@ -62,6 +62,7 @@ type botConn struct {
 func (bc *botConn) writeJSON(v interface{}) error {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
+	bc.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	return bc.conn.WriteJSON(v)
 }
 

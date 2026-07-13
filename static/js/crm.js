@@ -1,51 +1,8 @@
-// ===================== DATOS DE EJEMPLO =====================
-const conversations = [
-  {
-    id: 1, name:"Facundo Corengia", initials:"FC", channel:"whatsapp",
-    scope:"mias", phone:"+54 911 2761 9724", availability:"No disponible",
-    tags:["coaching"], time:"5:43 PM", snippet:"vi que estabas interesado en ingresar a la academia...",
-    windowRestricted:true,
-    messages:[
-      {from:"in", text:"Hola Facundo, estoy interesado en ingresar a la academia.", time:"5:43 PM"},
-      {from:"out", text:"buenas", time:"5:43 PM"},
-      {from:"out", text:"como estas?", time:"5:43 PM"},
-      {from:"out", text:"vi que estabas interesado en ingresar a la academia, contame un poco de vos, si ya llevas tiempo en la IA o no", time:"5:43 PM"},
-      {from:"out", text:"tambien queria saber que estabas buscando conseguir con mi ayuda, asi se si realmente te puedo ayudar", time:"5:43 PM"},
-      {from:"in", text:"Hola Facundo, estoy interesado en ingresar a la academia.", time:"7:29 PM"},
-      {from:"sys", text:"Facundo Corengia eliminó a humano"},
-      {from:"sys", text:"Facundo Corengia eliminó a coaching"},
-    ]
-  },
-  {
-    id: 2, name:"Marina López", initials:"ML", channel:"instagram",
-    scope:"sin", phone:"+52 662 371 0899", availability:"Disponible",
-    tags:["empresa","no_cualificado"], time:"2:10 PM", snippet:"¿Tienen planes para negocios pequeños?",
-    windowRestricted:false,
-    messages:[
-      {from:"in", text:"Hola! vi su anuncio en Instagram", time:"2:05 PM"},
-      {from:"in", text:"¿Tienen planes para negocios pequeños?", time:"2:10 PM"},
-    ]
-  },
-  {
-    id: 3, name:"Carlos Mendez", initials:"CM", channel:"messenger",
-    scope:"todos", phone:"+52 662 555 1122", availability:"No disponible",
-    tags:["humano"], time:"11:02 AM", snippet:"Gracias, quedo atento a la propuesta.",
-    windowRestricted:false,
-    messages:[
-      {from:"out", text:"Aquí tienes la propuesta que armamos para tu negocio", time:"10:55 AM"},
-      {from:"in", text:"Gracias, quedo atento a la propuesta.", time:"11:02 AM"},
-    ]
-  },
-  {
-    id: 4, name:"Renata Gómez", initials:"RG", channel:"whatsapp",
-    scope:"mias", phone:"+52 662 118 4477", availability:"Disponible",
-    tags:["descremado"], time:"Ayer", snippet:"No me interesa por ahora, gracias.",
-    windowRestricted:false,
-    messages:[
-      {from:"in", text:"No me interesa por ahora, gracias.", time:"Ayer"},
-    ]
-  },
-];
+// Conversaciones — se llenan en vivo desde el bot de WhatsApp (ver
+// initWhatsAppCRM/upsertWhatsAppMessage más abajo). Instagram/Messenger/etc.
+// todavía no están conectados a nada real, así que por ahora no hay datos
+// de esos canales aquí — cuando se conecten, se agregan igual que WhatsApp.
+const conversations = [];
 
 const tagStyles = {
   coaching:"bg-coaching", descremado:"bg-descremado", empresa:"bg-empresa",
@@ -75,7 +32,7 @@ function channelBadgeHtml(channelKey){
   return `<span class="chan-icon">${customChannelSvg[ch.svg]}</span>`;
 }
 
-let state = { channel:null, tag:null, filter:"mias", activeId: conversations[0].id };
+let state = { channel:null, tag:null, filter:"mias", activeId: null };
 let contactsViewActive = false;
 
 function getContacts(){
@@ -145,9 +102,15 @@ function renderList(){
 function renderChat(){
   const c = conversations.find(x=>x.id===state.activeId);
   if(!c){
+    document.getElementById('chatAvatar').textContent = "";
+    document.getElementById('chatName').textContent = "Selecciona una conversación";
+    document.getElementById('chatChannel').innerHTML = "";
+    document.getElementById('windowBanner').style.display = "none";
+    document.getElementById('aiControlBar').style.display = "none";
     document.getElementById('messages').innerHTML = '<div class="empty-list">Selecciona una conversación.</div>';
     return;
   }
+  document.getElementById('aiControlBar').style.display = "";
   const ch = channelIcons[c.channel];
   document.getElementById('chatAvatar').textContent = c.initials;
   document.getElementById('chatName').textContent = c.name;
@@ -670,7 +633,7 @@ function attachmentBubbleHtml(a, hasText){
   return `<div class="att-file-chip" style="${margin}"><i class="lni lni-paperclip"></i> ${a.name}</div>`;
 }
 
-let panelState = { left:true, right:true };
+let panelState = { left:true, right:false };
 
 function applyGrid(){
   const left = panelState.left ? '232px' : '44px';
@@ -806,6 +769,10 @@ function upsertWhatsAppMessage(evt){
       messages: []
     };
     conversations.unshift(c);
+    // Si no hay nada seleccionado todavía (CRM recién abierto, sin
+    // conversaciones), abrimos esta automáticamente en vez de dejar el
+    // panel de chat vacío.
+    if(state.activeId === null) state.activeId = c.id;
   }
 
   c.messages.push({ from: evt.direction === "in" ? "in" : "out", text: evt.text, time, _new: true });
