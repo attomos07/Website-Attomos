@@ -48,34 +48,60 @@ type crmSendCommand struct {
 	Text  string `json:"text,omitempty"`
 }
 
+// botConn envuelve la conexión del bot con su propio mutex de escritura.
+// gorilla/websocket NO permite que dos goroutines escriban al mismo tiempo
+// sobre la misma conexión — y aquí hay dos escritores posibles: el ticker
+// de Ping (mantiene viva la conexión) y sendToBot (cuando un humano contesta
+// desde el CRM). Sin este mutex, si ambos escriben en el mismo instante la
+// conexión se corrompe y se cae de forma errática.
+type botConn struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
+
+func (bc *botConn) writeJSON(v interface{}) error {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+	return bc.conn.WriteJSON(v)
+}
+
+func (bc *botConn) writePing() error {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+	bc.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	return bc.conn.WriteMessage(websocket.PingMessage, nil)
+}
+
 type crmHub struct {
 	mu   sync.RWMutex
-	bots map[uint]*websocket.Conn        // agentID → conexión del bot
+	bots map[uint]*botConn               // agentID → conexión del bot
 	subs map[uint]map[chan CRMEvent]bool // agentID → suscriptores SSE (pestañas del CRM)
 }
 
 // CRMHub es el hub global del proceso — un único backend maneja todos los
 // agentes, cada uno con su propia entrada en los mapas de arriba.
 var CRMHub = &crmHub{
-	bots: make(map[uint]*websocket.Conn),
+	bots: make(map[uint]*botConn),
 	subs: make(map[uint]map[chan CRMEvent]bool),
 }
 
-func (h *crmHub) registerBot(agentID uint, conn *websocket.Conn) {
+func (h *crmHub) registerBot(agentID uint, conn *websocket.Conn) *botConn {
+	bc := &botConn{conn: conn}
 	h.mu.Lock()
 	if old, ok := h.bots[agentID]; ok {
-		old.Close()
+		old.conn.Close()
 	}
-	h.bots[agentID] = conn
+	h.bots[agentID] = bc
 	h.mu.Unlock()
 
 	h.broadcastStatus(agentID, true)
+	return bc
 }
 
-func (h *crmHub) unregisterBot(agentID uint, conn *websocket.Conn) {
+func (h *crmHub) unregisterBot(agentID uint, bc *botConn) {
 	h.mu.Lock()
 	removed := false
-	if current, ok := h.bots[agentID]; ok && current == conn {
+	if current, ok := h.bots[agentID]; ok && current == bc {
 		delete(h.bots, agentID)
 		removed = true
 	}
@@ -131,12 +157,12 @@ func (h *crmHub) broadcast(agentID uint, evt CRMEvent) {
 
 func (h *crmHub) sendToBot(agentID uint, cmd crmSendCommand) bool {
 	h.mu.RLock()
-	conn, ok := h.bots[agentID]
+	bc, ok := h.bots[agentID]
 	h.mu.RUnlock()
 	if !ok {
 		return false
 	}
-	if err := conn.WriteJSON(cmd); err != nil {
+	if err := bc.writeJSON(cmd); err != nil {
 		log.Printf("❌ [CRM] Error enviando comando al bot del agente %d: %v", agentID, err)
 		return false
 	}
@@ -183,11 +209,11 @@ func BotCRMSocket(c *gin.Context) {
 		return
 	}
 
-	CRMHub.registerBot(agentID, conn)
+	bc := CRMHub.registerBot(agentID, conn)
 	log.Printf("🔌 [CRM] Bot del agente %d conectado al hub", agentID)
 
 	defer func() {
-		CRMHub.unregisterBot(agentID, conn)
+		CRMHub.unregisterBot(agentID, bc)
 		conn.Close()
 		log.Printf("🔌 [CRM] Bot del agente %d desconectado del hub", agentID)
 	}()
@@ -198,11 +224,9 @@ func BotCRMSocket(c *gin.Context) {
 		return nil
 	})
 
-	// ⚠️ Esto era lo que faltaba: el PongHandler de arriba renueva el
-	// deadline cuando llega un Pong, pero nadie mandaba el Ping que lo
-	// dispara. Sin este ticker, el ReadDeadline de 90s siempre expiraba
-	// solo — por eso el bot se desconectaba y reconectaba cada ~90s aunque
-	// todo estuviera sano.
+	// El ticker de Ping y sendToBot (cuando el CRM manda un mensaje) pueden
+	// dispararse al mismo tiempo — bc.writePing()/bc.writeJSON() comparten
+	// el mismo mutex, así que nunca escriben al socket simultáneamente.
 	stopPing := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(45 * time.Second)
@@ -210,8 +234,7 @@ func BotCRMSocket(c *gin.Context) {
 		for {
 			select {
 			case <-ticker.C:
-				conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				if err := bc.writePing(); err != nil {
 					return
 				}
 			case <-stopPing:
