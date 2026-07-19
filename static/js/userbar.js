@@ -410,7 +410,9 @@ function initNotifications() {
         });
     }, 5 * 60 * 1000);
 
-    const isMobile = window.innerWidth <= 768;
+    // FIX: mismo problema que en initUserDropdown — window.innerWidth <= 768
+    // se congelaba al cargar. Usamos la capacidad real del dispositivo.
+    const isMobile = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     if (isMobile) {
         notificationBtn.addEventListener('click', (e) => {
@@ -469,7 +471,15 @@ function initUserDropdown() {
 
     if (!userAvatar || !userDropdown) return;
 
-    const isMobile = window.innerWidth <= 768;
+    // FIX: antes se decidía "modo mobile" vs "modo desktop" una sola vez al
+    // cargar, comparando window.innerWidth <= 768. Ese valor queda congelado
+    // para siempre: si el viewport cambiaba después (resize, rotación,
+    // DevTools sin recargar) el avatar se quedaba enganchado a los listeners
+    // de hover (mouseenter/mouseleave) en vez de click — en pantalla táctil
+    // eso solo se "activa" si mantienes el dedo presionado, simulando hover.
+    // Ahora se detecta la capacidad real del dispositivo (¿tiene mouse con
+    // hover de verdad?), que no cambia con el tamaño de ventana.
+    const isMobile = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     if (isMobile) {
         userAvatar.addEventListener('click', (e) => {
@@ -514,14 +524,14 @@ function initUserDropdown() {
         });
     }
 
+    // Ya no se compara "modo" contra un ancho (ver FIX arriba) — al cambiar
+    // de tamaño solo limpiamos estados de menú abiertos para que no queden
+    // dropdowns "fantasma" a medio abrir tras rotar o redimensionar.
     window.addEventListener('resize', () => {
-        const nowMobile = window.innerWidth <= 768;
-        if (isMobile !== nowMobile) {
-            const notificationPanel = document.getElementById('notificationPanel');
-            if (notificationPanel) notificationPanel.classList.remove('mobile-active');
-            userDropdown.classList.remove('mobile-active');
-            userDropdown.classList.remove('is-open');
-        }
+        const notificationPanel = document.getElementById('notificationPanel');
+        if (notificationPanel) notificationPanel.classList.remove('mobile-active');
+        userDropdown.classList.remove('mobile-active');
+        userDropdown.classList.remove('is-open');
     });
 }
 

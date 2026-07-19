@@ -122,6 +122,82 @@ func (h *GoogleIntegrationHandler) MakeSpreadsheetPublicEditor(ctx context.Conte
 	return nil
 }
 
+// closeOAuthPopup responde con una página HTML mínima que:
+//  1. Si esta ventana fue abierta como popup (window.opener existe), le avisa
+//     al padre el resultado vía postMessage y se cierra sola.
+//  2. Si no fue abierta como popup (ej. el usuario abrió el link directo en
+//     una pestaña normal), no puede cerrarse sola por seguridad del navegador,
+//     así que muestra un mensaje y un link de vuelta a /my-agents.
+//
+// extra son pares clave/valor adicionales a incluir en el mensaje postMessage
+// (por ejemplo agent_id, calendar_id, sheet_id) y en el link de fallback.
+func closeOAuthPopup(c *gin.Context, success bool, errorCode string, extra map[string]string) {
+	payload := map[string]interface{}{
+		"type":    "google-oauth-result",
+		"success": success,
+	}
+	if errorCode != "" {
+		payload["error"] = errorCode
+	}
+	for k, v := range extra {
+		payload[k] = v
+	}
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		payloadJSON = []byte(`{"type":"google-oauth-result","success":false,"error":"internal_error"}`)
+	}
+
+	// Link de respaldo por si el navegador no deja cerrar la ventana (por
+	// ejemplo si no fue abierta vía window.open, sino navegación directa).
+	fallbackURL := "/my-agents"
+	if success {
+		fallbackURL += "?success=true"
+	} else {
+		fallbackURL += "?error=" + errorCode
+	}
+	for k, v := range extra {
+		fallbackURL += fmt.Sprintf("&%s=%s", k, v)
+	}
+
+	message := "Conexión con Google completada. Esta ventana se cerrará automáticamente."
+	if !success {
+		message = "No se pudo completar la conexión con Google. Esta ventana se cerrará automáticamente."
+	}
+
+	html := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Google OAuth</title>
+</head>
+<body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#4b5563;text-align:center;padding:1.5rem;">
+<div>
+	<p>%s</p>
+	<p style="font-size:0.85rem;">Si no se cierra sola, <a href="%s" target="_top">haz clic aquí</a>.</p>
+</div>
+<script>
+	(function () {
+		var payload = %s;
+		try {
+			if (window.opener && !window.opener.closed) {
+				window.opener.postMessage(payload, window.location.origin);
+				window.close();
+				return;
+			}
+		} catch (e) {
+			// window.opener bloqueado por el navegador (ventanas de distinto origen, etc.)
+		}
+		// No es un popup con opener válido: no podemos cerrarla sola,
+		// mandamos a la página de agentes como respaldo.
+		window.top.location.href = %q;
+	})();
+</script>
+</body>
+</html>`, message, fallbackURL, string(payloadJSON), fallbackURL)
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+}
+
 // InitiateGoogleIntegration inicia el flujo OAuth2 para Calendar y Sheets
 func (h *GoogleIntegrationHandler) InitiateGoogleIntegration(c *gin.Context) {
 	userInterface, exists := c.Get("user")
@@ -165,7 +241,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	state := c.Query("state")
 
 	if code == "" || state == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=invalid_request")
+		closeOAuthPopup(c, false, "invalid_request", nil)
 		return
 	}
 
@@ -173,7 +249,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	savedState, err := c.Cookie("oauth_state")
 	if err != nil || state != savedState {
 		log.Printf("❌ Error de validación de state: state=%s, savedState=%s", state, savedState)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=invalid_state")
+		closeOAuthPopup(c, false, "invalid_state", nil)
 		return
 	}
 
@@ -188,7 +264,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	var agent models.Agent
 	if err := config.DB.Where("id = ? AND user_id = ?", agentID, userID).First(&agent).Error; err != nil {
 		log.Printf("❌ Error obteniendo agente: %v", err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=agent_not_found")
+		closeOAuthPopup(c, false, "agent_not_found", nil)
 		return
 	}
 
@@ -196,7 +272,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	var user models.User
 	if err := config.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		log.Printf("❌ Error obteniendo usuario: %v", err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=user_not_found")
+		closeOAuthPopup(c, false, "user_not_found", nil)
 		return
 	}
 
@@ -205,14 +281,14 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	token, err := h.calendarService.ExchangeCode(ctx, code)
 	if err != nil {
 		log.Printf("❌ Error intercambiando código: %v", err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=token_exchange_failed")
+		closeOAuthPopup(c, false, "token_exchange_failed", nil)
 		return
 	}
 
 	tokenJSON, err := json.Marshal(token)
 	if err != nil {
 		log.Printf("❌ Error serializando token: %v", err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=token_error")
+		closeOAuthPopup(c, false, "token_error", nil)
 		return
 	}
 
@@ -222,7 +298,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	userEmail, err := h.calendarService.GetUserEmail(ctx, string(tokenJSON))
 	if err != nil {
 		log.Printf("❌ [Agent %d] Error obteniendo email de Google: %v", agent.ID, err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=get_email_failed")
+		closeOAuthPopup(c, false, "get_email_failed", nil)
 		return
 	}
 	log.Printf("✅ [Agent %d] Email de Google obtenido: %s", agent.ID, userEmail)
@@ -232,7 +308,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	calendarID, err := h.calendarService.CreateCalendar(ctx, string(tokenJSON), agent.Name)
 	if err != nil {
 		log.Printf("❌ [Agent %d] Error creando Calendar: %v", agent.ID, err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=calendar_creation_failed")
+		closeOAuthPopup(c, false, "calendar_creation_failed", nil)
 		return
 	}
 	log.Printf("✅ [Agent %d] Calendar creado: %s", agent.ID, calendarID)
@@ -251,7 +327,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	})
 	if err != nil {
 		log.Printf("❌ [Agent %d] Error creando Sheet: %v", agent.ID, err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=sheet_creation_failed")
+		closeOAuthPopup(c, false, "sheet_creation_failed", nil)
 		return
 	}
 	log.Printf("✅ [Agent %d] Sheet creado con formato de calendario: %s", agent.ID, spreadsheetID)
@@ -276,7 +352,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 
 	if err := config.DB.Save(&agent).Error; err != nil {
 		log.Printf("❌ [Agent %d] Error guardando en BD: %v", agent.ID, err)
-		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=save_failed")
+		closeOAuthPopup(c, false, "save_failed", nil)
 		return
 	}
 
@@ -317,10 +393,14 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 		}
 	}
 
-	// Redirigir con éxito
-	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
-		agent.ID, calendarID, spreadsheetID)
-	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+	// Éxito: cerrar el popup y avisarle a la pestaña original (integrations.js
+	// ya hace polling de popup.closed, así que basta con cerrar; el postMessage
+	// es un bonus para quien quiera reaccionar más rápido sin esperar el poll).
+	closeOAuthPopup(c, true, "", map[string]string{
+		"agent_id":    fmt.Sprintf("%d", agent.ID),
+		"calendar_id": calendarID,
+		"sheet_id":    spreadsheetID,
+	})
 }
 
 // DisconnectGoogle desconecta la integración de Google

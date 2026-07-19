@@ -1156,7 +1156,7 @@ async function saveProfile(opts = {}) {
 
             if (!opts.silent) {
                 showNotification('¡Cambios guardados exitosamente!', 'success');
-                maybeOfferAgentRedeploy();
+                autoRedeployAgentsAfterSave();
             }
         } else {
             throw new Error(result.error || 'Error desconocido');
@@ -1171,7 +1171,6 @@ async function saveProfile(opts = {}) {
 // ============================================
 // REDEPLOY DE AGENTES TRAS ACTUALIZAR EL NEGOCIO
 // ============================================
-let pendingRedeployAgents = [];
 let _onboardingScriptLoadedForBusiness = false;
 
 // onboarding.js trae watchAgentRedeploy/ensureModalsExist (el mismo modal de
@@ -1191,9 +1190,10 @@ async function ensureOnboardingScriptLoadedForBusiness() {
     });
 }
 
-// Tras guardar cambios del negocio, si el usuario tiene agentes, se le
-// pregunta si quiere actualizarlos (redeploy) para que tomen la nueva info.
-async function maybeOfferAgentRedeploy() {
+// Tras guardar cambios del negocio, se redeploya automáticamente TODOS los
+// agentes del usuario (sin pedir confirmación) para que tomen la nueva info,
+// igual que ocurre al editar un agente individual desde "Detalles del Agente".
+async function autoRedeployAgentsAfterSave() {
     try {
         const res = await fetch('/api/agents', { credentials: 'include' });
         if (!res.ok) return;
@@ -1201,30 +1201,13 @@ async function maybeOfferAgentRedeploy() {
         const agents = data.agents || [];
         if (!agents.length) return;
 
-        pendingRedeployAgents = agents;
-
-        const textEl = document.getElementById('redeployPromptText');
-        if (textEl) {
-            textEl.textContent = agents.length === 1
-                ? `Guardaste cambios en tu negocio. ¿Quieres actualizar tu agente "${agents[0].name || 'principal'}" ahora para que use la nueva información? Se reiniciará brevemente.`
-                : `Guardaste cambios en tu negocio. Tienes ${agents.length} agentes activos — ¿quieres actualizarlos ahora para que usen la nueva información? Se reiniciarán brevemente.`;
-        }
-
-        const modal = document.getElementById('redeployPromptModal');
-        if (modal) modal.style.display = 'flex';
+        await redeployAgentsList(agents);
     } catch (err) {
-        console.error('No se pudo revisar agentes para ofrecer redeploy:', err);
+        console.error('No se pudo redeployar los agentes tras guardar el negocio:', err);
     }
 }
 
-function closeRedeployPromptModal() {
-    const modal = document.getElementById('redeployPromptModal');
-    if (modal) modal.style.display = 'none';
-}
-
-async function confirmRedeployAgents() {
-    const agents = pendingRedeployAgents.slice();
-    closeRedeployPromptModal();
+async function redeployAgentsList(agents) {
     if (!agents.length) return;
 
     // Un solo agente → mostramos el flujo completo: animación de progreso y,
@@ -1246,7 +1229,7 @@ async function confirmRedeployAgents() {
                     return; // el propio modal se encarga de avisar cuando termine
                 }
             }
-            showNotification('Agente actualizado, los cambios tomarán unos segundos en aplicarse.', 'success');
+            showNotification('Agente actualizado con la nueva información del negocio.', 'success');
         } catch (err) {
             console.error('Error en redeploy de agente:', err);
             showNotification('No se pudo actualizar el agente, intenta de nuevo desde "Mis Agentes".', 'error');
@@ -1257,7 +1240,7 @@ async function confirmRedeployAgents() {
     // Varios agentes → redeploy en lote (sin apilar varios modales de QR).
     // Los que sean de WhatsApp mostrarán su QR automáticamente al entrar a
     // "Mis Agentes", gracias a la detección que ya corre en esa página.
-    showNotification(`Actualizando ${agents.length} agentes...`, 'info');
+    showNotification(`Actualizando ${agents.length} agentes con la nueva información...`, 'info');
     const results = await Promise.allSettled(
         agents.map(a => fetch(`/api/agents/${a.id}/redeploy`, { method: 'POST', credentials: 'include' }))
     );

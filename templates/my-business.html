@@ -1370,32 +1370,6 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
         <span data-translate="mybiz_save_btn">Guardar Cambios</span>
     </button>
 
-    <!-- Modal: ofrecer actualizar (redeploy) los agentes tras guardar cambios del negocio -->
-    <div class="acct-modal" id="redeployPromptModal" style="display:none;">
-        <div class="acct-modal-overlay" onclick="closeRedeployPromptModal()"></div>
-        <div class="acct-modal-content" style="max-width:420px;">
-            <div class="acct-modal-header">
-                <h3><i class="lni lni-reload" style="color:#06b6d4;margin-right:6px;"></i> Actualizar tus agentes</h3>
-                <button type="button" onclick="closeRedeployPromptModal()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1.1rem;line-height:1;padding:4px;">
-                    <i class="lni lni-close"></i>
-                </button>
-            </div>
-            <div class="acct-modal-body">
-                <p id="redeployPromptText" style="color:#4b5563;font-size:0.9rem;line-height:1.5;margin:0;">
-                    Guardaste cambios en la información de tu negocio. ¿Quieres actualizar tus agentes ahora para que usen la nueva información? Esto los reiniciará brevemente.
-                </p>
-                <div style="display:flex;gap:0.6rem;margin-top:0.5rem;">
-                    <button type="button" onclick="closeRedeployPromptModal()" style="flex:1;padding:0.7rem;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;color:#4b5563;font-weight:600;font-size:0.875rem;cursor:pointer;">
-                        Después
-                    </button>
-                    <button type="button" id="redeployPromptConfirmBtn" onclick="confirmRedeployAgents()" style="flex:1;padding:0.7rem;border-radius:10px;border:none;background:#06b6d4;color:#fff;font-weight:700;font-size:0.875rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-                        <i class="lni lni-reload"></i> Actualizar ahora
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Sileo viewport -->
     <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
 
