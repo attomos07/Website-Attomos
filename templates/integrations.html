@@ -586,15 +586,35 @@
                                 </div>
                             </div>
 
+                            <!-- All action buttons in a single row -->
+                            <div class="card-actions-row">
+                                <div id="sheetsConnectActions">
+                                    <button class="btn btn-connect" id="btnConnectSheets" disabled>
+                                        <i class="lni lni-link"></i>
+                                        <span data-translate="integ_sheets_connect">Conectar Sheets</span>
+                                    </button>
+                                </div>
+                                <div id="sheetsManageActions" style="display: none; gap: 1rem;">
+                                    <button class="btn btn-secondary" id="btnReconnectSheets">
+                                        <i class="lni lni-reload"></i>
+                                        <span data-translate="integ_cal_reconnect">Reconectar</span>
+                                    </button>
+                                    <button class="btn btn-disconnect" id="btnDisconnectSheets">
+                                        <i class="lni lni-unlink"></i>
+                                        <span data-translate="integ_cal_disconnect">Desconectar</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <!-- Columnas que se crean — negocio -->
                             <div class="card-note sheets-cols-business">
                                 <i class="lni lni-information"></i>
-                                <span data-translate-html="integ_sheets_cols_biz">Google Sheets se conecta automáticamente cuando conectas Google Calendar. Columnas: <strong>Nombre · Servicio · Fecha · Hora · Teléfono · Estado</strong></span>
+                                <span data-translate-html="integ_sheets_cols_biz">Columnas: <strong>Nombre · Servicio · Fecha · Hora · Teléfono · Estado</strong></span>
                             </div>
                             <!-- Columnas que se crean — gobierno -->
                             <div class="card-note sheets-cols-gov" style="display:none;">
                                 <i class="lni lni-information"></i>
-                                <span data-translate-html="integ_sheets_cols_gov">Google Sheets se conecta automáticamente cuando conectas Google. Columnas: <strong>Nombre · Curso · Sede · Fecha inscripción · Teléfono · Email · Estado</strong></span>
+                                <span data-translate-html="integ_sheets_cols_gov">Columnas: <strong>Nombre · Curso · Sede · Fecha inscripción · Teléfono · Email · Estado</strong></span>
                             </div>
                         </div>
 

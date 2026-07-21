@@ -176,12 +176,21 @@ type Agent struct {
 	ChatwootInboxName   string `gorm:"size:255" json:"chatwootInboxName"`
 	ChatwootURL         string `gorm:"size:500" json:"chatwootUrl"`
 
-	// Google
+	// Google — token compartido (una vez autorizado, sirve para ambos servicios).
+	// Calendar y Sheets se conectan/desconectan de forma independiente entre sí;
+	// GoogleConnected/GoogleConnectedAt se mantienen como resumen legacy (OR de
+	// los dos) por compatibilidad con código que aún los lea.
 	GoogleToken       string     `gorm:"type:text" json:"-"`
-	GoogleCalendarID  string     `gorm:"size:500" json:"googleCalendarId"`
-	GoogleSheetID     string     `gorm:"size:500" json:"googleSheetId"`
 	GoogleConnected   bool       `gorm:"default:false" json:"googleConnected"`
 	GoogleConnectedAt *time.Time `json:"googleConnectedAt"`
+
+	GoogleCalendarID          string     `gorm:"size:500" json:"googleCalendarId"`
+	GoogleCalendarConnected   bool       `gorm:"default:false" json:"googleCalendarConnected"`
+	GoogleCalendarConnectedAt *time.Time `json:"googleCalendarConnectedAt"`
+
+	GoogleSheetID           string     `gorm:"size:500" json:"googleSheetId"`
+	GoogleSheetsConnected   bool       `gorm:"default:false" json:"googleSheetsConnected"`
+	GoogleSheetsConnectedAt *time.Time `json:"googleSheetsConnectedAt"`
 
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
@@ -222,13 +231,11 @@ func (a *Agent) GetEnvVarsForBot() map[string]string {
 		"PHONE_NUMBER": a.PhoneNumber,
 		"PORT":         fmt.Sprintf("%d", a.Port),
 	}
-	if a.GoogleConnected {
-		if a.GoogleSheetID != "" {
-			envVars["SPREADSHEETID"] = a.GoogleSheetID
-		}
-		if a.GoogleCalendarID != "" {
-			envVars["GOOGLE_CALENDAR_ID"] = a.GoogleCalendarID
-		}
+	if a.GoogleSheetsConnected && a.GoogleSheetID != "" {
+		envVars["SPREADSHEETID"] = a.GoogleSheetID
+	}
+	if a.GoogleCalendarConnected && a.GoogleCalendarID != "" {
+		envVars["GOOGLE_CALENDAR_ID"] = a.GoogleCalendarID
 	}
 	if a.MetaConnected {
 		if a.MetaAccessToken != "" {
@@ -265,6 +272,27 @@ func (a *Agent) IsMetaTokenExpired() bool {
 		return true
 	}
 	return time.Now().After(*a.MetaTokenExpiresAt)
+}
+
+// SyncGoogleConnectedSummary recalcula el flag legacy GoogleConnected/GoogleConnectedAt
+// como resumen (OR) de Calendar y Sheets. Llamar siempre después de tocar
+// GoogleCalendarConnected o GoogleSheetsConnected, antes de guardar en BD, para
+// que código que aún dependa del flag combinado (ej. bots antiguos) siga funcionando.
+func (a *Agent) SyncGoogleConnectedSummary() {
+	a.GoogleConnected = a.GoogleCalendarConnected || a.GoogleSheetsConnected
+	switch {
+	case a.GoogleCalendarConnectedAt == nil:
+		a.GoogleConnectedAt = a.GoogleSheetsConnectedAt
+	case a.GoogleSheetsConnectedAt == nil:
+		a.GoogleConnectedAt = a.GoogleCalendarConnectedAt
+	case a.GoogleCalendarConnectedAt.After(*a.GoogleSheetsConnectedAt):
+		a.GoogleConnectedAt = a.GoogleCalendarConnectedAt
+	default:
+		a.GoogleConnectedAt = a.GoogleSheetsConnectedAt
+	}
+	if !a.GoogleConnected {
+		a.GoogleConnectedAt = nil
+	}
 }
 
 func (a *Agent) GetMetaTokenDaysRemaining() int {

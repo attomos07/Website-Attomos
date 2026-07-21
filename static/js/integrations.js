@@ -949,16 +949,28 @@ async function removeGeminiKey() {
 // ============================================
 
 function initGoogleIntegration() {
-    const connectButton = document.getElementById('btnConnectGoogle');
-    const disconnectButton = document.getElementById('btnDisconnectGoogle');
-    
-    if (connectButton) {
-        connectButton.addEventListener('click', connectGoogle);
-    }
-    
-    if (disconnectButton) {
-        disconnectButton.addEventListener('click', disconnectGoogle);
-    }
+    document.getElementById('btnConnectGoogle')?.addEventListener('click', () => connectGoogleService('calendar'));
+    document.getElementById('btnDisconnectGoogle')?.addEventListener('click', () => disconnectGoogleService('calendar'));
+    document.getElementById('btnReconnectGoogle')?.addEventListener('click', () => reconnectGoogleService('calendar'));
+
+    document.getElementById('btnConnectSheets')?.addEventListener('click', () => connectGoogleService('sheets'));
+    document.getElementById('btnDisconnectSheets')?.addEventListener('click', () => disconnectGoogleService('sheets'));
+    document.getElementById('btnReconnectSheets')?.addEventListener('click', () => reconnectGoogleService('sheets'));
+
+    // Escuchar el resultado del popup de OAuth (más rápido que esperar al
+    // polling de popup.closed; el polling sigue como respaldo).
+    window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        if (!event.data || event.data.type !== 'google-oauth-result') return;
+
+        if (event.data.success) {
+            const label = event.data.service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+            showNotification(`${label} conectado exitosamente`, 'success');
+        } else {
+            showNotification(t('integ_err_google_connect', 'Error al conectar con Google'), 'error');
+        }
+        if (selectedAgentId) loadGoogleIntegrationStatus(selectedAgentId);
+    });
 }
 
 async function loadGoogleIntegrationStatus(agentId) {
@@ -966,9 +978,9 @@ async function loadGoogleIntegrationStatus(agentId) {
         console.warn('⚠️ No agent ID provided for Google integration status');
         return;
     }
-    
+
     console.log(`🔍 Cargando estado de Google para agente ${agentId}...`);
-    
+
     try {
         const response = await fetch(`/api/google/status/${agentId}`, {
             method: 'GET',
@@ -984,24 +996,53 @@ async function loadGoogleIntegrationStatus(agentId) {
 
         const data = await response.json();
         console.log('✅ Estado de Google recibido:', data);
-        
+
         updateGoogleIntegrationUI(data);
-        
+
     } catch (error) {
         console.error('Error cargando estado de Google:', error);
     }
 }
 
 function updateGoogleIntegrationUI(data) {
-    const statusBadge = document.getElementById('googleStatusBadge');
-    const sheetsStatusBadge = document.getElementById('sheetsStatusBadge');
-    const connectionInfo = document.getElementById('googleConnectionInfo');
-    const sheetsConnectionInfo = document.getElementById('sheetsConnectionInfo');
-    const connectActions = document.getElementById('googleConnectActions');
-    const manageActions = document.getElementById('googleManageActions');
-    
-    if (data.connected) {
-        // Update status badges
+    // ── Calendar ─────────────────────────────────────────────────────────
+    updateGoogleServiceCardUI({
+        connected: data.calendar_connected,
+        connectedAt: data.calendar_connected_at,
+        statusBadgeId: 'googleStatusBadge',
+        connectionInfoId: 'googleConnectionInfo',
+        connectActionsId: 'googleConnectActions',
+        manageActionsId: 'googleManageActions',
+        connectButtonId: 'btnConnectGoogle',
+        connectedAtElId: 'calendarConnectedAt',
+        linkElId: 'calendarLink',
+        linkUrl: data.calendar_url,
+    });
+
+    // ── Sheets ───────────────────────────────────────────────────────────
+    updateGoogleServiceCardUI({
+        connected: data.sheets_connected,
+        connectedAt: data.sheets_connected_at,
+        statusBadgeId: 'sheetsStatusBadge',
+        connectionInfoId: 'sheetsConnectionInfo',
+        connectActionsId: 'sheetsConnectActions',
+        manageActionsId: 'sheetsManageActions',
+        connectButtonId: 'btnConnectSheets',
+        connectedAtElId: 'sheetsConnectedAt',
+        linkElId: 'sheetLink',
+        linkUrl: data.sheet_url,
+    });
+}
+
+// Actualiza una tarjeta de servicio de Google (Calendar o Sheets) — misma
+// lógica para ambas, solo cambian los IDs de los elementos del DOM.
+function updateGoogleServiceCardUI(cfg) {
+    const statusBadge = document.getElementById(cfg.statusBadgeId);
+    const connectionInfo = document.getElementById(cfg.connectionInfoId);
+    const connectActions = document.getElementById(cfg.connectActionsId);
+    const manageActions = document.getElementById(cfg.manageActionsId);
+
+    if (cfg.connected) {
         if (statusBadge) {
             statusBadge.className = 'status-badge connected';
             statusBadge.innerHTML = `
@@ -1009,56 +1050,23 @@ function updateGoogleIntegrationUI(data) {
                 ${t('integ_status_connected','Conectado')}
             `;
         }
-        
-        if (sheetsStatusBadge) {
-            sheetsStatusBadge.className = 'status-badge connected';
-            sheetsStatusBadge.innerHTML = `
-                <span class="status-indicator"></span>
-                ${t('integ_status_connected','Conectado')}
-            `;
-        }
-        
-        // Show connection info
+
         if (connectionInfo) {
             connectionInfo.style.display = 'block';
-            
-            const calendarLink = document.getElementById('calendarLink');
-            const calendarConnectedAt = document.getElementById('calendarConnectedAt');
-            
-            if (calendarLink && data.calendar_id) {
-                const calendarUrl = `https://calendar.google.com/calendar/u/0/r`;
-                calendarLink.href = calendarUrl;
-            }
-            
-            if (calendarConnectedAt && data.connected_at) {
-                const date = new Date(data.connected_at);
-                calendarConnectedAt.textContent = formatDate(date);
+
+            const linkEl = document.getElementById(cfg.linkElId);
+            if (linkEl && cfg.linkUrl) linkEl.href = cfg.linkUrl;
+
+            const connectedAtEl = document.getElementById(cfg.connectedAtElId);
+            if (connectedAtEl && cfg.connectedAt) {
+                connectedAtEl.textContent = formatDate(new Date(cfg.connectedAt));
             }
         }
-        
-        if (sheetsConnectionInfo) {
-            sheetsConnectionInfo.style.display = 'block';
-            
-            const sheetLink = document.getElementById('sheetLink');
-            const sheetsConnectedAt = document.getElementById('sheetsConnectedAt');
-            
-            if (sheetLink && data.sheet_id) {
-                const sheetUrl = `https://docs.google.com/spreadsheets/d/${data.sheet_id}/edit`;
-                sheetLink.href = sheetUrl;
-            }
-            
-            if (sheetsConnectedAt && data.connected_at) {
-                const date = new Date(data.connected_at);
-                sheetsConnectedAt.textContent = formatDate(date);
-            }
-        }
-        
-        // Show manage actions, hide connect actions
+
         if (connectActions) connectActions.style.display = 'none';
         if (manageActions) manageActions.style.display = 'flex';
-        
+
     } else {
-        // Update status badges
         if (statusBadge) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
@@ -1066,36 +1074,24 @@ function updateGoogleIntegrationUI(data) {
                 ${t('integ_status_disconnected','No conectado')}
             `;
         }
-        
-        if (sheetsStatusBadge) {
-            sheetsStatusBadge.className = 'status-badge disconnected';
-            sheetsStatusBadge.innerHTML = `
-                <span class="status-indicator"></span>
-                ${t('integ_status_disconnected','No conectado')}
-            `;
-        }
-        
-        // Hide connection info
+
         if (connectionInfo) connectionInfo.style.display = 'none';
-        if (sheetsConnectionInfo) sheetsConnectionInfo.style.display = 'none';
-        
-        // Show connect actions, hide manage actions
         if (connectActions) connectActions.style.display = 'flex';
         if (manageActions) manageActions.style.display = 'none';
-        
-        // Habilitar el botón de conectar
-        const connectButton = document.getElementById('btnConnectGoogle');
+
+        const connectButton = document.getElementById(cfg.connectButtonId);
         if (connectButton) connectButton.disabled = false;
     }
 }
 
-async function connectGoogle() {
+// service: 'calendar' | 'sheets'
+async function connectGoogleService(service) {
     if (!requireAgentSelected()) return;
-    
-    console.log(`🔗 Iniciando conexión de Google para agente ${selectedAgentId}...`);
-    
+
+    console.log(`🔗 Iniciando conexión de Google ${service} para agente ${selectedAgentId}...`);
+
     try {
-        const response = await fetch(`/api/google/connect?agent_id=${selectedAgentId}`, {
+        const response = await fetch(`/api/google/connect?agent_id=${selectedAgentId}&service=${service}`, {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -1108,68 +1104,91 @@ async function connectGoogle() {
         }
 
         const data = await response.json();
-        
+
+        // El backend ya tenía un token de Google (del otro servicio) y creó
+        // el recurso directo, sin necesidad de mostrarle nada a Google otra vez.
+        if (data.direct) {
+            if (data.success) {
+                if (!data.already_connected) {
+                    const label = service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+                    showNotification(`${label} conectado exitosamente`, 'success');
+                }
+                await loadGoogleIntegrationStatus(selectedAgentId);
+            } else {
+                showNotification(t('integ_err_google_connect', 'Error al conectar con Google'), 'error');
+            }
+            return;
+        }
+
         if (!data.auth_url) {
             throw new Error('No se recibió URL de autorización');
         }
-        
+
         const width = 600;
         const height = 700;
         const left = (window.screen.width - width) / 2;
         const top = (window.screen.height - height) / 2;
-        
+
         const popup = window.open(
             data.auth_url,
             'GoogleOAuth',
             `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
-        
+
         if (!popup) {
             showNotification(t('integ_err_popups','Por favor permite ventanas emergentes para continuar'), 'error');
             return;
         }
-        
+
+        // El popup se cierra solo al terminar (avisa por postMessage arriba);
+        // este polling queda como respaldo por si el postMessage no llega.
         const pollTimer = setInterval(async () => {
             if (popup.closed) {
                 clearInterval(pollTimer);
                 console.log('🔄 Ventana OAuth cerrada, verificando estado...');
-                
+
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 await loadGoogleIntegrationStatus(selectedAgentId);
             }
         }, 500);
-        
+
     } catch (error) {
-        console.error('Error conectando Google:', error);
+        console.error(`Error conectando Google ${service}:`, error);
         showNotification(t('integ_err_google_connect','Error al conectar con Google'), 'error');
     }
 }
 
-async function disconnectGoogle() {
+// service: 'calendar' | 'sheets'
+async function disconnectGoogleService(service) {
     if (!requireAgentSelected()) return;
-    
-    if (!confirm('¿Estás seguro de que quieres desconectar Google? Esto eliminará el acceso a tu calendario y hoja de cálculo.')) {
+
+    const label = service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+    if (!confirm(`¿Estás seguro de que quieres desconectar ${label}?`)) {
         return;
     }
-    
-    console.log(`🔌 Desconectando Google para agente ${selectedAgentId}...`);
-    
-    const btnDisconnect = document.getElementById('btnDisconnectGoogle');
-    const originalText = btnDisconnect.innerHTML;
-    
-    btnDisconnect.innerHTML = `
-        <div class="loading-spinner"></div>
-        <span>Desconectando...</span>
-    `;
-    btnDisconnect.disabled = true;
-    
+
+    console.log(`🔌 Desconectando ${service} para agente ${selectedAgentId}...`);
+
+    const btnDisconnectId = service === 'sheets' ? 'btnDisconnectSheets' : 'btnDisconnectGoogle';
+    const btnDisconnect = document.getElementById(btnDisconnectId);
+    const originalText = btnDisconnect?.innerHTML;
+
+    if (btnDisconnect) {
+        btnDisconnect.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>Desconectando...</span>
+        `;
+        btnDisconnect.disabled = true;
+    }
+
     try {
         const response = await fetch(`/api/google/disconnect/${selectedAgentId}`, {
             method: 'POST',
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ service })
         });
 
         if (!response.ok) {
@@ -1178,17 +1197,38 @@ async function disconnectGoogle() {
 
         const data = await response.json();
         console.log('✅ Google desconectado:', data);
-        
-        showNotification(t('integ_ok_google_disconnect','Google desconectado exitosamente'), 'success');
+
+        showNotification(`${label} desconectado exitosamente`, 'success');
         await loadGoogleIntegrationStatus(selectedAgentId);
-        
+
     } catch (error) {
-        console.error('Error desconectando Google:', error);
+        console.error(`Error desconectando ${service}:`, error);
         showNotification(t('integ_err_google_disconnect','Error al desconectar Google'), 'error');
-        
-        btnDisconnect.innerHTML = originalText;
-        btnDisconnect.disabled = false;
+
+        if (btnDisconnect) {
+            btnDisconnect.innerHTML = originalText;
+            btnDisconnect.disabled = false;
+        }
     }
+}
+
+// "Reconectar" = desconectar y volver a conectar de una — útil si el token
+// quedó en mal estado (revocado desde la cuenta de Google, etc.)
+async function reconnectGoogleService(service) {
+    if (!requireAgentSelected()) return;
+
+    try {
+        await fetch(`/api/google/disconnect/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ service })
+        });
+    } catch (error) {
+        console.error(`Error al desconectar ${service} antes de reconectar:`, error);
+    }
+
+    await connectGoogleService(service);
 }
 
 // ============================================
