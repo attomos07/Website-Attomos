@@ -1,137 +1,34 @@
 /* ============================================
    INVENTORY PAGE JS
-   Vista estilo hoja de cálculo — SOLO VISUAL.
-   No hay llamadas a backend todavía: los datos
-   son de ejemplo y viven en `inventoryData`.
-   Cuando exista el endpoint real, basta con
-   reemplazar `inventoryData` por la respuesta
-   del API (mismas claves = mismas columnas
-   del sheet) y volver a llamar renderSheet().
+   Visualizador GENÉRICO de cualquier Google Sheet
+   conectada — no asume columnas fijas (sirve para
+   cualquier giro de negocio). El backend manda:
+     { headers: [...], rows: [{ row, cells: [...] }] }
+   y cada celda ya viene clasificada por TIPO
+   (kind: "text" | "number" | "boolean" | "image" | "link"),
+   nunca por nombre de columna.
+     GET  /api/inventory-sheets/status/:agent_id
+     POST /api/inventory-sheets/connect/:agent_id
+     POST /api/inventory-sheets/disconnect/:agent_id
+     GET  /api/inventory-sheets/rows/:agent_id
+   Los checkboxes se muestran de SOLO LECTURA: no
+   sabemos si esa hoja tiene algún Apps Script propio
+   colgado de un trigger onEdit en esa columna.
    ============================================ */
 
-// Definición de columnas: mapea 1:1 cada columna del Google Sheet
-// (letra, encabezado, clave de dato y clase de ancho/alineación)
-const SHEET_COLUMNS = [
-    { letter: 'A', label: 'VIN', key: 'vin', cssClass: 'col-vin' },
-    { letter: 'B', label: 'Marca', key: 'marca', cssClass: 'col-marca' },
-    { letter: 'C', label: 'Vehículo', key: 'vehiculo', cssClass: 'col-vehiculo' },
-    { letter: 'D', label: 'Color Ext./Int.', key: 'color', cssClass: 'col-color' },
-    { letter: 'E', label: 'Año', key: 'anio', cssClass: 'col-anio' },
-    { letter: 'F', label: 'Ubicación', key: 'ubicacion', cssClass: 'col-ubicacion' },
-    { letter: 'G', label: 'Precio', key: 'precio', cssClass: 'col-precio' },
-    { letter: 'H', label: 'Días en Inv.', key: 'diasInventario', cssClass: 'col-dias' },
-    { letter: 'I', label: 'Kilometraje', key: 'kilometraje', cssClass: 'col-km' },
-    { letter: 'J', label: 'Estatus', key: 'estatus', cssClass: 'col-estatus' },
-    { letter: 'K', label: 'Foto', key: 'foto', cssClass: 'col-foto' },
-    { letter: 'L', label: 'Subir Foto', key: 'subirFoto', cssClass: 'col-subirfoto' },
-    { letter: 'M', label: 'Álbum', key: 'album', cssClass: 'col-album' },
-];
-
-// Datos de ejemplo (reflejan el sheet compartido).
-// Los VIN de las filas 2-5 se completaron a 17 caracteres a partir
-// del prefijo visible en la hoja; los de las filas con solo VIN
-// (aún sin procesar por la IA) se dejaron tal cual.
-const inventoryData = [
-    {
-        vin: 'MMBM7U5G2SF012345',
-        marca: 'Mitsubishi',
-        vehiculo: 'L200 4PTAS GL',
-        color: 'WHITE SOLID/NEGRO',
-        anio: 2025,
-        ubicacion: 'MORELOS',
-        precio: 479900,
-        diasInventario: 19,
-        kilometraje: 15478,
-        estatus: '',
-        foto: '',
-        subirFoto: false,
-        album: null, // { count: 0 } si tuviera fotos
-    },
-    {
-        vin: 'MMBML45G4JH901234',
-        marca: 'Mitsubishi',
-        vehiculo: 'L200 2.4 GLS C',
-        color: 'WHITE SOLID/E',
-        anio: 2018,
-        ubicacion: 'MITSU CHIHUAHUA',
-        precio: 259900,
-        diasInventario: 4,
-        kilometraje: 136203,
-        estatus: 'Vendido',
-        foto: '',
-        subirFoto: false,
-        album: null,
-    },
-    {
-        vin: 'NPTKH3BX2LR456789',
-        marca: 'Mitsubishi',
-        vehiculo: 'L200 4 PTAS GL',
-        color: 'WHITE SOLID/E',
-        anio: 2025,
-        ubicacion: 'NISSAUTO',
-        precio: 479900,
-        diasInventario: 19,
-        kilometraje: 16413,
-        estatus: '',
-        foto: '',
-        subirFoto: false,
-        album: null,
-    },
-    {
-        vin: 'MZBET2A12PN345678',
-        marca: 'Kia',
-        vehiculo: 'SELTOS TURBO',
-        color: 'WHITE PEARL',
-        anio: 2023,
-        ubicacion: 'GRAN AUTO',
-        precio: 399900,
-        diasInventario: 49,
-        kilometraje: 73059,
-        estatus: '',
-        foto: '',
-        subirFoto: true,
-        album: { count: 12 },
-    },
-    // Fila en blanco (separador, tal como aparece en el sheet)
-    { empty: true },
-    {
-        vin: 'LSFAM3ABXRA042654',
-        marca: '',
-        vehiculo: '',
-        color: '',
-        anio: '',
-        ubicacion: '',
-        precio: '',
-        diasInventario: '',
-        kilometraje: '',
-        estatus: '',
-        foto: '',
-        subirFoto: false,
-        album: { count: null }, // fotos ya subidas, aún sin el resto de datos
-    },
-    {
-        vin: '3N1CN8AE8ML817705',
-        marca: '',
-        vehiculo: '',
-        color: '',
-        anio: '',
-        ubicacion: '',
-        precio: '',
-        diasInventario: '',
-        kilometraje: '',
-        estatus: '',
-        foto: '',
-        subirFoto: false,
-        album: null,
-    },
-];
-
-function formatNumber(value) {
-    if (value === '' || value === null || value === undefined) return '';
-    return Number(value).toLocaleString('en-US');
+// A, B, C... Z, AA, AB... (por si la hoja tiene más de 26 columnas)
+function columnLetter(index) {
+    let n = index + 1;
+    let letter = '';
+    while (n > 0) {
+        const rem = (n - 1) % 26;
+        letter = String.fromCharCode(65 + rem) + letter;
+        n = Math.floor((n - 1) / 26);
+    }
+    return letter;
 }
 
-function buildColLetterRow() {
+function buildColLetterRow(headers) {
     const tr = document.createElement('tr');
     tr.className = 'col-letter-row';
 
@@ -139,16 +36,16 @@ function buildColLetterRow() {
     corner.className = 'corner-cell';
     tr.appendChild(corner);
 
-    SHEET_COLUMNS.forEach(col => {
+    headers.forEach((_, i) => {
         const th = document.createElement('th');
-        th.textContent = col.letter;
+        th.textContent = columnLetter(i);
         tr.appendChild(th);
     });
 
     return tr;
 }
 
-function buildHeaderRow() {
+function buildHeaderRow(headers) {
     const tr = document.createElement('tr');
     tr.className = 'sheet-header-row';
 
@@ -157,11 +54,10 @@ function buildHeaderRow() {
     rowNum.textContent = '1';
     tr.appendChild(rowNum);
 
-    SHEET_COLUMNS.forEach((col, idx) => {
+    headers.forEach((label, idx) => {
         const td = document.createElement('td');
-        td.className = col.cssClass;
-        td.textContent = col.label;
-        // Replica el recuadro azul de "celda activa" sobre A1, como en el sheet original
+        td.textContent = label;
+        // Replica el recuadro azul de "celda activa" sobre A1, como en Sheets
         if (idx === 0) td.classList.add('cell-selected');
         tr.appendChild(td);
     });
@@ -169,93 +65,625 @@ function buildHeaderRow() {
     return tr;
 }
 
-function buildDataCell(col, row) {
+function buildDataCell(cell, headerName, row) {
     const td = document.createElement('td');
-    td.className = col.cssClass;
+    if (!cell) return td;
 
-    if (col.key === 'subirFoto') {
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'sheet-checkbox';
-        checkbox.checked = !!row.subirFoto;
-        // Solo visual: cambia el estado local, sin llamadas a backend todavía
-        checkbox.addEventListener('change', () => {
-            row.subirFoto = checkbox.checked;
-        });
-        td.appendChild(checkbox);
-        return td;
-    }
-
-    if (col.key === 'album') {
-        if (row.album) {
-            const a = document.createElement('a');
-            a.href = '#';
-            a.className = 'album-link';
-            a.textContent = row.album.count ? `Ver fotos (${row.album.count})` : 'Ver fotos';
-            a.addEventListener('click', (e) => e.preventDefault()); // sin backend aún
-            td.appendChild(a);
+    // Columna de fotos configurada por el usuario: además de mostrar la foto
+    // (si ya hay una), siempre se puede subir dándole clic al botón de la celda.
+    if (inventoryPhotoColumn && headerName === inventoryPhotoColumn) {
+        td.classList.add('sheet-photo-cell');
+        if (cell.kind === 'image' && cell.url) {
+            const img = document.createElement('img');
+            img.className = 'sheet-photo-thumb';
+            img.src = cell.url;
+            img.alt = '';
+            img.loading = 'lazy';
+            td.appendChild(img);
         }
+        const uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.className = 'sheet-photo-upload-btn';
+        uploadBtn.title = cell.url ? 'Agregar más fotos a esta fila' : 'Subir foto(s) a esta fila';
+        uploadBtn.innerHTML = '<i class="lni lni-camera"></i>';
+        uploadBtn.addEventListener('click', () => triggerRowPhotoUpload(row));
+        td.appendChild(uploadBtn);
         return td;
     }
 
-    if (col.key === 'precio' || col.key === 'kilometraje') {
-        td.classList.add('num-cell');
-        td.textContent = col.key === 'kilometraje' ? formatNumber(row.kilometraje) : (row.precio === '' ? '' : row.precio);
-        return td;
-    }
+    switch (cell.kind) {
+        case 'image':
+            if (cell.url) {
+                const img = document.createElement('img');
+                img.className = 'sheet-photo-thumb';
+                img.src = cell.url;
+                img.alt = '';
+                img.loading = 'lazy';
+                td.appendChild(img);
+            }
+            return td;
 
-    if (col.key === 'diasInventario' || col.key === 'anio') {
-        td.classList.add('num-cell');
-        td.textContent = row[col.key] === '' ? '' : row[col.key];
-        return td;
-    }
+        case 'boolean': {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'sheet-checkbox';
+            checkbox.checked = !!cell.bool;
+            // Solo lectura: no sabemos si esa columna dispara algo (un script
+            // propio del cliente) en su hoja — nunca escribimos desde aquí.
+            checkbox.disabled = true;
+            checkbox.title = 'Solo lectura — edítalo desde Google Sheets';
+            td.appendChild(checkbox);
+            return td;
+        }
 
-    if (col.key === 'estatus') {
-        td.classList.add('estatus-text');
-        td.textContent = row.estatus || '';
-        return td;
-    }
+        case 'link':
+            if (cell.url) {
+                const a = document.createElement('a');
+                a.className = 'album-link';
+                a.href = cell.url;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = cell.text || 'Abrir';
+                td.appendChild(a);
+            }
+            return td;
 
-    td.textContent = row[col.key] || '';
-    return td;
+        case 'number':
+            td.classList.add('num-cell');
+            td.textContent = cell.text || '';
+            makeCellEditable(td, cell, headerName, row);
+            return td;
+
+        default:
+            td.textContent = cell.text || '';
+            makeCellEditable(td, cell, headerName, row);
+            return td;
+    }
 }
 
-function buildDataRow(row, rowNumber) {
+// Convierte una celda de texto/número en editable: clic → input, Enter/blur
+// guarda (PATCH al backend, que lo escribe en la hoja real), Escape cancela.
+function makeCellEditable(td, cell, headerName, row) {
+    td.classList.add('sheet-cell-editable');
+    td.title = 'Clic para editar';
+
+    td.addEventListener('click', () => {
+        if (td.querySelector('input')) return; // ya está en edición
+        const originalText = cell.text || '';
+        const wasNumCell = td.classList.contains('num-cell');
+
+        td.textContent = '';
+        td.classList.remove('num-cell');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'sheet-cell-input';
+        input.value = originalText;
+        td.appendChild(input);
+        input.focus();
+        input.select();
+
+        let done = false;
+        const finish = async (commit) => {
+            if (done) return;
+            done = true;
+            const newValue = commit ? input.value : originalText;
+            td.textContent = newValue;
+            if (wasNumCell) td.classList.add('num-cell');
+
+            if (!commit || newValue === originalText) return; // sin cambios reales
+
+            cell.text = newValue;
+            try {
+                const res = await fetch(`/api/inventory-sheets/cell/${currentAgentId}`, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ row: row.row, column: headerName, value: newValue }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || 'No se pudo guardar el cambio');
+            } catch (err) {
+                cell.text = originalText;
+                td.textContent = originalText;
+                if (wasNumCell) td.classList.add('num-cell');
+                if (typeof showToast === 'function') showToast('error', err.message || 'No se pudo guardar el cambio en la hoja');
+            }
+        };
+
+        input.addEventListener('blur', () => finish(true));
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { e.preventDefault(); finish(false); input.blur(); }
+        });
+    });
+}
+
+function buildDataRow(row, headers) {
     const tr = document.createElement('tr');
-
-    if (row.empty) {
-        tr.className = 'row-empty';
-        const rowNum = document.createElement('td');
-        rowNum.className = 'row-number-cell';
-        rowNum.textContent = rowNumber;
-        tr.appendChild(rowNum);
-        SHEET_COLUMNS.forEach(() => tr.appendChild(document.createElement('td')));
-        return tr;
-    }
-
-    if (row.estatus === 'Vendido') tr.classList.add('row-vendido');
 
     const rowNum = document.createElement('td');
     rowNum.className = 'row-number-cell';
-    rowNum.textContent = rowNumber;
+    rowNum.textContent = row.row;
     tr.appendChild(rowNum);
 
-    SHEET_COLUMNS.forEach(col => tr.appendChild(buildDataCell(col, row)));
+    const cells = row.cells || [];
+    headers.forEach((headerName, i) => {
+        tr.appendChild(buildDataCell(cells[i], headerName, row));
+    });
 
     return tr;
 }
 
-function renderSheet(data) {
+function renderSheet(headers, rows) {
     const tbody = document.getElementById('sheetBody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    tbody.appendChild(buildColLetterRow());
-    tbody.appendChild(buildHeaderRow());
+    tbody.appendChild(buildColLetterRow(headers));
+    tbody.appendChild(buildHeaderRow(headers));
 
-    data.forEach((row, i) => {
-        tbody.appendChild(buildDataRow(row, i + 2)); // fila 1 = encabezados
+    rows.forEach(row => tbody.appendChild(buildDataRow(row, headers)));
+}
+
+/* ============================================
+   AGENTE ACTUAL — compartido entre la sección
+   de Sheets y la de RepairDesk, para no pedir
+   /api/agents dos veces al cargar la página.
+   ============================================ */
+
+let _agentIdPromise = null;
+function getAgentId() {
+    if (!_agentIdPromise) {
+        _agentIdPromise = fetch('/api/agents', { credentials: 'include' })
+            .then(res => (res.ok ? res.json() : { agents: [] }))
+            .then(data => (data.agents && data.agents.length ? data.agents[0].id : null))
+            .catch(() => null);
+    }
+    return _agentIdPromise;
+}
+
+/* ============================================
+   GOOGLE SHEETS DEL INVENTARIO — conexión real
+   ============================================ */
+
+let currentAgentId = null;
+let sheetHeaders = [];
+let sheetRows = [];
+let inventoryPhotoColumn = null;
+let inventoryAlbumColumn = null;
+
+function extractSpreadsheetId(input) {
+    // Acepta tanto la URL completa (https://docs.google.com/spreadsheets/d/<ID>/edit#gid=0)
+    // como el ID pelón, tal como lo pegue el usuario.
+    const match = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : input.trim();
+}
+
+async function initSheetInventory() {
+    const agentId = await getAgentId();
+    if (!agentId) return;
+    currentAgentId = agentId;
+    await refreshSheetStatus();
+}
+
+async function refreshSheetStatus() {
+    if (!currentAgentId) return;
+    try {
+        const res = await fetch(`/api/inventory-sheets/status/${currentAgentId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        applySheetStatus(data);
+        if (data.connected) await loadSheetRows();
+    } catch (e) {
+        console.warn('Inventory sheet status error:', e);
+    }
+}
+
+function applySheetStatus(data) {
+    const badge         = document.getElementById('sheetInvStatusBadge');
+    const badgeText      = document.getElementById('sheetInvStatusText');
+    const form           = document.getElementById('sheetInvConnectForm');
+    const info           = document.getElementById('sheetInvConnectionInfo');
+    const manageActions  = document.getElementById('sheetInvManageActions');
+    const link           = document.getElementById('sheetInvLink');
+    const connectedAt    = document.getElementById('sheetInvConnectedAt');
+    const container      = document.getElementById('sheetInvContainer');
+    const footnote       = document.getElementById('sheetInvFootnote');
+    const empty          = document.getElementById('sheetInvEmpty');
+
+    if (data.connected) {
+        badge?.classList.remove('disconnected');
+        badge?.classList.add('connected');
+        if (badgeText) badgeText.textContent = 'Conectado';
+        if (form) form.style.display = 'none';
+        if (info) info.style.display = 'block';
+        if (manageActions) manageActions.style.display = 'flex';
+        if (link && data.spreadsheet_url) link.href = data.spreadsheet_url;
+        if (connectedAt) {
+            connectedAt.textContent = data.connected_at
+                ? new Date(data.connected_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '-';
+        }
+        inventoryPhotoColumn = data.photo_column || null;
+        inventoryAlbumColumn = data.album_column || null;
+    } else {
+        badge?.classList.remove('connected');
+        badge?.classList.add('disconnected');
+        if (badgeText) badgeText.textContent = 'No conectado';
+        if (form) form.style.display = 'block';
+        if (info) info.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'none';
+        if (container) container.style.display = 'none';
+        if (footnote) footnote.style.display = 'none';
+        if (empty) empty.style.display = 'none';
+    }
+}
+
+async function loadSheetRows() {
+    if (!currentAgentId) return;
+    try {
+        const res = await fetch(`/api/inventory-sheets/rows/${currentAgentId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        sheetHeaders = data.headers || [];
+        sheetRows = data.rows || [];
+        updateColumnConfigUI();
+        renderSheetView(data.last_sync);
+    } catch (e) {
+        console.warn('Error cargando filas del inventario:', e);
+    }
+}
+
+function renderSheetView(lastSync) {
+    const container      = document.getElementById('sheetInvContainer');
+    const empty          = document.getElementById('sheetInvEmpty');
+    const footnote       = document.getElementById('sheetInvFootnote');
+    const lastSyncLabel  = document.getElementById('sheetInvLastSync');
+
+    if (!sheetRows.length) {
+        if (container) container.style.display = 'none';
+        if (footnote) footnote.style.display = 'none';
+        if (empty) empty.style.display = 'flex';
+        return;
+    }
+
+    if (container) container.style.display = 'block';
+    if (empty) empty.style.display = 'none';
+    renderSheet(sheetHeaders, sheetRows);
+
+    if (footnote && lastSyncLabel) {
+        footnote.style.display = 'flex';
+        lastSyncLabel.textContent = lastSync
+            ? `Actualizado: ${new Date(lastSync).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+            : 'Actualizado ahora';
+    }
+}
+
+/* ============================================
+   COLUMNAS DE FOTOS/ÁLBUM — elegidas por el
+   usuario de entre los headers reales de SU hoja
+   ============================================ */
+
+function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+/* ============================================
+   COLUMNAS DE FOTOS/ÁLBUM — elegidas por el
+   usuario de entre los headers reales de SU hoja,
+   vía el ícono de la barra de herramientas + modal
+   ============================================ */
+
+function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+// Muestra/oculta la barra de herramientas y marca cada ícono con un puntito
+// rojo mientras esa columna en particular no se haya configurado todavía.
+function updateColumnConfigUI() {
+    const toolbar = document.getElementById('sheetToolbar');
+    const photoBtn = document.getElementById('btnOpenPhotoColConfig');
+    const albumBtn = document.getElementById('btnOpenAlbumColConfig');
+    if (!toolbar) return;
+
+    if (sheetHeaders.length) {
+        toolbar.style.display = 'flex';
+        if (photoBtn) {
+            photoBtn.classList.toggle('needs-config', !inventoryPhotoColumn);
+            photoBtn.title = inventoryPhotoColumn ? 'Cambiar columna de fotos' : 'Configurar columna de fotos';
+        }
+        if (albumBtn) {
+            albumBtn.classList.toggle('needs-config', !inventoryAlbumColumn);
+            albumBtn.title = inventoryAlbumColumn ? 'Cambiar columna de álbum' : 'Configurar columna de álbum';
+        }
+    } else {
+        toolbar.style.display = 'none';
+    }
+}
+
+function openColumnConfigModal(focusField) {
+    const overlay = document.getElementById('columnConfigModalOverlay');
+    const photoSel = document.getElementById('sheetInvPhotoColSelect');
+    const albumSel = document.getElementById('sheetInvAlbumColSelect');
+    if (!overlay || !sheetHeaders.length) return;
+
+    if (photoSel) {
+        photoSel.innerHTML = sheetHeaders.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        if (inventoryPhotoColumn) photoSel.value = inventoryPhotoColumn;
+    }
+    if (albumSel) {
+        albumSel.innerHTML = '<option value="">Ninguna</option>'
+            + sheetHeaders.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        albumSel.value = inventoryAlbumColumn || '';
+    }
+
+    overlay.classList.add('open');
+    // Si vinimos del ícono de álbum, deja el foco ahí en vez de en el de fotos
+    if (focusField === 'album') {
+        setTimeout(() => albumSel?.focus(), 150);
+    } else {
+        setTimeout(() => photoSel?.focus(), 150);
+    }
+}
+
+function closeColumnConfigModal() {
+    document.getElementById('columnConfigModalOverlay')?.classList.remove('open');
+}
+
+async function saveInventoryColumns() {
+    if (!currentAgentId) return;
+    const photoColumn = document.getElementById('sheetInvPhotoColSelect')?.value;
+    const albumColumn = document.getElementById('sheetInvAlbumColSelect')?.value || '';
+    if (!photoColumn) return;
+
+    const btn = document.getElementById('btnSaveInventoryColumns');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/columns/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo_column: photoColumn, album_column: albumColumn }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo guardar la configuración');
+
+        inventoryPhotoColumn = data.photo_column || null;
+        inventoryAlbumColumn = data.album_column || null;
+        updateColumnConfigUI();
+        closeColumnConfigModal();
+        renderSheet(sheetHeaders, sheetRows); // vuelve a pintar para activar los botones de subida
+        if (typeof showToast === 'function') showToast('success', 'Listo — ya puedes subir fotos desde la tabla');
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al guardar la configuración');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+/* ============================================
+   SUBIR FOTOS A UNA FILA CONOCIDA
+   (sin IA: la fila ya se sabe por la celda en la
+   que se dio clic — la detección de VIN vía Gemini
+   es aparte, para el botón general "Subir foto")
+   ============================================ */
+
+function triggerRowPhotoUpload(row) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.addEventListener('change', () => {
+        if (input.files && input.files.length) uploadRowPhotos(row, input.files);
     });
+    input.click();
+}
+
+async function uploadRowPhotos(row, fileList) {
+    if (!currentAgentId) return;
+
+    const formData = new FormData();
+    formData.append('row', row.row);
+
+    // Si la hoja tiene una columna "VIN" con valor en esta fila, se usa como
+    // nombre de la subcarpeta en Drive (más legible); si no, "Fila N".
+    const vinIdx = sheetHeaders.findIndex(h => (h || '').trim().toUpperCase() === 'VIN');
+    const vinCell = vinIdx !== -1 ? (row.cells || [])[vinIdx] : null;
+    if (vinCell && vinCell.text) formData.append('folder_label', vinCell.text);
+
+    Array.from(fileList).forEach(f => formData.append('photos', f));
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/upload/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudieron subir las fotos');
+
+        if (typeof showToast === 'function') showToast('success', `${data.count} foto(s) subida(s)`);
+        await loadSheetRows(); // refresca para mostrar la miniatura nueva
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al subir las fotos');
+    }
+}
+
+async function connectSheetInventory() {
+    const input = document.getElementById('sheetInvUrlInput');
+    const btn   = document.getElementById('btnConnectSheetInv');
+    const raw   = input?.value?.trim();
+
+    if (!raw) {
+        if (typeof showToast === 'function') showToast('error', 'Pega el enlace o ID de tu hoja de inventario');
+        return;
+    }
+    if (!currentAgentId) return;
+
+    const spreadsheetId = extractSpreadsheetId(raw);
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;"></div> Conectando...';
+    }
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/connect/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spreadsheet_url: spreadsheetId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo conectar la hoja');
+
+        applySheetStatus(data);
+        await loadSheetRows();
+        if (typeof showToast === 'function') showToast('success', 'Hoja de inventario conectada');
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al conectar la hoja');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml || '<i class="lni lni-link"></i><span>Conectar hoja</span>'; }
+    }
+}
+
+async function disconnectSheetInventory() {
+    if (!currentAgentId) return;
+    try {
+        const res = await fetch(`/api/inventory-sheets/disconnect/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        if (!res.ok) throw new Error('No se pudo desconectar');
+        sheetHeaders = [];
+        sheetRows = [];
+        inventoryPhotoColumn = null;
+        inventoryAlbumColumn = null;
+        applySheetStatus({ connected: false });
+        if (typeof showToast === 'function') showToast('success', 'Hoja desconectada');
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al desconectar');
+    }
+}
+
+function wireSheetInventoryButtons() {
+    document.getElementById('btnConnectSheetInv')?.addEventListener('click', connectSheetInventory);
+    document.getElementById('btnRefreshSheetInv')?.addEventListener('click', loadSheetRows);
+    document.getElementById('btnDisconnectSheetInv')?.addEventListener('click', disconnectSheetInventory);
+    document.getElementById('btnChangeSheetInv')?.addEventListener('click', () => {
+        const form = document.getElementById('sheetInvConnectForm');
+        if (form) form.style.display = 'block';
+    });
+    document.getElementById('btnSaveInventoryColumns')?.addEventListener('click', saveInventoryColumns);
+
+    document.getElementById('btnOpenPhotoColConfig')?.addEventListener('click', () => openColumnConfigModal('photo'));
+    document.getElementById('btnOpenAlbumColConfig')?.addEventListener('click', () => openColumnConfigModal('album'));
+    document.getElementById('btnCloseColumnConfig')?.addEventListener('click', closeColumnConfigModal);
+    document.getElementById('btnCancelColumnConfig')?.addEventListener('click', closeColumnConfigModal);
+
+    const columnOverlay = document.getElementById('columnConfigModalOverlay');
+    columnOverlay?.addEventListener('click', (e) => {
+        if (e.target === columnOverlay) closeColumnConfigModal(); // clic fuera de la tarjeta
+    });
+
+    document.getElementById('btnOpenAiUpload')?.addEventListener('click', openAiUploadModal);
+    document.getElementById('btnCloseAiUpload')?.addEventListener('click', closeAiUploadModal);
+    document.getElementById('btnCancelAiUpload')?.addEventListener('click', closeAiUploadModal);
+    document.getElementById('btnSubmitAiUpload')?.addEventListener('click', submitAiUpload);
+    document.getElementById('aiUploadDropzone')?.addEventListener('click', () => {
+        document.getElementById('aiUploadFileInput')?.click();
+    });
+    document.getElementById('aiUploadFileInput')?.addEventListener('change', renderAiUploadPreview);
+
+    const aiOverlay = document.getElementById('aiUploadModalOverlay');
+    aiOverlay?.addEventListener('click', (e) => {
+        if (e.target === aiOverlay) closeAiUploadModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (columnOverlay?.classList.contains('open')) closeColumnConfigModal();
+        if (aiOverlay?.classList.contains('open')) closeAiUploadModal();
+    });
+}
+
+/* ============================================
+   SUBIR FOTO CON IA (detecta el VIN) — SOLO
+   FRONTEND por ahora. El endpoint todavía no
+   existe en el backend (falta conectar Gemini);
+   esta llamada ya queda lista para cuando exista.
+   ============================================ */
+
+function openAiUploadModal() {
+    const overlay = document.getElementById('aiUploadModalOverlay');
+    const fileInput = document.getElementById('aiUploadFileInput');
+    const preview = document.getElementById('aiUploadPreview');
+    if (fileInput) fileInput.value = '';
+    if (preview) preview.innerHTML = '';
+    overlay?.classList.add('open');
+}
+
+function closeAiUploadModal() {
+    document.getElementById('aiUploadModalOverlay')?.classList.remove('open');
+}
+
+function renderAiUploadPreview() {
+    const fileInput = document.getElementById('aiUploadFileInput');
+    const preview = document.getElementById('aiUploadPreview');
+    if (!fileInput || !preview) return;
+    preview.innerHTML = '';
+    Array.from(fileInput.files || []).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.className = 'ai-upload-preview-thumb';
+            img.src = e.target.result;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function submitAiUpload() {
+    const fileInput = document.getElementById('aiUploadFileInput');
+    if (!fileInput || !fileInput.files.length) {
+        if (typeof showToast === 'function') showToast('error', 'Elige al menos una foto');
+        return;
+    }
+    if (!currentAgentId) return;
+
+    const formData = new FormData();
+    Array.from(fileInput.files).forEach(f => formData.append('photos', f));
+
+    const btn = document.getElementById('btnSubmitAiUpload');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;"></div> Detectando...';
+    }
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/detect-upload/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo procesar la foto');
+
+        if (typeof showToast === 'function') showToast('success', `VIN detectado: ${data.vin || ''}`);
+        closeAiUploadModal();
+        await loadSheetRows();
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'La detección por IA todavía no está conectada');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
 }
 
 /* ============================================
@@ -415,13 +843,8 @@ function notifyParentReady() {
 
 async function initRepairDeskInventory() {
     try {
-        const res = await fetch('/api/agents', { credentials: 'include' });
-        if (!res.ok) return;
-        const data = await res.json();
-        const agents = data.agents || [];
-        if (!agents.length) return;
-
-        const agentId = agents[0].id;
+        const agentId = await getAgentId();
+        if (!agentId) return;
         await checkRepairDeskStatus(agentId);
     } catch (e) {
         console.warn('RepairDesk check skipped:', e);
@@ -543,9 +966,10 @@ function renderRepairDeskInventory(items, lastSync) {
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    renderSheet(inventoryData);
     initViewToggle();
     renderBusinessInventory([]); // estado vacío hasta que llegue el postMessage del padre
+    wireSheetInventoryButtons();
+    initSheetInventory();
     initRepairDeskInventory();
     notifyParentReady();
 });

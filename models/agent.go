@@ -192,6 +192,18 @@ type Agent struct {
 	GoogleSheetsConnected   bool       `gorm:"default:false" json:"googleSheetsConnected"`
 	GoogleSheetsConnectedAt *time.Time `json:"googleSheetsConnectedAt"`
 
+	// Inventario de vehículos (VIN + fotos vía IA) — hoja de Sheets propia del
+	// cliente (concesionarias), independiente de la hoja de citas de arriba.
+	InventorySheetID          string     `gorm:"size:500" json:"inventorySheetId"`
+	InventorySheetConnected   bool       `gorm:"default:false" json:"inventorySheetConnected"`
+	InventorySheetConnectedAt *time.Time `json:"inventorySheetConnectedAt"`
+
+	// Columnas elegidas por el usuario para subir fotos (texto exacto del
+	// encabezado tal como está en su hoja — nunca asumido). Vacío = todavía
+	// no configuró la subida de fotos para esta hoja.
+	InventoryPhotoColumn string `gorm:"size:255" json:"inventoryPhotoColumn"`
+	InventoryAlbumColumn string `gorm:"size:255" json:"inventoryAlbumColumn"`
+
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

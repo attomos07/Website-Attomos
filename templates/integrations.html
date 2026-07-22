@@ -619,40 +619,40 @@
                         </div>
 
                         <!-- Google Sheets Inventarios Card (solo visual — próximamente) -->
-                        <div class="integration-card coming-soon" id="sheetsInventoryCard">
+                        <div class="integration-card" id="sheetsInventoryCard">
                             <div class="card-header">
                                 <div class="card-title">
                                     <img src="/static/images/logo-google-sheets.png" class="custom-icon-sheets integration-icon" alt="Sheets Inventarios">
                                     <h2>Sheets Inventarios</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="sheetsInventoryStatusBadge"><span class="status-indicator"></span><span>Próximamente</span></div>
+                                <div class="status-badge disconnected" id="sheetsInventoryStatusBadge"><span class="status-indicator"></span><span id="sheetsInventoryStatusText">No conectado</span></div>
                             </div>
 
                             <p class="card-description">
-                                Sincroniza tu inventario de productos con una hoja de cálculo para llevar el control de existencias, precios y disponibilidad en tiempo real.
+                                Conecta cualquier hoja de Google Sheets de tu negocio y visualízala como inventario dentro de Attomos — sin importar tu giro ni las columnas que ya tengas.
                             </p>
 
                             <div class="card-features">
                                 <ul class="feature-list">
-                                    <li class="feature-item"><i class="lni lni-package"></i><span>Sincronización automática de existencias</span></li>
-                                    <li class="feature-item"><i class="lni lni-alarm"></i><span>Alertas de stock bajo</span></li>
-                                    <li class="feature-item"><i class="lni lni-search-alt"></i><span>Consulta de productos desde el bot</span></li>
-                                    <li class="feature-item"><i class="lni lni-reload"></i><span>Actualización de precios y disponibilidad</span></li>
+                                    <li class="feature-item"><i class="lni lni-grid-alt"></i><span>Se adapta a las columnas que ya tengas en tu hoja</span></li>
+                                    <li class="feature-item"><i class="lni lni-camera"></i><span>Muestra fotos y links guardados como fórmulas en la hoja</span></li>
+                                    <li class="feature-item"><i class="lni lni-package"></i><span>Vista en tiempo real dentro de Mi Negocio</span></li>
+                                    <li class="feature-item"><i class="lni lni-reload"></i><span>Se lee en vivo — sin duplicar datos en Attomos</span></li>
                                 </ul>
                             </div>
 
                             <div class="card-actions-row">
                                 <div id="sheetsInventoryConnectActions">
-                                    <button class="btn btn-connect" id="btnConnectSheetsInventory" disabled>
+                                    <button class="btn btn-connect" id="btnConnectSheetsInventory" onclick="window.location.href='/inventory'">
                                         <i class="lni lni-link"></i>
-                                        <span>Conectar Inventario</span>
+                                        <span id="sheetsInventoryBtnText">Conectar Inventario</span>
                                     </button>
                                 </div>
                             </div>
 
                             <div class="card-note">
                                 <i class="lni lni-information"></i>
-                                <span>Columnas: <strong>Producto · SKU · Categoría · Precio · Stock · Última actualización</strong></span>
+                                <span>Funciona con cualquier hoja: <strong>lee las columnas y filas tal como estén</strong>, sin necesidad de acomodarlas a ningún formato.</span>
                             </div>
                         </div>
 

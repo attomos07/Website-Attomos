@@ -49,7 +49,7 @@
                                 <i class="lni lni-package"></i>
                                 <span>Inventario</span>
                             </h1>
-                            <p class="page-subtitle">Existencias de tu negocio, o el inventario sincronizado desde Google Sheets vía IA (VIN + fotos a Drive)</p>
+                            <p class="page-subtitle">Existencias de tu negocio, o cualquier hoja de Google Sheets que conectes para visualizarla aquí</p>
                         </div>
                     </div>
 
@@ -148,23 +148,175 @@
                         </div>
                     </div>
 
-                    <!-- ══════════ VISTA: SHEETS (VIN + fotos vía IA) ══════════ -->
+                    <!-- ══════════ VISTA: SHEETS (cualquier hoja conectada) ══════════ -->
                     <div class="inv-view-panel" data-view="sheets" id="invViewSheets">
-                        <!-- Toolbar estilo Sheets/Excel (sin herramientas por el momento) -->
-                        <div class="sheet-toolbar" id="sheetToolbar">
-                            <!-- Intencionalmente vacío por ahora -->
-                        </div>
+                        <div class="profile-card" style="margin-top:0;">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-grid-alt"></i>
+                                    <h2>Inventario (Google Sheets)</h2>
+                                </div>
+                                <div class="status-badge disconnected" id="sheetInvStatusBadge">
+                                    <span class="status-indicator"></span>
+                                    <span id="sheetInvStatusText">No conectado</span>
+                                </div>
+                            </div>
 
-                        <!-- Hoja de inventario -->
-                        <div class="sheet-container">
-                            <table class="sheet-table">
-                                <tbody id="sheetBody">
-                                    <!-- Filas renderizadas dinámicamente por inventory.js -->
-                                </tbody>
-                            </table>
+                            <!-- Formulario de conexión (visible si no hay hoja conectada) -->
+                            <div id="sheetInvConnectForm" class="api-key-form">
+                                <div class="input-group">
+                                    <label class="input-label" for="sheetInvUrlInput">
+                                        <i class="lni lni-link"></i>
+                                        <span>Enlace o ID de tu Google Sheet de inventario</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="text" id="sheetInvUrlInput" class="api-key-input" placeholder="https://docs.google.com/spreadsheets/d/…">
+                                    </div>
+                                    <small class="input-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span>Se muestran las columnas y filas tal como estén en tu hoja — no necesitas acomodarla a ningún formato. Necesitas tener Google conectado desde Integraciones antes de vincularla aquí.</span>
+                                    </small>
+                                </div>
+                                <div class="card-actions" style="margin-top:1rem;">
+                                    <button type="button" class="btn btn-connect" id="btnConnectSheetInv">
+                                        <i class="lni lni-link"></i>
+                                        <span>Conectar hoja</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Info + acciones (visible si ya está conectada) -->
+                            <div id="sheetInvConnectionInfo" class="connection-info" style="display:none;">
+                                <div class="connection-details">
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Hoja:</span>
+                                        <a href="#" id="sheetInvLink" class="connection-link" target="_blank" rel="noopener">
+                                            <span>Abrir en Google Sheets</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Conectada:</span>
+                                        <span class="connection-value" id="sheetInvConnectedAt">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-actions" id="sheetInvManageActions" style="display:none;">
+                                <button type="button" class="btn btn-secondary" id="btnRefreshSheetInv">
+                                    <i class="lni lni-reload"></i>
+                                    <span>Actualizar</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btnChangeSheetInv">
+                                    <i class="lni lni-pencil"></i>
+                                    <span>Cambiar hoja</span>
+                                </button>
+                                <button type="button" class="btn btn-disconnect" id="btnDisconnectSheetInv">
+                                    <i class="lni lni-unlink"></i>
+                                    <span>Desconectar</span>
+                                </button>
+                            </div>
+
+                            <!-- Barra de herramientas -->
+                            <div class="sheet-toolbar" id="sheetToolbar" style="display:none; margin-top:1rem;">
+                                <button type="button" class="sheet-toolbar-btn" id="btnOpenPhotoColConfig" title="Configurar columna de fotos">
+                                    <i class="lni lni-camera"></i>
+                                </button>
+                                <button type="button" class="sheet-toolbar-btn" id="btnOpenAlbumColConfig" title="Configurar columna de álbum">
+                                    <i class="lni lni-link"></i>
+                                </button>
+                                <span class="sheet-toolbar-divider"></span>
+                                <button type="button" class="sheet-toolbar-action" id="btnOpenAiUpload" title="Subir foto — la IA detecta el VIN">
+                                    <i class="lni lni-cloud-upload"></i>
+                                    <span>Subir foto (IA)</span>
+                                </button>
+                            </div>
+
+                            <!-- Hoja de inventario -->
+                            <div class="sheet-container" id="sheetInvContainer" style="display:none;">
+                                <table class="sheet-table">
+                                    <tbody id="sheetBody">
+                                        <!-- Filas renderizadas dinámicamente por inventory.js -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="sheet-footnote" id="sheetInvFootnote" style="display:none;">
+                                <i class="lni lni-reload"></i>
+                                <span id="sheetInvLastSync"></span>
+                            </div>
+
+                            <!-- Estado vacío (conectada pero sin filas todavía) -->
+                            <div class="empty-list-hint" id="sheetInvEmpty" style="display:none; margin-top:1.5rem;">
+                                <i class="lni lni-package"></i>
+                                <span>La hoja está vacía (o solo tiene encabezados).</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: configurar en qué columna van las fotos/álbum -->
+    <div class="modal-overlay" id="columnConfigModalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="lni lni-camera"></i><span>Columnas de fotos</span></h3>
+                <button type="button" class="modal-close" id="btnCloseColumnConfig" aria-label="Cerrar">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label" for="sheetInvPhotoColSelect">
+                        <i class="lni lni-image"></i>
+                        <span>¿En qué columna van las fotos?</span>
+                    </label>
+                    <select id="sheetInvPhotoColSelect" class="api-key-input"></select>
+                </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label" for="sheetInvAlbumColSelect">
+                        <i class="lni lni-link"></i>
+                        <span>¿Y el link del álbum? (opcional)</span>
+                    </label>
+                    <select id="sheetInvAlbumColSelect" class="api-key-input">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelColumnConfig">Cancelar</button>
+                <button type="button" class="btn btn-connect" id="btnSaveInventoryColumns">
+                    <span>Guardar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: subir foto con detección de VIN por IA (SOLO FRONTEND por ahora
+         — falta conectar el backend de Gemini) -->
+    <div class="modal-overlay" id="aiUploadModalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="lni lni-cloud-upload"></i><span>Subir foto (IA detecta el VIN)</span></h3>
+                <button type="button" class="modal-close" id="btnCloseAiUpload" aria-label="Cerrar">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint-text">Sube una o varias fotos donde se vea el VIN. La IA lo va a leer y va a buscar sola la fila correspondiente.</p>
+                <div class="ai-upload-dropzone" id="aiUploadDropzone">
+                    <i class="lni lni-camera"></i>
+                    <span>Elegir fotos…</span>
+                </div>
+                <input type="file" id="aiUploadFileInput" accept="image/*" multiple hidden>
+                <div id="aiUploadPreview" class="ai-upload-preview"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelAiUpload">Cancelar</button>
+                <button type="button" class="btn btn-connect" id="btnSubmitAiUpload">
+                    <i class="lni lni-cloud-upload"></i>
+                    <span>Subir y detectar</span>
+                </button>
             </div>
         </div>
     </div>

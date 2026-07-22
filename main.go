@@ -321,6 +321,15 @@ func main() {
 			protected.GET("/google/status/:agent_id", googleIntegrationHandler.GetIntegrationStatus)
 			protected.POST("/google/disconnect/:agent_id", googleIntegrationHandler.DisconnectGoogle)
 			protected.POST("/google/appointments", googleIntegrationHandler.CreateAppointment)
+
+			// 📦 INVENTARIO (VIN + fotos vía IA) — hoja de Sheets del cliente
+			protected.GET("/inventory-sheets/status/:agent_id", googleIntegrationHandler.GetInventorySheetStatus)
+			protected.POST("/inventory-sheets/connect/:agent_id", googleIntegrationHandler.ConnectInventorySheet)
+			protected.POST("/inventory-sheets/disconnect/:agent_id", googleIntegrationHandler.DisconnectInventorySheet)
+			protected.GET("/inventory-sheets/rows/:agent_id", googleIntegrationHandler.GetInventorySheetRows)
+			protected.POST("/inventory-sheets/columns/:agent_id", googleIntegrationHandler.SetInventoryColumns)
+			protected.POST("/inventory-sheets/upload/:agent_id", googleIntegrationHandler.UploadInventoryRowPhotos)
+			protected.PATCH("/inventory-sheets/cell/:agent_id", googleIntegrationHandler.UpdateInventoryCell)
 		}
 
 		// ============================================

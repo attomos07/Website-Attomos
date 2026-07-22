@@ -36,6 +36,7 @@ const STATUS_BADGE_KEY_MAP = {
     stripeConnectStatusBadge:   { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
     paymentsStatusBadge:        { connected: 'integ_status_configured', disconnected: 'integ_status_without_config' },
     repairDeskStatusBadge:      { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    sheetsInventoryStatusBadge: { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
     srStatusBadge:               { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
 };
 
@@ -254,6 +255,9 @@ async function selectAgent(option) {
 
     // RepairDesk: disponible para todos los bots
     await loadRepairDeskStatus(selectedAgentId);
+
+    // Sheets Inventarios (VIN + fotos vía IA): disponible para todos los bots
+    await loadInventorySheetStatus(selectedAgentId);
 
     // SoftRestaurant: disponible para todos los bots
     await loadSoftRestaurantStatus(selectedAgentId);
@@ -2587,6 +2591,44 @@ function updateRepairDeskUI(data) {
 
         const saveBtn = document.getElementById('btnSaveRepairDesk');
         if (saveBtn)    saveBtn.disabled = true;
+    }
+}
+
+// ============================================
+// SHEETS INVENTARIOS (VIN + fotos vía IA)
+// Esta card es un launcher hacia /inventory: el formulario para pegar el
+// enlace de la hoja y la tabla en vivo viven ahí, no aquí. Aquí solo se
+// refleja si ya está conectada o no.
+// ============================================
+
+async function loadInventorySheetStatus(agentId) {
+    if (!agentId) return;
+    try {
+        const res = await fetch(`/api/inventory-sheets/status/${agentId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        updateInventorySheetCardUI(data);
+    } catch (e) {
+        console.error('Inventory sheet status error:', e);
+    }
+}
+
+function updateInventorySheetCardUI(data) {
+    const badge   = document.getElementById('sheetsInventoryStatusBadge');
+    const btnText = document.getElementById('sheetsInventoryBtnText');
+
+    if (data.connected) {
+        if (badge) {
+            badge.className = 'status-badge connected';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected', 'Conectado')}`;
+        }
+        if (btnText) btnText.textContent = t('integ_inv_btn_view', 'Ver Inventario');
+    } else {
+        if (badge) {
+            badge.className = 'status-badge disconnected';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected', 'No conectado')}`;
+        }
+        if (btnText) btnText.textContent = t('integ_inv_btn_connect', 'Conectar Inventario');
     }
 }
 
