@@ -251,6 +251,9 @@ let sheetHeaders = [];
 let sheetRows = [];
 let inventoryPhotoColumn = null;
 let inventoryAlbumColumn = null;
+let inventoryFileNameColumns = [];
+let hasOwnGeminiKey = false;
+let hasSharedGeminiKey = false;
 
 function extractSpreadsheetId(input) {
     // Acepta tanto la URL completa (https://docs.google.com/spreadsheets/d/<ID>/edit#gid=0)
@@ -306,6 +309,10 @@ function applySheetStatus(data) {
         }
         inventoryPhotoColumn = data.photo_column || null;
         inventoryAlbumColumn = data.album_column || null;
+        inventoryFileNameColumns = data.file_name_columns || [];
+        hasOwnGeminiKey = !!data.has_own_gemini_key;
+        hasSharedGeminiKey = !!data.has_shared_gemini_key;
+        updateGeminiKeyUI();
     } else {
         badge?.classList.remove('connected');
         badge?.classList.add('disconnected');
@@ -409,6 +416,7 @@ function openColumnConfigModal(focusField) {
     const overlay = document.getElementById('columnConfigModalOverlay');
     const photoSel = document.getElementById('sheetInvPhotoColSelect');
     const albumSel = document.getElementById('sheetInvAlbumColSelect');
+    const nameColsList = document.getElementById('sheetInvNameColsList');
     if (!overlay || !sheetHeaders.length) return;
 
     if (photoSel) {
@@ -419,6 +427,20 @@ function openColumnConfigModal(focusField) {
         albumSel.innerHTML = '<option value="">Ninguna</option>'
             + sheetHeaders.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
         albumSel.value = inventoryAlbumColumn || '';
+    }
+    if (nameColsList) {
+        nameColsList.innerHTML = sheetHeaders.map(h => {
+            const checked = inventoryFileNameColumns.includes(h);
+            return `<label class="file-name-col-chip${checked ? ' checked' : ''}">
+                <input type="checkbox" value="${escapeHtml(h)}" ${checked ? 'checked' : ''}>
+                <span>${escapeHtml(h)}</span>
+            </label>`;
+        }).join('');
+        nameColsList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                cb.closest('.file-name-col-chip')?.classList.toggle('checked', cb.checked);
+            });
+        });
     }
 
     overlay.classList.add('open');
@@ -438,6 +460,9 @@ async function saveInventoryColumns() {
     if (!currentAgentId) return;
     const photoColumn = document.getElementById('sheetInvPhotoColSelect')?.value;
     const albumColumn = document.getElementById('sheetInvAlbumColSelect')?.value || '';
+    const fileNameColumns = Array.from(
+        document.querySelectorAll('#sheetInvNameColsList input[type="checkbox"]:checked')
+    ).map(cb => cb.value);
     if (!photoColumn) return;
 
     const btn = document.getElementById('btnSaveInventoryColumns');
@@ -448,13 +473,14 @@ async function saveInventoryColumns() {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ photo_column: photoColumn, album_column: albumColumn }),
+            body: JSON.stringify({ photo_column: photoColumn, album_column: albumColumn, file_name_columns: fileNameColumns }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'No se pudo guardar la configuración');
 
         inventoryPhotoColumn = data.photo_column || null;
         inventoryAlbumColumn = data.album_column || null;
+        inventoryFileNameColumns = data.file_name_columns || [];
         updateColumnConfigUI();
         closeColumnConfigModal();
         renderSheet(sheetHeaders, sheetRows); // vuelve a pintar para activar los botones de subida
@@ -564,6 +590,7 @@ async function disconnectSheetInventory() {
         sheetRows = [];
         inventoryPhotoColumn = null;
         inventoryAlbumColumn = null;
+        inventoryFileNameColumns = [];
         applySheetStatus({ connected: false });
         if (typeof showToast === 'function') showToast('success', 'Hoja desconectada');
     } catch (err) {
@@ -600,6 +627,17 @@ function wireSheetInventoryButtons() {
     });
     document.getElementById('aiUploadFileInput')?.addEventListener('change', renderAiUploadPreview);
 
+    document.getElementById('btnOpenGeminiKeyConfig')?.addEventListener('click', openGeminiKeyModal);
+    document.getElementById('btnCloseGeminiKey')?.addEventListener('click', closeGeminiKeyModal);
+    document.getElementById('btnCancelGeminiKey')?.addEventListener('click', closeGeminiKeyModal);
+    document.getElementById('btnSaveGeminiKey')?.addEventListener('click', saveGeminiKey);
+    document.getElementById('btnRemoveGeminiKey')?.addEventListener('click', removeGeminiKey);
+
+    const geminiOverlay = document.getElementById('geminiKeyModalOverlay');
+    geminiOverlay?.addEventListener('click', (e) => {
+        if (e.target === geminiOverlay) closeGeminiKeyModal();
+    });
+
     const aiOverlay = document.getElementById('aiUploadModalOverlay');
     aiOverlay?.addEventListener('click', (e) => {
         if (e.target === aiOverlay) closeAiUploadModal();
@@ -609,6 +647,7 @@ function wireSheetInventoryButtons() {
         if (e.key !== 'Escape') return;
         if (columnOverlay?.classList.contains('open')) closeColumnConfigModal();
         if (aiOverlay?.classList.contains('open')) closeAiUploadModal();
+        if (geminiOverlay?.classList.contains('open')) closeGeminiKeyModal();
     });
 }
 
@@ -680,9 +719,98 @@ async function submitAiUpload() {
         closeAiUploadModal();
         await loadSheetRows();
     } catch (err) {
-        if (typeof showToast === 'function') showToast('error', err.message || 'La detección por IA todavía no está conectada');
+        if (typeof showToast === 'function') showToast('error', err.message || 'No se pudo procesar la foto con IA');
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
+}
+
+/* ============================================
+   API KEY DE GEMINI PROPIA DEL AGENTE (opcional)
+   Si no se configura, el backend usa el fallback
+   compartido GEMINI_VISION_API_KEY.
+   ============================================ */
+
+function updateGeminiKeyUI() {
+    const btn = document.getElementById('btnOpenGeminiKeyConfig');
+    if (!btn) return;
+    btn.classList.toggle('needs-config', !hasOwnGeminiKey && !hasSharedGeminiKey);
+    btn.title = hasOwnGeminiKey ? 'Ya tienes tu propia API Key de Gemini' : 'Configura tu propia API Key de Gemini (opcional)';
+}
+
+function openGeminiKeyModal() {
+    const overlay = document.getElementById('geminiKeyModalOverlay');
+    const input = document.getElementById('geminiKeyInput');
+    const hint = document.getElementById('geminiKeyStatusHint');
+    const removeBtn = document.getElementById('btnRemoveGeminiKey');
+    if (!overlay) return;
+
+    if (input) input.value = '';
+    if (hint) {
+        hint.textContent = hasOwnGeminiKey
+            ? 'Ya tienes una API Key propia configurada. Pega una nueva para reemplazarla.'
+            : (hasSharedGeminiKey
+                ? 'Si no configuras una propia, se usa la key compartida de Attomos.'
+                : 'Todavía no hay ninguna key configurada (ni propia ni compartida) — la detección con IA no va a funcionar hasta que agregues una.');
+    }
+    if (removeBtn) removeBtn.style.display = hasOwnGeminiKey ? 'inline-flex' : 'none';
+
+    overlay.classList.add('open');
+}
+
+function closeGeminiKeyModal() {
+    document.getElementById('geminiKeyModalOverlay')?.classList.remove('open');
+}
+
+async function saveGeminiKey() {
+    if (!currentAgentId) return;
+    const input = document.getElementById('geminiKeyInput');
+    const apiKey = input?.value?.trim();
+    if (!apiKey) {
+        if (typeof showToast === 'function') showToast('error', 'Pega tu API Key de Gemini');
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveGeminiKey');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/gemini-key/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo guardar la API Key');
+
+        hasOwnGeminiKey = true;
+        updateGeminiKeyUI();
+        closeGeminiKeyModal();
+        if (typeof showToast === 'function') showToast('success', 'API Key de Gemini guardada');
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al guardar la API Key');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function removeGeminiKey() {
+    if (!currentAgentId) return;
+    try {
+        const res = await fetch(`/api/inventory-sheets/gemini-key/${currentAgentId}/remove`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo quitar la API Key');
+
+        hasOwnGeminiKey = false;
+        updateGeminiKeyUI();
+        closeGeminiKeyModal();
+        if (typeof showToast === 'function') showToast('success', 'API Key propia eliminada — ahora se usa la compartida');
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'Error al quitar la API Key');
     }
 }
 

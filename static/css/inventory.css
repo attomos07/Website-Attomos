@@ -502,6 +502,45 @@ body {
     line-height: 1.4;
 }
 
+/* Lista de checkboxes: columnas para nombrar fotos (una o varias) */
+.file-name-columns-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 0.6rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+}
+.file-name-col-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    font-size: 0.82rem;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+}
+.file-name-col-chip:hover {
+    border-color: #06b6d4;
+}
+.file-name-col-chip input[type="checkbox"] {
+    accent-color: #06b6d4;
+    cursor: pointer;
+}
+.file-name-col-chip.checked {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: #06b6d4;
+    color: #0891b2;
+    font-weight: 600;
+}
+
 /* ============================================
    CELDAS EDITABLES (texto/número) — se reflejan
    directo en la hoja real al confirmar

@@ -204,6 +204,17 @@ type Agent struct {
 	InventoryPhotoColumn string `gorm:"size:255" json:"inventoryPhotoColumn"`
 	InventoryAlbumColumn string `gorm:"size:255" json:"inventoryAlbumColumn"`
 
+	// API Key de Gemini PROPIA de este agente/cliente para detectar VIN en
+	// fotos (independiente de la del bot, que vive en el .env del servidor
+	// compartido o en GCP). Si está vacía, se usa GEMINI_VISION_API_KEY como
+	// fallback compartido.
+	InventoryGeminiAPIKey string `gorm:"type:text" json:"-"`
+
+	// Columnas elegidas por el usuario para nombrar las fotos que NO coinciden
+	// con el VIN detectado (ej. "Marca", o "Marca,Vehículo"). La foto donde sí
+	// se detectó el VIN siempre se nombra con el VIN mismo, sin importar esto.
+	InventoryFileNameColumns string `gorm:"size:500" json:"inventoryFileNameColumns"`
+
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

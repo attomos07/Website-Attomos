@@ -32,6 +32,10 @@ type UploadedPhoto struct {
 	Bytes    []byte
 	FileName string
 	MimeType string
+	// MatchesVIN: true si la IA detectó el VIN buscado en ESTA foto en
+	// particular (flujo de detección automática). Esa foto se nombra con el
+	// VIN; las demás usan la etiqueta de columnas configurada.
+	MatchesVIN bool
 }
 
 // UploadPhotosResult es lo que se le devuelve al frontend tras subir.
@@ -110,15 +114,39 @@ func indexOfHeader(headers []interface{}, name string) int {
 	return -1
 }
 
-// UploadPhotosToRow sube una o varias fotos a Drive para una fila YA
-// CONOCIDA (no requiere detección de VIN por IA) y escribe las fórmulas
-// resultantes en las columnas de Foto/Álbum configuradas por el usuario.
+// guessFileExtension determina la extensión según el mimeType, con respaldo
+// en el nombre original — mismo criterio que el Apps Script del cliente.
+func guessFileExtension(mimeType, fileName string) string {
+	switch mimeType {
+	case "image/jpeg", "image/jpg":
+		return ".jpg"
+	case "image/png":
+		return ".png"
+	case "image/webp":
+		return ".webp"
+	case "image/heic":
+		return ".heic"
+	case "image/heif":
+		return ".heif"
+	}
+	if idx := strings.LastIndex(fileName, "."); idx != -1 {
+		return fileName[idx:]
+	}
+	return ""
+}
+
+// UploadPhotosToRow sube una o varias fotos a Drive para una fila conocida
+// y escribe las fórmulas resultantes en las columnas de Foto/Álbum
+// configuradas por el usuario.
+// nameLabel es el nombre armado a partir de las columnas que el usuario
+// eligió (ej. "Toyota_Corolla") — se usa para las fotos que NO traen
+// MatchesVIN=true. Las que sí, se nombran con folderLabel (el VIN).
 func (s *GoogleSheetsService) UploadPhotosToRow(
 	ctx context.Context,
 	tokenJSON, spreadsheetID string,
 	rowNumber int,
 	photoColumn, albumColumn string,
-	folderLabel string,
+	folderLabel, nameLabel string,
 	photos []UploadedPhoto,
 ) (*UploadPhotosResult, error) {
 	if len(photos) == 0 {
@@ -170,8 +198,29 @@ func (s *GoogleSheetsService) UploadPhotosToRow(
 	}
 
 	var firstURL string
+	vinCount := 0
+	otherCount := 0
 	for i, p := range photos {
-		file := &drive.File{Name: p.FileName, Parents: []string{subfolder.Id}}
+		ext := guessFileExtension(p.MimeType, p.FileName)
+
+		var baseName string
+		if p.MatchesVIN {
+			vinCount++
+			if vinCount == 1 {
+				baseName = folderLabel
+			} else {
+				baseName = fmt.Sprintf("%s_%d", folderLabel, vinCount)
+			}
+		} else {
+			otherCount++
+			if nameLabel != "" {
+				baseName = fmt.Sprintf("Foto%d-%s", otherCount, nameLabel)
+			} else {
+				baseName = fmt.Sprintf("Foto%d", otherCount)
+			}
+		}
+
+		file := &drive.File{Name: baseName + ext, Parents: []string{subfolder.Id}}
 		created, err := driveSvc.Files.Create(file).
 			Media(bytes.NewReader(p.Bytes), googleapi.ContentType(p.MimeType)).
 			Fields("id").Do()
@@ -182,7 +231,10 @@ func (s *GoogleSheetsService) UploadPhotosToRow(
 			return nil, fmt.Errorf("error compartiendo foto: %w", err)
 		}
 		if i == 0 {
-			firstURL = "https://drive.google.com/uc?id=" + created.Id
+			// drive.google.com/uc?id=... cada vez lo bloquea más Google para
+			// "hotlinking" (regresa una página de confirmación en vez de la
+			// imagen). thumbnail?id=...&sz=w1000 sí está pensado para esto.
+			firstURL = "https://drive.google.com/thumbnail?id=" + created.Id + "&sz=w1000"
 		}
 	}
 

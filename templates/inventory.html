@@ -225,6 +225,9 @@
                                     <i class="lni lni-link"></i>
                                 </button>
                                 <span class="sheet-toolbar-divider"></span>
+                                <button type="button" class="sheet-toolbar-btn" id="btnOpenGeminiKeyConfig" title="Tu propia API Key de Gemini (opcional)">
+                                    <i class="lni lni-key"></i>
+                                </button>
                                 <button type="button" class="sheet-toolbar-action" id="btnOpenAiUpload" title="Subir foto — la IA detecta el VIN">
                                     <i class="lni lni-cloud-upload"></i>
                                     <span>Subir foto (IA)</span>
@@ -282,6 +285,17 @@
                         <option value="">Ninguna</option>
                     </select>
                 </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label">
+                        <i class="lni lni-tag"></i>
+                        <span>¿Con qué columnas nombrar las fotos? (opcional — puedes elegir varias)</span>
+                    </label>
+                    <div id="sheetInvNameColsList" class="file-name-columns-list"></div>
+                    <small class="input-hint">
+                        <i class="lni lni-information"></i>
+                        <span>La foto donde la IA detecta el VIN siempre se nombra con el VIN. Esto aplica a las demás — ej. si eliges "Marca" y "Vehículo", se llamarán "Foto1-Toyota_Corolla".</span>
+                    </small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="btnCancelColumnConfig">Cancelar</button>
@@ -316,6 +330,40 @@
                 <button type="button" class="btn btn-connect" id="btnSubmitAiUpload">
                     <i class="lni lni-cloud-upload"></i>
                     <span>Subir y detectar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: API Key de Gemini propia (opcional) -->
+    <div class="modal-overlay" id="geminiKeyModalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="lni lni-key"></i><span>Tu API Key de Gemini</span></h3>
+                <button type="button" class="modal-close" id="btnCloseGeminiKey" aria-label="Cerrar">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label" for="geminiKeyInput">
+                        <i class="lni lni-key"></i>
+                        <span>API Key (de aistudio.google.com/app/apikey)</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" id="geminiKeyInput" class="api-key-input" placeholder="AIzaSy...">
+                    </div>
+                    <small class="input-hint">
+                        <i class="lni lni-information"></i>
+                        <span id="geminiKeyStatusHint">Si no configuras una propia, se usa la key compartida de Attomos.</span>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnRemoveGeminiKey" style="display:none;">Quitar mi key</button>
+                <button type="button" class="btn btn-secondary" id="btnCancelGeminiKey">Cancelar</button>
+                <button type="button" class="btn btn-connect" id="btnSaveGeminiKey">
+                    <span>Guardar</span>
                 </button>
             </div>
         </div>

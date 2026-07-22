@@ -213,3 +213,95 @@ func (s *GoogleSheetsService) UpdateCellValue(ctx context.Context, tokenJSON, sp
 
 	return nil
 }
+
+// FindRowByVIN busca la fila cuyo valor en la columna "VIN" coincide con el
+// VIN detectado por la IA (comparación insensible a mayúsculas/espacios,
+// igual que hace el Apps Script del cliente). Devuelve 0 si no hay match.
+func (s *GoogleSheetsService) FindRowByVIN(ctx context.Context, tokenJSON, spreadsheetID, vin string) (int, error) {
+	sheetsSvc, err := s.CreateSheetsService(ctx, tokenJSON)
+	if err != nil {
+		return 0, err
+	}
+	sheetTitle, err := s.getFirstSheetTitle(ctx, tokenJSON, spreadsheetID)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := sheetsSvc.Spreadsheets.Values.Get(spreadsheetID, fmt.Sprintf("'%s'!A1:Z2000", sheetTitle)).Do()
+	if err != nil {
+		return 0, fmt.Errorf("error leyendo la hoja: %w", err)
+	}
+	if len(resp.Values) == 0 {
+		return 0, nil
+	}
+
+	vinColIdx := indexOfHeader(resp.Values[0], "VIN")
+	if vinColIdx == -1 {
+		return 0, fmt.Errorf(`la hoja no tiene una columna llamada "VIN"`)
+	}
+
+	target := strings.ToUpper(strings.TrimSpace(vin))
+	for i := 1; i < len(resp.Values); i++ {
+		row := resp.Values[i]
+		if vinColIdx >= len(row) {
+			continue
+		}
+		cellVal := strings.ToUpper(strings.TrimSpace(fmt.Sprintf("%v", row[vinColIdx])))
+		if cellVal == target {
+			return i + 1, nil
+		}
+	}
+	return 0, nil
+}
+
+var fileLabelSanitizeRe = regexp.MustCompile(`[^a-zA-Z0-9-]+`)
+
+func sanitizeFileLabelPart(s string) string {
+	s = fileLabelSanitizeRe.ReplaceAllString(strings.TrimSpace(s), "_")
+	return strings.Trim(s, "_")
+}
+
+// BuildRowLabel arma un nombre legible (ej. "Toyota_Corolla") a partir de las
+// columnas que el usuario eligió para nombrar fotos — pueden ser una o varias.
+// Se usa para las fotos que NO coinciden con el VIN detectado (esas siempre
+// se nombran con el VIN mismo).
+func (s *GoogleSheetsService) BuildRowLabel(ctx context.Context, tokenJSON, spreadsheetID string, rowNumber int, columns []string) (string, error) {
+	if len(columns) == 0 {
+		return "", nil
+	}
+
+	data, err := s.GetInventorySheetData(ctx, tokenJSON, spreadsheetID)
+	if err != nil {
+		return "", err
+	}
+
+	var row *InventoryRow
+	for i := range data.Rows {
+		if data.Rows[i].Row == rowNumber {
+			row = &data.Rows[i]
+			break
+		}
+	}
+	if row == nil {
+		return "", nil
+	}
+
+	colIdx := map[string]int{}
+	for i, h := range data.Headers {
+		colIdx[h] = i
+	}
+
+	parts := []string{}
+	for _, colName := range columns {
+		idx, ok := colIdx[colName]
+		if !ok || idx >= len(row.Cells) || row.Cells[idx].Text == "" {
+			continue
+		}
+		part := sanitizeFileLabelPart(row.Cells[idx].Text)
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+
+	return strings.Join(parts, "_"), nil
+}

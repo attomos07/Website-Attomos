@@ -330,6 +330,9 @@ func main() {
 			protected.POST("/inventory-sheets/columns/:agent_id", googleIntegrationHandler.SetInventoryColumns)
 			protected.POST("/inventory-sheets/upload/:agent_id", googleIntegrationHandler.UploadInventoryRowPhotos)
 			protected.PATCH("/inventory-sheets/cell/:agent_id", googleIntegrationHandler.UpdateInventoryCell)
+			protected.POST("/inventory-sheets/detect-upload/:agent_id", googleIntegrationHandler.DetectAndUploadInventoryPhotos)
+			protected.POST("/inventory-sheets/gemini-key/:agent_id", googleIntegrationHandler.SetInventoryGeminiKey)
+			protected.POST("/inventory-sheets/gemini-key/:agent_id/remove", googleIntegrationHandler.RemoveInventoryGeminiKey)
 		}
 
 		// ============================================
