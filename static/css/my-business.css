@@ -1177,6 +1177,23 @@ textarea:focus {
   flex-shrink: 0;
 }
 
+.service-item.service-from-inventory {
+  border-color: #a5f3fc;
+}
+
+.service-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  background: rgba(6, 182, 212, 0.1);
+  color: #0891b2;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .service-item:hover { border-color: #06b6d4; }
 
 .service-item-row {

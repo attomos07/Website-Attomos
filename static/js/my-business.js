@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initSchedule();
     initHolidays();
     initServices();
+    startServicesAutoRefresh();
     initWorkers();
     initSaveButton();
     initBrandImages();
@@ -1313,6 +1314,48 @@ function showNotification(message, type = 'info') {
 // SERVICES
 // ============================================
 
+// ============================================
+// AUTO-REFRESCO DE SERVICIOS
+// Los productos sincronizados desde el inventario de Sheets (fromSheetRow>0)
+// pueden cambiar en cualquier momento desde allá. En vez de que el usuario
+// tenga que recargar la página para verlo, refrescamos solo la lista de
+// servicios cada cierto tiempo — sin tocarla si está escribiendo dentro de
+// esa sección justo en ese momento (para no interrumpir una edición).
+// ============================================
+
+let servicesAutoRefreshTimer = null;
+const SERVICES_AUTO_REFRESH_MS = 20000; // 20s
+
+function startServicesAutoRefresh() {
+    stopServicesAutoRefresh();
+    servicesAutoRefreshTimer = setInterval(() => {
+        if (document.hidden) return;
+        if (!activeBranchId) return;
+        const list = document.getElementById('servicesList');
+        if (list && list.contains(document.activeElement)) return; // no interrumpe una edición en curso
+        refreshServicesOnly();
+    }, SERVICES_AUTO_REFRESH_MS);
+}
+
+function stopServicesAutoRefresh() {
+    if (servicesAutoRefreshTimer) {
+        clearInterval(servicesAutoRefreshTimer);
+        servicesAutoRefreshTimer = null;
+    }
+}
+
+async function refreshServicesOnly() {
+    if (!activeBranchId) return;
+    try {
+        const res = await fetch(`/api/my-business/${activeBranchId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const branch = await res.json();
+        renderServices(branch.services || []);
+    } catch (e) {
+        console.warn('No se pudieron refrescar los productos:', e);
+    }
+}
+
 function initServices() {
     document.getElementById('btnAddService')?.addEventListener('click', addServiceItem);
 }
@@ -1339,6 +1382,8 @@ function addServiceItem(e, data = null) {
     const div = document.createElement('div');
     div.className = 'service-item';
     div.dataset.serviceId = id;
+    div.dataset.fromSheetRow = data?.fromSheetRow || 0;
+    if (data?.fromSheetRow) div.classList.add('service-from-inventory');
 
     const isPromo = data?.priceType === 'promo';
     const inStock = data?.inStock !== false; // true por defecto
@@ -1369,6 +1414,7 @@ function addServiceItem(e, data = null) {
     const imgUrls = data?.imageUrls || (data?.imageUrl ? [data.imageUrl] : []);
 
     div.innerHTML = `
+        ${data?.fromSheetRow ? `<div class="service-sync-badge" title="Este producto se actualiza solo desde tu inventario de Sheets"><i class="lni lni-reload"></i> Sincronizado desde inventario</div>` : ''}
         <div class="service-item-row">
             <input type="text" class="info-input service-title" placeholder="${t('mybiz_service_name','Nombre del servicio')}" value="${data?.title || ''}">
             <label class="stock-toggle" title="${inStock ? t('mybiz_in_stock','En existencia') : t('mybiz_out_of_stock','Agotado')}">

@@ -382,6 +382,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"promoDateEnd":    s.PromoDateEnd,
 			"inStock":         s.InStock,
 			"stockQty":        s.StockQty,
+			"fromSheetRow":    s.FromSheetRow,
 		}
 	}
 

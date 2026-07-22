@@ -215,6 +215,14 @@ type Agent struct {
 	// se detectó el VIN siempre se nombra con el VIN mismo, sin importar esto.
 	InventoryFileNameColumns string `gorm:"size:500" json:"inventoryFileNameColumns"`
 
+	// Vinculación con el catálogo de Mi Negocio (columnas elegidas por el
+	// usuario). InventoryPhotoColumn ya existe arriba y se reutiliza para la
+	// foto del producto. Vacío = esa columna no se vincula.
+	InventoryTitleColumn         string `gorm:"size:255" json:"inventoryTitleColumn"`
+	InventoryDescriptionColumn   string `gorm:"size:255" json:"inventoryDescriptionColumn"`
+	InventoryOriginalPriceColumn string `gorm:"size:255" json:"inventoryOriginalPriceColumn"`
+	InventoryPromoPriceColumn    string `gorm:"size:255" json:"inventoryPromoPriceColumn"`
+
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

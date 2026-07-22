@@ -486,8 +486,23 @@ body {
 .modal-body {
     padding: 1.25rem 1.5rem;
 }
+.modal-body-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+}
 .modal-body select.api-key-input {
     cursor: pointer;
+}
+.modal-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed #e5e7eb;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #06b6d4;
 }
 .modal-footer {
     display: flex;

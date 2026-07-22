@@ -107,6 +107,10 @@ func (h *GoogleIntegrationHandler) GetInventorySheetStatus(c *gin.Context) {
 		resp["has_own_gemini_key"] = agent.InventoryGeminiAPIKey != ""
 		resp["has_shared_gemini_key"] = os.Getenv("GEMINI_VISION_API_KEY") != ""
 		resp["file_name_columns"] = splitFileNameColumns(agent.InventoryFileNameColumns)
+		resp["title_column"] = agent.InventoryTitleColumn
+		resp["description_column"] = agent.InventoryDescriptionColumn
+		resp["original_price_column"] = agent.InventoryOriginalPriceColumn
+		resp["promo_price_column"] = agent.InventoryPromoPriceColumn
 	}
 	c.JSON(http.StatusOK, resp)
 }
@@ -203,11 +207,28 @@ func (h *GoogleIntegrationHandler) GetInventorySheetRows(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"headers":   data.Headers,
 		"rows":      data.Rows,
 		"last_sync": time.Now().Format(time.RFC3339),
-	})
+	}
+
+	// Sincroniza el catálogo de Mi Negocio automáticamente en cada lectura de
+	// la hoja (al abrir la vista o al darle "Actualizar") — así los cambios
+	// hechos directo en Sheets se reflejan solos, sin tener que volver a
+	// tocar el modal de columnas. Reutiliza los datos que ya se acaban de
+	// leer (no vuelve a llamar a la API de Sheets).
+	if agent.InventoryTitleColumn != "" {
+		count, syncErr := h.syncInventoryToCatalogWithData(agent, data)
+		if syncErr != nil {
+			log.Printf("⚠️  [Agent %d] auto-sync del catálogo falló: %v", agent.ID, syncErr)
+			resp["catalog_sync_error"] = syncErr.Error()
+		} else {
+			resp["synced_products"] = count
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // SetInventoryColumns — POST /api/inventory-sheets/columns/:agent_id
@@ -220,9 +241,13 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 	}
 
 	var body struct {
-		PhotoColumn     string   `json:"photo_column"`
-		AlbumColumn     string   `json:"album_column"`
-		FileNameColumns []string `json:"file_name_columns"`
+		PhotoColumn         string   `json:"photo_column"`
+		AlbumColumn         string   `json:"album_column"`
+		FileNameColumns     []string `json:"file_name_columns"`
+		TitleColumn         string   `json:"title_column"`
+		DescriptionColumn   string   `json:"description_column"`
+		OriginalPriceColumn string   `json:"original_price_column"`
+		PromoPriceColumn    string   `json:"promo_price_column"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
@@ -235,6 +260,10 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 
 	agent.InventoryPhotoColumn = strings.TrimSpace(body.PhotoColumn)
 	agent.InventoryAlbumColumn = strings.TrimSpace(body.AlbumColumn)
+	agent.InventoryTitleColumn = strings.TrimSpace(body.TitleColumn)
+	agent.InventoryDescriptionColumn = strings.TrimSpace(body.DescriptionColumn)
+	agent.InventoryOriginalPriceColumn = strings.TrimSpace(body.OriginalPriceColumn)
+	agent.InventoryPromoPriceColumn = strings.TrimSpace(body.PromoPriceColumn)
 
 	cleanCols := make([]string, 0, len(body.FileNameColumns))
 	for _, col := range body.FileNameColumns {
@@ -250,11 +279,29 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"photo_column":      agent.InventoryPhotoColumn,
-		"album_column":      agent.InventoryAlbumColumn,
-		"file_name_columns": splitFileNameColumns(agent.InventoryFileNameColumns),
-	})
+	resp := gin.H{
+		"photo_column":          agent.InventoryPhotoColumn,
+		"album_column":          agent.InventoryAlbumColumn,
+		"file_name_columns":     splitFileNameColumns(agent.InventoryFileNameColumns),
+		"title_column":          agent.InventoryTitleColumn,
+		"description_column":    agent.InventoryDescriptionColumn,
+		"original_price_column": agent.InventoryOriginalPriceColumn,
+		"promo_price_column":    agent.InventoryPromoPriceColumn,
+	}
+
+	// "Al asignarlos debería vincularse automáticamente": si ya quedó
+	// configurado el título, sincroniza de una vez con Mi Negocio.
+	if agent.InventoryTitleColumn != "" {
+		count, err := h.syncInventoryToCatalog(context.Background(), agent)
+		if err != nil {
+			log.Printf("⚠️  [Agent %d] error sincronizando catálogo tras guardar columnas: %v", agent.ID, err)
+			resp["sync_error"] = err.Error()
+		} else {
+			resp["synced_products"] = count
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // UploadInventoryRowPhotos — POST /api/inventory-sheets/upload/:agent_id
@@ -571,4 +618,156 @@ func (h *GoogleIntegrationHandler) RemoveInventoryGeminiKey(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "has_own_gemini_key": false})
+}
+
+// syncInventoryToCatalog lee la hoja y arma/actualiza los productos de Mi
+// Negocio a partir de las columnas que el usuario vinculó (título, descripción,
+// foto, precio original, precio promoción). SOLO toca los productos marcados
+// como venidos del inventario (FromSheetRow > 0) — los agregados a mano en Mi
+// Negocio (FromSheetRow == 0) se conservan tal cual, nunca se tocan ni se borran.
+func (h *GoogleIntegrationHandler) syncInventoryToCatalog(ctx context.Context, agent *models.Agent) (int, error) {
+	if agent.InventoryTitleColumn == "" {
+		return 0, nil // no vinculado todavía, no hace nada
+	}
+	if !agent.InventorySheetConnected || agent.InventorySheetID == "" || agent.GoogleToken == "" {
+		return 0, fmt.Errorf("la hoja de inventario no está conectada")
+	}
+
+	data, err := h.sheetsService.GetInventorySheetData(ctx, agent.GoogleToken, agent.InventorySheetID)
+	if err != nil {
+		return 0, err
+	}
+	return h.syncInventoryToCatalogWithData(agent, data)
+}
+
+// syncInventoryToCatalogWithData hace el mismo trabajo que syncInventoryToCatalog
+// pero reutilizando datos de la hoja ya leídos (para no volver a llamar a la
+// API de Sheets cuando quien llama ya los tiene, ej. GetInventorySheetRows).
+func (h *GoogleIntegrationHandler) syncInventoryToCatalogWithData(agent *models.Agent, data *services.InventorySheetData) (int, error) {
+	if agent.InventoryTitleColumn == "" {
+		return 0, nil
+	}
+	if agent.BranchID == 0 {
+		return 0, fmt.Errorf("este agente no tiene una sucursal (Mi Negocio) vinculada")
+	}
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", agent.BranchID, agent.UserID).First(&branch).Error; err != nil {
+		return 0, fmt.Errorf("no se encontró la sucursal vinculada a este agente: %w", err)
+	}
+
+	colIdx := map[string]int{}
+	for i, hdr := range data.Headers {
+		colIdx[hdr] = i
+	}
+	titleIdx, hasTitle := colIdx[agent.InventoryTitleColumn]
+	if !hasTitle {
+		return 0, fmt.Errorf("no se encontró la columna de título (%s)", agent.InventoryTitleColumn)
+	}
+	descIdx, hasDesc := colIdx[agent.InventoryDescriptionColumn]
+	photoIdx, hasPhoto := colIdx[agent.InventoryPhotoColumn]
+	origIdx, hasOrig := colIdx[agent.InventoryOriginalPriceColumn]
+	promoIdx, hasPromo := colIdx[agent.InventoryPromoPriceColumn]
+
+	cellText := func(row services.InventoryRow, idx int, ok bool) string {
+		if !ok || idx >= len(row.Cells) {
+			return ""
+		}
+		return row.Cells[idx].Text
+	}
+
+	newServices := []models.BranchService{}
+	for _, row := range data.Rows {
+		title := cellText(row, titleIdx, hasTitle)
+		if title == "" {
+			continue // sin título no se puede armar un producto para esta fila
+		}
+
+		svc := models.BranchService{Title: title, FromSheetRow: row.Row}
+		if hasDesc {
+			svc.Description = cellText(row, descIdx, hasDesc)
+		}
+		if hasPhoto && photoIdx < len(row.Cells) && row.Cells[photoIdx].Kind == "image" && row.Cells[photoIdx].URL != "" {
+			svc.ImageURL = row.Cells[photoIdx].URL
+			svc.ImageUrls = []string{row.Cells[photoIdx].URL}
+		}
+
+		orig := parsePriceText(cellText(row, origIdx, hasOrig))
+		promo := parsePriceText(cellText(row, promoIdx, hasPromo))
+		svc.OriginalPrice = orig
+		svc.PromoPrice = promo
+		switch {
+		case orig > 0 && promo > 0:
+			svc.PriceType = "promo"
+			svc.Price = promo
+		case promo > 0:
+			svc.PriceType = "promo"
+			svc.Price = promo
+		case orig > 0:
+			svc.PriceType = "normal"
+			svc.Price = orig
+		default:
+			svc.PriceType = "normal"
+			svc.Price = 0
+		}
+
+		newServices = append(newServices, svc)
+	}
+
+	kept := models.BranchServices{}
+	for _, s := range branch.Services {
+		if s.FromSheetRow == 0 {
+			kept = append(kept, s)
+		}
+	}
+	branch.Services = append(kept, newServices...)
+
+	if err := config.DB.Save(&branch).Error; err != nil {
+		return 0, fmt.Errorf("no se pudo guardar el catálogo: %w", err)
+	}
+
+	// Empuja el business_config.json actualizado a los AtomicBots conectados
+	// a esta sucursal — igual que hace SaveMyBusiness al guardar desde la UI.
+	syncAtomicBots(&branch)
+
+	return len(newServices), nil
+}
+
+// parsePriceText interpreta un valor de celda como precio (acepta "$479,900.00",
+// "479900", "233" — quita símbolo de moneda y separador de miles). Si no se
+// puede interpretar, devuelve 0 (no rompe la sincronización por un precio raro).
+func parsePriceText(s string) float64 {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0
+	}
+	cleaner := strings.NewReplacer("$", "", ",", "", " ", "")
+	v, err := strconv.ParseFloat(cleaner.Replace(s), 64)
+	if err != nil {
+		return 0
+	}
+	return v
+}
+
+// SyncInventoryProducts — POST /api/inventory-sheets/sync-products/:agent_id
+// Re-sincroniza manualmente (por si cambiaste datos en la hoja y no quieres
+// esperar al próximo guardado de columnas).
+func (h *GoogleIntegrationHandler) SyncInventoryProducts(c *gin.Context) {
+	agent, _, ok := h.getAgentForUser(c)
+	if !ok {
+		return
+	}
+	if agent.InventoryTitleColumn == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Primero elige qué columna es el título del producto"})
+		return
+	}
+
+	count, err := h.syncInventoryToCatalog(context.Background(), agent)
+	if err != nil {
+		log.Printf("❌ [Agent %d] sync-products: %v", agent.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"synced_products": count})
 }

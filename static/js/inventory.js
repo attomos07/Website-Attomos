@@ -252,6 +252,10 @@ let sheetRows = [];
 let inventoryPhotoColumn = null;
 let inventoryAlbumColumn = null;
 let inventoryFileNameColumns = [];
+let inventoryTitleColumn = null;
+let inventoryDescriptionColumn = null;
+let inventoryOriginalPriceColumn = null;
+let inventoryPromoPriceColumn = null;
 let hasOwnGeminiKey = false;
 let hasSharedGeminiKey = false;
 
@@ -310,9 +314,14 @@ function applySheetStatus(data) {
         inventoryPhotoColumn = data.photo_column || null;
         inventoryAlbumColumn = data.album_column || null;
         inventoryFileNameColumns = data.file_name_columns || [];
+        inventoryTitleColumn = data.title_column || null;
+        inventoryDescriptionColumn = data.description_column || null;
+        inventoryOriginalPriceColumn = data.original_price_column || null;
+        inventoryPromoPriceColumn = data.promo_price_column || null;
         hasOwnGeminiKey = !!data.has_own_gemini_key;
         hasSharedGeminiKey = !!data.has_shared_gemini_key;
         updateGeminiKeyUI();
+        sheetInvIsConnected = true;
     } else {
         badge?.classList.remove('connected');
         badge?.classList.add('disconnected');
@@ -323,6 +332,7 @@ function applySheetStatus(data) {
         if (container) container.style.display = 'none';
         if (footnote) footnote.style.display = 'none';
         if (empty) empty.style.display = 'none';
+        sheetInvIsConnected = false;
     }
 }
 
@@ -443,6 +453,19 @@ function openColumnConfigModal(focusField) {
         });
     }
 
+    // Selects de vinculación con Mi Negocio (título/descripción/precios)
+    const fillOptionalSelect = (id, currentValue, emptyLabel) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = `<option value="">${emptyLabel}</option>`
+            + sheetHeaders.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        sel.value = currentValue || '';
+    };
+    fillOptionalSelect('sheetInvTitleColSelect', inventoryTitleColumn, 'No vincular');
+    fillOptionalSelect('sheetInvDescColSelect', inventoryDescriptionColumn, 'Ninguna');
+    fillOptionalSelect('sheetInvOrigPriceColSelect', inventoryOriginalPriceColumn, 'Ninguna');
+    fillOptionalSelect('sheetInvPromoPriceColSelect', inventoryPromoPriceColumn, 'Ninguna');
+
     overlay.classList.add('open');
     // Si vinimos del ícono de álbum, deja el foco ahí en vez de en el de fotos
     if (focusField === 'album') {
@@ -463,6 +486,10 @@ async function saveInventoryColumns() {
     const fileNameColumns = Array.from(
         document.querySelectorAll('#sheetInvNameColsList input[type="checkbox"]:checked')
     ).map(cb => cb.value);
+    const titleColumn = document.getElementById('sheetInvTitleColSelect')?.value || '';
+    const descriptionColumn = document.getElementById('sheetInvDescColSelect')?.value || '';
+    const originalPriceColumn = document.getElementById('sheetInvOrigPriceColSelect')?.value || '';
+    const promoPriceColumn = document.getElementById('sheetInvPromoPriceColSelect')?.value || '';
     if (!photoColumn) return;
 
     const btn = document.getElementById('btnSaveInventoryColumns');
@@ -473,7 +500,15 @@ async function saveInventoryColumns() {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ photo_column: photoColumn, album_column: albumColumn, file_name_columns: fileNameColumns }),
+            body: JSON.stringify({
+                photo_column: photoColumn,
+                album_column: albumColumn,
+                file_name_columns: fileNameColumns,
+                title_column: titleColumn,
+                description_column: descriptionColumn,
+                original_price_column: originalPriceColumn,
+                promo_price_column: promoPriceColumn,
+            }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'No se pudo guardar la configuración');
@@ -481,10 +516,23 @@ async function saveInventoryColumns() {
         inventoryPhotoColumn = data.photo_column || null;
         inventoryAlbumColumn = data.album_column || null;
         inventoryFileNameColumns = data.file_name_columns || [];
+        inventoryTitleColumn = data.title_column || null;
+        inventoryDescriptionColumn = data.description_column || null;
+        inventoryOriginalPriceColumn = data.original_price_column || null;
+        inventoryPromoPriceColumn = data.promo_price_column || null;
         updateColumnConfigUI();
         closeColumnConfigModal();
         renderSheet(sheetHeaders, sheetRows); // vuelve a pintar para activar los botones de subida
-        if (typeof showToast === 'function') showToast('success', 'Listo — ya puedes subir fotos desde la tabla');
+
+        if (typeof showToast === 'function') {
+            if (data.sync_error) {
+                showToast('error', 'Columnas guardadas, pero no se pudo vincular con Mi Negocio: ' + data.sync_error);
+            } else if (typeof data.synced_products === 'number') {
+                showToast('success', `Vinculado — ${data.synced_products} producto(s) en Mi Negocio`);
+            } else {
+                showToast('success', 'Listo — ya puedes subir fotos desde la tabla');
+            }
+        }
     } catch (err) {
         if (typeof showToast === 'function') showToast('error', err.message || 'Error al guardar la configuración');
     } finally {
@@ -591,6 +639,10 @@ async function disconnectSheetInventory() {
         inventoryPhotoColumn = null;
         inventoryAlbumColumn = null;
         inventoryFileNameColumns = [];
+        inventoryTitleColumn = null;
+        inventoryDescriptionColumn = null;
+        inventoryOriginalPriceColumn = null;
+        inventoryPromoPriceColumn = null;
         applySheetStatus({ connected: false });
         if (typeof showToast === 'function') showToast('success', 'Hoja desconectada');
     } catch (err) {
@@ -832,6 +884,26 @@ const IS_EMBED_MODE = params.get('embed') === '1';
    TOGGLE DE VISTA — Negocio / Sheets
    ============================================ */
 
+let sheetInvIsConnected = false;
+let sheetAutoRefreshTimer = null;
+const SHEET_AUTO_REFRESH_MS = 45000; // cada 45s mientras la vista de Sheets esté abierta
+
+function startSheetAutoRefresh() {
+    stopSheetAutoRefresh();
+    sheetAutoRefreshTimer = setInterval(() => {
+        if (document.hidden) return; // no gastar llamadas con la pestaña en segundo plano
+        if (!sheetInvIsConnected) return;
+        loadSheetRows();
+    }, SHEET_AUTO_REFRESH_MS);
+}
+
+function stopSheetAutoRefresh() {
+    if (sheetAutoRefreshTimer) {
+        clearInterval(sheetAutoRefreshTimer);
+        sheetAutoRefreshTimer = null;
+    }
+}
+
 function setActiveView(view) {
     document.querySelectorAll('.inv-view-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
@@ -839,6 +911,14 @@ function setActiveView(view) {
     document.querySelectorAll('.inv-view-panel').forEach(panel => {
         panel.classList.toggle('active', panel.dataset.view === view);
     });
+
+    // Mientras se está viendo la hoja, se refresca sola (y con eso, también
+    // el catálogo de Mi Negocio — ver GetInventorySheetRows en el backend).
+    if (view === 'sheets') {
+        startSheetAutoRefresh();
+    } else {
+        stopSheetAutoRefresh();
+    }
 }
 
 function initViewToggle() {

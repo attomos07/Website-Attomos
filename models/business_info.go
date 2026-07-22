@@ -93,6 +93,12 @@ type BranchService struct {
 	PromoDateEnd    string   `json:"promoDateEnd"`    // "2025-02-28" cuando type="range"
 	InStock         bool     `json:"inStock"`         // true = en existencia, false = agotado
 	StockQty        *int     `json:"stockQty"`        // nil = sin control de inventario; 0+ = unidades
+
+	// FromSheetRow: 0 si el producto se agregó a mano en Mi Negocio; > 0 si
+	// viene sincronizado del inventario de Sheets (fila real de la hoja).
+	// La sincronización de inventario SOLO toca/reemplaza los productos con
+	// este campo > 0 — los agregados a mano nunca se tocan.
+	FromSheetRow int `json:"fromSheetRow,omitempty"`
 }
 
 type BranchServices []BranchService

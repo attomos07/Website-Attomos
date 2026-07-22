@@ -333,6 +333,7 @@ func main() {
 			protected.POST("/inventory-sheets/detect-upload/:agent_id", googleIntegrationHandler.DetectAndUploadInventoryPhotos)
 			protected.POST("/inventory-sheets/gemini-key/:agent_id", googleIntegrationHandler.SetInventoryGeminiKey)
 			protected.POST("/inventory-sheets/gemini-key/:agent_id/remove", googleIntegrationHandler.RemoveInventoryGeminiKey)
+			protected.POST("/inventory-sheets/sync-products/:agent_id", googleIntegrationHandler.SyncInventoryProducts)
 		}
 
 		// ============================================

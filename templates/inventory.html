@@ -259,16 +259,16 @@
         </div>
     </div>
 
-    <!-- Modal: configurar en qué columna van las fotos/álbum -->
+    <!-- Modal: configurar columnas (fotos/álbum + vinculación con Mi Negocio) -->
     <div class="modal-overlay" id="columnConfigModalOverlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3><i class="lni lni-camera"></i><span>Columnas de fotos</span></h3>
+                <h3><i class="lni lni-camera"></i><span>Configurar columnas</span></h3>
                 <button type="button" class="modal-close" id="btnCloseColumnConfig" aria-label="Cerrar">
                     <i class="lni lni-close"></i>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body modal-body-scroll">
                 <div class="input-group">
                     <label class="input-label" for="sheetInvPhotoColSelect">
                         <i class="lni lni-image"></i>
@@ -296,6 +296,51 @@
                         <span>La foto donde la IA detecta el VIN siempre se nombra con el VIN. Esto aplica a las demás — ej. si eliges "Marca" y "Vehículo", se llamarán "Foto1-Toyota_Corolla".</span>
                     </small>
                 </div>
+
+                <div class="modal-section-divider">
+                    <i class="lni lni-shopping-basket"></i>
+                    <span>Vincular con Mi Negocio (opcional)</span>
+                </div>
+                <p class="modal-hint-text" style="margin-bottom:0.9rem;">
+                    Al asignar estas columnas, cada fila del inventario se sincroniza como un producto en Mi Negocio. Solo toca los productos que vengan del inventario — los que agregaste a mano no se tocan.
+                </p>
+
+                <div class="input-group">
+                    <label class="input-label" for="sheetInvTitleColSelect">
+                        <i class="lni lni-tag"></i>
+                        <span>Título del producto</span>
+                    </label>
+                    <select id="sheetInvTitleColSelect" class="api-key-input">
+                        <option value="">No vincular</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label" for="sheetInvDescColSelect">
+                        <i class="lni lni-text-align-left"></i>
+                        <span>Descripción del producto (opcional)</span>
+                    </label>
+                    <select id="sheetInvDescColSelect" class="api-key-input">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label" for="sheetInvOrigPriceColSelect">
+                        <i class="lni lni-dollar"></i>
+                        <span>Precio original (opcional)</span>
+                    </label>
+                    <select id="sheetInvOrigPriceColSelect" class="api-key-input">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label" for="sheetInvPromoPriceColSelect">
+                        <i class="lni lni-percentage"></i>
+                        <span>Precio promoción (opcional)</span>
+                    </label>
+                    <select id="sheetInvPromoPriceColSelect" class="api-key-input">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="btnCancelColumnConfig">Cancelar</button>
@@ -305,6 +350,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Modal: subir foto con detección de VIN por IA (SOLO FRONTEND por ahora
          — falta conectar el backend de Gemini) -->
