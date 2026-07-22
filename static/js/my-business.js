@@ -1757,15 +1757,15 @@ function removeItem(btn, listId, hintId) {
 
 // ============================================
 // INVENTARIO
+// La vista (tabla de existencias + toggle a Sheets) ahora vive en
+// inventory.html, embebida en un <iframe id="inventoryFrame">. Aquí solo
+// calculamos las filas a partir del catálogo (.service-item, que sigue
+// viviendo en esta página) y se las mandamos por postMessage.
 // ============================================
 
-function refreshInventoryTable() {
-    const tbody  = document.getElementById('invTableBody');
-    const empty  = document.getElementById('invEmpty');
-    const table  = document.getElementById('invTable');
-    if (!tbody) return;
+let lastInventoryRows = [];
 
-    // Recopilar productos con existencias definidas (solo si es giro comercio)
+function refreshInventoryTable() {
     const rows = [];
     document.querySelectorAll('.service-item').forEach(item => {
         const title   = item.querySelector('.service-title')?.value?.trim();
@@ -1776,73 +1776,20 @@ function refreshInventoryTable() {
         const qty     = qtyEl && qtyEl.value !== '' ? parseInt(qtyEl.value, 10) : null;
         const inStock = stockCb ? stockCb.checked : true;
 
-        rows.push({ title, qty, inStock, imgUrl, item });
+        rows.push({ title, qty, inStock, imgUrl });
     });
 
-    if (rows.length === 0) {
-        if (table)  table.style.display  = 'none';
-        if (empty)  empty.style.display  = 'flex';
-        updateInvSummary(0, 0, 0);
-        return;
-    }
-
-    if (table)  table.style.display  = 'table';
-    if (empty)  empty.style.display  = 'none';
-
-    let cntOk = 0, cntLow = 0, cntOut = 0;
-
-    tbody.innerHTML = rows.map((r, idx) => {
-        let badgeClass, badgeText;
-        if (!r.inStock || r.qty === 0) {
-            badgeClass = 'inv-badge-out'; badgeText = 'Agotado'; cntOut++;
-        } else if (r.qty !== null && r.qty <= 5) {
-            badgeClass = 'inv-badge-low'; badgeText = 'Stock bajo'; cntLow++;
-        } else {
-            badgeClass = 'inv-badge-ok';  badgeText = 'En existencia'; cntOk++;
-        }
-
-        const qtyDisplay = r.qty !== null
-            ? `<span class="inv-qty-cell">${r.qty}</span>`
-            : `<span class="inv-qty-na">—</span>`;
-
-        const imgTag = r.imgUrl
-            ? `<img class="inv-prod-img" src="${r.imgUrl}" alt="${r.title}" onerror="this.style.display='none'">`
-            : `<div class="inv-prod-img" style="display:inline-block;"></div>`;
-
-        const adjHtml = r.qty !== null ? `
-            <div class="inv-adj-wrap">
-                <button type="button" class="inv-adj-btn" onclick="invAdjust(${idx}, -1)" title="Restar">−</button>
-                <input type="number" class="inv-adj-input" min="0" value="${r.qty}"
-                    data-inv-idx="${idx}" onchange="invSetQty(${idx}, this.value)" onclick="this.select()">
-                <button type="button" class="inv-adj-btn" onclick="invAdjust(${idx}, 1)" title="Sumar">+</button>
-            </div>
-        ` : `<span class="inv-qty-na">Sin control</span>`;
-
-        return `
-        <tr>
-            <td>
-                <div class="inv-prod-cell">
-                    ${imgTag}
-                    <span class="inv-prod-name">${r.title}</span>
-                </div>
-            </td>
-            <td class="inv-th-center"><span class="inv-badge ${badgeClass}">${badgeText}</span></td>
-            <td class="inv-th-center">${qtyDisplay}</td>
-            <td class="inv-adjust-cell">${adjHtml}</td>
-        </tr>`;
-    }).join('');
-
-    updateInvSummary(cntOk, cntLow, cntOut);
+    lastInventoryRows = rows;
+    sendInventoryRowsToFrame();
 }
 
-function updateInvSummary(ok, low, out) {
-    const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    setTxt('invCountOk',  ok);
-    setTxt('invCountLow', low);
-    setTxt('invCountOut', out);
+function sendInventoryRowsToFrame() {
+    const frame = document.getElementById('inventoryFrame');
+    if (!frame || !frame.contentWindow) return;
+    frame.contentWindow.postMessage({ type: 'attomos:inventory:rows', rows: lastInventoryRows }, window.location.origin);
 }
 
-// Ajustar qty desde botones +/-
+// Ajustar qty desde los botones +/- de la tabla (dentro del iframe)
 function invAdjust(rowIdx, delta) {
     const items = [...document.querySelectorAll('.service-item')].filter(item => {
         return item.querySelector('.service-title')?.value?.trim();
@@ -1854,10 +1801,10 @@ function invAdjust(rowIdx, delta) {
     const cur = parseInt(qtyInput.value, 10) || 0;
     const newVal = Math.max(0, cur + delta);
     qtyInput.value = newVal;
-    qtyInput.dispatchEvent(new Event('input'));
+    qtyInput.dispatchEvent(new Event('input')); // refreshInventoryTable ya está enganchado a este evento
 }
 
-// Ajustar qty directo desde la tabla
+// Ajustar qty directo desde el input de la tabla (dentro del iframe)
 function invSetQty(rowIdx, val) {
     const items = [...document.querySelectorAll('.service-item')].filter(item => {
         return item.querySelector('.service-title')?.value?.trim();
@@ -1870,6 +1817,19 @@ function invSetQty(rowIdx, val) {
     qtyInput.value = newVal;
     qtyInput.dispatchEvent(new Event('input'));
 }
+
+// Puente con el iframe de inventory.html
+window.addEventListener('message', (event) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data || {};
+    if (data.type === 'attomos:inventory:ready') {
+        sendInventoryRowsToFrame();
+    } else if (data.type === 'attomos:inventory:adjust') {
+        invAdjust(data.idx, data.delta);
+    } else if (data.type === 'attomos:inventory:setqty') {
+        invSetQty(data.idx, data.value);
+    }
+});
 
 // ============================================
 // NINDA BANNER — estado de visibilidad
@@ -2570,143 +2530,4 @@ function fmt(n) {
 function setText(id, val) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
-}
-// ============================================
-// REPAIRDESK INVENTORY SYNC — My Business
-// ============================================
-
-// Al cargar la página: verificar si hay integración activa
-document.addEventListener('DOMContentLoaded', function () {
-    initRepairDeskInventory();
-});
-
-async function initRepairDeskInventory() {
-    try {
-        // Obtener el primer agente disponible para consultar el status
-        const res = await fetch('/api/agents', { credentials: 'include' });
-        if (!res.ok) return;
-        const data = await res.json();
-        const agents = data.agents || [];
-        if (!agents.length) return;
-
-        // Usar el primer agente conectado (mismo criterio que integrations.js)
-        const agentId = agents[0].id;
-        await checkRepairDeskStatus(agentId);
-    } catch (e) {
-        console.warn('RepairDesk check skipped:', e);
-    }
-}
-
-async function checkRepairDeskStatus(agentId) {
-    try {
-        const res = await fetch(`/api/repairdesk/status/${agentId}`, { credentials: 'include' });
-        if (!res.ok) return;
-        const data = await res.json();
-
-        const syncBtn = document.getElementById('btnRdSyncInventory');
-        if (data.connected) {
-            // Mostrar botón Sync RepairDesk en la cabecera del inventario
-            if (syncBtn) {
-                syncBtn.style.display = 'inline-flex';
-                syncBtn.setAttribute('data-agent-id', agentId);
-                syncBtn.onclick = () => syncRepairDeskInventory(agentId);
-            }
-            // Cargar productos ya sincronizados
-            await loadRepairDeskInventory(agentId);
-        } else {
-            if (syncBtn) syncBtn.style.display = 'none';
-        }
-    } catch (e) {
-        console.warn('RepairDesk status error:', e);
-    }
-}
-
-async function syncRepairDeskInventory(agentId) {
-    const btn = document.getElementById('btnRdSyncInventory');
-    if (btn) { btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;"></div> Sincronizando...'; btn.disabled = true; }
-
-    try {
-        const res = await fetch(`/api/repairdesk/sync/${agentId}`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al sincronizar'); }
-        const data = await res.json();
-
-        // Recargar tabla
-        await loadRepairDeskInventory(agentId);
-
-        // Toast
-        if (typeof showToast === 'function') {
-            showToast('success', `Inventario RepairDesk actualizado: ${data.synced_count ?? ''} productos`);
-        }
-    } catch (err) {
-        if (typeof showToast === 'function') showToast('error', err.message || 'Error al sincronizar');
-    } finally {
-        if (btn) {
-            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:1em;height:1em;"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M7 12h10M7 8.5h6M7 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="1.5" fill="currentColor"/></svg> Sync RepairDesk`;
-            btn.disabled = false;
-        }
-    }
-}
-
-async function loadRepairDeskInventory(agentId) {
-    try {
-        const res = await fetch(`/api/repairdesk/inventory/${agentId}`, { credentials: 'include' });
-        if (!res.ok) return;
-        const data = await res.json();
-        renderRepairDeskInventory(data.items || [], data.last_sync);
-    } catch (e) {
-        console.warn('RepairDesk inventory load error:', e);
-    }
-}
-
-function renderRepairDeskInventory(items, lastSync) {
-    const section  = document.getElementById('rdInventorySection');
-    const tbody    = document.getElementById('rdInvTableBody');
-    const table    = document.getElementById('rdInvTable');
-    const empty    = document.getElementById('rdInvEmpty');
-    const syncLbl  = document.getElementById('rdLastSyncLabel');
-
-    if (!section) return;
-    section.style.display = 'block';
-
-    if (syncLbl && lastSync) {
-        const d = new Date(lastSync);
-        syncLbl.innerHTML = `<i class="lni lni-reload"></i> Último sync: ${d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}`;
-    }
-
-    if (!items.length) {
-        if (table) table.style.display = 'none';
-        if (empty) empty.style.display = 'flex';
-        return;
-    }
-
-    if (table) table.style.display = 'table';
-    if (empty) empty.style.display = 'none';
-
-    tbody.innerHTML = items.map(item => {
-        let badgeClass, badgeText;
-        const qty = item.quantity ?? item.qty ?? null;
-        const inStock = item.in_stock !== false && qty !== 0;
-
-        if (!inStock || qty === 0) {
-            badgeClass = 'inv-badge-out'; badgeText = 'Agotado';
-        } else if (qty !== null && qty <= 5) {
-            badgeClass = 'inv-badge-low'; badgeText = 'Stock bajo';
-        } else {
-            badgeClass = 'inv-badge-ok';  badgeText = 'En existencia';
-        }
-
-        const qtyDisplay = qty !== null ? `<span class="inv-qty-cell">${qty}</span>` : `<span class="inv-qty-na">—</span>`;
-        const sku = item.sku || item.part_number || '—';
-
-        return `
-        <tr>
-            <td><div class="inv-prod-cell"><span class="inv-prod-name">${item.name || item.title || 'Sin nombre'}</span></div></td>
-            <td class="inv-th-center"><span style="font-family:monospace;font-size:.8rem;color:#6b7280;">${sku}</span></td>
-            <td class="inv-th-center"><span class="inv-badge ${badgeClass}">${badgeText}</span></td>
-            <td class="inv-th-center">${qtyDisplay}</td>
-        </tr>`;
-    }).join('');
 }

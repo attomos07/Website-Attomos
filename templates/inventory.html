@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/inventory.css">
+
+    <!-- Sileo toast system (para los avisos de sync de RepairDesk) -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <link rel="stylesheet" href="/static/css/sileo.css">
+</head>
+<body>
+    <!-- Detecta el modo embed (cargado en el iframe del tab "Inventario" de
+         Mi Negocio) ANTES de pintar el sidebar/userbar, para evitar parpadeo -->
+    <script>
+        if (new URLSearchParams(window.location.search).get('embed') === '1') {
+            document.body.classList.add('embed-mode');
+        }
+    </script>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div id="sidebarWrap">
+            {{template "sidebar.html" .}}
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            <div id="userbarWrap">
+                {{template "userbar.html" .}}
+            </div>
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper" id="inventoryContentWrapper">
+                <div class="inventory-layout">
+                    <!-- Page Header (oculto en modo embed) -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-package"></i>
+                                <span>Inventario</span>
+                            </h1>
+                            <p class="page-subtitle">Existencias de tu negocio, o el inventario sincronizado desde Google Sheets vía IA (VIN + fotos a Drive)</p>
+                        </div>
+                    </div>
+
+                    <!-- Toggle de vista -->
+                    <div class="inv-view-tabs">
+                        <button type="button" class="inv-view-tab" data-view="negocio">
+                            <i class="lni lni-package"></i>
+                            <span>Existencias</span>
+                        </button>
+                        <button type="button" class="inv-view-tab" data-view="sheets">
+                            <i class="lni lni-grid-alt"></i>
+                            <span>Ver Sheets</span>
+                        </button>
+                    </div>
+
+                    <!-- ══════════ VISTA: EXISTENCIAS DEL NEGOCIO ══════════ -->
+                    <div class="inv-view-panel" data-view="negocio" id="invViewNegocio">
+                        <div class="profile-card" style="margin-top:0;">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-package"></i>
+                                    <h2>Inventario</h2>
+                                </div>
+                                <div class="card-header-actions">
+                                    <span class="inv-sync-hint"><i class="lni lni-reload"></i> <span>Se actualiza con tu menú</span></span>
+                                    <button type="button" class="btn-rd-sync" id="btnRdSyncInventory" style="display:none;" title="Sincronizar inventario desde RepairDesk">
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:1em;height:1em;"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M7 12h10M7 8.5h6M7 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
+                                        Sync RepairDesk
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <!-- Resumen de estado -->
+                                <div class="inv-summary-bar" id="invSummaryBar">
+                                    <div class="inv-summary-card inv-ok">
+                                        <span class="inv-sum-num" id="invCountOk">0</span>
+                                        <span class="inv-sum-lbl">En existencia</span>
+                                    </div>
+                                    <div class="inv-summary-card inv-low">
+                                        <span class="inv-sum-num" id="invCountLow">0</span>
+                                        <span class="inv-sum-lbl">Stock bajo (≤5)</span>
+                                    </div>
+                                    <div class="inv-summary-card inv-out">
+                                        <span class="inv-sum-num" id="invCountOut">0</span>
+                                        <span class="inv-sum-lbl">Agotados</span>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de inventario -->
+                                <div class="inv-table-wrap">
+                                    <table class="inv-table" id="invTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="inv-th-center">Estado</th>
+                                                <th class="inv-th-center">Existencias</th>
+                                                <th class="inv-th-center">Ajustar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="invTableBody">
+                                        </tbody>
+                                    </table>
+                                    <div class="empty-list-hint" id="invEmpty" style="display:none;">
+                                        <i class="lni lni-package"></i>
+                                        <span>Agrega productos con existencias en la sección</span> <strong>Menú / Catálogo</strong> <span>para verlos aquí.</span>
+                                    </div>
+                                </div>
+
+                                <!-- ── Productos importados de RepairDesk ── -->
+                                <div id="rdInventorySection" style="display:none; margin-top:1.5rem;">
+                                    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
+                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:1.1rem;height:1.1rem;color:#f97316;flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M7 12h10M7 8.5h6M7 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
+                                        <span style="font-weight:700;font-size:.9rem;color:#374151;">Inventario RepairDesk</span>
+                                        <span class="inv-sync-hint" id="rdLastSyncLabel" style="margin-left:auto;"></span>
+                                    </div>
+                                    <div class="inv-table-wrap">
+                                        <table class="inv-table" id="rdInvTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Parte / Producto</th>
+                                                    <th class="inv-th-center">SKU</th>
+                                                    <th class="inv-th-center">Estado</th>
+                                                    <th class="inv-th-center">Existencias</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="rdInvTableBody"></tbody>
+                                        </table>
+                                        <div class="empty-list-hint" id="rdInvEmpty" style="display:none;">
+                                            <i class="lni lni-package"></i>
+                                            <span>Sin productos importados de RepairDesk. Usa el botón <strong>Sync RepairDesk</strong>.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /RepairDesk inventory -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════ VISTA: SHEETS (VIN + fotos vía IA) ══════════ -->
+                    <div class="inv-view-panel" data-view="sheets" id="invViewSheets">
+                        <!-- Toolbar estilo Sheets/Excel (sin herramientas por el momento) -->
+                        <div class="sheet-toolbar" id="sheetToolbar">
+                            <!-- Intencionalmente vacío por ahora -->
+                        </div>
+
+                        <!-- Hoja de inventario -->
+                        <div class="sheet-container">
+                            <table class="sheet-table">
+                                <tbody id="sheetBody">
+                                    <!-- Filas renderizadas dinámicamente por inventory.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport (toasts) -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/inventory.js"></script>
+</body>
+</html>

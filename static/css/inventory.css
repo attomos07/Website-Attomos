@@ -1,0 +1,506 @@
+/* ============================================
+   INVENTORY PAGE CSS
+   Vista tipo hoja de cálculo para el inventario
+   sincronizado (VIN + fotos vía IA Gemini)
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+}
+
+/* Layout (igual que el resto de la app) */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    padding-top: 100px; /* Espacio para el userbar flotante */
+    padding-left: calc(2rem + 96px); /* Espacio para el sidebar flotante */
+    background: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.inventory-layout {
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   EMBED MODE — cuando esta página se carga
+   dentro del iframe del tab "Inventario" en
+   Mi Negocio (?embed=1)
+   ============================================ */
+
+.embed-mode #sidebarWrap,
+.embed-mode #userbarWrap {
+    display: none !important;
+}
+
+.embed-mode .content-wrapper {
+    padding: 1rem !important;
+}
+
+.embed-mode .page-header {
+    display: none;
+}
+
+.embed-mode .inventory-layout {
+    max-width: 100%;
+}
+
+/* ============================================
+   TOGGLE DE VISTA — Negocio / Sheets
+   ============================================ */
+
+.inv-view-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 0.3rem;
+    margin-bottom: 1.5rem;
+}
+
+.inv-view-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.1rem;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.inv-view-tab i {
+    font-size: 1rem;
+}
+
+.inv-view-tab:hover {
+    color: #1a1a1a;
+}
+
+.inv-view-tab.active {
+    background: #06b6d4;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(6, 182, 212, 0.35);
+}
+
+.inv-view-panel {
+    display: none;
+}
+
+.inv-view-panel.active {
+    display: block;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title i {
+    font-size: 2rem;
+    color: #06b6d4;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   TOOLBAR (estilo Sheets/Excel) — vacía por ahora
+   ============================================ */
+
+.sheet-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e1e3e6;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    /* Intencionalmente sin botones/íconos por ahora */
+}
+
+/* ============================================
+   SHEET CONTAINER
+   ============================================ */
+
+.sheet-container {
+    background: #ffffff;
+    border: 1px solid #e1e3e6;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    overflow: auto;
+    max-height: 70vh;
+}
+
+/* ============================================
+   SHEET TABLE — imitación visual de Google Sheets
+   ============================================ */
+
+.sheet-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: Arial, Roboto, sans-serif;
+    font-size: 13px;
+    color: #1e1e1e;
+    width: max-content;
+    min-width: 100%;
+}
+
+.sheet-table th,
+.sheet-table td {
+    border-right: 1px solid #e1e3e6;
+    border-bottom: 1px solid #e1e3e6;
+    padding: 5px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* Fila de letras de columna (A, B, C…) */
+.col-letter-row th {
+    background: #f8f9fa;
+    color: #5f6368;
+    font-weight: 400;
+    text-align: center;
+    height: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    border-bottom: 1px solid #d0d3d6;
+}
+
+/* Esquina superior izquierda */
+.corner-cell {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+}
+
+/* Columna de números de fila (1, 2, 3…) */
+.row-number-cell {
+    background: #f8f9fa;
+    color: #5f6368;
+    font-weight: 400;
+    text-align: center;
+    width: 34px;
+    min-width: 34px;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    border-right: 1px solid #d0d3d6;
+}
+
+/* Fila 1 (encabezados de columna tal como están escritos en el sheet) */
+.sheet-header-row td {
+    background: #ffffff;
+    font-weight: 400;
+}
+
+/* Celda "activa" seleccionada (imita el recuadro azul de Sheets) */
+.cell-selected {
+    outline: 2px solid #1a73e8;
+    outline-offset: -2px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Fila resaltada (Vendido) — rojo/rosa como en Sheets */
+.row-vendido td {
+    background: #f4cccc;
+}
+
+/* Fila vacía separadora */
+.row-empty td {
+    background: #ffffff;
+    height: 26px;
+}
+
+/* Anchos aproximados por columna */
+.col-vin { width: 100px; max-width: 100px; }
+.col-marca { width: 95px; max-width: 95px; }
+.col-vehiculo { width: 120px; max-width: 120px; }
+.col-color { width: 115px; max-width: 115px; }
+.col-anio { width: 60px; max-width: 60px; text-align: right !important; }
+.col-ubicacion { width: 115px; max-width: 115px; }
+.col-precio { width: 85px; max-width: 85px; text-align: right !important; }
+.col-dias { width: 75px; max-width: 75px; text-align: right !important; }
+.col-km { width: 90px; max-width: 90px; text-align: right !important; }
+.col-estatus { width: 90px; max-width: 90px; }
+.col-foto { width: 70px; max-width: 70px; }
+.col-subirfoto { width: 80px; max-width: 80px; text-align: center !important; }
+.col-album { width: 120px; max-width: 120px; }
+
+/* Checkbox estilo Sheets */
+.sheet-checkbox {
+    width: 14px;
+    height: 14px;
+    accent-color: #5f6368;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* Estatus "Vendido" como texto simple (igual que en el sheet) */
+.estatus-text {
+    color: #1e1e1e;
+}
+
+/* Enlace de álbum de fotos */
+.album-link {
+    color: #1155cc;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.album-link:hover {
+    text-decoration: underline;
+}
+
+/* Números */
+.num-cell {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   VISTA NEGOCIO — trasladado desde my-business
+   (tarjeta genérica + tabla de existencias)
+   ============================================ */
+
+.profile-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.card-title i {
+    font-size: 1.5rem;
+    color: #06b6d4;
+}
+
+.card-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.empty-list-hint {
+    grid-column: 1/-1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-list-hint i { font-size: 1.25rem; }
+
+.inv-sync-hint { font-size: 0.78rem; color: #6b7280; display: flex; align-items: center; gap: 4px; }
+.inv-sync-hint i { font-size: 0.85rem; }
+.btn-rd-sync {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .3rem .85rem;
+    border: 1.5px solid #f97316; border-radius: 8px;
+    background: white; color: #f97316;
+    font-size: .78rem; font-weight: 600; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+}
+.btn-rd-sync:hover { background: #f97316; color: #fff; }
+.btn-rd-sync:disabled { opacity: .6; cursor: not-allowed; }
+
+.inv-summary-bar { display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.inv-summary-card {
+    flex: 1; min-width: 100px; border-radius: 12px; padding: 14px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border: 1.5px solid transparent;
+}
+.inv-summary-card.inv-ok  { background: #ecfdf5; border-color: #bbf7d0; }
+.inv-summary-card.inv-low { background: #fffbeb; border-color: #fde68a; }
+.inv-summary-card.inv-out { background: #fef2f2; border-color: #fecaca; }
+.inv-sum-num { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.inv-summary-card.inv-ok  .inv-sum-num { color: #16a34a; }
+.inv-summary-card.inv-low .inv-sum-num { color: #d97706; }
+.inv-summary-card.inv-out .inv-sum-num { color: #ef4444; }
+.inv-sum-lbl { font-size: 0.75rem; color: #6b7280; text-align: center; }
+
+.inv-table-wrap { overflow-x: auto; }
+.inv-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.inv-table thead th {
+    text-align: left; padding: 10px 12px; background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb; color: #374151; font-weight: 600;
+    white-space: nowrap;
+}
+.inv-th-center { text-align: center !important; }
+.inv-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .15s; }
+.inv-table tbody tr:hover { background: #f9fafb; }
+.inv-table td { padding: 10px 12px; vertical-align: middle; }
+.inv-prod-name { font-weight: 600; color: #111827; }
+.inv-prod-img {
+    width: 38px; height: 38px; border-radius: 8px; object-fit: cover;
+    border: 1px solid #e5e7eb; margin-right: 10px; flex-shrink: 0;
+    background: #f3f4f6;
+}
+.inv-prod-cell { display: flex; align-items: center; }
+.inv-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+}
+.inv-badge-ok  { background: #dcfce7; color: #16a34a; }
+.inv-badge-low { background: #fef3c7; color: #d97706; }
+.inv-badge-out { background: #fee2e2; color: #ef4444; }
+.inv-qty-cell { text-align: center; font-weight: 700; font-size: 1rem; color: #111827; }
+.inv-qty-na { color: #9ca3af; font-size: 0.8rem; font-weight: 400; }
+.inv-adjust-cell { text-align: center; }
+.inv-adj-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.inv-adj-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+    background: #fff; cursor: pointer; font-size: 1rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: #374151; transition: all .15s; line-height: 1;
+}
+.inv-adj-btn:hover { background: #06b6d4; border-color: #06b6d4; color: #fff; }
+.inv-adj-input {
+    width: 52px; text-align: center; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 4px 6px; font-size: 0.9rem; font-weight: 700; color: #111827;
+    outline: none;
+}
+.inv-adj-input:focus { border-color: #06b6d4; }
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(6, 182, 212, 0.2);
+    border-top-color: #06b6d4;
+    border-radius: 50%;
+    animation: inv-spin 0.8s linear infinite;
+    display: inline-block;
+}
+@keyframes inv-spin { to { transform: rotate(360deg); } }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+        padding-top: 90px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .page-title i {
+        font-size: 1.5rem;
+    }
+
+    .sheet-container {
+        max-height: 60vh;
+    }
+
+    .card-content {
+        grid-template-columns: 1fr;
+    }
+
+    .inv-view-tabs {
+        width: 100%;
+    }
+
+    .inv-view-tab {
+        flex: 1;
+        justify-content: center;
+    }
+}

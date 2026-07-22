@@ -498,6 +498,12 @@ func main() {
 		c.HTML(200, "my-business.html", nil)
 	})
 
+	// Inventario — embebido como iframe dentro del tab "Inventario" de /my-business
+	// (?embed=1 oculta sidebar/userbar/header) y también accesible standalone.
+	router.GET("/inventory", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "inventory.html", nil)
+	})
+
 	router.GET("/my-agency", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "my-agency.html", nil)
 	})

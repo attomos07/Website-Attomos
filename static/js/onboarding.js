@@ -1,5062 +1,2887 @@
 // ============================================
-// SCROLLBAR PERSONALIZADO (delgado, cian) PARA LOS MODALES
+// INTEGRATIONS JAVASCRIPT - ACTUALIZADO CON WEBHOOK AUTOMÁTICO
 // ============================================
-(function injectAttomosModalScrollbarStyles() {
-  if (document.getElementById('attomos-modal-scrollbar-style')) return;
-  const style = document.createElement('style');
-  style.id = 'attomos-modal-scrollbar-style';
-  style.textContent = `
-    /* Firefox */
-    #qrModal, #creatingModal, #successModal, .creating-content {
-      scrollbar-width: thin;
-      scrollbar-color: #06b6d4 transparent;
-    }
-    /* Chrome / Edge / Safari */
-    #qrModal::-webkit-scrollbar,
-    #creatingModal::-webkit-scrollbar,
-    #successModal::-webkit-scrollbar,
-    .creating-content::-webkit-scrollbar {
-      width: 6px;
-    }
-    #qrModal::-webkit-scrollbar-track,
-    #creatingModal::-webkit-scrollbar-track,
-    #successModal::-webkit-scrollbar-track,
-    .creating-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    #qrModal::-webkit-scrollbar-thumb,
-    #creatingModal::-webkit-scrollbar-thumb,
-    #successModal::-webkit-scrollbar-thumb,
-    .creating-content::-webkit-scrollbar-thumb {
-      background-color: #06b6d4;
-      border-radius: 999px;
-    }
-    #qrModal::-webkit-scrollbar-thumb:hover,
-    #creatingModal::-webkit-scrollbar-thumb:hover,
-    #successModal::-webkit-scrollbar-thumb:hover,
-    .creating-content::-webkit-scrollbar-thumb:hover {
-      background-color: #0891b2;
-    }
 
-    /* Resaltado al arrastrar una foto sobre el área de imágenes de un producto/servicio */
-    .service-images-grid.service-img-drag-over {
-      outline: 2px dashed #06b6d4;
-      outline-offset: 4px;
-      border-radius: 12px;
-      background: rgba(6, 182, 212, 0.06);
-      transition: background 0.15s ease;
-    }
-    .service-images-grid.service-img-drag-over .service-img-add-btn {
-      border-color: #06b6d4 !important;
-      color: #0891b2 !important;
-      background: rgba(6, 182, 212, 0.08) !important;
-    }
-  `;
-  document.head.appendChild(style);
-})();
-
-// ============================================
-// STATE MANAGEMENT
-// ============================================
-let currentStep = 1;
-let currentSection = 1;
-window.selectedSocial = ''; let selectedSocial = window.selectedSocial;
-let userBusinessType = '';
-window.agentData = {
-  social: '',        // plataforma: 'whatsapp' | 'meta'
-  branchId: 0,       // ID de my_business_info (fuente de verdad)
-  businessType: '',  // heredado de my-business (para validación local)
-  name: '',
-  phoneNumber: '',
-  useDifferentPhone: false,
-  location: {
-    address: '', betweenStreets: '', number: '', neighborhood: '',
-    city: '', state: '', country: '', postalCode: ''
-  },
-  social_media: {
-    facebook: '', instagram: '', twitter: '', linkedin: ''
-  },
-  config: {
-    tone: 'formal',
-    customTone: '',
-    languages: [],
-    additionalLanguages: [],
-    specialInstructions: '',
-    schedule: {
-      monday:    { open: true,  start: '09:00', end: '18:00' },
-      tuesday:   { open: true,  start: '09:00', end: '18:00' },
-      wednesday: { open: true,  start: '09:00', end: '18:00' },
-      thursday:  { open: true,  start: '09:00', end: '18:00' },
-      friday:    { open: true,  start: '09:00', end: '18:00' },
-      saturday:  { open: false, start: '09:00', end: '14:00' },
-      sunday:    { open: false, start: '09:00', end: '14:00' }
-    }
-  }
-};
-let agentData = window.agentData;
-
-// Datos del negocio/dependencia cargados desde API (solo lectura en onboarding)
-let businessData = null;
-
-// Flag: true cuando el usuario es de tipo gubernamental
-let isGovernment = false;
-
-// Section definitions — base (negocio privado)
-const SECTIONS_BUSINESS = [
-  { id: 1, name: () => t('onb_tab_business','Info. Negocio'), icon: 'lni-briefcase', containerId: 'section-business' },
-  { id: 2, name: () => t('onb_tab_basic','Info. Básica'), icon: 'lni-information', containerId: 'section-basic' },
-  { id: 3, name: () => t('onb_tab_location','Ubicación'), icon: 'lni-map-marker', containerId: 'section-location' },
-  { id: 4, name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt', containerId: 'section-social' },
-  { id: 5, name: () => t('onb_tab_personality','Personalidad'), icon: 'lni-comments', containerId: 'section-personality' },
-  { id: 6, name: () => t('onb_tab_schedule','Horarios'), icon: 'lni-calendar', containerId: 'section-schedule' },
-  { id: 7, name: () => t('onb_tab_holidays','Días Festivos'), icon: 'lni-gift', containerId: 'section-holidays' },
-  { id: 8, name: () => t('onb_tab_services','Servicios / Productos'), icon: 'lni-package', containerId: 'section-services' },
-  { id: 9, name: () => t('onb_tab_menu','Catálogo'), icon: 'lni-files', containerId: 'section-menu' },
-  { id: 10, name: () => t('onb_tab_workers','Trabajadores'), icon: 'lni-users', containerId: 'section-workers' }
-];
-
-// Section definitions — gubernamental (usa My Agency)
-const SECTIONS_GOVERNMENT = [
-  { id: 1, name: () => t('onb_tab_agency','Dependencia'),    icon: 'lni-government',   containerId: 'section-business' },
-  { id: 2, name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information',  containerId: 'section-basic' },
-  { id: 3, name: () => t('onb_tab_location','Ubicación'),      icon: 'lni-map-marker',   containerId: 'section-location' },
-  { id: 4, name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt',    containerId: 'section-social' },
-  { id: 5, name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments',     containerId: 'section-personality' },
-  { id: 6, name: () => t('onb_tab_schedule','Horarios'),       icon: 'lni-calendar',     containerId: 'section-schedule' },
-  { id: 7, name: () => t('onb_tab_holidays_gov','Días Inhábiles'), icon: 'lni-gift',         containerId: 'section-holidays' },
-  { id: 8, name: () => t('onb_tab_courses','Cursos'),         icon: 'lni-graduation',   containerId: 'section-services' },
-];
-
-// Referencia activa (se asigna en fetchUserData)
-let SECTIONS = SECTIONS_BUSINESS;
-
-// ============================================
-// BUSINESS CATEGORY HELPERS
-// ============================================
-const BUSINESS_CATEGORY_MAP = {
-  'clinica-dental': 'servicio',
-  'peluqueria':     'servicio',
-  'automotriz':     'producto',
-  'libreria':       'producto',
-  'gorditas':       'comida',
-  'mariscos':       'comida',
-  'pizzeria':       'comida',
-  'restaurante':    'comida',
-  'panaderia':      'comida',
-  'ensaladas':      'comida',
-};
-
-function getBusinessCategory(type) {
-  return BUSINESS_CATEGORY_MAP[type] || 'servicio';
-}
-
-function _getServicePlaceholder() {
-  const type = window.agentData?.businessType || '';
-  // Modo gubernamental
-  if (type.toLowerCase().includes('gubernamental')) {
-    return 'Ej: Curso de computación básica';
-  }
-  const placeholders = {
-    'clinica-dental': 'Ej: Limpieza dental',
-    'peluqueria':     t('onb_svc_title_placeholder','Ej: Corte de cabello'),
-    'gorditas':       'Ej: Gordita de chicharrón',
-    'mariscos':       'Ej: Caldo de camarón',
-    'automotriz':     'Ej: Aceite de motor 5W-30',
-    'pizzeria':       'Ej: Pizza margarita',
-    'libreria':       'Ej: Cuaderno universitario',
-    'restaurante':    'Ej: Caldo de res',
-    'panaderia':      'Ej: Concha de vainilla',
-    'ensaladas':      'Ej: Ensalada César',
-  };
-  return placeholders[type] || t('onb_svc_title_placeholder','Ej: Corte de cabello');
-}
-
-/**
- * Actualiza dinámicamente las etiquetas de las tabs y secciones
- * "Servicios/Productos" y "Menú/Catálogo" según el giro del negocio.
- */
-function updateSectionLabels(businessType) {
-  const cat = getBusinessCategory(businessType);
-
-  const svcTabLabel  = cat === 'servicio' ? t('onb_tab_services','Servicios / Productos') : t('onb_tab_products','Productos');
-  const svcTitle     = cat === 'servicio' ? t('onb_tab_services','Servicios / Productos') : t('onb_tab_products','Productos');
-  const svcBtnLabel  = cat === 'servicio' ? t('onb_svc_add_btn','Agregar Servicio') : t('onb_menu_add_btn','Agregar Producto');
-  const svcItemLabel = cat === 'servicio' ? t('onb_svc_item_servicio','Servicio') : t('onb_svc_item_producto','Producto');
-  const svcHint      = cat === 'servicio'
-    ? t('onb_svc_help','Define los servicios que ofreces')
-    : t('onb_svc_help_products','Define los productos que ofreces');
-
-  const menuTabLabel = cat === 'comida'   ? t('onb_sec_menu','Menú')     : t('onb_tab_catalog','Catálogo');
-  const menuTitle    = cat === 'comida'   ? t('onb_sec_menu','Menú')     : t('onb_tab_catalog','Catálogo');
-  const menuHint     = cat === 'comida'
-    ? t('onb_catalog_menu_help','Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.')
-    : t('onb_catalog_help','Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.');
-
-  // Guardar para uso en addService() / removeService()
-  window._currentSvcItemLabel = svcItemLabel;
-
-  // ── Tabs de navegación (seción 8 y 9) ─────────────────────────────────────
-  document.querySelectorAll('.section-nav-btn').forEach(btn => {
-    const id = parseInt(btn.dataset.sectionId);
-    const spanEl = btn.querySelector('span');
-    if (!spanEl) return;
-    if (id === 8) spanEl.textContent = svcTabLabel;
-    if (id === 9) spanEl.textContent = menuTabLabel;
-  });
-
-  // ── Título h3 de section-services ─────────────────────────────────────────
-  const svcTitleEl = document.querySelector('#section-services .section-title');
-  if (svcTitleEl) {
-    const icon = svcTitleEl.querySelector('i');
-    svcTitleEl.textContent = '\u00A0' + svcTitle;
-    if (icon) svcTitleEl.prepend(icon);
-  }
-
-  // ── Hint de servicios ──────────────────────────────────────────────────────
-  const svcHintEl = document.querySelector('#section-services .form-help');
-  if (svcHintEl) svcHintEl.textContent = svcHint;
-
-  // ── Botón "Agregar Servicio" ───────────────────────────────────────────────
-  const addSvcBtn = document.getElementById('addServiceBtn');
-  if (addSvcBtn) {
-    const icon = addSvcBtn.querySelector('i');
-    addSvcBtn.textContent = '\u00A0' + svcBtnLabel;
-    if (icon) addSvcBtn.prepend(icon);
-  }
-
-  // ── Re-etiquetar items de servicio ya existentes ───────────────────────────
-  const svcPlaceholder = _getServicePlaceholder();
-  const fotosLabel     = svcItemLabel === 'Servicio' ? t('onb_svc_photos_label','Fotos del Servicio') : t('onb_svc_photos_product','Fotos del Producto');
-  document.querySelectorAll('.service-item').forEach((item, idx) => {
-    const numEl = item.querySelector('.service-number');
-    if (numEl) numEl.textContent = `${svcItemLabel} ${idx + 1}`;
-    // Etiqueta del campo título
-    item.querySelectorAll('.form-label').forEach(lbl => {
-      if (/^Título del (Servicio|Producto)/i.test(lbl.textContent.trim())) {
-        lbl.textContent = `Título del ${svcItemLabel} *`;
-      }
-      if (/^Fotos del (Servicio|Producto)/i.test(lbl.textContent.trim())) {
-        lbl.textContent = fotosLabel;
-      }
-    });
-    // Placeholder del input título
-    const titleInput = item.querySelector('.service-title');
-    if (titleInput) titleInput.placeholder = svcPlaceholder;
-  });
-
-  // ── Título h3 de section-menu ──────────────────────────────────────────────
-  const menuTitleEl = document.querySelector('#section-menu .section-title');
-  if (menuTitleEl) {
-    const icon = menuTitleEl.querySelector('i');
-    menuTitleEl.textContent = '\u00A0' + menuTitle;
-    if (icon) menuTitleEl.prepend(icon);
-  }
-
-  // ── Hint de menú ──────────────────────────────────────────────────────────
-  const menuHintEl = document.querySelector('#section-menu .form-help');
-  if (menuHintEl) menuHintEl.textContent = menuHint;
-
-  console.log(`🏷️ Etiquetas actualizadas → cat: ${cat} | svc: ${svcTabLabel} | menu: ${menuTabLabel}`);
-}
-
-// Location data
-const COUNTRIES = [
-  { value: 'mexico', name: 'México', icon: 'lni-flag-mx' },
-  { value: 'usa', name: 'Estados Unidos', icon: 'lni-flag-us' },
-  { value: 'canada', name: 'Canadá', icon: 'lni-flag-ca' },
-  { value: 'spain', name: 'España', icon: 'lni-flag-es' },
-  { value: 'argentina', name: 'Argentina', icon: 'lni-flag-ar' }
-];
-
-const STATES_MEXICO = [
-  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
-  'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
-  'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit',
-  'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
-  'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
-];
-
-const CITIES_MEXICO = {
-  'sonora': ['Hermosillo', 'Ciudad Obregón', 'Nogales', 'San Luis Río Colorado', 'Navojoa', 
-             'Guaymas', 'Empalme', 'Agua Prieta', 'Caborca', 'Cananea', 'Puerto Peñasco'],
-  'default': ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 
-              'León', 'Juárez', 'Zapopan', 'Mérida', 'Cancún']
-};
-
-// ============================================
-// DOT INDICATOR ENGINE
-// ============================================
-const DOT_COUNT = 10;
-const DOT_INTERVAL_MS = 600;   // velocidad 0.6s
-let _dotTimer   = null;
-let _dotCurrent = 0;
-let _dotTarget  = 0;
-
-function initDotIndicator() {
-  const container = document.getElementById('progressDots');
-  if (!container) return;
-  container.innerHTML = '';
-  for (let i = 0; i < DOT_COUNT; i++) {
-    const d = document.createElement('div');
-    d.className = 'progress-step';
-    d.id = 'pdot-' + i;
-    container.appendChild(d);
-  }
-  _dotCurrent = 0;
-  _dotTarget  = 0;
-  _renderDots();
-  _startDotAnim();
-}
-
-function _renderDots() {
-  for (let i = 0; i < DOT_COUNT; i++) {
-    const d = document.getElementById('pdot-' + i);
-    if (!d) continue;
-    d.className = 'progress-step';
-    if (i === _dotCurrent)    d.classList.add('dot-active');
-    else if (i < _dotCurrent) d.classList.add('dot-lit');
-  }
-}
-
-function _startDotAnim() {
-  if (_dotTimer) clearInterval(_dotTimer);
-  _dotTimer = setInterval(_tickDot, DOT_INTERVAL_MS);
-}
-
-function _tickDot() {
-  const next = _dotCurrent + 1;
-  if (next > _dotTarget) {
-    // llegó al tope: apagar todo y reiniciar desde 0
-    _dotCurrent = 0;
-  } else {
-    _dotCurrent = next;
-  }
-  _renderDots();
-}
-
-function setDotTarget(fraction) {
-  // fraction 0.0 → 1.0
-  _dotTarget = Math.round(fraction * (DOT_COUNT - 1));
-  if (_dotCurrent > _dotTarget) _dotCurrent = 0;
-  _renderDots();
-}
-
-// ============================================
-// INITIALIZE
-// ============================================
-// ONBOARDING.JS - IA Agent setup flow
-// ============================================================
 function getLang() { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; }
 function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key] || fallback; }
 
 document.addEventListener('DOMContentLoaded', function() {
-
-  // Hook: rebuild section nav tabs when language changes
-  if (window.Translations) {
-    const _origApply = window.Translations.apply.bind(window.Translations);
-    window.Translations.apply = function(lang) {
-      _origApply(lang);
-      const navContainer = document.getElementById('sectionNavigation');
-      if (navContainer && SECTIONS?.length) rebuildSectionNav(navContainer);
-    };
-  }
-
-
-  // Render SVG flags for language checkboxes
-  window.renderLangFlags = function renderLangFlags() {
-    document.querySelectorAll('[data-flag-lang]').forEach(el => {
-      const lang = el.getAttribute('data-flag-lang');
-      const svg = window.Translations?.FLAG_SVG?.[lang];
-      if (svg) el.innerHTML = svg;
-    });
-  };
-  window.renderLangFlags();
-  initDotIndicator();
-  fetchUserData();
-  initializeBusinessTypeSelect();
-  initializeSocialSelection();
-  initializeNavigationButtons();
-  initializeSectionNavigation();
-  initializeToneSelection();
-  initializeLanguageSelection();
-  initializeRichEditor();
-  initializePhoneToggle();
-  initializeSchedule();
-  initializeHolidays();
-  initializeServices();
-  initializeWorkers();
-  initializeMenu();
-  initializeLocationDropdowns();
-  initializeSocialMediaInputs();
-  
-  // Inicializar custom pickers
-  setTimeout(() => {
-    initBusinessTimePickers();
-    initHolidayDatePickers();
-    initWorkerTimePickers();
-  }, 100);
+    console.log('🔧 Integrations JS cargado correctamente');
+    
+    initAgentSelector();
+    initGoogleIntegration();
+    initGeminiIntegration();
+    initMetaIntegration();
+    initPaymentsIntegration();
+    initRepairDeskIntegration();
+    initSoftRestaurantIntegration();
+    detectGubernamental();
+    
+    console.log('✅ Integrations funcionalidades inicializadas');
 });
 
 // ============================================
-// SECTION NAVIGATION
+// RE-TRADUCIR BADGES DE ESTADO AL CAMBIAR DE IDIOMA
+// Los badges se pintan una sola vez en el idioma activo al conectar/
+// desconectar; si el usuario cambia de idioma después sin disparar
+// esa acción, este listener actualiza el texto sin volver a pedir
+// datos al servidor ni reengachar los botones (evita listeners duplicados).
 // ============================================
-function rebuildSectionNav(navigationContainer) {
-  // Crear botones de navegación de secciones
-  navigationContainer.innerHTML = '';
-  SECTIONS.forEach(section => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `section-nav-btn ${section.id === 1 ? 'active' : ''}`;
-    btn.dataset.sectionId = section.id;
-    btn.innerHTML = `
-      <i class="lni ${section.icon}"></i>
-      <span>${typeof section.name === 'function' ? section.name() : section.name}</span>
-    `;
-    btn.addEventListener('click', () => navigateToSection(section.id));
-    navigationContainer.appendChild(btn);
-  });
-}
+const STATUS_BADGE_KEY_MAP = {
+    metaStatusBadge:            { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    geminiStatusBadge:          { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    googleStatusBadge:          { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    sheetsStatusBadge:          { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    speiStatusBadge:            { connected: 'integ_status_configured', disconnected: 'integ_status_not_configured' },
+    stripeConnectStatusBadge:   { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    paymentsStatusBadge:        { connected: 'integ_status_configured', disconnected: 'integ_status_without_config' },
+    repairDeskStatusBadge:      { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+    srStatusBadge:               { connected: 'integ_status_connected',  disconnected: 'integ_status_disconnected' },
+};
 
-function initializeSectionNavigation() {
-  const navigationContainer = document.getElementById('sectionNavigation');
-  if (!navigationContainer) return;
-
-  rebuildSectionNav(navigationContainer);
-
-  // Eventos para botones "Siguiente" de cada sección
-  document.querySelectorAll('.btn-next-section').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (currentSection < SECTIONS.length) {
-        navigateToSection(currentSection + 1);
-      }
+function refreshIntegrationBadgesLanguage() {
+    Object.keys(STATUS_BADGE_KEY_MAP).forEach(id => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        const state = badge.classList.contains('connected') ? 'connected' : 'disconnected';
+        const key = STATUS_BADGE_KEY_MAP[id][state];
+        const fallback = badge.textContent.trim();
+        badge.innerHTML = `<span class="status-indicator"></span>${t(key, fallback)}`;
     });
-  });
-
-  // Eventos para botones "Anterior" de cada sección
-  document.querySelectorAll('.btn-prev-section').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (currentSection > 1) {
-        navigateToSection(currentSection - 1);
-      }
-    });
-  });
-
-  // Mostrar primera sección al iniciar
-  navigateToSection(1);
 }
 
-function navigateToSection(sectionId) {
-  if (sectionId < 1 || sectionId > SECTIONS.length) return;
+document.addEventListener('attomos:langchange', refreshIntegrationBadgesLanguage);
 
-  currentSection = sectionId;
+// ============================================
+// DETECCIÓN GUBERNAMENTAL
+// ============================================
 
-  // Ocultar todas las secciones
-  SECTIONS.forEach(section => {
-    const container = document.getElementById(section.containerId);
-    if (container) {
-      container.classList.remove('active');
-    }
-  });
+async function detectGubernamental() {
+    try {
+        const res  = await fetch('/api/me', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const biz  = (data.user?.businessType || '').toLowerCase();
+        if (biz.includes('gubernamental')) applyGovContext();
+    } catch {}
+}
 
-  // Mostrar sección actual
-  const currentSectionData = SECTIONS.find(s => s.id === sectionId);
-  if (currentSectionData) {
-    const container = document.getElementById(currentSectionData.containerId);
-    if (container) {
-      container.classList.add('active');
-      
-      // Mostrar u ocultar botón "Anterior" según la sección
-      const prevBtn = container.querySelector('.btn-prev-section');
-      if (prevBtn) {
-        if (sectionId === 1) {
-          prevBtn.style.display = 'none';
-        } else {
-          prevBtn.style.display = 'flex';
-        }
-      }
-    }
-  }
+function applyGovContext() {
+    // Sheets
+    toggleGovBusiness('.sheets-desc-business', '.sheets-desc-gov');
+    toggleGovBusiness('.sheets-feat-business', '.sheets-feat-gov');
+    toggleGovBusiness('.sheets-cols-business', '.sheets-cols-gov');
+    toggleGovBusiness('.sheets-link-label-business', '.sheets-link-label-gov');
+    // Calendar
+    toggleGovBusiness('.cal-desc-business', '.cal-desc-gov');
+    toggleGovBusiness('.cal-feat-business', '.cal-feat-gov');
+    toggleGovBusiness('.cal-btn-business',  '.cal-btn-gov');
+}
 
-  // Actualizar botones de navegación
-  document.querySelectorAll('.section-nav-btn').forEach(btn => {
-    const btnSectionId = parseInt(btn.dataset.sectionId);
-    btn.classList.remove('active', 'completed');
-    
-    if (btnSectionId === sectionId) {
-      btn.classList.add('active');
-    } else if (btnSectionId < sectionId) {
-      btn.classList.add('completed');
-    }
-  });
-
-  // Scroll al inicio del contenedor
-  window.scrollTo(0, 0);
-
-  // Actualizar dot-indicator
-  updateProgressBar();
+function toggleGovBusiness(bizSel, govSel) {
+    document.querySelectorAll(bizSel).forEach(el => el.style.display = 'none');
+    document.querySelectorAll(govSel).forEach(el => el.style.display = '');
 }
 
 // ============================================
-// CUSTOM TIME PICKER - BUSINESS HOURS
-// ============================================
-function initBusinessTimePickers() {
-  console.log('🕐 Inicializando Time Pickers del negocio...');
-  
-  const timeInputs = document.querySelectorAll('.time-input');
-  
-  timeInputs.forEach(input => {
-    const parent = input.closest('.schedule-day');
-    if (parent && !input.dataset.useCustom) {
-      convertToCustomTimePicker(input);
-    }
-  });
-}
-
-function convertToCustomTimePicker(nativeInput) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'custom-time-wrapper';
-  
-  const customInput = document.createElement('input');
-  customInput.type = 'text';
-  customInput.className = 'time-input-custom';
-  customInput.value = formatTimeDisplay(nativeInput.value || '09:00');
-  customInput.readOnly = true;
-  
-  if (nativeInput.disabled) {
-    customInput.disabled = true;
-    wrapper.classList.add('disabled');
-  }
-  
-  const arrow = document.createElement('i');
-  arrow.className = 'lni lni-chevron-down time-arrow';
-  
-  const dropdown = document.createElement('div');
-  dropdown.className = 'time-dropdown';
-  
-  const columnsContainer = document.createElement('div');
-  columnsContainer.className = 'time-picker-columns';
-  
-  const initialTime = parseTime(nativeInput.value || '09:00');
-  
-  const hoursColumn = createTimeColumn(t('onb_time_hour','Hora'), generateHours(), initialTime.hour);
-  const minutesColumn = createTimeColumn(t('onb_time_min','Min'), generateMinutes(), initialTime.minute);
-  const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
-  
-  columnsContainer.appendChild(hoursColumn);
-  columnsContainer.appendChild(minutesColumn);
-  columnsContainer.appendChild(periodColumn);
-  
-  const footer = document.createElement('div');
-  footer.className = 'time-picker-footer';
-  
-  const cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.className = 'time-picker-btn time-picker-cancel';
-  cancelBtn.textContent = t('onb_btn_cancel','Cancelar');
-  cancelBtn.onclick = (e) => {
-    e.stopPropagation();
-    closeBusinessDropdown(wrapper);
-  };
-  
-  const confirmBtn = document.createElement('button');
-  confirmBtn.type = 'button';
-  confirmBtn.className = 'time-picker-btn time-picker-confirm';
-  confirmBtn.textContent = t('onb_btn_accept','Aceptar');
-  confirmBtn.onclick = (e) => {
-    e.stopPropagation();
-    applyBusinessTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
-  };
-  
-  footer.appendChild(cancelBtn);
-  footer.appendChild(confirmBtn);
-  
-  dropdown.appendChild(columnsContainer);
-  dropdown.appendChild(footer);
-  
-  customInput.addEventListener('click', (e) => {
-    if (!customInput.disabled) {
-      e.stopPropagation();
-      toggleBusinessDropdown(wrapper);
-    }
-  });
-  
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) {
-      closeBusinessDropdown(wrapper);
-    }
-  });
-  
-  wrapper.appendChild(customInput);
-  wrapper.appendChild(arrow);
-  wrapper.appendChild(dropdown);
-  
-  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
-  nativeInput.style.display = 'none';
-  nativeInput.dataset.useCustom = 'true';
-  
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.attributeName === 'disabled') {
-        customInput.disabled = nativeInput.disabled;
-        if (nativeInput.disabled) {
-          wrapper.classList.add('disabled');
-          closeBusinessDropdown(wrapper);
-        } else {
-          wrapper.classList.remove('disabled');
-        }
-      }
-    });
-  });
-  
-  observer.observe(nativeInput, { attributes: true });
-}
-
-function createTimeColumn(label, options, selectedValue) {
-  const column = document.createElement('div');
-  column.className = 'time-column';
-  
-  if (label) {
-    const header = document.createElement('div');
-    header.className = 'time-column-header';
-    header.textContent = label;
-    column.appendChild(header);
-  }
-  
-  options.forEach(option => {
-    const optionElement = document.createElement('div');
-    optionElement.className = 'time-column-option';
-    optionElement.textContent = option;
-    optionElement.dataset.value = option;
-    
-    if (option === selectedValue) {
-      optionElement.classList.add('selected');
-      setTimeout(() => {
-        optionElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }, 50);
-    }
-    
-    optionElement.addEventListener('click', (e) => {
-      e.stopPropagation();
-      column.querySelectorAll('.time-column-option').forEach(opt => {
-        opt.classList.remove('selected');
-      });
-      optionElement.classList.add('selected');
-    });
-    
-    column.appendChild(optionElement);
-  });
-  
-  return column;
-}
-
-function generateHours() {
-  const hours = [];
-  for (let i = 1; i <= 12; i++) {
-    hours.push(i.toString().padStart(2, '0'));
-  }
-  return hours;
-}
-
-function generateMinutes() {
-  return ['00', '15', '30', '45'];
-}
-
-function parseTime(time24) {
-  const [hours, minutes] = time24.split(':');
-  let hour = parseInt(hours);
-  const period = hour >= 12 ? 'PM' : 'AM';
-  hour = hour % 12 || 12;
-  
-  return {
-    hour: hour.toString().padStart(2, '0'),
-    minute: minutes,
-    period: period
-  };
-}
-
-function formatTimeDisplay(time24) {
-  const parsed = parseTime(time24);
-  return `${parsed.hour}:${parsed.minute} ${parsed.period}`;
-}
-
-function toggleBusinessDropdown(wrapper) {
-  const isActive = wrapper.classList.contains('active');
-  
-  if (isActive) {
-    closeBusinessDropdown(wrapper);
-  } else {
-    openBusinessDropdown(wrapper);
-  }
-}
-
-function openBusinessDropdown(wrapper) {
-  wrapper.classList.add('active');
-  wrapper.querySelector('.time-input-custom').classList.add('active');
-}
-
-function closeBusinessDropdown(wrapper) {
-  wrapper.classList.remove('active');
-  const input = wrapper.querySelector('.time-input-custom');
-  if (input) {
-    input.classList.remove('active');
-  }
-}
-
-function applyBusinessTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn) {
-  const selectedHour = hoursColumn.querySelector('.time-column-option.selected');
-  const selectedMinute = minutesColumn.querySelector('.time-column-option.selected');
-  const selectedPeriod = periodColumn.querySelector('.time-column-option.selected');
-  
-  if (!selectedHour || !selectedMinute || !selectedPeriod) {
-    return;
-  }
-  
-  let hour = parseInt(selectedHour.dataset.value);
-  const minute = selectedMinute.dataset.value;
-  const period = selectedPeriod.dataset.value;
-  
-  if (period === 'PM' && hour !== 12) {
-    hour += 12;
-  } else if (period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-  
-  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
-  const timeDisplay = `${selectedHour.dataset.value}:${minute} ${period}`;
-  
-  nativeInput.value = time24;
-  customInput.value = timeDisplay;
-  
-  const event = new Event('change', { bubbles: true });
-  nativeInput.dispatchEvent(event);
-  
-  closeBusinessDropdown(wrapper);
-}
-
-// ============================================
-// CUSTOM DATE PICKER - HOLIDAYS
-// ============================================
-function initHolidayDatePickers() {
-  console.log('📅 Inicializando Date Pickers de festivos...');
-  
-  const holidaysList = document.getElementById('holidaysList');
-  if (!holidaysList) return;
-  
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === 1 && node.classList.contains('holiday-item')) {
-          const dateInput = node.querySelector('.holiday-date-input');
-          if (dateInput && !dateInput.dataset.useCustom) {
-            convertToCustomDatePicker(dateInput);
-          }
-        }
-      });
-    });
-  });
-  
-  observer.observe(holidaysList, { childList: true });
-  
-  document.querySelectorAll('.holiday-date-input').forEach(input => {
-    if (!input.dataset.useCustom) {
-      convertToCustomDatePicker(input);
-    }
-  });
-}
-
-function convertToCustomDatePicker(nativeInput) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'custom-date-wrapper';
-  
-  const customInput = document.createElement('input');
-  customInput.type = 'text';
-  customInput.className = 'date-input-custom';
-  customInput.value = formatDisplayDate(nativeInput.value || '');
-  customInput.readOnly = true;
-  customInput.placeholder = t('onb_hol_name_placeholder','Selecciona una fecha');
-  
-  const arrow = document.createElement('i');
-  arrow.className = 'lni lni-calendar date-arrow';
-  
-  const dropdown = document.createElement('div');
-  dropdown.className = 'date-dropdown';
-  
-  const currentDate = new Date();
-  let currentMonth = currentDate.getMonth();
-  let currentYear = currentDate.getFullYear();
-  
-  function renderCalendar() {
-    dropdown.innerHTML = '';
-    
-    const header = document.createElement('div');
-    header.className = 'date-picker-header';
-    
-    const nav = document.createElement('div');
-    nav.className = 'date-picker-nav';
-    
-    const prevBtn = document.createElement('button');
-    prevBtn.type = 'button';
-    prevBtn.innerHTML = '<i class="lni lni-chevron-left"></i>';
-    prevBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentMonth--;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      }
-      renderCalendar();
-    };
-    
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.innerHTML = '<i class="lni lni-chevron-right"></i>';
-    nextBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentMonth++;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
-      renderCalendar();
-    };
-    
-    nav.appendChild(prevBtn);
-    nav.appendChild(nextBtn);
-    
-    const current = document.createElement('div');
-    current.className = 'date-picker-current';
-    const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun','month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
-    const monthNames = monthKeys.map(k => t(k, ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][monthKeys.indexOf(k)]));
-    current.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-    
-    header.appendChild(nav);
-    header.appendChild(current);
-    dropdown.appendChild(header);
-    
-    const calendar = document.createElement('div');
-    calendar.className = 'date-picker-calendar';
-    
-    const weekdays = document.createElement('div');
-    weekdays.className = 'date-picker-weekdays';
-    ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(day => {
-      const weekday = document.createElement('div');
-      weekday.className = 'date-picker-weekday';
-      weekday.textContent = day;
-      weekdays.appendChild(weekday);
-    });
-    calendar.appendChild(weekdays);
-    
-    const days = document.createElement('div');
-    days.className = 'date-picker-days';
-    
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-    
-    for (let i = firstDay - 1; i >= 0; i--) {
-      const day = document.createElement('div');
-      day.className = 'date-picker-day other-month';
-      day.textContent = daysInPrevMonth - i;
-      days.appendChild(day);
-    }
-    
-    const today = new Date();
-    const selectedDate = nativeInput.value ? new Date(nativeInput.value + 'T00:00:00') : null;
-    
-    for (let i = 1; i <= daysInMonth; i++) {
-      const day = document.createElement('div');
-      day.className = 'date-picker-day';
-      day.textContent = i;
-      
-      const thisDate = new Date(currentYear, currentMonth, i);
-      
-      if (today.toDateString() === thisDate.toDateString()) {
-        day.classList.add('today');
-      }
-      
-      if (selectedDate && selectedDate.toDateString() === thisDate.toDateString()) {
-        day.classList.add('selected');
-      }
-      
-      day.onclick = (e) => {
-        e.stopPropagation();
-        selectDate(wrapper, nativeInput, customInput, currentYear, currentMonth, i);
-      };
-      
-      days.appendChild(day);
-    }
-    
-    const totalCells = days.children.length;
-    const remainingCells = 42 - totalCells;
-    for (let i = 1; i <= remainingCells; i++) {
-      const day = document.createElement('div');
-      day.className = 'date-picker-day other-month';
-      day.textContent = i;
-      days.appendChild(day);
-    }
-    
-    calendar.appendChild(days);
-    dropdown.appendChild(calendar);
-  }
-  
-  renderCalendar();
-  
-  customInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleDateDropdown(wrapper);
-  });
-  
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) {
-      closeDateDropdown(wrapper);
-    }
-  });
-  
-  wrapper.appendChild(customInput);
-  wrapper.appendChild(arrow);
-  wrapper.appendChild(dropdown);
-  
-  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
-  nativeInput.style.display = 'none';
-  nativeInput.dataset.useCustom = 'true';
-}
-
-function toggleDateDropdown(wrapper) {
-  const isActive = wrapper.classList.contains('active');
-  
-  if (isActive) {
-    closeDateDropdown(wrapper);
-  } else {
-    openDateDropdown(wrapper);
-  }
-}
-
-function openDateDropdown(wrapper) {
-  wrapper.classList.add('active');
-  wrapper.querySelector('.date-input-custom').classList.add('active');
-}
-
-function closeDateDropdown(wrapper) {
-  wrapper.classList.remove('active');
-  wrapper.querySelector('.date-input-custom').classList.remove('active');
-}
-
-function selectDate(wrapper, nativeInput, customInput, year, month, day) {
-  const date = new Date(year, month, day);
-  const dateString = date.toISOString().split('T')[0];
-  
-  nativeInput.value = dateString;
-  customInput.value = formatDisplayDate(dateString);
-  
-  const event = new Event('change', { bubbles: true });
-  nativeInput.dispatchEvent(event);
-  
-  closeDateDropdown(wrapper);
-}
-
-function formatDisplayDate(dateString) {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString + 'T00:00:00');
-  const day = date.getDate();
-  const monthKeys = ['month_jan','month_feb','month_mar','month_apr','month_may','month_jun','month_jul','month_aug','month_sep','month_oct','month_nov','month_dec'];
-  const monthNames = monthKeys.map(k => t(k, ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][monthKeys.indexOf(k)]));
-  
-  return `${day} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-// ============================================
-// CUSTOM TIME PICKER - WORKERS
-// ============================================
-function initWorkerTimePickers() {
-  console.log('👷 Inicializando Time Pickers de trabajadores...');
-  
-  const workersList = document.getElementById('workersList');
-  if (!workersList) return;
-  
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === 1 && node.classList.contains('worker-item')) {
-          const startTime = node.querySelector('.worker-start-time');
-          const endTime = node.querySelector('.worker-end-time');
-          
-          if (startTime && !startTime.dataset.useCustom) {
-            convertToWorkerTimePicker(startTime);
-          }
-          if (endTime && !endTime.dataset.useCustom) {
-            convertToWorkerTimePicker(endTime);
-          }
-        }
-      });
-    });
-  });
-  
-  observer.observe(workersList, { childList: true, subtree: true });
-  
-  document.querySelectorAll('.worker-start-time, .worker-end-time').forEach(input => {
-    if (!input.dataset.useCustom) {
-      convertToWorkerTimePicker(input);
-    }
-  });
-}
-
-function convertToWorkerTimePicker(nativeInput) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'worker-time-wrapper';
-  
-  const customInput = document.createElement('input');
-  customInput.type = 'text';
-  customInput.className = 'worker-time-input-custom';
-  customInput.value = formatTimeDisplay(nativeInput.value || '09:00');
-  customInput.readOnly = true;
-  
-  const arrow = document.createElement('i');
-  arrow.className = 'lni lni-chevron-down worker-time-arrow';
-  
-  const dropdown = document.createElement('div');
-  dropdown.className = 'worker-time-dropdown';
-  
-  const columnsContainer = document.createElement('div');
-  columnsContainer.className = 'time-picker-columns';
-  
-  const initialTime = parseTime(nativeInput.value || '09:00');
-  
-  const hoursColumn = createTimeColumn(t('onb_time_hour','Hora'), generateHours(), initialTime.hour);
-  const minutesColumn = createTimeColumn(t('onb_time_min','Min'), generateMinutes(), initialTime.minute);
-  const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
-  
-  columnsContainer.appendChild(hoursColumn);
-  columnsContainer.appendChild(minutesColumn);
-  columnsContainer.appendChild(periodColumn);
-  
-  const footer = document.createElement('div');
-  footer.className = 'time-picker-footer';
-  
-  const cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.className = 'time-picker-btn time-picker-cancel';
-  cancelBtn.textContent = t('onb_btn_cancel','Cancelar');
-  cancelBtn.onclick = (e) => {
-    e.stopPropagation();
-    closeWorkerDropdown(wrapper);
-  };
-  
-  const confirmBtn = document.createElement('button');
-  confirmBtn.type = 'button';
-  confirmBtn.className = 'time-picker-btn time-picker-confirm';
-  confirmBtn.textContent = t('onb_btn_accept','Aceptar');
-  confirmBtn.onclick = (e) => {
-    e.stopPropagation();
-    applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
-  };
-  
-  footer.appendChild(cancelBtn);
-  footer.appendChild(confirmBtn);
-  
-  dropdown.appendChild(columnsContainer);
-  dropdown.appendChild(footer);
-  
-  customInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleWorkerDropdown(wrapper);
-  });
-  
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) {
-      closeWorkerDropdown(wrapper);
-    }
-  });
-  
-  wrapper.appendChild(customInput);
-  wrapper.appendChild(arrow);
-  wrapper.appendChild(dropdown);
-  
-  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
-  nativeInput.style.display = 'none';
-  nativeInput.dataset.useCustom = 'true';
-}
-
-function toggleWorkerDropdown(wrapper) {
-  const isActive = wrapper.classList.contains('active');
-  
-  if (isActive) {
-    closeWorkerDropdown(wrapper);
-  } else {
-    openWorkerDropdown(wrapper);
-  }
-}
-
-function openWorkerDropdown(wrapper) {
-  wrapper.classList.add('active');
-  wrapper.querySelector('.worker-time-input-custom').classList.add('active');
-}
-
-function closeWorkerDropdown(wrapper) {
-  wrapper.classList.remove('active');
-  const input = wrapper.querySelector('.worker-time-input-custom');
-  if (input) {
-    input.classList.remove('active');
-  }
-}
-
-function applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn) {
-  const selectedHour = hoursColumn.querySelector('.time-column-option.selected');
-  const selectedMinute = minutesColumn.querySelector('.time-column-option.selected');
-  const selectedPeriod = periodColumn.querySelector('.time-column-option.selected');
-  
-  if (!selectedHour || !selectedMinute || !selectedPeriod) {
-    return;
-  }
-  
-  let hour = parseInt(selectedHour.dataset.value);
-  const minute = selectedMinute.dataset.value;
-  const period = selectedPeriod.dataset.value;
-  
-  if (period === 'PM' && hour !== 12) {
-    hour += 12;
-  } else if (period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-  
-  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
-  const timeDisplay = `${selectedHour.dataset.value}:${minute} ${period}`;
-  
-  nativeInput.value = time24;
-  customInput.value = timeDisplay;
-  
-  const event = new Event('change', { bubbles: true });
-  nativeInput.dispatchEvent(event);
-  
-  closeWorkerDropdown(wrapper);
-}
-
-// ============================================
-// USER DATA
+// GLOBAL STATE
 // ============================================
 
-// ============================================
-// BUSINESS TYPE SELECT (Información del Negocio)
-// ============================================
-function initializeBusinessTypeSelect() {
-  const wrapper = document.getElementById('businessTypeWrapper');
-  const input = document.getElementById('businessTypeInput');
-  const dropdown = document.getElementById('businessTypeDropdown');
-  const search = document.getElementById('businessTypeSearch');
-  const options = document.querySelectorAll('#businessTypeOptions .select-option');
+let selectedAgentId = null;
+let selectedAgent = null;
+let agents = [];
 
-  if (!wrapper) return;
-
-  wrapper.addEventListener('click', function(e) {
-    e.stopPropagation();
-    wrapper.classList.toggle('active');
-  });
-
-  options.forEach(option => {
-    option.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const value = this.dataset.value;
-      const text = this.querySelector('span').textContent;
-      input.value = text;
-      input.dataset.value = value;
-      agentData.businessType = value;
-      options.forEach(o => o.classList.remove('selected'));
-      this.classList.add('selected');
-      wrapper.classList.remove('active');
-      updateSectionLabels(value);
-    });
-  });
-
-  if (search) {
-    search.addEventListener('input', function(e) {
-      e.stopPropagation();
-      const q = this.value.toLowerCase();
-      options.forEach(opt => {
-        const match = opt.querySelector('span').textContent.toLowerCase().includes(q);
-        opt.style.display = match ? '' : 'none';
-      });
-    });
-    search.addEventListener('click', e => e.stopPropagation());
-  }
-
-  document.addEventListener('click', () => wrapper.classList.remove('active'));
-}
-
-async function fetchUserData() {
-  try {
-    // Datos básicos del usuario
-    const userResp = await fetch('/api/me', { credentials: 'include' });
-    if (userResp.ok) {
-      const data = await userResp.json();
-      userBusinessType = data.user.businessType;
-      agentData.businessType = userBusinessType;
-
-      // Detectar si el usuario es gubernamental
-      isGovernment = !!(
-        data.user.isGovernment ||
-        data.user.userType === 'government' ||
-        data.user.accountType === 'government' ||
-        (data.user.businessType || '').toLowerCase().includes('gubernamental')
-      );
-      if (isGovernment) {
-        applyGovernmentMode();
-      }
-    }
-
-    if (isGovernment) {
-      // ── Ruta gubernamental: datos desde /api/my-agency ─────────────────────
-      const agencyResp = await fetch('/api/my-agency', { credentials: 'include' });
-      if (agencyResp.ok) {
-        const agencyData = await agencyResp.json();
-        console.log('🏛️ /api/my-agency response:', JSON.stringify(agencyData));
-        const allOffices = agencyData.offices || agencyData.branches || [];
-        const office = agencyData.activeBranch || agencyData.defaultBranch || (allOffices.length > 0 ? allOffices[0] : null);
-        if (office) {
-          businessData = office;
-          agentData.branchId = office.id || 0;
-          renderGovernmentPreview(office);
-          console.log('✅ Datos de dependencia precargados, officeId:', agentData.branchId);
-        } else {
-          console.warn('⚠️ No se encontró oficina activa en /api/my-agency');
-        }
-        if (allOffices.length >= 1) {
-          renderBranchSelectorBasic(allOffices, agentData.branchId);
-        }
-      }
+// Guard compartido para todas las acciones de guardar/conectar que requieren
+// un agente. Da un mensaje distinto según el caso: si el usuario no tiene
+// ningún agente creado, lo manda a crear uno; si ya tiene pero no eligió,
+// le pide que seleccione. Las tarjetas de integración siempre se ven todas
+// desde que entras a la página — esto solo bloquea la ACCIÓN, no la vista.
+function requireAgentSelected() {
+    if (selectedAgentId) return true;
+    if (agents.length === 0) {
+        showNotification(t('integ_err_create_agent_first', 'Primero crea un agente para poder conectar integraciones'), 'error');
     } else {
-      // ── Ruta normal: datos desde /api/my-business ──────────────────────────
-      const bizResp = await fetch('/api/my-business', { credentials: 'include' });
-      if (bizResp.ok) {
-        const bizData = await bizResp.json();
-        console.log('📦 /api/my-business response:', JSON.stringify(bizData));
-        const allBranches = (window._dashboardBranches && window._dashboardBranches.length > 0)
-          ? window._dashboardBranches
-          : (bizData.branches || []);
-        const branch = bizData.activeBranch || bizData.defaultBranch;
-        if (branch) {
-          businessData = branch;
-          agentData.branchId = branch.id || 0;
-          agentData.businessType = branch.business?.type || agentData.businessType;
-          renderBusinessPreview(branch);
-          updateSectionLabels(agentData.businessType);
-          console.log('✅ Datos del negocio precargados, branchId:', agentData.branchId);
-        } else {
-          console.warn('⚠️ No se encontró activeBranch ni defaultBranch en la respuesta');
-        }
-        if (allBranches.length >= 1) {
-          renderBranchSelectorBasic(allBranches, agentData.branchId);
-        }
-      }
+        showNotification(t('integ_err_select_agent', 'Por favor selecciona un agente primero'), 'error');
     }
-  } catch (error) {
-    console.error('❌ Error obteniendo datos del usuario:', error);
-  }
-}
-
-// ============================================
-// GOVERNMENT MODE — adapta UI del onboarding
-// ============================================
-
-/**
- * Cambia las secciones, etiquetas y readonly-notices del onboarding
- * para reflejar la terminología gubernamental de Mi Dependencia.
- */
-function applyGovernmentMode() {
-  console.log('🏛️ Modo Gubernamental activado en onboarding');
-
-  // Cambiar el array de secciones activo (quita Menú, renombra varias)
-  SECTIONS = SECTIONS_GOVERNMENT;
-
-  // Ocultar sección-menú (no aplica para gobierno)
-  const menuSection = document.getElementById('section-menu');
-  if (menuSection) menuSection.style.display = 'none';
-
-  // ── Adaptar sección "Info. Negocio" → "Dependencia" ──────────────────────
-
-  // Título de la sección
-  const bizTitle = document.querySelector('#section-business .section-title');
-  if (bizTitle) {
-    const icon = bizTitle.querySelector('i');
-    bizTitle.innerHTML = '';
-    if (icon) { icon.className = 'lni lni-government'; bizTitle.appendChild(icon); }
-    bizTitle.append(' Información de la Dependencia');
-  }
-
-  // Readonly notice: apunta a "Mi Dependencia" en TODAS las secciones
-  document.querySelectorAll(
-    '#section-business .readonly-notice, ' +
-    '#section-location .readonly-notice, ' +
-    '#section-social .readonly-notice, ' +
-    '#section-schedule .readonly-notice, ' +
-    '#section-holidays .readonly-notice, ' +
-    '#section-services .readonly-notice, ' +
-    '#section-workers .readonly-notice'
-  ).forEach(notice => {
-    notice.innerHTML = `<i class="lni lni-lock-alt"></i> ${t('onb_readonly_notice_pre','Datos precargados desde')} <strong>${t('onb_gov_agency','Mi Dependencia')}</strong>. ${t('onb_readonly_notice_mid','Para editarlos ve a')} <a href="/my-agency" target="_blank">${t('onb_gov_agency','Mi Dependencia')} &rarr;</a>`;
-  });
-
-  // Adaptar labels del formulario de negocio
-  _govLabel('businessNameInput', 'Nombre de la Dependencia', 'Ej: Secretaría de Educación Pública');
-  _govPlaceholder('businessNameInput', 'Ej: Secretaría de Educación Pública');
-  _govLabel('businessDescInput', 'Descripción de la Dependencia', 'Describe brevemente la función de tu dependencia');
-  _govPlaceholder('businessDescInput', 'Ej: Somos la dirección de capacitación y desarrollo, ofrecemos cursos y talleres...');
-  _govLabel('emailContactInput', 'Email Oficial', 'Email principal de contacto de la dependencia');
-  _govPlaceholder('emailContactInput', 'atencion@dependencia.gob.mx');
-
-  // Ocultar el selector de "Giro del Negocio" (no aplica)
-  const bizTypeGroup = document.getElementById('businessTypeWrapper')?.closest('.form-group');
-  if (bizTypeGroup) bizTypeGroup.style.display = 'none';
-
-  // Inyectar campos gubernamentales extra (acrónimo, área, nivel de gobierno)
-  _injectGovFields();
-
-  // ── Adaptar sección "Días Festivos" → "Días Inhábiles" ───────────────────
-  const holidayTitle = document.querySelector('#section-holidays .section-title');
-  if (holidayTitle) {
-    const icon = holidayTitle.querySelector('i');
-    holidayTitle.innerHTML = '';
-    if (icon) holidayTitle.appendChild(icon);
-    holidayTitle.append(' Días Inhábiles');
-  }
-  const addHolidayBtn = document.getElementById('addHolidayBtn');
-  if (addHolidayBtn) {
-    const icon = addHolidayBtn.querySelector('i');
-    addHolidayBtn.textContent = ' ' + t('onb_hol_add_btn','Agregar Día Inhábil');
-    if (icon) addHolidayBtn.prepend(icon);
-  }
-  document.querySelectorAll('.holiday-name-input').forEach(el => {
-    el.placeholder = t('onb_hol_name_placeholder','Nombre del día inhábil');
-  });
-
-  // ── Adaptar sección "Servicios" → "Cursos y Talleres" ────────────────────
-  const svcTitle = document.querySelector('#section-services .section-title');
-  if (svcTitle) {
-    const icon = svcTitle.querySelector('i');
-    svcTitle.innerHTML = '';
-    if (icon) { icon.className = 'lni lni-graduation'; svcTitle.appendChild(icon); }
-    svcTitle.append(' Cursos y Talleres');
-  }
-  const svcHint = document.querySelector('#section-services .form-help');
-  if (svcHint) svcHint.textContent = t('onb_gov_courses','Define los cursos o talleres que ofrece tu dependencia');
-  const addSvcBtn = document.getElementById('addServiceBtn');
-  if (addSvcBtn) {
-    const icon = addSvcBtn.querySelector('i');
-    addSvcBtn.textContent = ' ' + t('onb_gov_courses','Agregar Curso');
-    if (icon) addSvcBtn.prepend(icon);
-  }
-  window._currentSvcItemLabel = 'Curso';
-
-  // Ocultar campos de precio en todos los service-items existentes y agregar campos gov
-  document.querySelectorAll('.service-item').forEach(item => {
-    _hideServicePriceFields(item);
-    _injectCourseGovFields(item, null);
-    // Actualizar label del título
-    const titleLabel = item.querySelector('.form-label');
-    if (titleLabel && titleLabel.textContent.includes('Título')) {
-      titleLabel.textContent = t('onb_gov_courses','Título del Curso') + ' *';
-    }
-    const titleInput = item.querySelector('.service-title');
-    if (titleInput) titleInput.placeholder = 'Ej: ' + t('onb_gov_courses','Curso') + ' de computación básica';
-  });
-
-  // ── Adaptar sección "Ubicación" para gobierno ──────────────────────────────
-  // Ocultar campos que no aplican (entre calles, número, colonia, código postal)
-  ['postalCodeInput','betweenStreetsInput','numberInput','neighborhoodInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.closest('.form-group').style.display = 'none';
-  });
-  // Mostrar ciudad y estado (están ocultos por defecto en modo negocio)
-  ['cityInput','stateInput','countryInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.display = '';
-      el.closest('.form-group').style.display = '';
-    }
-  });
-  // Actualizar el title de la sección
-  const locTitle = document.querySelector('#section-location .section-title');
-  if (locTitle) {
-    const icon = locTitle.querySelector('i');
-    locTitle.innerHTML = '';
-    if (icon) locTitle.appendChild(icon);
-    locTitle.append(' Ubicación de la Dependencia');
-  }
-  // Agregar campo de Maps si no existe
-  if (!document.getElementById('govMapsLinkInput')) {
-    const addressGroup = document.getElementById('addressInput')?.closest('.form-group');
-    if (addressGroup) {
-      const mapsGroup = document.createElement('div');
-      mapsGroup.className = 'form-group';
-      mapsGroup.innerHTML = `
-        <label class="form-label">
-          <i class="lni lni-map" style="color:#06b6d4;margin-right:4px;"></i>
-          Link de Google Maps
-        </label>
-        <input type="url" id="govMapsLinkInput" class="form-input"
-               placeholder="https://maps.google.com/?q=...">
-        <span class="form-help">Pega el enlace de "Compartir" de Google Maps</span>
-      `;
-      addressGroup.after(mapsGroup);
-    }
-  }
-  const workersTitle = document.querySelector('#section-workers .section-title');
-  if (workersTitle) {
-    const icon = workersTitle.querySelector('i');
-    workersTitle.innerHTML = '';
-    if (icon) workersTitle.appendChild(icon);
-    workersTitle.append(' Personal de Atención');
-  }
-  const addWorkerBtn = document.getElementById('addWorkerBtn');
-  if (addWorkerBtn) {
-    const icon = addWorkerBtn.querySelector('i');
-    if (addWorkerBtn) { addWorkerBtn.innerHTML = `<i class="lni lni-plus"></i> ${t('onb_wkr_add_btn','Agregar Trabajador')}`; }
-    if (icon) addWorkerBtn.prepend(icon);
-  }
-
-  // ── Adaptar "Trabajadores" → "Personal de Atención" ──────────────────────
-  const navContainer = document.getElementById('sectionNavigation');
-  if (navContainer) rebuildSectionNav(navContainer);
-}
-
-/** Helper: cambia la etiqueta de un campo */
-function _govLabel(inputId, newLabel, newHelp) {
-  const el = document.getElementById(inputId);
-  if (!el) return;
-  const group = el.closest('.form-group');
-  if (!group) return;
-  const label = group.querySelector('.form-label');
-  if (label) label.childNodes[label.childNodes.length - 1].textContent = newLabel;
-  if (newHelp) {
-    const help = group.querySelector('.form-help');
-    if (help) help.textContent = newHelp;
-  }
-}
-
-/** Helper: cambia el placeholder de un input */
-function _govPlaceholder(inputId, placeholder) {
-  const el = document.getElementById(inputId);
-  if (el) el.placeholder = placeholder;
-}
-
-/** Inyecta campos de acrónimo, área, nivel de gobierno en section-business */
-function _injectGovFields() {
-  const grid = document.querySelector('#section-business .form-grid');
-  if (!grid || document.getElementById('depAcronymInput')) return; // ya inyectados
-
-  const govFieldsHTML = `
-    <div class="form-group" id="govAcronymGroup">
-      <label class="form-label">Siglas / Acrónimo</label>
-      <input type="text" id="depAcronymInput" class="form-input" placeholder="Ej: SEP, IMSS, CONACYT" readonly />
-      <span class="form-help">Abreviatura oficial de la dependencia</span>
-    </div>
-    <div class="form-group" id="govAreaGroup">
-      <label class="form-label">Área / Departamento</label>
-      <input type="text" id="depAreaInput" class="form-input" placeholder="Ej: Dirección de Capacitación" readonly />
-      <span class="form-help">Unidad interna responsable</span>
-    </div>
-    <div class="form-group" id="govParentGroup">
-      <label class="form-label">Organismo Superior</label>
-      <input type="text" id="depParentInput" class="form-input" placeholder="Ej: Gobierno del Estado de Sonora" readonly />
-      <span class="form-help">Dependencia madre o entidad superior</span>
-    </div>
-    <div class="form-group" id="govLevelGroup">
-      <label class="form-label">Nivel de Gobierno</label>
-      <input type="text" id="govLevelDisplayInput" class="form-input" placeholder="—" readonly />
-      <span class="form-help">Federal, Estatal, Municipal u Organismo Autónomo</span>
-    </div>
-  `;
-
-  // Insertar antes del primer form-group
-  const firstGroup = grid.querySelector('.form-group');
-  if (firstGroup) {
-    firstGroup.insertAdjacentHTML('afterend', govFieldsHTML);
-  } else {
-    grid.insertAdjacentHTML('beforeend', govFieldsHTML);
-  }
-}
-
-/**
- * Precarga los campos del onboarding con datos de /api/my-agency
- * (equivalente a renderBusinessPreview pero para dependencias).
- */
-function renderGovernmentPreview(office) {
-  // office shape from my-agency.js loadBranchData:
-  // { depName, depAcronym, depArea, depParent, govLevel, rfc, description,
-  //   website, email, phoneNumber, address, city, state, mapsLink,
-  //   facebook, instagram, twitter, youtube, linkedin, schedule, holidays,
-  //   sedes, cursos, officeName }
-
-  // ── Información de la Dependencia ─────────────────────────────────────────
-  const infoMap = {
-    'businessNameInput':  office.depName      || '',
-    'businessDescInput':  office.description  || '',
-    'websiteInput':       office.website      || '',
-    'emailContactInput':  office.email        || '',
-    'depAcronymInput':    office.depAcronym   || '',
-    'depAreaInput':       office.depArea      || '',
-    'depParentInput':     office.depParent    || '',
-    'govLevelDisplayInput': _govLevelLabel(office.govLevel),
-  };
-  Object.entries(infoMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  // Deshabilitar el selector de tipo de negocio
-  const typeWrapper = document.getElementById('businessTypeWrapper');
-  if (typeWrapper) typeWrapper.style.pointerEvents = 'none';
-
-  // ── Ubicación ─────────────────────────────────────────────────────────────
-  const locMap = {
-    'addressInput':       office.address || '',
-    'postalCodeInput':    office.postalCode || '',
-    'betweenStreetsInput': '',
-    'numberInput':        '',
-    'neighborhoodInput':  '',
-  };
-  Object.entries(locMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  agentData.location = {
-    address:        office.address || '',
-    betweenStreets: '',
-    number:         '',
-    neighborhood:   '',
-    city:           office.city    || '',
-    state:          office.state   || '',
-    country:        'México',
-    postalCode:     office.postalCode || '',
-  };
-
-  preloadLocationDropdown('countryInput', 'México');
-  preloadLocationDropdown('stateInput',   office.state || '');
-  preloadLocationDropdown('cityInput',    office.city  || '');
-
-  // ── Redes Sociales ────────────────────────────────────────────────────────
-  const socialMap = {
-    'facebookInput':  office.facebook  || '',
-    'instagramInput': office.instagram || '',
-    'twitterInput':   office.twitter   || '',
-    'linkedinInput':  office.linkedin  || '',
-  };
-  Object.entries(socialMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  agentData.social_media = {
-    facebook:  office.facebook  || '',
-    instagram: office.instagram || '',
-    twitter:   office.twitter   || '',
-    linkedin:  office.linkedin  || '',
-  };
-
-  // ── Horario ───────────────────────────────────────────────────────────────
-  const schedule = office.schedule || {};
-  const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-  days.forEach(day => {
-    const dayData = schedule[day];
-    if (!dayData) return;
-    const toggle  = document.getElementById(`${day}Toggle`);
-    const startEl = document.getElementById(`${day}Start`);
-    const endEl   = document.getElementById(`${day}End`);
-    const dayBlock = document.querySelector(`[data-day="${day}"]`);
-
-    const isOpen    = dayData.isOpen !== undefined ? dayData.isOpen : dayData.open;
-    const openTime  = dayData.open   || dayData.start || '09:00';
-    const closeTime = dayData.close  || dayData.end   || '18:00';
-
-    if (toggle) { toggle.checked = !!isOpen; toggle.dispatchEvent(new Event('change')); }
-    if (startEl) { startEl.value = openTime;  startEl.dispatchEvent(new Event('change')); _updateCustomTimePicker(startEl, openTime); }
-    if (endEl)   { endEl.value   = closeTime; endEl.dispatchEvent(new Event('change'));   _updateCustomTimePicker(endEl, closeTime); }
-    if (dayBlock) dayBlock.classList.toggle('closed', !isOpen);
-  });
-
-  // ── Días Inhábiles ────────────────────────────────────────────────────────
-  const holidays = office.holidays || [];
-  if (holidays.length > 0) {
-    const holidaysList = document.getElementById('holidaysList');
-    if (holidaysList) holidaysList.innerHTML = '';
-    holidays.forEach(h => {
-      const dateStr = h.date && h.date.includes('-') ? h.date :
-                      (h.date ? `2025-${(h.date.split('/')[1]||'01').padStart(2,'0')}-${(h.date.split('/')[0]||'01').padStart(2,'0')}` : '');
-      addHolidayWithData(dateStr, h.name || '');
-    });
-    updateHolidaysData();
-  }
-
-  // ── Cursos (equivalente a servicios en modo gobierno) ─────────────────────
-  const cursos = office.cursos || [];
-  if (cursos.length > 0) {
-    const servicesList = document.getElementById('servicesList');
-    if (servicesList) servicesList.innerHTML = '';
-    cursos.forEach(c => {
-      addServiceWithData({
-        title:       c.title || '',
-        description: c.description || '',
-        price:       null,
-        imageUrls:   c.imageUrls || [],
-      });
-      // Inyectar campos gov con los datos reales del curso
-      const items = document.querySelectorAll('.service-item');
-      const lastItem = items[items.length - 1];
-      if (lastItem) _injectCourseGovFields(lastItem, c);
-    });
-    updateServicesData();
-  }
-
-  // ── Personal (trabajadores) ───────────────────────────────────────────────
-  const workers = office.workers || [];
-  if (workers.length > 0) {
-    const workersList = document.getElementById('workersList');
-    if (workersList) workersList.innerHTML = '';
-    workers.forEach(w => addWorkerWithData(w));
-    updateWorkersData();
-  }
-
-  // ── Nombre de la oficina en el selector de rama ───────────────────────────
-  document.getElementById('branchDropdownLabel') && (document.getElementById('branchDropdownLabel').textContent = office.officeName || 'Oficina');
-}
-
-/** Inyecta campos gubernamentales (modalidad, cupos, periodo, sede) en un service-item */
-function _injectCourseGovFields(item, courseData) {
-  if (!item || item.querySelector('.course-gov-fields')) return; // ya inyectados
-
-  const sedes = [...document.querySelectorAll('.sede-nombre')]
-    .map(i => i.value.trim()).filter(Boolean);
-
-  const modalidad  = courseData?.modalidad  || 'presencial';
-  const cupos      = courseData?.cupos      || '';
-  const fechaIni   = courseData?.fechaInicio || '';
-  const fechaFin   = courseData?.fechaFin   || '';
-  const sedeVal    = courseData?.sede        || '';
-  const disponible = courseData?.disponible !== false;
-
-  const govBlock = document.createElement('div');
-  govBlock.className = 'course-gov-fields';
-  govBlock.style.cssText = 'margin-top:1rem;display:flex;flex-direction:column;gap:.85rem;';
-
-  govBlock.innerHTML = `
-    <!-- Toggle disponible -->
-    <div style="display:flex;align-items:center;gap:.75rem;">
-      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;">
-        <input type="checkbox" class="curso-ob-disponible" ${disponible ? 'checked' : ''}
-               style="width:16px;height:16px;accent-color:#06b6d4;">
-        <span style="font-size:.875rem;font-weight:600;color:#374151;">Disponible</span>
-      </label>
-    </div>
-
-    <!-- Modalidad -->
-    <div>
-      <label style="display:block;font-size:.8rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Modalidad</label>
-      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-        ${['presencial','en-linea','hibrido'].map(m => `
-          <button type="button" class="ob-modalidad-btn${m===modalidad?' ob-modalidad-active':''}"
-                  data-mod="${m}"
-                  style="padding:.3rem .8rem;border-radius:8px;border:1.5px solid ${m===modalidad?'#06b6d4':'#e5e7eb'};
-                         background:${m===modalidad?'#ecfeff':'white'};color:${m===modalidad?'#0891b2':'#6b7280'};
-                         font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;">
-            ${m==='presencial'?'Presencial':m==='en-linea'?'En línea':'Híbrido'}
-          </button>`).join('')}
-      </div>
-      <input type="hidden" class="curso-ob-modalidad" value="${modalidad}">
-    </div>
-
-    <!-- Cupos -->
-    <div>
-      <label style="display:block;font-size:.8rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Cupos disponibles</label>
-      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
-        <input type="number" class="form-input curso-ob-cupos" min="0" step="1"
-               placeholder="—" value="${cupos}"
-               style="width:80px;text-align:center;padding:.35rem .5rem;font-size:.9rem;">
-        <span style="font-size:.82rem;color:#6b7280;">lugares</span>
-      </div>
-    </div>
-
-    <!-- Periodo -->
-    <div>
-      <label style="display:block;font-size:.8rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Periodo</label>
-      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
-        <input type="date" class="form-input curso-ob-fecha-inicio" value="${fechaIni}"
-               style="flex:1;min-width:130px;">
-        <span style="color:#d1d5db;">→</span>
-        <input type="date" class="form-input curso-ob-fecha-fin" value="${fechaFin}"
-               style="flex:1;min-width:130px;">
-      </div>
-    </div>
-
-    <!-- Sede -->
-    <div>
-      <label style="display:block;font-size:.8rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">Sede</label>
-      <div style="position:relative;">
-        <i class="lni lni-map-marker"
-           style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#06b6d4;font-size:.9rem;pointer-events:none;"></i>
-        <select class="form-input curso-ob-sede"
-                style="padding-left:2.2rem;cursor:pointer;appearance:none;-webkit-appearance:none;">
-          <option value="">Sin sede asignada</option>
-          ${sedes.map(s => `<option value="${s}"${s===sedeVal?' selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-  `;
-
-  // Listeners modalidad
-  govBlock.querySelectorAll('.ob-modalidad-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      govBlock.querySelectorAll('.ob-modalidad-btn').forEach(b => {
-        b.style.borderColor = '#e5e7eb'; b.style.background = 'white'; b.style.color = '#6b7280';
-      });
-      this.style.borderColor = '#06b6d4'; this.style.background = '#ecfeff'; this.style.color = '#0891b2';
-      govBlock.querySelector('.curso-ob-modalidad').value = this.dataset.mod;
-    });
-  });
-
-  item.querySelector('.service-fields').appendChild(govBlock);
-}
-function _govLevelLabel(val) {
-  const map = {
-    federal:   'Federal',
-    estatal:   'Estatal',
-    municipal: 'Municipal',
-    autonomo:  'Organismo Autónomo',
-  };
-  return map[val] || val || '';
-}
-
-/** Oculta los campos de precio y adapta labels de un service-item para modo gobierno */
-function _hideServicePriceFields(item) {
-  if (!item) return;
-  // Ocultar: tipo de precio, precio normal, precios de promoción, periodo promo
-  item.querySelectorAll('.price-type-selector, .price-normal, .promotion-prices, .promo-period-block').forEach(el => {
-    el.style.display = 'none';
-  });
-  item.querySelectorAll('.form-group').forEach(g => {
-    const label = g.querySelector('.form-label');
-    if (!label) return;
-    if (label.textContent.includes('Tipo de Precio') || label.textContent.trim().startsWith('Precio')) {
-      g.style.display = 'none';
-    }
-    // Renombrar "Descripción del Servicio/Producto" → "Descripción del Curso"
-    if (label.textContent.includes('Descripción del Servicio') || label.textContent.includes('Descripción del Producto')) {
-      label.textContent = 'Descripción del Curso';
-    }
-    // Renombrar "Título del Servicio/Producto" → "Título del Curso"
-    if (label.textContent.includes('Título del Servicio') || label.textContent.includes('Título del Producto')) {
-      label.textContent = 'Título del Curso *';
-    }
-  });
-  // Renombrar cabecera del item (ej: "Servicio 1" → "Curso 1")
-  const header = item.querySelector('.service-number');
-  if (header) header.textContent = header.textContent.replace('Servicio', 'Curso').replace('Producto', 'Curso');
-}
-
-// ── Selector de sucursal en Info. Básica ─────────────────────────────────────
-
-function renderBranchSelectorBasic(branches, activeBranchId) {
-  const wrapper = document.getElementById('branchSelectorBasic');
-  const container = document.getElementById('branchBasicCards');
-  if (!wrapper || !container) return;
-
-  container.innerHTML = '';
-
-  // Con una sola sucursal: solo badge informativo, sin opción de cambiar
-  if (branches.length === 1) {
-    const b = branches[0];
-    const badge = document.createElement('div');
-    badge.className = 'branch-basic-card active branch-basic-single';
-    badge.dataset.branchId = b.id;
-    badge.innerHTML = `<span class="branch-basic-badge">${b.branchNumber}</span><i class="lni lni-map-marker"></i><span>${b.branchName || ('Sucursal ' + b.branchNumber)}</span><i class="lni lni-checkmark-circle branch-basic-check"></i>`;
-    container.appendChild(badge);
-    wrapper.style.display = 'block';
-    return;
-  }
-
-  // Con múltiples sucursales: selector interactivo
-  // Card "Todas las sucursales"
-  const allCard = document.createElement('div');
-  allCard.className = 'branch-basic-card' + (activeBranchId === 0 ? ' active' : '');
-  allCard.dataset.branchId = '0';
-  allCard.innerHTML = `<i class="lni lni-network"></i><span>${t('onb_all_branches','Todas las sucursales')}</span>`;
-  allCard.addEventListener('click', () => selectBranchBasic(0, null));
-  container.appendChild(allCard);
-
-  branches.forEach(b => {
-    const card = document.createElement('div');
-    card.className = 'branch-basic-card' + (b.id === activeBranchId ? ' active' : '');
-    card.dataset.branchId = b.id;
-    card.innerHTML = `<span class="branch-basic-badge">${b.branchNumber}</span><i class="lni lni-map-marker"></i><span>${b.branchName || ('Sucursal ' + b.branchNumber)}</span>`;
-    card.addEventListener('click', () => selectBranchBasic(b.id, b));
-    container.appendChild(card);
-  });
-
-  wrapper.style.display = 'block';
-}
-
-async function selectBranchBasic(branchId, branchMeta) {
-  if (agentData.branchId === branchId) return;
-
-  document.querySelectorAll('#branchBasicCards .branch-basic-card').forEach(card => {
-    card.classList.toggle('active', parseInt(card.dataset.branchId) === branchId);
-  });
-
-  if (branchId === 0) {
-    agentData.branchId = 0;
-    updatePhoneToggleHint(null);
-    console.log('🔀 Sucursal: Todas');
-    return;
-  }
-
-  try {
-    const resp = await fetch(`/api/my-business/${branchId}`, { credentials: 'include' });
-    if (!resp.ok) throw new Error('Error cargando sucursal');
-    const branch = await resp.json();
-    businessData = branch;
-    agentData.branchId = branchId;
-    agentData.businessType = branch.business?.type || agentData.businessType;
-    renderBusinessPreview(branch);
-    updatePhoneToggleHint(branch);
-    updateSectionLabels(agentData.businessType);
-    console.log('🔀 Sucursal cambiada a:', branchId);
-  } catch (err) {
-    console.error('❌ Error cargando sucursal:', err);
-  }
-}
-
-// Actualiza el hint del toggle de teléfono según la sucursal seleccionada
-function updatePhoneToggleHint(branch) {
-  const desc = document.getElementById('phoneToggleDesc');
-  // Remover hint anterior si existe
-  const existing = document.getElementById('branchPhoneHint');
-  if (existing) existing.remove();
-
-  if (branch && branch.phoneNumber) {
-    const hint = document.createElement('div');
-    hint.id = 'branchPhoneHint';
-    hint.className = 'branch-phone-hint';
-    hint.innerHTML = `<i class="lni lni-map-marker"></i> Sucursal usa: <strong>${branch.phoneNumber}</strong> — activa esto si necesitas un número distinto`;
-    if (desc && desc.parentNode) {
-      desc.parentNode.insertBefore(hint, desc.nextSibling);
-    }
-  }
-}
-
-
-// Muestra un resumen read-only del negocio en las secciones del onboarding
-function renderBusinessPreview(branch) {
-  // El endpoint devuelve { business: { name, type, description, website, email }, ... }
-  const biz = branch.business || {};
-  const loc = branch.location || {};
-  const soc = branch.social   || {};
-
-  // ── Info del negocio ──────────────────────────
-  const map = {
-    'businessNameInput': biz.name        || '',
-    'businessDescInput': biz.description || '',
-    'websiteInput':      biz.website     || '',
-    'emailContactInput': biz.email       || '',
-    'phoneNumber':       branch.phoneNumber || '',
-  };
-  Object.entries(map).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  // Tipo de negocio (custom select — solo llenar el input visible)
-  const typeInput = document.getElementById('businessTypeInput');
-  if (typeInput && biz.type) {
-    typeInput.value = biz.typeName || biz.type;
-    typeInput.dataset.value = biz.type;
-    const wrapper = document.getElementById('businessTypeWrapper');
-    if (wrapper) wrapper.style.pointerEvents = 'none';
-  }
-
-  // ── Ubicación ─────────────────────────────────
-  const locMap = {
-    'addressInput':        loc.address        || '',
-    'postalCodeInput':     loc.postalCode     || '',
-    'betweenStreetsInput':  loc.betweenStreets || '',
-    'numberInput':         loc.number         || '',
-    'neighborhoodInput':   loc.neighborhood   || '',
-  };
-  Object.entries(locMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  // Precargar agentData.location para el summary
-  agentData.location = {
-    address:        loc.address        || '',
-    betweenStreets: loc.betweenStreets || '',
-    number:         loc.number         || '',
-    neighborhood:   loc.neighborhood   || '',
-    city:           loc.city           || '',
-    state:          loc.state          || '',
-    country:        loc.country        || '',
-    postalCode:     loc.postalCode     || '',
-  };
-
-  // Precargar los custom dropdowns de ubicación (país, estado, ciudad)
-  // Estos tienen un displayInput visible separado del hidden input original
-  preloadLocationDropdown('countryInput', loc.country   || '');
-  preloadLocationDropdown('stateInput',   loc.state     || '');
-  preloadLocationDropdown('cityInput',    loc.city      || '');
-
-  // ── Redes sociales ────────────────────────────
-  const socialMap = {
-    'facebookInput':  soc.facebook  || '',
-    'instagramInput': soc.instagram || '',
-    'twitterInput':   soc.twitter   || '',
-    'linkedinInput':  soc.linkedin  || '',
-  };
-  Object.entries(socialMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) { el.value = val; el.readOnly = true; }
-  });
-
-  // Precargar agentData.social_media para el summary
-  agentData.social_media = {
-    facebook:  soc.facebook  || '',
-    instagram: soc.instagram || '',
-    twitter:   soc.twitter   || '',
-    linkedin:  soc.linkedin  || '',
-  };
-
-  // ── Horario ───────────────────────────────────
-  const schedule = branch.schedule || {};
-  const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-  days.forEach(day => {
-    const dayData = schedule[day];
-    if (!dayData) return;
-
-    const toggle   = document.getElementById(`${day}Toggle`);
-    const startEl  = document.getElementById(`${day}Start`);
-    const endEl    = document.getElementById(`${day}End`);
-    const dayBlock = document.querySelector(`[data-day="${day}"]`);
-
-    const isOpen = dayData.isOpen !== undefined ? dayData.isOpen : dayData.open;
-    const openTime  = dayData.open  || dayData.start || '09:00';
-    const closeTime = dayData.close || dayData.end   || '18:00';
-
-    if (toggle) {
-      toggle.checked = !!isOpen;
-      toggle.dispatchEvent(new Event('change'));
-    }
-    if (startEl) {
-      startEl.value = openTime;
-      startEl.dispatchEvent(new Event('change'));
-      // Actualizar custom time picker si ya fue inicializado
-      _updateCustomTimePicker(startEl, openTime);
-    }
-    if (endEl) {
-      endEl.value = closeTime;
-      endEl.dispatchEvent(new Event('change'));
-      _updateCustomTimePicker(endEl, closeTime);
-    }
-    if (dayBlock) {
-      dayBlock.classList.toggle('closed', !isOpen);
-    }
-  });
-
-  // ── Días Festivos ─────────────────────────────
-  const holidays = branch.holidays || [];
-  if (holidays.length > 0) {
-    const holidaysList = document.getElementById('holidaysList');
-    if (holidaysList) holidaysList.innerHTML = '';
-    holidays.forEach(h => {
-      // h.date puede venir como "YYYY-MM-DD" o en formato "dd/mm"
-      const dateStr = h.date && h.date.includes('-') ? h.date :
-                      (h.date ? `2025-${(h.date.split('/')[1]||'01').padStart(2,'0')}-${(h.date.split('/')[0]||'01').padStart(2,'0')}` : '');
-      addHolidayWithData(dateStr, h.name || '');
-    });
-    updateHolidaysData();
-  }
-
-  // ── Servicios ─────────────────────────────────
-  const services = branch.services || [];
-  if (services.length > 0) {
-    const servicesList = document.getElementById('servicesList');
-    if (servicesList) servicesList.innerHTML = '';
-    services.forEach(s => addServiceWithData(s));
-    updateServicesData();
-  }
-
-  // ── Trabajadores ──────────────────────────────
-  const workers = branch.workers || [];
-  if (workers.length > 0) {
-    const workersList = document.getElementById('workersList');
-    if (workersList) workersList.innerHTML = '';
-    workers.forEach(w => addWorkerWithData(w));
-    updateWorkersData();
-  }
-}
-
-// Precarga el displayInput visible de un location dropdown
-function preloadLocationDropdown(inputId, value) {
-  if (!value) return;
-  const hiddenInput = document.getElementById(inputId);
-  if (!hiddenInput) return;
-  // El wrapper está justo antes del hidden input
-  const wrapper = hiddenInput.previousElementSibling;
-  if (wrapper && wrapper.classList.contains('location-dropdown-wrapper')) {
-    const displayInput = wrapper.querySelector('.location-select');
-    if (displayInput) displayInput.value = value;
-    // Marcar la opción como selected si existe
-    const option = wrapper.querySelector(`.location-option[data-value="${value.toLowerCase().replace(/\s+/g,'-')}"]`);
-    if (option) {
-      wrapper.querySelectorAll('.location-option').forEach(o => o.classList.remove('selected'));
-      option.classList.add('selected');
-    }
-  }
-  hiddenInput.value = value;
-}
-
-// Actualiza el custom time picker visual dado el input nativo
-function _updateCustomTimePicker(nativeInput, time24) {
-  if (!nativeInput || !time24) return;
-  const wrapper = nativeInput.previousElementSibling;
-  if (!wrapper || !wrapper.classList.contains('custom-time-wrapper')) return;
-  const customInput = wrapper.querySelector('.time-input-custom');
-  if (customInput) customInput.value = formatTimeDisplay(time24);
-}
-
-// Agrega un día festivo con datos precargados
-function addHolidayWithData(dateStr, name) {
-  const holidaysList = document.getElementById('holidaysList');
-  if (!holidaysList) return;
-
-  const holidayId = Date.now() + Math.random();
-  const holidayItem = document.createElement('div');
-  holidayItem.className = 'holiday-item';
-  holidayItem.dataset.holidayId = holidayId;
-  holidayItem.innerHTML = `
-    <div class="holiday-date form-group">
-      <input type="date" class="form-input holiday-date-input" value="${dateStr}" required>
-    </div>
-    <div class="holiday-name form-group">
-      <input type="text" class="form-input holiday-name-input" placeholder="${t('onb_hol_name_placeholder','Nombre del día festivo')}" value="${name}" required>
-    </div>
-    <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
-      <i class="lni lni-trash-can"></i>
-    </button>
-  `;
-  holidaysList.appendChild(holidayItem);
-  holidayItem.querySelector('.holiday-date-input').addEventListener('change', updateHolidaysData);
-  holidayItem.querySelector('.holiday-name-input').addEventListener('input', updateHolidaysData);
-}
-
-// Agrega un servicio con datos precargados
-function addServiceWithData(s) {
-  addService(); // crea el DOM vacío
-  const items = document.querySelectorAll('.service-item');
-  const item = items[items.length - 1];
-  if (!item) return;
-
-  const titleEl = item.querySelector('.service-title');
-  if (titleEl) titleEl.value = s.title || '';
-
-  const editorEl = item.querySelector('.service-editor-content');
-  if (editorEl) editorEl.innerHTML = s.description || '';
-
-  const imgUrls = s.imageUrls || (s.imageUrl ? [s.imageUrl] : []);
-  if (imgUrls.length > 0) {
-    const grid    = item.querySelector('.service-images-grid');
-    const urlsInput = item.querySelector('.service-image-urls');
-    const addBtn  = item.querySelector('.service-img-add-btn');
-    imgUrls.forEach(url => {
-      const thumb = document.createElement('div');
-      thumb.className = 'service-img-thumb';
-      thumb.dataset.url = url; // URL real, no pendiente
-      thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
-      grid.insertBefore(thumb, addBtn);
-    });
-    if (urlsInput) urlsInput.value = imgUrls.join(',');
-  }
-
-  // ── Precio ────────────────────────────────────────────────────────────────
-  const priceType = (s.priceType === 'promotion' || s.priceType === 'promo') ? 'promotion' : 'normal';
-  const priceTypeOpts = item.querySelectorAll('.price-type-option');
-  priceTypeOpts.forEach(opt => {
-    opt.classList.toggle('active', opt.dataset.type === priceType);
-  });
-  const promoSection = item.querySelector('.promotion-prices');
-  const normalSection = item.querySelector('.price-normal');
-  const promoPeriodBlock = item.querySelector('.promo-period-block');
-  if (priceType === 'promotion') {
-    if (promoSection) promoSection.classList.add('show');
-    if (normalSection) normalSection.style.display = 'none';
-    if (promoPeriodBlock) promoPeriodBlock.style.display = 'block';
-    const origEl = item.querySelector('.service-original-price');
-    const promoEl = item.querySelector('.service-promo-price');
-    if (origEl) origEl.value = s.originalPrice ? _formatPriceNumber(s.originalPrice) : '';
-    if (promoEl) promoEl.value = s.promoPrice ? _formatPriceNumber(s.promoPrice) : '';
-
-    // ── Periodo de promo ──────────────────────────────────────────────────
-    const periodType = s.promoPeriodType || 'days';
-    const periodBtns = item.querySelectorAll('.period-tab-btn');
-    periodBtns.forEach(b => b.classList.toggle('active', b.dataset.period === periodType));
-    const daysPanel  = item.querySelector('.promo-days-panel');
-    const rangePanel = item.querySelector('.promo-range-panel');
-    if (daysPanel)  daysPanel.style.display  = periodType === 'range' ? 'none' : 'flex';
-    if (rangePanel) rangePanel.style.display = periodType === 'range' ? 'flex' : 'none';
-
-    if (periodType === 'days' && Array.isArray(s.promoDays)) {
-      item.querySelectorAll('.promo-days-panel .day-chip').forEach(chip => {
-        const val = chip.querySelector('input').value;
-        const active = s.promoDays.includes(val);
-        chip.classList.toggle('active', active);
-        chip.querySelector('input').checked = active;
-      });
-    } else if (periodType === 'range') {
-      const startEl = item.querySelector('.promo-date-start');
-      const endEl   = item.querySelector('.promo-date-end');
-      if (startEl) startEl.value = s.promoDateStart || '';
-      if (endEl)   endEl.value   = s.promoDateEnd   || '';
-    }
-  } else {
-    const priceEl = item.querySelector('.service-price');
-    if (priceEl) priceEl.value = s.price ? _formatPriceNumber(s.price) : '';
-  }
-}
-
-// Agrega un trabajador con datos precargados
-function addWorkerWithData(w) {
-  addWorker(); // crea el DOM vacío
-  const items = document.querySelectorAll('.worker-item');
-  const item = items[items.length - 1];
-  if (!item) return;
-
-  const nameEl = item.querySelector('.worker-name');
-  if (nameEl) nameEl.value = w.name || '';
-
-  const startEl = item.querySelector('.worker-start-time');
-  const endEl   = item.querySelector('.worker-end-time');
-  if (startEl) { startEl.value = w.startTime || '09:00'; _updateWorkerTimePicker(startEl, startEl.value); }
-  if (endEl)   { endEl.value   = w.endTime   || '18:00'; _updateWorkerTimePicker(endEl,   endEl.value);   }
-
-  const days = Array.isArray(w.days) ? w.days : [];
-  item.querySelectorAll('.availability-day input[type="checkbox"]').forEach(cb => {
-    cb.checked = days.includes(cb.value);
-  });
-}
-
-function _updateWorkerTimePicker(nativeInput, time24) {
-  if (!nativeInput || !time24) return;
-  const wrapper = nativeInput.previousElementSibling;
-  if (!wrapper || !wrapper.classList.contains('worker-time-wrapper')) return;
-  const customInput = wrapper.querySelector('.worker-time-input-custom');
-  if (customInput) customInput.value = formatTimeDisplay(time24);
-}
-
-// ============================================
-// SOCIAL NETWORK SELECTION
-// ============================================
-function initializeSocialSelection() {
-  const socialInputs = document.querySelectorAll('input[name="social"]');
-  const btnStep1 = document.getElementById('btnStep1');
-
-  socialInputs.forEach(input => {
-    input.addEventListener('change', function() {
-      selectedSocial = this.value;
-      window.selectedSocial = this.value;
-      agentData.social = this.value;
-      window.agentData.social = this.value;
-
-      // Mostrar campo de token solo para Telegram
-      const tokenSection = document.getElementById('telegramTokenSection');
-      if (tokenSection) {
-        tokenSection.style.display = this.value === 'telegram' ? 'block' : 'none';
-      }
-
-      // Habilitar botón (para Telegram, requerir token)
-      if (this.value === 'telegram') {
-        const tokenInput = document.getElementById('telegramBotToken');
-        if (tokenInput) {
-          // Revisar si ya hay token escrito
-          btnStep1.disabled = !tokenInput.value.trim().includes(':');
-          // Escuchar cambios en el token
-          tokenInput.oninput = function() {
-            const hasToken = this.value.trim().includes(':');
-            btnStep1.disabled = !hasToken;
-            if (hasToken) {
-              agentData.phoneNumber = this.value.trim();
-              window.agentData.phoneNumber = this.value.trim();
-            }
-          };
-        }
-      } else {
-        btnStep1.disabled = false;
-      }
-    });
-  });
-}
-
-// ============================================
-// DETECCIÓN DE NÚMERO DUPLICADO (plan Protón en adelante)
-// ============================================
-// El toggle "usar un número diferente" es para WhatsApp Business (API oficial
-// de Meta, planes Protón+) — ahí sí puede chocar con el número de otro agente.
-// WhatsApp Web (plan gratuito, QR con whatsmeow) no tiene este problema
-// porque no da de alta un número, solo vincula el que escanea el QR.
-let phoneNumberHasConflict = false;
-let _agentsForPhoneCheckCache = null;
-let _phoneCheckDebounce = null;
-
-async function loadAgentsForPhoneCheck() {
-  if (_agentsForPhoneCheckCache) return _agentsForPhoneCheckCache;
-  try {
-    const resp = await fetch('/api/agents', { credentials: 'include' });
-    if (!resp.ok) { _agentsForPhoneCheckCache = []; return []; }
-    const data = await resp.json();
-    _agentsForPhoneCheckCache = data.agents || [];
-  } catch (e) {
-    console.error('❌ No se pudo revisar agentes existentes para el número:', e);
-    _agentsForPhoneCheckCache = [];
-  }
-  return _agentsForPhoneCheckCache;
-}
-
-function _normalizePhoneDigits(str) {
-  return (str || '').replace(/[^\d]/g, '');
-}
-
-function schedulePhoneConflictCheck() {
-  clearTimeout(_phoneCheckDebounce);
-  _phoneCheckDebounce = setTimeout(checkPhoneNumberConflict, 350);
-}
-
-async function checkPhoneNumberConflict() {
-  const numberInput = document.getElementById('phoneNumber');
-  const countryCode = document.getElementById('countryCode')?.value || '';
-  if (!numberInput) return;
-
-  const rawNumber = numberInput.value.trim();
-  if (!rawNumber) {
-    phoneNumberHasConflict = false;
-    hidePhoneConflictWarning();
-    numberInput.classList.remove('input-error');
-    return;
-  }
-
-  const fullNumber = _normalizePhoneDigits(countryCode + rawNumber);
-  const agents = await loadAgentsForPhoneCheck();
-  const editingId = agentData.editingAgentId || null;
-
-  const conflict = agents.find(a =>
-    a.id !== editingId &&
-    a.phoneNumber &&
-    _normalizePhoneDigits(a.phoneNumber) === fullNumber
-  );
-
-  if (conflict) {
-    phoneNumberHasConflict = true;
-    showPhoneConflictWarning(conflict);
-    numberInput.classList.add('input-error');
-  } else {
-    phoneNumberHasConflict = false;
-    hidePhoneConflictWarning();
-    numberInput.classList.remove('input-error');
-  }
-}
-
-function showPhoneConflictWarning(agent) {
-  let warningEl = document.getElementById('phoneConflictWarning');
-  if (!warningEl) {
-    warningEl = document.createElement('div');
-    warningEl.id = 'phoneConflictWarning';
-    warningEl.className = 'phone-conflict-warning';
-    const phoneGroup = document.getElementById('phoneNumber')?.closest('.phone-input-group');
-    if (phoneGroup && phoneGroup.parentNode) {
-      phoneGroup.parentNode.insertBefore(warningEl, phoneGroup.nextSibling);
-    }
-  }
-
-  // Si el backend nos da el nombre de la sucursal del agente, lo mostramos también
-  const branchLabel = agent.branchName
-    ? ` en la sucursal <strong>"${agent.branchName}"</strong>`
-    : '';
-
-  warningEl.innerHTML = `<i class="lni lni-warning"></i><span>Este número ya lo está usando el agente <strong>"${agent.name || 'sin nombre'}"</strong>${branchLabel}. Por favor usa otro número.</span>`;
-  warningEl.style.display = 'flex';
-}
-
-function hidePhoneConflictWarning() {
-  const warningEl = document.getElementById('phoneConflictWarning');
-  if (warningEl) warningEl.style.display = 'none';
-}
-
-// ============================================
-// PHONE TOGGLE
-// ============================================
-function initializePhoneToggle() {
-  const phoneToggle = document.getElementById('phoneToggle');
-  const differentPhoneSection = document.getElementById('differentPhoneSection');
-  
-  if (phoneToggle) {
-    phoneToggle.addEventListener('change', function() {
-      agentData.useDifferentPhone = this.checked;
-      if (differentPhoneSection) {
-        if (this.checked) {
-          differentPhoneSection.style.display = 'block';
-          loadAgentsForPhoneCheck(); // precargar mientras el usuario escribe
-        } else {
-          differentPhoneSection.style.display = 'none';
-          phoneNumberHasConflict = false;
-          hidePhoneConflictWarning();
-        }
-      }
-    });
-  }
-
-  const phoneNumberInput = document.getElementById('phoneNumber');
-  const countryCodeSelect = document.getElementById('countryCode');
-  if (phoneNumberInput) phoneNumberInput.addEventListener('input', schedulePhoneConflictCheck);
-  if (countryCodeSelect) countryCodeSelect.addEventListener('change', schedulePhoneConflictCheck);
-
-  applyPhoneToggleVisibilityByPlan();
-}
-
-// El toggle "usar un número diferente" es para WhatsApp Business (API oficial
-// de Meta, disponible en Protón en adelante) — en el plan Gratuito el agente
-// usa WhatsApp Web (QR con whatsmeow) y no da de alta ningún número, así que
-// el toggle no aplica y se oculta por completo.
-function applyPhoneToggleVisibilityByPlan() {
-  const container = document.getElementById('phoneToggleContainer');
-  if (!container) return;
-
-  const setVisible = (isPaidPlan) => {
-    container.style.display = isPaidPlan ? '' : 'none';
-    if (!isPaidPlan) {
-      // Asegurar que quede apagado y oculto si el plan no lo permite
-      const toggle = document.getElementById('phoneToggle');
-      const section = document.getElementById('differentPhoneSection');
-      if (toggle && toggle.checked) toggle.checked = false;
-      if (section) section.style.display = 'none';
-      agentData.useDifferentPhone = false;
-    }
-  };
-
-  const isPaid = (plan) => !!plan && plan !== 'gratuito' && plan !== 'pending';
-
-  // 1) Mostrar de inmediato con lo que haya en caché (mismo patrón que userbar.js)
-  try {
-    const cached = JSON.parse(localStorage.getItem('userData') || 'null');
-    if (cached && cached.currentPlan) setVisible(isPaid(cached.currentPlan));
-  } catch (e) { /* caché corrupta, ignorar */ }
-
-  // 2) Confirmar con el backend (fuente de verdad) — mismo endpoint que usa el userbar
-  fetch('/api/me', { credentials: 'include' })
-    .then(res => res.ok ? res.json() : null)
-    .then(data => {
-      const plan = data?.user?.currentPlan;
-      if (plan) setVisible(isPaid(plan));
-    })
-    .catch(err => console.error('❌ No se pudo confirmar el plan del usuario:', err));
-}
-
-// ============================================
-// TONE SELECTION
-// ============================================
-function initializeToneSelection() {
-  const toneInputs = document.querySelectorAll('input[name="tone"]');
-  const customToneEditor = document.getElementById('customToneEditor');
-
-  // Al inicializar: limpiar clases .selected del HTML estático
-  // y reasignar solo al radio realmente :checked (single source of truth)
-  document.querySelectorAll('.tone-radio-option').forEach(opt => opt.classList.remove('selected'));
-  const checkedInput = document.querySelector('input[name="tone"]:checked');
-  if (checkedInput) {
-    checkedInput.closest('.tone-radio-option').classList.add('selected');
-    agentData.config.tone = checkedInput.value;
-  }
-
-  toneInputs.forEach(input => {
-    input.addEventListener('change', function() {
-      // Quitar selección de TODAS y poner solo en la activa
-      document.querySelectorAll('.tone-radio-option').forEach(opt => {
-        opt.classList.remove('selected');
-      });
-      this.closest('.tone-radio-option').classList.add('selected');
-      agentData.config.tone = this.value;
-
-      if (this.value === 'custom') {
-        customToneEditor.classList.add('show');
-      } else {
-        customToneEditor.classList.remove('show');
-        agentData.config.customTone = '';
-      }
-    });
-  });
-}
-
-// ============================================
-// LANGUAGE SELECTION
-// ============================================
-function initializeLanguageSelection() {
-  const languageCheckboxes = document.querySelectorAll('input[name="additionalLanguage"]');
-  
-  languageCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-      if (this.checked) {
-        if (!agentData.config.additionalLanguages.includes(this.value)) {
-          agentData.config.additionalLanguages.push(this.value);
-        }
-      } else {
-        agentData.config.additionalLanguages = agentData.config.additionalLanguages.filter(lang => lang !== this.value);
-      }
-    });
-  });
-}
-
-// ============================================
-// RICH TEXT EDITOR
-// ============================================
-function initializeRichEditor() {
-  const editorContent = document.getElementById('editorContent');
-  if (!editorContent) return;
-
-  const boldBtn = document.getElementById('boldBtn');
-  const italicBtn = document.getElementById('italicBtn');
-  const underlineBtn = document.getElementById('underlineBtn');
-  const listBtn = document.getElementById('listBtn');
-
-  if (boldBtn) {
-    boldBtn.addEventListener('click', () => {
-      document.execCommand('bold', false, null);
-      editorContent.focus();
-    });
-  }
-
-  if (italicBtn) {
-    italicBtn.addEventListener('click', () => {
-      document.execCommand('italic', false, null);
-      editorContent.focus();
-    });
-  }
-
-  if (underlineBtn) {
-    underlineBtn.addEventListener('click', () => {
-      document.execCommand('underline', false, null);
-      editorContent.focus();
-    });
-  }
-
-  if (listBtn) {
-    listBtn.addEventListener('click', () => {
-      document.execCommand('insertUnorderedList', false, null);
-      editorContent.focus();
-    });
-  }
-
-  editorContent.addEventListener('input', function() {
-    agentData.config.customTone = this.innerHTML;
-  });
-}
-
-// ============================================
-// SCHEDULE MANAGEMENT
-// ============================================
-function initializeSchedule() {
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  
-  days.forEach(day => {
-    const toggle = document.getElementById(`${day}Toggle`);
-    const startTime = document.getElementById(`${day}Start`);
-    const endTime = document.getElementById(`${day}End`);
-    const scheduleDay = document.querySelector(`[data-day="${day}"]`);
-    
-    if (toggle) {
-      toggle.addEventListener('change', function() {
-        if (!agentData.config.schedule) agentData.config.schedule = {};
-        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
-        agentData.config.schedule[day].open = this.checked;
-        if (scheduleDay) {
-          if (this.checked) {
-            scheduleDay.classList.remove('closed');
-            if (startTime) startTime.disabled = false;
-            if (endTime) endTime.disabled = false;
-          } else {
-            scheduleDay.classList.add('closed');
-            if (startTime) startTime.disabled = true;
-            if (endTime) endTime.disabled = true;
-          }
-        }
-      });
-    }
-    
-    if (startTime) {
-      startTime.addEventListener('change', function() {
-        if (!agentData.config.schedule) agentData.config.schedule = {};
-        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
-        agentData.config.schedule[day].start = this.value;
-      });
-    }
-    
-    if (endTime) {
-      endTime.addEventListener('change', function() {
-        if (!agentData.config.schedule) agentData.config.schedule = {};
-        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
-        agentData.config.schedule[day].end = this.value;
-      });
-    }
-  });
-}
-
-// ============================================
-// HOLIDAYS MANAGEMENT
-// ============================================
-function initializeHolidays() {
-  const addHolidayBtn = document.getElementById('addHolidayBtn');
-  
-  if (addHolidayBtn) {
-    addHolidayBtn.addEventListener('click', addHoliday);
-  }
-}
-
-function addHoliday() {
-  const holidaysList = document.getElementById('holidaysList');
-  if (!holidaysList) return;
-  
-  const holidayId = Date.now();
-  const holidayItem = document.createElement('div');
-  holidayItem.className = 'holiday-item';
-  holidayItem.dataset.holidayId = holidayId;
-  
-  holidayItem.innerHTML = `
-    <div class="holiday-date form-group">
-      <input type="date" class="form-input holiday-date-input" required>
-    </div>
-    <div class="holiday-name form-group">
-      <input type="text" class="form-input holiday-name-input" placeholder="${t('onb_hol_name_placeholder','Nombre del día festivo')}" required>
-    </div>
-    <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
-      <i class="lni lni-trash-can"></i>
-    </button>
-  `;
-  
-  holidaysList.appendChild(holidayItem);
-  
-  const dateInput = holidayItem.querySelector('.holiday-date-input');
-  const nameInput = holidayItem.querySelector('.holiday-name-input');
-  
-  dateInput.addEventListener('change', updateHolidaysData);
-  nameInput.addEventListener('input', updateHolidaysData);
-}
-
-function removeHoliday(holidayId) {
-  const holidayItem = document.querySelector(`[data-holiday-id="${holidayId}"]`);
-  if (holidayItem) {
-    holidayItem.remove();
-    updateHolidaysData();
-  }
-}
-
-function updateHolidaysData() {
-  const holidays = [];
-  document.querySelectorAll('.holiday-item').forEach(item => {
-    const date = item.querySelector('.holiday-date-input').value;
-    const name = item.querySelector('.holiday-name-input').value;
-    if (date && name) {
-      holidays.push({ date, name });
-    }
-  });
-  agentData.config.holidays = holidays;
-}
-
-// ============================================
-// SERVICES MANAGEMENT
-// ============================================
-// ============================================
-// FORMATEO DE PRECIO (comas de miles en vivo, ej. 25000 -> 25,000)
-// ============================================
-
-// Convierte un número (o string con comas) a texto formateado "25,000" / "25,000.50"
-function _formatPriceNumber(num) {
-  if (num === null || num === undefined || num === '') return '';
-  const n = typeof num === 'number' ? num : parseFloat(String(num).replace(/,/g, ''));
-  if (isNaN(n)) return '';
-  const hasDecimals = n % 1 !== 0;
-  return n.toLocaleString('en-US', { minimumFractionDigits: hasDecimals ? 2 : 0, maximumFractionDigits: 2 });
-}
-
-// Quita las comas y devuelve el número real para guardar/enviar al backend
-function _parsePriceValue(str) {
-  if (!str) return 0;
-  return parseFloat(String(str).replace(/,/g, '')) || 0;
-}
-
-// Reformatea el input mientras el usuario escribe, preservando la posición del cursor
-function _formatPriceInputValue(el) {
-  const cursorPos = el.selectionStart == null ? el.value.length : el.selectionStart;
-  const digitsBeforeCursor = el.value.slice(0, cursorPos).replace(/[^\d]/g, '').length;
-
-  let raw = el.value.replace(/[^\d.]/g, '');
-  const firstDot = raw.indexOf('.');
-  if (firstDot !== -1) {
-    raw = raw.slice(0, firstDot + 1) + raw.slice(firstDot + 1).replace(/\./g, '');
-  }
-
-  let [intPart, decPart] = raw.split('.');
-  intPart = (intPart || '').replace(/^0+(?=\d)/, '');
-  if (decPart !== undefined) decPart = decPart.slice(0, 2);
-
-  const intFormatted = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '';
-  let newValue = intFormatted;
-  if (decPart !== undefined) newValue += '.' + decPart;
-  else if (raw.endsWith('.')) newValue += '.';
-
-  el.value = newValue;
-
-  if (digitsBeforeCursor === 0) {
-    el.setSelectionRange(0, 0);
-    return;
-  }
-  let digitsSeen = 0, newPos = newValue.length;
-  for (let i = 0; i < newValue.length; i++) {
-    if (/\d/.test(newValue[i])) digitsSeen++;
-    if (digitsSeen === digitsBeforeCursor) { newPos = i + 1; break; }
-  }
-  el.setSelectionRange(newPos, newPos);
-}
-
-function initializeServices() {
-  const addServiceBtn = document.getElementById('addServiceBtn');
-  
-  if (addServiceBtn) {
-    addServiceBtn.addEventListener('click', addService);
-  }
-}
-
-function addService() {
-  const servicesList = document.getElementById('servicesList');
-  if (!servicesList) return;
-  
-  const serviceId = Date.now();
-  const serviceNumber = document.querySelectorAll('.service-item').length + 1;
-  const serviceItem = document.createElement('div');
-  serviceItem.className = 'service-item';
-  serviceItem.dataset.serviceId = serviceId;
-
-  const svcUid = 'svc_' + serviceId;
-  const serviceLabel   = window._currentSvcItemLabel || 'Servicio';
-  const svcPlaceholder = _getServicePlaceholder();
-  const fotosLabel     = serviceLabel === 'Curso' ? t('onb_svc_photos_course','Fotos del Curso') : (serviceLabel === 'Servicio' ? t('onb_svc_photos_label','Fotos del Servicio') : t('onb_svc_photos_product','Fotos del Producto'));
-
-  serviceItem.innerHTML = `
-    <div class="service-header">
-      <div class="service-number">${t('onb_svc_item_label', serviceLabel)} ${serviceNumber}</div>
-      <button type="button" class="btn-remove-service" onclick="removeService(${serviceId})">
-        <i class="lni lni-trash-can"></i>
-      </button>
-    </div>
-    <div class="service-fields">
-      <div class="form-group">
-        <label class="form-label">${t('onb_svc_title_label','Título del Servicio')} <span class="form-label-required">*</span></label>
-        <input type="text" class="form-input service-title" placeholder="${svcPlaceholder}" required>
-      </div>
-
-      <!-- FOTOS DEL SERVICIO -->
-      <div class="form-group">
-        <label class="form-label">${fotosLabel}</label>
-        <div class="service-image-upload" data-uid="${svcUid}">
-          <input type="file" class="service-image-file" id="file_${svcUid}" accept="image/*" style="display:none" multiple>
-          <div class="service-images-grid">
-            <div class="service-img-add-btn">
-              <i class="lni lni-camera"></i>
-              <span style="white-space:nowrap">${t('onb_svc_add_photo','Agregar foto')}</span>
-            </div>
-          </div>
-          <input type="hidden" class="service-image-urls" value="">
-          <div class="service-image-uploading" style="display:none">
-            <i class="lni lni-spinner-arrow"></i> ${t('onb_svc_uploading','Subiendo...')}
-          </div>
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">${t('onb_svc_price_label','Tipo de Precio')}</label>
-        <div class="price-type-selector">
-          <div class="price-type-option active" data-type="normal">${t('onb_svc_price_normal','Precio Normal')}</div>
-          <div class="price-type-option" data-type="promotion">${t('onb_svc_price_promo','Promoción')}</div>
-        </div>
-      </div>
-      
-      <div class="form-group price-normal">
-        <label class="form-label">${t('onb_svc_price_amount','Precio')} *</label>
-        <div class="price-input-wrapper">
-          <span class="price-currency">$</span>
-          <input type="text" inputmode="decimal" class="form-input service-price price-input" placeholder="0.00" required>
-        </div>
-      </div>
-      
-      <div class="promotion-prices">
-        <div class="form-group">
-          <label class="form-label">${t('onb_svc_price_original','Precio Original')} <span class="form-label-required">*</span></label>
-          <div class="price-input-wrapper">
-            <span class="price-currency">$</span>
-            <input type="text" inputmode="decimal" class="form-input service-original-price price-input" placeholder="0.00">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">${t('onb_svc_price_promo_amount','Precio Promoción')} <span class="form-label-required">*</span></label>
-          <div class="price-input-wrapper">
-            <span class="price-currency">$</span>
-            <input type="text" inputmode="decimal" class="form-input service-promo-price price-input" placeholder="0.00">
-          </div>
-        </div>
-      </div>
-
-      <!-- PERIODO DE PROMOCIÓN -->
-      <div class="promo-period-block" style="display:none">
-        <div class="promo-period-header">
-          <i class="lni lni-calendar"></i>
-          <span>${t('onb_svc_promo_avail','Disponibilidad de la promoción')}</span>
-          <div class="promo-period-type-toggle">
-            <button type="button" class="period-tab-btn active" data-period="days">${t('onb_svc_promo_days','Días de la semana')}</button>
-            <button type="button" class="period-tab-btn" data-period="range">${t('onb_svc_promo_range','Rango de fechas')}</button>
-          </div>
-        </div>
-        <div class="promo-days-panel" style="display:flex">
-          <label class="day-chip"><input type="checkbox" value="monday" style="display:none"><span>${t('onb_sch_day_mon_short','Lun')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="tuesday" style="display:none"><span>${t('onb_sch_day_tue_short','Mar')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="wednesday" style="display:none"><span>${t('onb_sch_day_wed_short','Mié')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="thursday" style="display:none"><span>${t('onb_sch_day_thu_short','Jue')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="friday" style="display:none"><span>${t('onb_sch_day_fri_short','Vie')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="saturday" style="display:none"><span>${t('onb_sch_day_sat_short','Sáb')}</span></label>
-          <label class="day-chip"><input type="checkbox" value="sunday" style="display:none"><span>${t('onb_sch_day_sun_short','Dom')}</span></label>
-        </div>
-        <div class="promo-range-panel" style="display:none">
-          <label class="form-label">${t('onb_svc_promo_from','Desde')}</label>
-          <input type="date" class="form-input promo-date-start">
-          <label class="form-label">${t('onb_svc_promo_to','Hasta')}</label>
-          <input type="date" class="form-input promo-date-end">
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">${t('onb_svc_desc_label','Descripción del Servicio')}</label>
-        <div class="service-description-editor">
-          <div class="service-editor-toolbar">
-            <button type="button" class="service-editor-btn" data-command="bold" title="Negrita">
-              <i class="lni lni-text-format"></i>
-            </button>
-            <button type="button" class="service-editor-btn" data-command="italic" title="Cursiva">
-              <i class="lni lni-italic"></i>
-            </button>
-            <button type="button" class="service-editor-btn" data-command="underline" title="Subrayado">
-              <i class="lni lni-underline"></i>
-            </button>
-            <button type="button" class="service-editor-btn" data-command="insertUnorderedList" title="Lista">
-              <i class="lni lni-list"></i>
-            </button>
-          </div>
-          <div class="service-editor-content" 
-               contenteditable="true" 
-               data-placeholder="Describe las características del servicio...">
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  servicesList.appendChild(serviceItem);
-
-  // Si es modo gobierno, ocultar campos de precio y agregar campos de curso
-  if (isGovernment) {
-    _hideServicePriceFields(serviceItem);
-    _injectCourseGovFields(serviceItem, null);
-  }
-  
-  const editorButtons = serviceItem.querySelectorAll('.service-editor-btn');
-  const editorContent = serviceItem.querySelector('.service-editor-content');
-  
-  editorButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const command = this.dataset.command;
-      document.execCommand(command, false, null);
-      editorContent.focus();
-    });
-  });
-  
-  editorContent.addEventListener('input', function() {
-    updateServicesData();
-  });
-  
-  const priceTypeOptions = serviceItem.querySelectorAll('.price-type-option');
-  const promotionPrices = serviceItem.querySelector('.promotion-prices');
-  const normalPrice = serviceItem.querySelector('.price-normal');
-  
-  priceTypeOptions.forEach(option => {
-    option.addEventListener('click', function() {
-      priceTypeOptions.forEach(opt => opt.classList.remove('active'));
-      this.classList.add('active');
-      
-      if (this.dataset.type === 'promotion') {
-        promotionPrices.classList.add('show');
-        normalPrice.style.display = 'none';
-      } else {
-        promotionPrices.classList.remove('show');
-        normalPrice.style.display = 'block';
-      }
-      updateServicesData();
-    });
-  });
-  
-  serviceItem.querySelectorAll('.price-input').forEach(input => {
-    input.addEventListener('input', function() { _formatPriceInputValue(this); });
-  });
-
-  serviceItem.querySelectorAll('input, textarea').forEach(input => {
-    input.addEventListener('input', updateServicesData);
-  });
-
-  // ── Promo period toggle ──────────────────────────────────────────────────
-  const promoPeriodBlock = serviceItem.querySelector('.promo-period-block');
-  serviceItem.querySelectorAll('.period-tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      serviceItem.querySelectorAll('.period-tab-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      const isRange = this.dataset.period === 'range';
-      serviceItem.querySelector('.promo-days-panel').style.display = isRange ? 'none' : 'flex';
-      serviceItem.querySelector('.promo-range-panel').style.display = isRange ? 'flex' : 'none';
-    });
-  });
-
-  serviceItem.querySelectorAll('.promo-days-panel .day-chip').forEach(chip => {
-    chip.addEventListener('click', function(e) {
-      e.preventDefault();
-      this.classList.toggle('active');
-      this.querySelector('input').checked = this.classList.contains('active');
-    });
-  });
-
-  // Show/hide promo period block when switching price type
-  const _origPriceTypeOpts = serviceItem.querySelectorAll('.price-type-option');
-  _origPriceTypeOpts.forEach(option => {
-    option.addEventListener('click', function() {
-      const isPromo = this.dataset.type === 'promotion';
-      if (promoPeriodBlock) promoPeriodBlock.style.display = isPromo ? 'block' : 'none';
-    });
-  });
-
-  // ── Multi-image upload ───────────────────────────────────────────────────
-  const _grid      = serviceItem.querySelector('.service-images-grid');
-  const _fileInput = serviceItem.querySelector('.service-image-file');
-  const _urlsInput = serviceItem.querySelector('.service-image-urls');
-  const _uploadingEl = serviceItem.querySelector('.service-image-uploading');
-  const _addBtn    = serviceItem.querySelector('.service-img-add-btn');
-
-  function _syncUrls() {
-    // Solo incluir URLs confirmadas (no las pendientes de upload)
-    const urls = [..._grid.querySelectorAll('.service-img-thumb')]
-      .filter(t => !t.dataset.pending && t.dataset.url)
-      .map(t => t.dataset.url);
-    _urlsInput.value = urls.join(',');
-  }
-
-  _grid.addEventListener('click', function(e) {
-    const removeBtn = e.target.closest('.btn-remove-thumb');
-    if (removeBtn) {
-      e.stopPropagation();
-      removeBtn.closest('.service-img-thumb').remove();
-      _syncUrls();
-      return;
-    }
-    if (!e.target.closest('.service-img-thumb')) {
-      _fileInput.click();
-    }
-  });
-
-  // ── Procesa una lista de archivos (vengan del input o de un drag & drop) ──
-  async function _processImageFiles(fileList) {
-    const files = [...fileList].filter(f => f.type && f.type.startsWith('image/'));
-    if (!files.length) return;
-    const oversize = files.filter(f => f.size > 5 * 1024 * 1024);
-    if (oversize.length) {
-      alert('Cada imagen debe ser menor a 5 MB');
-      return;
-    }
-
-    // ── Guardar en memoria como base64; el upload real ocurre al crear el agente ──
-    for (const file of files) {
-      await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          // Crear preview local inmediato
-          const previewUrl = e.target.result; // data URL para mostrar
-          _addThumb(previewUrl, file);         // almacena el File en el thumb
-          resolve();
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-    _syncUrls();
-  }
-
-  _fileInput.addEventListener('change', async function() {
-    await _processImageFiles(this.files);
-    _fileInput.value = '';
-  });
-
-  // ── Drag & drop de fotos directamente sobre el área de imágenes ───────────
-  ['dragenter', 'dragover'].forEach(evt => {
-    _grid.addEventListener(evt, function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      _grid.classList.add('service-img-drag-over');
-    });
-  });
-
-  _grid.addEventListener('dragleave', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    // Solo quitar el resaltado si de verdad salimos del área (no de un hijo interno)
-    if (!_grid.contains(e.relatedTarget)) {
-      _grid.classList.remove('service-img-drag-over');
-    }
-  });
-
-  _grid.addEventListener('drop', async function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    _grid.classList.remove('service-img-drag-over');
-    const dtFiles = e.dataTransfer && e.dataTransfer.files;
-    if (dtFiles && dtFiles.length) {
-      await _processImageFiles(dtFiles);
-    }
-  });
-
-  // url puede ser un data-URL (pendiente) o una URL real (ya subida / precargada)
-  function _addThumb(url, pendingFile) {
-    const thumb = document.createElement('div');
-    thumb.className = 'service-img-thumb';
-    // Si viene de precarga (URL real) la marcamos directamente; si es local, queda pendiente
-    if (pendingFile) {
-      thumb.dataset.pending = 'true';
-      thumb._pendingFile = pendingFile; // referencia al File original
-      thumb.dataset.url = '';           // se llenará tras el upload
-    } else {
-      thumb.dataset.url = url;
-    }
-    thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
-    _grid.insertBefore(thumb, _addBtn);
-  }
-}
-
-function removeService(serviceId) {
-  const serviceItem = document.querySelector(`[data-service-id="${serviceId}"]`);
-  if (serviceItem) {
-    serviceItem.remove();
-    updateServicesData();
-    
-    document.querySelectorAll('.service-item').forEach((item, index) => {
-      const numberDiv = item.querySelector('.service-number');
-      if (numberDiv) {
-        const lbl = window._currentSvcItemLabel || 'Servicio';
-        numberDiv.textContent = `${t('onb_svc_item_label', lbl)} ${index + 1}`;
-      }
-    });
-  }
-}
-
-function updateServicesData() {
-  const services = [];
-  document.querySelectorAll('.service-item').forEach(item => {
-    const title = item.querySelector('.service-title').value;
-    const editorContent = item.querySelector('.service-editor-content');
-    const description = editorContent ? editorContent.innerHTML : '';
-    const priceType = item.querySelector('.price-type-option.active').dataset.type;
-    
-    // Imágenes
-    const imageUrls = (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean);
-
-    let price, originalPrice, promoPrice;
-    let promoPeriodType = 'days', promoDays = [], promoDateStart = '', promoDateEnd = '';
-
-    if (priceType === 'promotion') {
-      originalPrice = _parsePriceValue(item.querySelector('.service-original-price').value);
-      promoPrice = _parsePriceValue(item.querySelector('.service-promo-price').value);
-
-      const activePeriodBtn = item.querySelector('.period-tab-btn.active');
-      if (activePeriodBtn) promoPeriodType = activePeriodBtn.dataset.period;
-      if (promoPeriodType === 'days') {
-        item.querySelectorAll('.promo-days-panel .day-chip input:checked').forEach(cb => {
-          promoDays.push(cb.value);
-        });
-      } else {
-        promoDateStart = item.querySelector('.promo-date-start')?.value || '';
-        promoDateEnd   = item.querySelector('.promo-date-end')?.value   || '';
-      }
-    } else {
-      price = _parsePriceValue(item.querySelector('.service-price').value);
-    }
-    
-    if (title) {
-      services.push({
-        title,
-        description,
-        imageUrls,
-        priceType,
-        price: priceType === 'normal' ? price : null,
-        originalPrice: priceType === 'promotion' ? originalPrice : null,
-        promoPrice: priceType === 'promotion' ? promoPrice : null,
-        promoPeriodType: priceType === 'promotion' ? promoPeriodType : '',
-        promoDays:       priceType === 'promotion' && promoPeriodType === 'days' ? promoDays : [],
-        promoDateStart:  priceType === 'promotion' && promoPeriodType === 'range' ? promoDateStart : '',
-        promoDateEnd:    priceType === 'promotion' && promoPeriodType === 'range' ? promoDateEnd   : '',
-      });
-    }
-  });
-  agentData.config.services = services;
-}
-
-// ============================================
-// WORKERS MANAGEMENT
-// ============================================
-function initializeWorkers() {
-  const addWorkerBtn = document.getElementById('addWorkerBtn');
-  
-  if (addWorkerBtn) {
-    addWorkerBtn.addEventListener('click', addWorker);
-  }
-}
-
-function addWorker() {
-  const workersList = document.getElementById('workersList');
-  if (!workersList) return;
-  
-  const workerId = Date.now();
-  const workerNumber = document.querySelectorAll('.worker-item').length + 1;
-  const workerItem = document.createElement('div');
-  workerItem.className = 'worker-item';
-  workerItem.dataset.workerId = workerId;
-  
-  workerItem.innerHTML = `
-    <div class="worker-header">
-      <div class="worker-number">${t('onb_wkr_item_label','Trabajador')} ${workerNumber}</div>
-      <button type="button" class="btn-remove-worker" onclick="removeWorker(${workerId})">
-        <i class="lni lni-trash-can"></i>
-      </button>
-    </div>
-    <div class="worker-fields">
-      <div class="form-group">
-        <label class="form-label">${t('onb_wkr_name_label','Nombre del Trabajador')} <span class="form-label-required">*</span></label>
-        <input type="text" class="form-input worker-name" placeholder="${t('onb_wkr_name_placeholder','Ej: Juan Pérez')}" required>
-      </div>
-      
-      <div class="worker-availability">
-        <div class="availability-title">${t('onb_wkr_availability','Disponibilidad (Días de la Semana)')}</div>
-        <div class="availability-grid">
-          <label class="availability-day">
-            <input type="checkbox" value="monday" checked>
-            <span>${t('onb_sch_day_mon','Lunes')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="tuesday" checked>
-            <span>${t('onb_sch_day_tue','Martes')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="wednesday" checked>
-            <span>${t('onb_sch_day_wed','Miércoles')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="thursday" checked>
-            <span>${t('onb_sch_day_thu','Jueves')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="friday" checked>
-            <span>${t('onb_sch_day_fri','Viernes')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="saturday">
-            <span>${t('onb_sch_day_sat','Sábado')}</span>
-          </label>
-          <label class="availability-day">
-            <input type="checkbox" value="sunday">
-            <span>${t('onb_sch_day_sun','Domingo')}</span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="worker-hours">
-        <div class="form-group">
-          <label class="form-label">${t('onb_wkr_start_time','Hora de Inicio')}</label>
-          <input type="time" class="form-input worker-start-time" value="09:00" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">${t('onb_wkr_end_time','Hora de Fin')}</label>
-          <input type="time" class="form-input worker-end-time" value="18:00" required>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  workersList.appendChild(workerItem);
-  
-  workerItem.querySelectorAll('input').forEach(input => {
-    input.addEventListener('input', updateWorkersData);
-    input.addEventListener('change', updateWorkersData);
-  });
-}
-
-function removeWorker(workerId) {
-  const workerItem = document.querySelector(`[data-worker-id="${workerId}"]`);
-  if (workerItem) {
-    workerItem.remove();
-    updateWorkersData();
-    
-    document.querySelectorAll('.worker-item').forEach((item, index) => {
-      const numberDiv = item.querySelector('.worker-number');
-      if (numberDiv) {
-        numberDiv.textContent = `${t('onb_wkr_item_label','Trabajador')} ${index + 1}`;
-      }
-    });
-  }
-}
-
-function updateWorkersData() {
-  const workers = [];
-  document.querySelectorAll('.worker-item').forEach(item => {
-    const name = item.querySelector('.worker-name').value;
-    const startTime = item.querySelector('.worker-start-time').value;
-    const endTime = item.querySelector('.worker-end-time').value;
-    
-    const days = [];
-    item.querySelectorAll('.availability-day input:checked').forEach(checkbox => {
-      days.push(checkbox.value);
-    });
-    
-    if (name && startTime && endTime) {
-      workers.push({
-        name,
-        startTime,
-        endTime,
-        days
-      });
-    }
-  });
-  agentData.config.workers = workers;
-}
-
-// ============================================
-// LOCATION DROPDOWNS
-// ============================================
-function initializeLocationDropdowns() {
-  createLocationDropdown('countryInput', COUNTRIES, 'Selecciona un país');
-  createLocationDropdown('stateInput', STATES_MEXICO.map(s => ({ 
-    value: s.toLowerCase().replace(/\s+/g, '-'), 
-    name: s 
-  })), 'Selecciona un estado');
-  createLocationDropdown('cityInput', CITIES_MEXICO.default.map(c => ({ 
-    value: c.toLowerCase().replace(/\s+/g, '-'), 
-    name: c 
-  })), 'Selecciona una ciudad');
-}
-
-function createLocationDropdown(inputId, options, placeholder) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'location-dropdown-wrapper';
-  
-  const displayInput = document.createElement('input');
-  displayInput.type = 'text';
-  displayInput.className = 'form-input location-select';
-  displayInput.placeholder = placeholder;
-  displayInput.readOnly = true;
-  
-  const arrow = document.createElement('i');
-  arrow.className = 'lni lni-chevron-down location-arrow';
-  
-  const dropdown = document.createElement('div');
-  dropdown.className = 'location-dropdown';
-  
-  const searchContainer = document.createElement('div');
-  searchContainer.className = 'location-search-container';
-  searchContainer.innerHTML = `
-    <i class="lni lni-search-alt location-search-icon"></i>
-    <input type="text" class="location-search" placeholder="Buscar..." autocomplete="off">
-  `;
-  
-  const optionsContainer = document.createElement('div');
-  optionsContainer.className = 'location-options-container';
-  
-  options.forEach(opt => {
-    const option = document.createElement('div');
-    option.className = 'location-option';
-    option.setAttribute('data-value', opt.value);
-    option.innerHTML = `
-      ${opt.icon ? `<i class="lni ${opt.icon}"></i>` : '<i class="lni lni-map-marker"></i>'}
-      <span>${opt.name}</span>
-    `;
-    optionsContainer.appendChild(option);
-  });
-  
-  dropdown.appendChild(searchContainer);
-  dropdown.appendChild(optionsContainer);
-  wrapper.appendChild(displayInput);
-  wrapper.appendChild(arrow);
-  wrapper.appendChild(dropdown);
-  
-  input.parentNode.insertBefore(wrapper, input);
-  input.style.display = 'none';
-  
-  const searchInput = searchContainer.querySelector('.location-search');
-  const selectOptions = optionsContainer.querySelectorAll('.location-option');
-  
-  displayInput.addEventListener('click', function(e) {
-    e.stopPropagation();
-    toggleLocationDropdown(wrapper, searchInput, selectOptions);
-  });
-  
-  searchInput.addEventListener('input', function() {
-    filterLocationOptions(this.value, selectOptions);
-  });
-  
-  searchInput.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-  
-  selectOptions.forEach(option => {
-    option.addEventListener('click', function(e) {
-      e.stopPropagation();
-      selectLocationOption(this, displayInput, input, wrapper, selectOptions, inputId);
-    });
-  });
-  
-  document.addEventListener('click', function(e) {
-    if (!wrapper.contains(e.target)) {
-      closeLocationDropdown(wrapper);
-    }
-  });
-}
-
-function toggleLocationDropdown(wrapper, searchInput, options) {
-  const isActive = wrapper.classList.contains('active');
-  
-  document.querySelectorAll('.location-dropdown-wrapper.active').forEach(w => {
-    if (w !== wrapper) w.classList.remove('active');
-  });
-  
-  if (isActive) {
-    closeLocationDropdown(wrapper);
-  } else {
-    wrapper.classList.add('active');
-    setTimeout(() => searchInput.focus(), 100);
-    searchInput.value = '';
-    options.forEach(opt => opt.classList.remove('hidden'));
-  }
-}
-
-function closeLocationDropdown(wrapper) {
-  wrapper.classList.remove('active');
-  const searchInput = wrapper.querySelector('.location-search');
-  if (searchInput) searchInput.value = '';
-}
-
-function filterLocationOptions(searchTerm, options) {
-  const term = searchTerm.toLowerCase().trim();
-  options.forEach(option => {
-    const text = option.querySelector('span')?.textContent.toLowerCase() || '';
-    if (text.includes(term)) {
-      option.classList.remove('hidden');
-    } else {
-      option.classList.add('hidden');
-    }
-  });
-}
-
-function selectLocationOption(option, displayInput, hiddenInput, wrapper, allOptions, inputId) {
-  const value = option.getAttribute('data-value');
-  const text = option.querySelector('span')?.textContent;
-  
-  displayInput.value = text;
-  hiddenInput.value = text;
-  hiddenInput.setAttribute('data-value', value);
-  
-  allOptions.forEach(opt => opt.classList.remove('selected'));
-  option.classList.add('selected');
-  
-  // Update agentData
-  if (inputId === 'countryInput') {
-    agentData.location.country = text;
-  } else if (inputId === 'stateInput') {
-    agentData.location.state = text;
-  } else if (inputId === 'cityInput') {
-    agentData.location.city = text;
-  }
-  
-  closeLocationDropdown(wrapper);
-}
-
-// ============================================
-// SOCIAL MEDIA INPUTS
-// ============================================
-function initializeSocialMediaInputs() {
-  const socialInputs = {
-    'facebookInput': 'facebook',
-    'instagramInput': 'instagram',
-    'twitterInput': 'twitter',
-    'linkedinInput': 'linkedin'
-  };
-  
-  Object.keys(socialInputs).forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (input) {
-      input.addEventListener('input', function() {
-        agentData.social_media[socialInputs[inputId]] = this.value;
-      });
-    }
-  });
-  
-  // Location text inputs
-  const locationInputs = {
-    'addressInput': 'address',
-    'postalCodeInput': 'postalCode',
-    'betweenStreetsInput': 'betweenStreets',
-    'numberInput': 'number',
-    'neighborhoodInput': 'neighborhood'
-  };
-  
-  Object.keys(locationInputs).forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (input) {
-      input.addEventListener('input', function() {
-        agentData.location[locationInputs[inputId]] = this.value;
-      });
-    }
-  });
-}
-
-// ============================================
-// NAVIGATION
-// ============================================
-function initializeNavigationButtons() {
-  const btnStep1 = document.getElementById('btnStep1');
-  if (btnStep1) {
-    btnStep1.addEventListener('click', () => nextStep());
-  }
-  
-  const btnStep2Unified = document.getElementById('btnStep2Unified');
-  if (btnStep2Unified) {
-    btnStep2Unified.addEventListener('click', () => nextStep());
-  }
-  
-  const btnBackStep3 = document.getElementById('btnBackStep3');
-  if (btnBackStep3) {
-    btnBackStep3.addEventListener('click', () => previousStep());
-  }
-  
-  const btnCreateAgent = document.getElementById('btnCreateAgent');
-  if (btnCreateAgent) {
-    console.log('✅ Botón Crear Agente encontrado, agregando event listener');
-    btnCreateAgent.addEventListener('click', () => {
-      console.log('🔘 Click en botón Crear Agente');
-      createAgent();
-    });
-  } else {
-    console.warn('⚠️ Botón Crear Agente no encontrado en initializeNavigationButtons');
-  }
-  
-  const btnGoToDashboard = document.getElementById('btnGoToDashboard');
-  if (btnGoToDashboard) {
-    btnGoToDashboard.addEventListener('click', function() {
-      window.location.href = '/dashboard';
-    });
-  }
-}
-
-function nextStep() {
-  if (currentStep === 1 && !selectedSocial) {
-    alert(t('onb_err_select_network','Por favor selecciona una red social'));
-    return;
-  }
-
-  if (currentStep === 2) {
-    if (!validateStep2()) {
-      return;
-    }
-    collectFormData();
-  }
-
-  if (currentStep === 3) {
-    return;
-  }
-
-  currentStep++;
-  updateStepDisplay();
-  updateProgressBar();
-
-  if (currentStep === 3) {
-    generateSummary();
-  }
-}
-
-function previousStep() {
-  if (currentStep === 1) return;
-  // En modo edición no existe el paso 1 (la plataforma no se puede cambiar)
-  if (currentStep === 2 && agentData.editingAgentId) return;
-
-  currentStep--;
-  updateStepDisplay();
-  updateProgressBar();
-}
-
-function validateStep2() {
-  const agentName = document.getElementById('agentName').value.trim();
-
-  if (!agentName) {
-    alert(t('onb_err_agent_name','Por favor ingresa el nombre del agente'));
-    document.getElementById('agentName').focus();
     return false;
-  }
-
-  const useDifferentPhone = document.getElementById('phoneToggle').checked;
-  if (useDifferentPhone) {
-    const phoneNumber = document.getElementById('phoneNumber').value.trim();
-    if (!phoneNumber) {
-      alert('Por favor ingresa el número de teléfono');
-      document.getElementById('phoneNumber').focus();
-      return false;
-    }
-    if (phoneNumberHasConflict) {
-      document.getElementById('phoneNumber').focus();
-      return false; // el aviso inline ya explica el problema, no hace falta un alert encima
-    }
-  }
-
-  return true;
-}
-
-function updateStepDisplay() {
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.remove('active');
-  });
-  document.getElementById(`step${currentStep}`).classList.add('active');
-  window.scrollTo(0, 0);
-}
-
-function updateProgressBar() {
-  let fraction;
-  if (currentStep === 1) {
-    fraction = 0;
-  } else if (currentStep === 2) {
-    // Opción B: solo las 9 secciones del paso 2 marcan el progreso real (0%→100%)
-    fraction = currentSection / SECTIONS.length;
-  } else {
-    fraction = 1.0;
-  }
-
-  // Porcentaje numérico
-  const progressPercentage = document.getElementById('progressPercentage');
-  if (progressPercentage) {
-    const targetPct = Math.round(fraction * 100);
-    const currentPct = parseInt(progressPercentage.textContent) || 0;
-    animatePercentage(currentPct, targetPct, progressPercentage);
-  }
-
-  // Mover tope del dot-indicator
-  setDotTarget(fraction);
-}
-
-function animatePercentage(start, end, element) {
-  const duration = 600;
-  const startTime = performance.now();
-  
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    
-    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(start + (end - start) * easeOutCubic);
-    
-    element.textContent = current + '%';
-    
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    }
-  }
-  
-  requestAnimationFrame(update);
 }
 
 // ============================================
-// MODO EDICIÓN DE AGENTE (llamado desde my-agents.js vía ?editAgent=ID)
-// Reutiliza toda la maquinaria de creación (secciones, addServiceWithData,
-// addWorkerWithData, addHolidayWithData) pero precargada con los datos del
-// agente existente, y al guardar hace PUT en vez de POST.
+// AGENT SELECTOR
 // ============================================
-window.editingAgentId = null;
 
-window.enterAgentEditMode = async function (agentIdToEdit) {
-  try {
-    const resp = await fetch(`/api/agents/${agentIdToEdit}`, { credentials: 'include' });
-    if (!resp.ok) throw new Error('No se pudo cargar el agente');
-    const data = await resp.json();
-    prefillAgentForEdit(data.agent);
-  } catch (err) {
-    console.error('❌ Error cargando agente para editar:', err);
-    alert('No se pudo cargar la información del agente para editar. Intenta de nuevo.');
-  }
-};
+async function initAgentSelector() {
+    console.log('📊 Cargando agentes...');
 
-function prefillAgentForEdit(agent) {
-  window.editingAgentId = agent.id;
-  agentData.editingAgentId = agent.id;
-  agentData.name = agent.name || '';
-  agentData.phoneNumber = agent.phoneNumber || '';
-  if (agent.businessType) agentData.businessType = agent.businessType;
-  if (agent.branchId) agentData.branchId = agent.branchId;
+    // Las tarjetas de integración se ven todas desde el inicio, sin
+    // importar si hay agentes o no — solo GUARDAR/CONECTAR requiere
+    // haber elegido un agente (ver requireAgentSelected()).
+    showIntegrationsGrid();
 
-  // ── Plataforma: fijar y bloquear (no se puede cambiar tras creado) ──────
-  const botType = (agent.botType || '').toLowerCase();
-  const socialValue = botType === 'telegram' ? 'telegram' : 'whatsapp';
-  agentData.social = socialValue;
-  window.selectedSocial = socialValue;
-  selectedSocial = socialValue; // la variable local es la que realmente lee nextStep()
-  document.querySelectorAll('input[name="social"]').forEach(r => {
-    r.checked = (r.value === socialValue);
-    r.disabled = true;
-  });
-
-  // Editar un agente no permite cambiar de plataforma, así que el paso 1
-  // (elegir red social) no aplica — saltamos directo al paso 2.
-  currentStep = 2;
-  updateStepDisplay();
-  updateProgressBar();
-
-  // ── Nombre ────────────────────────────────────────────────────────────
-  const nameInput = document.getElementById('agentName');
-  if (nameInput) nameInput.value = agentData.name;
-
-  // ── Teléfono personalizado / token de Telegram ───────────────────────
-  if (socialValue === 'telegram') {
-    const tokenInput = document.getElementById('telegramBotToken');
-    if (tokenInput) tokenInput.value = agent.phoneNumber || '';
-  } else if (agent.phoneNumber) {
-    const toggle = document.getElementById('phoneToggle');
-    if (toggle) {
-      toggle.checked = true;
-      toggle.dispatchEvent(new Event('change'));
-    }
-    const countryCodeSelect = document.getElementById('countryCode');
-    const numberInput = document.getElementById('phoneNumber');
-    if (countryCodeSelect && numberInput) {
-      const codes = Array.from(countryCodeSelect.options).map(o => o.value).sort((a, b) => b.length - a.length);
-      const matched = codes.find(c => agent.phoneNumber.startsWith(c));
-      if (matched) {
-        countryCodeSelect.value = matched;
-        numberInput.value = agent.phoneNumber.slice(matched.length);
-      } else {
-        numberInput.value = agent.phoneNumber;
-      }
-    }
-  }
-
-  const cfg = agent.config || {};
-
-  // ── Tono ──────────────────────────────────────────────────────────────
-  if (cfg.tone) {
-    agentData.config.tone = cfg.tone;
-    const toneRadio = document.querySelector(`input[name="tone"][value="${cfg.tone}"]`);
-    if (toneRadio) {
-      toneRadio.checked = true;
-      toneRadio.dispatchEvent(new Event('change'));
-    }
-    if (cfg.tone === 'custom' && cfg.customTone) {
-      agentData.config.customTone = cfg.customTone;
-      const editor = document.getElementById('editorContent');
-      if (editor) editor.innerHTML = cfg.customTone;
-    }
-  }
-
-  // ── Idiomas adicionales ───────────────────────────────────────────────
-  if (Array.isArray(cfg.additionalLanguages)) {
-    agentData.config.additionalLanguages = [...cfg.additionalLanguages];
-    document.querySelectorAll('input[name="additionalLanguage"]').forEach(cb => {
-      cb.checked = cfg.additionalLanguages.includes(cb.value);
-    });
-  }
-
-  // ── Instrucciones especiales ─────────────────────────────────────────
-  if (cfg.specialInstructions) {
-    agentData.config.specialInstructions = cfg.specialInstructions;
-    const special = document.getElementById('specialInstructionsInput');
-    if (special) special.value = cfg.specialInstructions;
-  }
-
-  // ── Horario ───────────────────────────────────────────────────────────
-  if (cfg.schedule) {
-    agentData.config.schedule = JSON.parse(JSON.stringify(cfg.schedule));
-    Object.entries(cfg.schedule).forEach(([day, sched]) => {
-      const checkbox   = document.getElementById(`day-${day}`);
-      const openInput  = document.getElementById(`time-${day}-open`);
-      const closeInput = document.getElementById(`time-${day}-close`);
-      if (checkbox) {
-        checkbox.checked = !!sched.open;
-        checkbox.dispatchEvent(new Event('change'));
-      }
-      if (openInput)  openInput.value  = sched.start || '09:00';
-      if (closeInput) closeInput.value = sched.end   || '18:00';
-    });
-  }
-
-  // ── Servicios ─────────────────────────────────────────────────────────
-  if (Array.isArray(cfg.services) && cfg.services.length) {
-    const list = document.getElementById('servicesList');
-    if (list) list.innerHTML = '';
-    cfg.services.forEach(s => addServiceWithData(s));
-    agentData.config.services = cfg.services;
-  }
-
-  // ── Personal ──────────────────────────────────────────────────────────
-  if (Array.isArray(cfg.workers) && cfg.workers.length) {
-    const list = document.getElementById('workersList');
-    if (list) list.innerHTML = '';
-    cfg.workers.forEach(w => addWorkerWithData(w));
-    agentData.config.workers = cfg.workers;
-  }
-
-  // ── Días festivos ─────────────────────────────────────────────────────
-  if (Array.isArray(cfg.holidays) && cfg.holidays.length) {
-    cfg.holidays.forEach(h => addHolidayWithData(h.date || `${h.day}/${h.month}`, h.name));
-  }
-
-  // ── Textos del modal: "Editar" en vez de "Crear" ────────────────────
-  const modalTitle = document.querySelector('.onboarding-modal-title span');
-  if (modalTitle) modalTitle.textContent = `Editar Agente — ${agentData.name}`;
-  const btnCreateAgent = document.getElementById('btnCreateAgent');
-  if (btnCreateAgent) {
-    const label = btnCreateAgent.querySelector('span') || btnCreateAgent;
-    label.textContent = 'Guardar Cambios';
-  }
-
-  console.log('✏️ Agente precargado para edición:', agent.id, agentData);
-}
-
-function collectFormData() {
-  // Solo datos propios del agente
-  agentData.name = document.getElementById('agentName').value.trim();
-
-  // Si es Telegram, el phoneNumber es el token del bot
-  const telegramTokenInput = document.getElementById('telegramBotToken');
-  const isTelegram = (agentData.social || '').toLowerCase() === 'telegram';
-
-  if (isTelegram && telegramTokenInput && telegramTokenInput.value.trim()) {
-    agentData.phoneNumber = telegramTokenInput.value.trim();
-  } else {
-    const useDifferentPhone = document.getElementById('phoneToggle').checked;
-    if (useDifferentPhone) {
-      const countryCode = document.getElementById('countryCode')?.value || '+52';
-      const phoneNumber = document.getElementById('phoneNumber').value.trim();
-      agentData.phoneNumber = countryCode + phoneNumber;
-    } else {
-      agentData.phoneNumber = '';
-    }
-  }
-
-  const tone = document.querySelector('input[name="tone"]:checked');
-  if (tone) {
-    agentData.config.tone = tone.value;
-    if (tone.value === 'custom') {
-      const editorContent = document.getElementById('editorContent');
-      if (editorContent) agentData.config.customTone = editorContent.innerHTML;
-    }
-  }
-
-  // Idiomas seleccionados
-  const langs = document.querySelectorAll('input[name="language"]:checked');
-  agentData.config.languages = Array.from(langs).map(l => l.value);
-
-  // Instrucciones especiales
-  const special = document.getElementById('specialInstructionsInput');
-  if (special) agentData.config.specialInstructions = special.value.trim();
-}
-
-function generateSummary() {
-  const container = document.getElementById('summaryContainer');
-  if (!container) return;
-
-  const socialNames = {
-    whatsapp: 'WhatsApp',
-    facebook: 'Facebook Messenger',
-    instagram: 'Instagram',
-    telegram: 'Telegram',
-    wechat: 'WeChat',
-    kakaotalk: 'KakaoTalk',
-    line: 'Line'
-  };
-
-  let html = `
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-network"></i>
-        ${t('onb_sum_social','Red Social')}
-      </h3>
-      <div class="summary-item">
-<span class="summary-label">${t('onb_sum_platform','Plataforma')}:</span>
-        <span class="summary-value">${socialNames[agentData.social]}</span>
-      </div>
-    </div>
-    
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-information"></i>
-        ${t('onb_sec_basic','Información Básica')}
-      </h3>
-      <div class="summary-item">
-<span class="summary-label">${t('onb_sum_agent_name','Nombre del Agente')}:</span>
-        <span class="summary-value">${agentData.name}</span>
-      </div>
-      <div class="summary-item">
-<span class="summary-label">${t('onb_sum_phone','Número de Teléfono')}:</span>
-        <span class="summary-value">${agentData.phoneNumber || t('onb_sum_registered_phone','Usar número registrado')}</span>
-      </div>
-      ${agentData.config.additionalLanguages.length > 0 ? `
-      <div class="summary-item">
-<span class="summary-label">${t('onb_sum_languages','Idiomas Adicionales')}:</span>
-        <span class="summary-value">${agentData.config.additionalLanguages.join(', ')}</span>
-      </div>
-      ` : ''}
-    </div>
-    
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-comments"></i>
-        ${t('onb_sec_personality','Personalidad')}
-      </h3>
-      <div class="summary-item">
-<span class="summary-label">${t('onb_sum_tone','Tono')}:</span>
-        <span class="summary-value">${formatTone(agentData.config.tone)}</span>
-      </div>
-    </div>
-  `;
-
-  if (isGovernment) {
-    // ── Resumen Gubernamental ────────────────────────────────────────────────
-    const depName    = businessData?.depName     || document.getElementById('businessNameInput')?.value || '';
-    const depAcronym = businessData?.depAcronym  || document.getElementById('depAcronymInput')?.value   || '';
-    const depArea    = businessData?.depArea     || document.getElementById('depAreaInput')?.value      || '';
-    const depParent  = businessData?.depParent   || document.getElementById('depParentInput')?.value    || '';
-    const govLevel   = _govLevelLabel(businessData?.govLevel || '');
-    const description = businessData?.description || document.getElementById('businessDescInput')?.value || '';
-    const email      = businessData?.email       || document.getElementById('emailContactInput')?.value || '';
-    const website    = businessData?.website     || document.getElementById('websiteInput')?.value      || '';
-    const phone      = businessData?.phoneNumber || '';
-
-    html += `
-      <div class="summary-section">
-        <h3 class="summary-section-title">
-          <i class="lni lni-government"></i>
-          ${t('onb_tab_agency','Mi Dependencia')}
-        </h3>
-        ${depName    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_name','Nombre')}:</span><span class="summary-value">${depName}</span></div>` : ''}
-        ${depAcronym ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_acronym','Siglas')}:</span><span class="summary-value">${depAcronym}</span></div>` : ''}
-        ${depArea    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_area','Área')}:</span><span class="summary-value">${depArea}</span></div>` : ''}
-        ${depParent  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_parent_org','Organismo superior')}:</span><span class="summary-value">${depParent}</span></div>` : ''}
-        ${govLevel   ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_gov_level','Nivel de gobierno')}:</span><span class="summary-value">${govLevel}</span></div>` : ''}
-        ${description ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_description','Descripción')}:</span><span class="summary-value">${description}</span></div>` : ''}
-        ${email      ? `<div class="summary-item"><span class="summary-label">Email:</span><span class="summary-value">${email}</span></div>` : ''}
-        ${website    ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_website','Sitio web')}:</span><span class="summary-value">${website}</span></div>` : ''}
-        ${phone      ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_phone_biz','Teléfono')}:</span><span class="summary-value">${phone}</span></div>` : ''}
-      </div>
-    `;
-
-    // Ubicación gubernamental
-    const addr  = businessData?.address || agentData.location.address || '';
-    const city  = businessData?.city    || agentData.location.city    || '';
-    const state = businessData?.state   || agentData.location.state   || '';
-    if (addr || city) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>${t('onb_sec_location','Ubicación')}</h3>
-          ${addr  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_address','Dirección')}:</span><span class="summary-value">${addr}</span></div>` : ''}
-          ${city  ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_city','Ciudad')}:</span><span class="summary-value">${city}${state ? ', '+state : ''}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    // Redes sociales
-    const soc = agentData.social_media || {};
-    if (soc.facebook || soc.instagram || soc.twitter || soc.linkedin) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>${t('onb_sec_social','Redes Sociales')}</h3>
-          ${soc.facebook  ? `<div class="summary-item"><span class="summary-label">Facebook:</span><span class="summary-value">${soc.facebook}</span></div>` : ''}
-          ${soc.instagram ? `<div class="summary-item"><span class="summary-label">Instagram:</span><span class="summary-value">${soc.instagram}</span></div>` : ''}
-          ${soc.twitter   ? `<div class="summary-item"><span class="summary-label">Twitter/X:</span><span class="summary-value">${soc.twitter}</span></div>` : ''}
-          ${soc.linkedin  ? `<div class="summary-item"><span class="summary-label">LinkedIn:</span><span class="summary-value">${soc.linkedin}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    // Horarios
-    const sched = businessData?.schedule || {};
-    const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-    const openDays = days.filter(d => { const dd = sched[d]; return dd && (dd.isOpen || dd.open); });
-    if (openDays.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_sec_schedule','Horarios de Atención')}</h3>
-          <ul class="summary-list">
-            ${openDays.map(d => {
-              const dd = sched[d];
-              return `<li>${formatDay(d)}: ${dd.open||dd.start||'09:00'} – ${dd.close||dd.end||'18:00'}</li>`;
-            }).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    // Días inhábiles
-    const hols = businessData?.holidays || [];
-    if (hols.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_tab_holidays_gov','Días Inhábiles')}</h3>
-          <ul class="summary-list">
-            ${hols.map(h => `<li>${h.date} – ${h.name}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    // Cursos
-    const cursos = businessData?.cursos || [];
-    if (cursos.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-graduation"></i>${t('onb_gov_courses','Cursos y Talleres')}</h3>
-          <ul class="summary-list">
-            ${cursos.map(c => `<li><strong>${c.title}</strong>${c.modalidad ? ' – '+c.modalidad : ''}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-  } else {
-    // ── Resumen Normal (Negocio privado) ────────────────────────────────────
-    const businessTypeNames = {
-      'clinica-dental': 'Clínica Dental',
-      'peluqueria': 'Peluquería / Salón de Belleza',
-      'restaurante': 'Restaurante',
-      'pizzeria': 'Pizzería',
-      'escuela': 'Escuela / Educación',
-      'gym': 'Gimnasio / Fitness',
-      'spa': 'Spa / Wellness',
-      'consultorio': 'Consultorio Médico',
-      'veterinaria': 'Veterinaria',
-      'hotel': 'Hotel / Hospedaje',
-      'tienda': 'Tienda / Retail',
-      'agencia': 'Agencia / Servicios',
-      'otro': 'Otro'
-    };
-
-    // Append businessType to basic info section (only in private mode)
-    html = html.replace(
-      '<span class="summary-label">Número de Teléfono:</span>',
-      `<span class="summary-label">${t('onb_sum_biz_type','Tipo de Negocio')}:</span>
-        </div><div class="summary-item">
-        <span class="summary-value">${businessTypeNames[agentData.businessType] || agentData.businessType}</span>
-        </div><div class="summary-item"><span class="summary-label">Número de Teléfono:</span>`
-    );
-
-    const biz   = businessData?.business   || {};
-    const loc   = businessData?.location   || {};
-    const soc   = businessData?.social     || {};
-    const sched = businessData?.schedule   || {};
-    const hols  = businessData?.holidays   || [];
-    const svcs  = businessData?.services   || [];
-    const wrks  = businessData?.workers    || [];
-
-    if (biz.name || biz.description || biz.email || biz.website) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title">
-            <i class="lni lni-briefcase"></i>
-            ${t('onb_my_business','Mi Negocio')}
-          </h3>
-          ${biz.name ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_name','Nombre')}:</span><span class="summary-value">${biz.name}</span></div>` : ''}
-          ${biz.typeName || biz.type ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_type','Tipo')}:</span><span class="summary-value">${biz.typeName || biz.type}</span></div>` : ''}
-          ${biz.description ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_description','Descripción')}:</span><span class="summary-value">${biz.description}</span></div>` : ''}
-          ${biz.email ? `<div class="summary-item"><span class="summary-label">Email:</span><span class="summary-value">${biz.email}</span></div>` : ''}
-          ${biz.website ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_website','Sitio web')}:</span><span class="summary-value">${biz.website}</span></div>` : ''}
-          ${businessData?.phoneNumber ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_phone_biz','Teléfono')}:</span><span class="summary-value">${businessData.phoneNumber}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    if (loc.address || loc.city) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-map-marker"></i>${t('onb_sec_location','Ubicación')}</h3>
-          ${loc.address ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_address','Dirección')}:</span><span class="summary-value">${loc.address}${loc.number ? ' #'+loc.number : ''}</span></div>` : ''}
-          ${loc.neighborhood ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_neighborhood','Colonia')}:</span><span class="summary-value">${loc.neighborhood}</span></div>` : ''}
-          ${loc.city ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_city','Ciudad')}:</span><span class="summary-value">${loc.city}${loc.state ? ', '+loc.state : ''}</span></div>` : ''}
-          ${loc.postalCode ? `<div class="summary-item"><span class="summary-label">${t('onb_sum_zip','C.P.')}:</span><span class="summary-value">${loc.postalCode}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    if (soc.facebook || soc.instagram || soc.twitter || soc.linkedin) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-share-alt"></i>${t('onb_sec_social','Redes Sociales')}</h3>
-          ${soc.facebook  ? `<div class="summary-item"><span class="summary-label">Facebook:</span><span class="summary-value">${soc.facebook}</span></div>` : ''}
-          ${soc.instagram ? `<div class="summary-item"><span class="summary-label">Instagram:</span><span class="summary-value">${soc.instagram}</span></div>` : ''}
-          ${soc.twitter   ? `<div class="summary-item"><span class="summary-label">Twitter/X:</span><span class="summary-value">${soc.twitter}</span></div>` : ''}
-          ${soc.linkedin  ? `<div class="summary-item"><span class="summary-label">LinkedIn:</span><span class="summary-value">${soc.linkedin}</span></div>` : ''}
-        </div>
-      `;
-    }
-
-    const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-    const openDays = days.filter(d => { const dd = sched[d]; return dd && (dd.isOpen || dd.open); });
-    if (openDays.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_sec_schedule','Horarios de Atención')}</h3>
-          <ul class="summary-list">
-            ${openDays.map(d => {
-              const dd = sched[d];
-              const start = dd.start || dd.openTime  || '09:00';
-              const end   = dd.end   || dd.closeTime || '18:00';
-              return `<li>${formatDay(d)}: ${start} – ${end}</li>`;
-            }).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    if (hols.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_sec_holidays','Días Festivos')}</h3>
-          <ul class="summary-list">
-            ${hols.map(h => `<li>${h.date} – ${h.name}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    if (svcs.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-package"></i>${t('onb_sec_services','Servicios')}</h3>
-          <ul class="summary-list">
-            ${svcs.map(s => {
-              let priceText = '';
-              if (s.priceType === 'promotion') {
-                priceText = ` – $${s.promoPrice} (antes $${s.originalPrice})`;
-              } else if (s.price) {
-                priceText = ` – $${s.price}`;
-              }
-              return `<li><strong>${s.title}</strong>${priceText}</li>`;
-            }).join('')}
-          </ul>
-        </div>
-      `;
-    }
-
-    if (wrks.length > 0) {
-      html += `
-        <div class="summary-section">
-          <h3 class="summary-section-title"><i class="lni lni-users"></i>${t('onb_sec_workers','Trabajadores')}</h3>
-          <ul class="summary-list">
-            ${wrks.map(w => `<li><strong>${w.name}</strong> – ${w.startTime} a ${w.endTime} (${(w.days||[]).length} ${t('onb_sum_days','días')})</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    }
-  }
-
-  container.innerHTML = html;
-}
-
-function formatTone(tone) {
-  const toneNames = {
-    'formal':   t('onb_tone_formal_title','Formal'),
-    'friendly': t('onb_tone_friendly_title','Amigable'),
-    'casual':   t('onb_tone_casual_title','Casual'),
-    'custom':   t('onb_tone_custom_title','Personalizado')
-  };
-  return toneNames[tone] || tone;
-}
-
-function formatDay(day) {
-  const dayNames = {
-    'monday':    t('onb_sch_day_mon','Lunes'),
-    'tuesday':   t('onb_sch_day_tue','Martes'),
-    'wednesday': t('onb_sch_day_wed','Miércoles'),
-    'thursday':  t('onb_sch_day_thu','Jueves'),
-    'friday':    t('onb_sch_day_fri','Viernes'),
-    'saturday':  t('onb_sch_day_sat','Sábado'),
-    'sunday':    t('onb_sch_day_sun','Domingo')
-  };
-  return dayNames[day] || day;
-}
-
-// ============================================
-// ENSURE MODALS EXIST
-// ============================================
-function ensureModalsExist() {
-  // Verificar si ya existen los tres modales
-  if (
-    document.getElementById('creatingModal') &&
-    document.getElementById('qrModal') &&
-    document.getElementById('successModal')
-  ) {
-    return;
-  }
-  
-  // Crear el modal de creación si no existe
-  if (!document.getElementById('creatingModal')) {
-    const creatingModal = document.createElement('div');
-    creatingModal.id = 'creatingModal';
-    creatingModal.className = 'overlay creating-modal';
-    creatingModal.innerHTML = `
-      <div class="creating-content">
-        <div class="creating-icon-wrapper">
-          <div class="creating-icon robot-icon">
-            <i class="lni lni-bot" id="creatingModalIcon"></i>
-          </div>
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring"></div>
-          <div class="pulse-ring"></div>
-        </div>
-
-        <h2 class="creating-title" id="creatingModalTitle">Creando tu Agente</h2>
-        <p class="creating-subtitle" id="creatingModalSubtitle">
-          Configurando infraestructura y desplegando el bot
-        </p>
-
-        <div class="agent-info">
-          <div class="agent-info-label">Agente</div>
-          <div class="agent-info-value" id="agentNameDisplay">Mi Agente</div>
-        </div>
-
-        <div class="status-info">
-          <div class="current-status">
-            <i class="lni lni-cog status-icon" id="currentStatusIcon"></i>
-            <span class="status-text" id="currentStatusText" data-translate="onb_creating_status_init">Iniciando creación...</span>
-          </div>
-
-          <div class="status-steps" id="statusStepsContainer">
-            <div class="status-step active">
-              <div class="status-step-indicator"></div>
-              <div class="status-step-text">
-                <i class="lni lni-apartment"></i> Creando infraestructura
-              </div>
-            </div>
-            <div class="status-step">
-              <div class="status-step-indicator"></div>
-              <div class="status-step-text">
-                <i class="lni lni-cog"></i> Inicializando sistema
-              </div>
-            </div>
-            <div class="status-step">
-              <div class="status-step-indicator"></div>
-              <div class="status-step-text">
-                <i class="lni lni-bot"></i> Desplegando bot
-              </div>
-            </div>
-            <div class="status-step">
-              <div class="status-step-indicator"></div>
-              <div class="status-step-text">
-                <i class="lni lni-checkmark"></i> Completado
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="progress-section">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="creationProgressBar"></div>
-          </div>
-
-          <div class="time-info">
-            <div class="time-item">
-              <div class="time-label">Transcurrido</div>
-              <div class="time-value" id="timeElapsed">0:00</div>
-            </div>
-            <div class="time-item">
-              <div class="time-label">Estimado</div>
-              <div class="time-value" id="timeRemaining">~15:00</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="creating-note">
-          <div class="creating-note-icon">
-            <i class="lni lni-information"></i>
-          </div>
-          <p class="creating-note-text" id="creatingModalNote">
-            Este proceso toma entre 10 y 20 minutos. Estamos configurando tu
-            infraestructura en la nube y desplegando tu bot personalizado.
-          </p>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(creatingModal);
-  }
-  
-  // ── Modal QR (Flujo 1: AtomicBot / WhatsApp Web) ──────────────────────────
-  if (!document.getElementById('qrModal')) {
-    const qrModal = document.createElement('div');
-    qrModal.id = 'qrModal';
-    qrModal.className = 'overlay creating-modal';
-    qrModal.innerHTML = `
-      <div class="creating-content success-modal-content" style="max-width:420px;position:relative">
-        <button type="button" id="qrModalCloseBtn" aria-label="Cerrar" style="
-          position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;
-          border-radius:50%;background:#f3f4f6;color:#6b7280;cursor:pointer;
-          display:flex;align-items:center;justify-content:center;font-size:1rem;
-        "><i class="lni lni-close"></i></button>
-        <div class="success-icon-large">
-          <i class="lni lni-whatsapp" style="color:#25d366;font-size:3rem"></i>
-        </div>
-        <h2 class="success-title" style="font-size:1.4rem">Vincula tu WhatsApp</h2>
-        <p class="success-subtitle">Escanea el código QR con la app de WhatsApp en tu teléfono</p>
-
-        <!-- QR image / spinner -->
-        <div id="qrImageWrapper" style="
-          display:flex;align-items:center;justify-content:center;
-          min-height:200px;background:#f8fafc;border-radius:12px;
-          padding:1rem;margin:1rem 0;border:1px solid #e2e8f0;
-        ">
-          <div id="qrSpinner" style="text-align:center">
-            <div class="loading-spinner" style="margin:0 auto 0.75rem"></div>
-            <p style="color:#64748b;font-size:0.85rem;margin:0">Generando código QR...</p>
-          </div>
-          <img id="qrImage" src="" alt="QR Code"
-            style="display:none;max-width:200px;max-height:200px;border-radius:8px" />
-        </div>
-
-        <!-- Estado de vinculación -->
-        <div id="qrStatusRow" style="
-          display:flex;align-items:center;gap:8px;
-          justify-content:center;margin-bottom:0.5rem;
-          font-size:0.85rem;color:#64748b;
-        ">
-          <span id="qrStatusDot" style="
-            width:8px;height:8px;border-radius:50%;
-            background:#f59e0b;flex-shrink:0;display:inline-block
-          "></span>
-          <span id="qrStatusText">Esperando escaneo...</span>
-        </div>
-
-        <!-- Aviso cuando el QR tarda demasiado en generarse -->
-        <div id="qrStuckPanel" style="display:none;margin-top:0.5rem;padding:1rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;text-align:center;">
-          <div style="color:#c2410c;font-weight:700;font-size:0.85rem;margin-bottom:0.35rem;">
-            <i class="lni lni-warning"></i> Esto está tardando más de lo normal
-          </div>
-          <p style="color:#9a3412;font-size:0.8rem;margin:0 0 0.75rem;line-height:1.4;">
-            No pudimos generar el código QR. Intenta un redeploy del agente o crea un nuevo agente.
-          </p>
-          <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-            <button type="button" id="qrStuckRedeployBtn" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f97316;color:#fff;font-weight:600;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
-              <i class="lni lni-reload"></i> Redeploy
-            </button>
-            <button type="button" id="qrStuckNewAgentBtn" style="padding:0.5rem 1rem;border:1px solid #f97316;border-radius:8px;background:#fff;color:#f97316;font-weight:600;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
-              <i class="lni lni-plus"></i> Crear otro agente
-            </button>
-          </div>
-        </div>
-
-        <div class="creating-note" style="margin-top:1rem">
-          <div class="creating-note-icon"><i class="lni lni-information"></i></div>
-          <p class="creating-note-text">
-            Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo y escanea el QR.
-          </p>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(qrModal);
-  }
-
-  // ── Modal de éxito (Flujo 2: agente completamente listo) ──────────────────
-  if (!document.getElementById('successModal')) {
-    const successModal = document.createElement('div');
-    successModal.id = 'successModal';
-    successModal.className = 'overlay creating-modal';
-    successModal.innerHTML = `
-      <div class="creating-content success-modal-content">
-        <div class="success-icon-large">
-          <i class="lni lni-checkmark-circle" style="color: #10b981"></i>
-        </div>
-        <h2 class="success-title">¡Agente Creado Exitosamente!</h2>
-        <p class="success-subtitle">Tu agente de IA está listo y operativo</p>
-
-        <div class="agent-details-box">
-          <div class="agent-detail-item">
-            <span class="agent-detail-label">Nombre:</span>
-            <span class="agent-detail-value" id="finalAgentName">Mi Agente</span>
-          </div>
-          <div class="agent-detail-item">
-            <span class="agent-detail-label">Servidor:</span>
-            <span class="agent-detail-value" id="finalAgentServer">Compartido</span>
-          </div>
-          <div class="agent-detail-item">
-            <span class="agent-detail-label">Estado:</span>
-            <span class="agent-detail-value" style="color: #10b981">
-              <i class="lni lni-circle-fill" style="font-size: 8px"></i> Activo
-            </span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          id="btnGoToMyAgents"
-          class="btn btn-next"
-          style="width: 100%; justify-content: center"
-          onclick="window.location.href='/my-agents'"
-        >
-          <i class="lni lni-list"></i>
-          <span>Ir a Mis Agentes</span>
-        </button>
-
-        <div class="creating-note" style="margin-top: 20px">
-          <div class="creating-note-icon"><i class="lni lni-bulb"></i></div>
-          <p class="creating-note-text" id="successNoteText">
-            Tu agente está listo. Puedes configurarlo desde Mis Agentes.
-          </p>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(successModal);
-  }
-}
-
-// ============================================
-// QR POLLING (AtomicBot / WhatsApp Web)
-// ============================================
-function startQRPolling(agentId, agentName) {
-  const qrModal        = document.getElementById('qrModal');
-  const qrSpinner      = document.getElementById('qrSpinner');
-  const qrImage        = document.getElementById('qrImage');
-  const qrStatusDot    = document.getElementById('qrStatusDot');
-  const qrStatusText   = document.getElementById('qrStatusText');
-  const qrStuckPanel   = document.getElementById('qrStuckPanel');
-  if (!qrModal) return;
-
-  qrModal.classList.add('show');
-  if (qrStuckPanel) qrStuckPanel.style.display = 'none';
-  console.log('📡 [QR] Iniciando polling para agente', agentId, '— aviso de atascado a los', 45, 's');
-
-  // ── Aviso de "atascado" ─────────────────────────────────────────────────
-  // Si después de un buen rato el backend sigue sin devolver QR ni conexión
-  // (ver logs "Sin QR ni conexión, esperando"), el usuario se queda viendo
-  // el spinner para siempre. Avisamos y ofrecemos redeploy o crear otro agente,
-  // sin dejar de sondear por si el bot se recupera solo.
-  const QR_STUCK_THRESHOLD_MS = 45000; // 45s
-  let _pollStartedAt = Date.now();
-  let _stuckShown = false;
-
-  function showStuckPanel() {
-    if (_stuckShown || !qrStuckPanel) return;
-    _stuckShown = true;
-    console.log('⏳ [QR] Sin QR después de', Math.round((Date.now() - _pollStartedAt) / 1000) + 's — mostrando aviso para agente', agentId);
-    qrStuckPanel.style.display = 'block';
-    if (qrStatusDot) qrStatusDot.style.background = '#ef4444';
-    if (qrStatusText) qrStatusText.textContent = 'No se pudo generar el QR';
-  }
-
-  function hideStuckPanel() {
-    if (!_stuckShown || !qrStuckPanel) return;
-    _stuckShown = false;
-    qrStuckPanel.style.display = 'none';
-  }
-
-  let _qrPollTimer = null;
-
-  async function pollQR() {
     try {
-      const resp = await fetch(`/api/agents/${agentId}/qr`, { credentials: 'include' });
-      if (!resp.ok) {
-        console.warn('⚠️ QR endpoint status:', resp.status);
-        return;
-      }
-
-      const contentType = resp.headers.get('Content-Type') || '';
-      console.log('📡 QR response Content-Type:', contentType);
-
-      // ── Caso A: el endpoint devuelve imagen PNG/JPEG directamente ──────────
-      if (contentType.includes('image/')) {
-        const blob = await resp.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        hideStuckPanel();
-        qrSpinner.style.display        = 'none';
-        qrImage.src                    = objectUrl;
-        qrImage.style.display          = 'block';
-        qrStatusDot.style.background   = '#f59e0b';
-        qrStatusText.textContent       = 'Esperando escaneo...';
-        return;
-      }
-
-      // ── Caso B: JSON ───────────────────────────────────────────────────────
-      const data = await resp.json();
-      console.log('📡 QR response JSON:', data);
-
-      // Detectar vinculación — cubre campos comunes del backend
-      const isLinked =
-        data.connected === true      ||
-        data.linked === true ||
-        data.status === 'connected'  || data.status === 'logged_in'  || data.status === 'active' ||
-        data.whatsapp_status === 'connected' || data.whatsapp_status === 'logged_in' ||
-        data.device_linked === true  ||
-        data.qr_code === null        || data.qr === null ||
-        data.message === 'connected' || data.message === 'linked';
-
-      if (isLinked) {
-        hideStuckPanel();
-        clearInterval(_qrPollTimer);
-        qrModal.classList.remove('show');
-        showSuccessModal(agentName, 'whatsapp');
-        return;
-      }
-
-      // Si el campo qr llegó vacío y ya teníamos QR mostrado → también es vinculación
-      const qrField = data.qr_code || data.qr || data.qrCode || data.image || data.data;
-      const hadQR = document.getElementById('qrTextArt') || (qrImage && qrImage.style.display !== 'none');
-      if (qrField === '' && hadQR) {
-        clearInterval(_qrPollTimer);
-        qrModal.classList.remove('show');
-        showSuccessModal(agentName, 'whatsapp');
-        return;
-      }
-
-      // Extraer código QR de cualquier campo común
-      const qrCode = qrField || '';
-
-      if (qrCode) {
-        hideStuckPanel();
-        qrSpinner.style.display = 'none';
-
-        // Quitar prefijo data-URI si lo tiene, para inspeccionar el contenido crudo
-        const DATA_PREFIX = 'data:image/png;base64,';
-        const rawContent  = qrCode.startsWith(DATA_PREFIX)
-          ? qrCode.slice(DATA_PREFIX.length)
-          : qrCode;
-
-        // ¿Es base64 real? Solo contiene [A-Za-z0-9+/=\r\n]
-        const isRealBase64 = /^[A-Za-z0-9+\/=\r\n]+$/.test(rawContent.trim());
-
-        if (isRealBase64) {
-          // PNG real — mostrar como <img>
-          qrImage.src = qrCode.startsWith('data:')
-            ? qrCode
-            : `data:image/png;base64,${qrCode}`;
-          qrImage.style.display = 'block';
-          const existingPre = document.getElementById('qrTextArt');
-          if (existingPre) existingPre.style.display = 'none';
-        } else {
-          // Arte ASCII/Unicode — mostrar como <pre>
-          qrImage.style.display = 'none';
-          let pre = document.getElementById('qrTextArt');
-          if (!pre) {
-            pre = document.createElement('pre');
-            pre.id = 'qrTextArt';
-            pre.style.cssText = 'font-family:monospace;font-size:7px;line-height:1.1;letter-spacing:0;white-space:pre;color:#000;background:#fff;padding:10px;border-radius:8px;overflow:auto;max-width:100%;margin:0 auto;display:block;';
-            qrImage.parentNode.insertBefore(pre, qrImage.nextSibling);
-          }
-          pre.textContent = rawContent;
-          pre.style.display = 'block';
-        }
-
-        qrStatusDot.style.background = '#f59e0b';
-        qrStatusText.textContent     = 'Esperando escaneo...';
-      } else if (!_stuckShown && (Date.now() - _pollStartedAt) >= QR_STUCK_THRESHOLD_MS) {
-        // Llevamos más de QR_STUCK_THRESHOLD_MS sin QR ni conexión (backend
-        // reporta "Sin QR ni conexión, esperando" indefinidamente) — avisar.
-        showStuckPanel();
-      }
-
-    } catch (err) {
-      console.error('❌ Error al obtener QR:', err);
-    }
-  }
-
-  // ── Poll QR cada 3 s ──────────────────────────────────────────────────────
-  pollQR();
-  _qrPollTimer = setInterval(pollQR, 3000);
-
-  // ── Fallback: poll estado del agente cada 4 s ─────────────────────────────
-  // Por si el endpoint /qr no refleja la vinculación en su respuesta
-  let _done = false;
-  const _agentStatusTimer = setInterval(async () => {
-    if (_done) { clearInterval(_agentStatusTimer); return; }
-    try {
-      const r = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
-      if (!r.ok) return;
-      const d = await r.json();
-      const ag = d.agent || d;
-      const linked =
-        ag.whatsapp_status === 'connected' || ag.whatsapp_status === 'logged_in' ||
-        ag.status === 'connected'          || ag.status === 'active'              ||
-        ag.is_connected === true           || ag.linked === true;
-      if (linked) {
-        _done = true;
-        clearInterval(_agentStatusTimer);
-        clearInterval(_qrPollTimer);
-        qrModal.classList.remove('show');
-        showSuccessModal(agentName, 'whatsapp');
-      }
-    } catch (_) {}
-  }, 4000);
-
-  // ── Botón cerrar: detiene el polling y oculta el modal sin cancelar el
-  // agente — el usuario puede volver a vincularlo luego desde el dropdown,
-  // o se le va a volver a mostrar solo la próxima vez que cargue Mis Agentes
-  // (mientras siga sin vincular).
-  const closeBtn = document.getElementById('qrModalCloseBtn');
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      clearInterval(_qrPollTimer);
-      clearInterval(_agentStatusTimer);
-      qrModal.classList.remove('show');
-    };
-  }
-
-  // ── Botones del aviso de "atascado" ───────────────────────────────────
-  const stuckRedeployBtn = document.getElementById('qrStuckRedeployBtn');
-  if (stuckRedeployBtn) {
-    stuckRedeployBtn.onclick = async () => {
-      stuckRedeployBtn.disabled = true;
-      stuckRedeployBtn.innerHTML = '<i class="lni lni-spinner-arrow"></i> Redeployando...';
-      try {
-        const resp = await fetch(`/api/agents/${agentId}/redeploy`, {
-          method: 'POST',
-          credentials: 'include'
+        const response = await fetch('/api/agents', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-        if (!resp.ok) throw new Error('redeploy failed');
-        if (typeof window.showNotification === 'function') {
-          window.showNotification('✅ Redeploy iniciado.', 'success');
+
+        if (!response.ok) {
+            throw new Error(t('integ_err_load_agents','Error al cargar agentes'));
         }
-        // Cerramos el QR y mostramos la animación de progreso (igual que al
-        // crear un agente); cuando detecte que el bot volvió a "running",
-        // esta misma función reabre el modal de QR automáticamente.
-        clearInterval(_qrPollTimer);
-        clearInterval(_agentStatusTimer);
-        qrModal.classList.remove('show');
-        stuckRedeployBtn.disabled = false;
-        stuckRedeployBtn.innerHTML = '<i class="lni lni-reload"></i> Redeploy';
-        watchAgentRedeploy(agentId, agentName);
-      } catch (e) {
-        if (typeof window.showNotification === 'function') {
-          window.showNotification('❌ Error al hacer redeploy', 'error');
+
+        const data = await response.json();
+        agents = data.agents || [];
+
+        console.log(`✅ ${agents.length} agentes cargados`, agents);
+
+        if (agents.length === 0) {
+            showNoAgentsBanner();
+            return;
         }
-        stuckRedeployBtn.disabled = false;
-        stuckRedeployBtn.innerHTML = '<i class="lni lni-reload"></i> Redeploy';
-      }
-    };
-  }
 
-  const stuckNewAgentBtn = document.getElementById('qrStuckNewAgentBtn');
-  if (stuckNewAgentBtn) {
-    // Solo mostrar la opción si estamos en un contexto donde existe el flujo de creación
-    stuckNewAgentBtn.style.display = (typeof window.openOnboardingModal === 'function') ? '' : 'none';
-    stuckNewAgentBtn.onclick = () => {
-      clearInterval(_qrPollTimer);
-      clearInterval(_agentStatusTimer);
-      qrModal.classList.remove('show');
-      if (typeof window.openOnboardingModal === 'function') window.openOnboardingModal();
-    };
-  }
+        hideNoAgentsBanner();
+        populateAgentSelector(agents);
+        setupAgentSelectorEvents();
+
+    } catch (error) {
+        console.error('Error cargando agentes:', error);
+        showNotification(t('integ_err_load_agents','Error al cargar agentes'), 'error');
+    }
 }
 
-// ============================================
-// SHOW SUCCESS MODAL
-// ============================================
-function showSuccessModal(agentName, platform) {
-  const successModal = document.getElementById('successModal');
-  if (!successModal) return;
+function populateAgentSelector(agents) {
+    const optionsContainer = document.getElementById('agentSelectOptions');
+    if (!optionsContainer) return;
+    
+    optionsContainer.innerHTML = '';
+    
+    agents.forEach(agent => {
+        const option = document.createElement('div');
+        option.className = 'select-option';
+        option.setAttribute('data-agent-id', agent.id);
+        option.setAttribute('data-bot-type', agent.botType);
+        option.textContent = agent.name;
+        optionsContainer.appendChild(option);
+    });
+}
 
-  // Nombre
-  const nameEl = document.getElementById('finalAgentName');
-  if (nameEl) nameEl.textContent = agentName || 'Mi Agente';
+function setupAgentSelectorEvents() {
+    const selectWrapper = document.getElementById('agentSelect');
+    const selectDisplay = document.getElementById('agentSelectDisplay');
+    const dropdown = document.getElementById('agentSelectDropdown');
+    const options = document.querySelectorAll('.select-option');
+    
+    if (!selectWrapper || !selectDisplay || !dropdown) return;
+    
+    selectDisplay.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleAgentDropdown();
+    });
+    
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectAgent(this);
+        });
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!selectWrapper.contains(e.target)) {
+            closeAgentDropdown();
+        }
+    });
+}
 
-  // Servidor: Compartido (AtomicBot) o Propio (OrbitalBot)
-  const serverEl = document.getElementById('finalAgentServer');
-  if (serverEl) {
-    if (platform === 'whatsapp') {
-      serverEl.textContent = 'Compartido';
+function toggleAgentDropdown() {
+    const selectWrapper = document.getElementById('agentSelect');
+    const isActive = selectWrapper.classList.contains('active');
+    
+    if (isActive) {
+        closeAgentDropdown();
     } else {
-      serverEl.textContent = 'Propio';
+        openAgentDropdown();
     }
-  }
+}
 
-  // Nota inferior según plataforma
-  const noteEl = document.getElementById('successNoteText');
-  if (noteEl) {
-    if (platform === 'meta') {
-      noteEl.textContent = 'Configura las credenciales de Meta WhatsApp API en Mis Agentes para comenzar a usar tu agente.';
+function openAgentDropdown() {
+    const selectWrapper = document.getElementById('agentSelect');
+    selectWrapper.classList.add('active');
+}
+
+function closeAgentDropdown() {
+    const selectWrapper = document.getElementById('agentSelect');
+    selectWrapper.classList.remove('active');
+}
+
+async function selectAgent(option) {
+    const agentId = option.getAttribute('data-agent-id');
+    const botType = option.getAttribute('data-bot-type');
+    const agentName = option.textContent;
+    
+    selectedAgentId = parseInt(agentId);
+    selectedAgent = agents.find(a => a.id === selectedAgentId);
+    
+    const selectDisplay = document.getElementById('agentSelectDisplay');
+    selectDisplay.textContent = agentName;
+    selectDisplay.removeAttribute('data-translate'); // ya no es el placeholder — no debe re-traducirse al cambiar idioma
+    
+    const allOptions = document.querySelectorAll('.select-option');
+    allOptions.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+    
+    closeAgentDropdown();
+    
+    console.log(`✅ Agente seleccionado: ${agentName} (ID: ${agentId}, Tipo: ${botType})`);
+    
+    showIntegrationsGrid();
+    
+    // Mostrar/ocultar tarjetas según el tipo de bot
+    showIntegrationsByBotType(botType);
+    
+    // 🔧 NUEVO: Mostrar webhook URL inmediatamente si es OrbitalBot
+    if (botType === 'orbital') {
+        updateWebhookUrl(selectedAgentId);
+    }
+    
+    // Load integration statuses
+    await loadGoogleIntegrationStatus(selectedAgentId);
+
+    // Cargar config de pagos (disponible para todos los bots)
+    const branchId = selectedAgent && selectedAgent.branchId ? selectedAgent.branchId : null;
+    if (branchId) await loadPaymentConfig(branchId);
+
+    // RepairDesk: disponible para todos los bots
+    await loadRepairDeskStatus(selectedAgentId);
+
+    // SoftRestaurant: disponible para todos los bots
+    await loadSoftRestaurantStatus(selectedAgentId);
+    
+    if (botType === 'atomic') {
+        await loadGeminiStatus(selectedAgentId);
+    } else if (botType === 'orbital') {
+        await loadMetaCredentialsStatus(selectedAgentId);
+    }
+}
+
+function showIntegrationsByBotType(botType) {
+    const geminiCard         = document.getElementById('geminiCard');
+    const metaCard           = document.getElementById('metaCard');
+    const paymentsCard       = document.getElementById('paymentsCard');
+    const repairDeskCard     = document.getElementById('repairDeskCard');
+    const softRestaurantCard = document.getElementById('softRestaurantCard');
+
+    if (botType === 'atomic') {
+        if (geminiCard) geminiCard.style.display = 'block';
+        if (metaCard)   metaCard.style.display   = 'none';
+    } else if (botType === 'orbital') {
+        if (geminiCard) geminiCard.style.display = 'none';
+        if (metaCard)   metaCard.style.display   = 'block';
+    }
+    if (paymentsCard)       paymentsCard.style.display       = 'block';
+    if (repairDeskCard)     repairDeskCard.style.display     = 'block';
+    if (softRestaurantCard) softRestaurantCard.style.display = 'block';
+}
+
+function showIntegrationsGrid() {
+    const grid = document.getElementById('integrationsGrid');
+    const emptyState = document.getElementById('emptyState');
+
+    // El grid ya es visible por CSS (display:grid) desde que carga la
+    // página — esto solo se asegura de que ningún estado previo lo haya
+    // ocultado, y muestra TODAS las tarjetas por defecto (Gemini y Meta
+    // incluidas) hasta que se sepa el tipo de bot del agente elegido.
+    if (grid) grid.style.display = 'grid';
+    if (emptyState) emptyState.classList.remove('active');
+
+    const geminiCard = document.getElementById('geminiCard');
+    const metaCard = document.getElementById('metaCard');
+    if (geminiCard) geminiCard.style.display = 'block';
+    if (metaCard) metaCard.style.display = 'block';
+}
+
+function showNoAgentsBanner() {
+    const banner = document.getElementById('noAgentsBanner');
+    const agentSelector = document.querySelector('.agent-selector');
+    if (banner) banner.style.display = 'flex';
+    // No hay agentes que elegir — ocultamos el selector (vacío) pero
+    // dejamos las tarjetas de integración visibles debajo del banner.
+    if (agentSelector) agentSelector.style.display = 'none';
+}
+
+function hideNoAgentsBanner() {
+    const banner = document.getElementById('noAgentsBanner');
+    const agentSelector = document.querySelector('.agent-selector');
+    if (banner) banner.style.display = 'none';
+    if (agentSelector) agentSelector.style.display = 'block';
+}
+
+// ============================================
+// META WHATSAPP INTEGRATION
+// ============================================
+
+function initMetaIntegration() {
+    const toggleToken = document.getElementById('toggleMetaToken');
+    const toggleVerify = document.getElementById('toggleMetaVerify');
+    const saveButton = document.getElementById('btnSaveMetaCredentials');
+    const updateButton = document.getElementById('btnUpdateMetaCredentials');
+    const removeButton = document.getElementById('btnRemoveMetaCredentials');
+    
+    if (toggleToken) {
+        toggleToken.addEventListener('click', () => toggleMetaVisibility('metaAccessToken', 'toggleMetaToken'));
+    }
+    
+    if (toggleVerify) {
+        toggleVerify.addEventListener('click', () => toggleMetaVisibility('metaVerifyToken', 'toggleMetaVerify'));
+    }
+    
+    // Enable save button when all fields have content
+    const inputs = ['metaPhoneNumberId', 'metaAccessToken', 'metaWabaId', 'metaVerifyToken'];
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', function() {
+                if (saveButton) {
+                    const allFilled = inputs.every(id => {
+                        const el = document.getElementById(id);
+                        return el && el.value.trim();
+                    });
+                    saveButton.disabled = !allFilled;
+                }
+            });
+        }
+    });
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', saveMetaCredentials);
+    }
+    
+    if (updateButton) {
+        updateButton.addEventListener('click', enableMetaEdit);
+    }
+    
+    if (removeButton) {
+        removeButton.addEventListener('click', removeMetaCredentials);
+    }
+}
+
+function toggleMetaVisibility(inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+    
+    if (!input || !button) return;
+    
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'lni lni-eye-slash';
     } else {
-      noteEl.textContent = 'Tu dispositivo está vinculado. El agente ya puede responder mensajes de WhatsApp.';
+        input.type = 'password';
+        icon.className = 'lni lni-eye';
     }
-  }
-
-  successModal.classList.add('show');
 }
 
-// ============================================
-// UPLOAD PENDING SERVICE IMAGES
-// Recorre todos los thumbs marcados como pending=true y los sube al servidor.
-// Actualiza el thumb con la URL real y sincroniza el hidden input de cada servicio.
-// ============================================
-async function uploadPendingServiceImages() {
-  const pendingThumbs = [...document.querySelectorAll('.service-img-thumb[data-pending="true"]')];
-  if (!pendingThumbs.length) return;
-
-  console.log(`📸 Subiendo ${pendingThumbs.length} imagen(es) pendiente(s)...`);
-
-  const uploadBranchId = agentData.branchId || 0;
-
-  for (const thumb of pendingThumbs) {
-    const file = thumb._pendingFile;
-    if (!file) { thumb.removeAttribute('data-pending'); continue; }
-
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const res = await fetch(`/api/upload/service-image?branch_id=${uploadBranchId}`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
-
-      // Actualizar thumb con la URL real
-      thumb.dataset.url = result.url;
-      thumb.removeAttribute('data-pending');
-      delete thumb._pendingFile;
-
-      // Actualizar la imagen visible (reemplazar data-URL con URL real)
-      const img = thumb.querySelector('img');
-      if (img) img.src = result.url;
-
-      console.log(`✅ Imagen subida: ${result.url}`);
-    } catch (err) {
-      console.error('❌ Error subiendo imagen pendiente:', err);
-      // No bloquear la creación del agente; la imagen simplemente no se incluirá
-      thumb.remove();
-    }
-
-    // Sincronizar el hidden input de su servicio
-    const serviceItem = thumb.closest('.service-item');
-    if (serviceItem) {
-      const urlsInput = serviceItem.querySelector('.service-image-urls');
-      if (urlsInput) {
-        const urls = [...serviceItem.querySelectorAll('.service-img-thumb')]
-          .filter(t => !t.dataset.pending && t.dataset.url)
-          .map(t => t.dataset.url);
-        urlsInput.value = urls.join(',');
-      }
-    }
-  }
-
-  // Refrescar agentData.config.services con las URLs ya subidas
-  updateServicesData();
-  console.log('✅ Todas las imágenes pendientes procesadas');
-}
-
-// ============================================
-// CREATE AGENT
-// ============================================
-async function createAgent() {
-  // Modo edición: el usuario abrió el modal desde "Editar" en agent-details.html
-  if (agentData.editingAgentId) {
-    return updateAgent();
-  }
-
-  console.log('🚀 Iniciando creación de agente...');
-  
-  // Cerrar el modal del onboarding si existe (cuando se abre desde el dashboard)
-  const onboardingModal = document.getElementById('onboardingModal');
-  if (onboardingModal && typeof closeOnboardingModal === 'function') {
-    console.log('🔒 Cerrando modal del onboarding...');
-    closeOnboardingModal();
-  }
-
-  const creatingModal = document.getElementById('creatingModal') || (ensureModalsExist(), document.getElementById('creatingModal'));
-  if (!creatingModal) {
-    console.error('❌ Modal de creación no encontrado');
-    alert('Error: No se pudo mostrar el modal de creación');
-    return;
-  }
-
-  try {
-    console.log('📤 Enviando petición de creación de agente...');
-    console.log('Datos del agente:', {
-      name: agentData.name,
-      phoneNumber: agentData.phoneNumber,
-      businessType: agentData.businessType
-    });
-
-    // ── Subir imágenes pendientes ANTES de crear el agente ──────────────────
-    await uploadPendingServiceImages();
-    // ────────────────────────────────────────────────────────────────────────
-
-    const response = await fetch('/api/agents', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        name: agentData.name,
-        phoneNumber: agentData.phoneNumber,
-        businessType: agentData.businessType,
-        branchId: agentData.branchId,
-        menuUrl: agentData.menuUrl || '',
-        metaDocument: '',
-        social: agentData.social || '',
-        config: agentData.config
-      }),
-    });
-
-    const data = await response.json();
-    console.log('📥 Respuesta recibida:', data);
-
-    if (response.status !== 202) {
-      throw new Error(data.error || 'Error al crear agente');
-    }
-
-    const agentId = data.agent.id;
-    const agentName = data.agent.name;
-    const platform = (agentData.social || '').toLowerCase(); // 'whatsapp' | 'meta' | 'telegram'
-    console.log('✅ Agente creado con ID:', agentId);
-
-    watchAgentDeployment(agentId, agentName, platform);
-
-  } catch (error) {
-    console.error('❌ Error:', error);
-    creatingModal.classList.remove('show');
-    alert(t('onb_err_creating','Error al crear el agente. Por favor intenta de nuevo.'));
-  }
-}
-
-// ============================================
-// ACTUALIZAR AGENTE EXISTENTE (modo edición)
-// Guarda los cambios con PUT y muestra el mismo modal de progreso → QR que
-// usa el redeploy manual, para que el usuario vea que se están aplicando.
-// ============================================
-async function updateAgent() {
-  console.log('✏️ Guardando cambios del agente', agentData.editingAgentId, '...');
-
-  const onboardingModal = document.getElementById('onboardingModal');
-  if (onboardingModal && typeof closeOnboardingModal === 'function') {
-    closeOnboardingModal();
-  }
-
-  const creatingModal = document.getElementById('creatingModal') || (ensureModalsExist(), document.getElementById('creatingModal'));
-  if (!creatingModal) {
-    console.error('❌ Modal de progreso no encontrado');
-    alert('Error: No se pudo mostrar el modal de progreso');
-    return;
-  }
-
-  const editedAgentId = agentData.editingAgentId;
-  const editedAgentName = agentData.name;
-
-  try {
-    await uploadPendingServiceImages();
-
-    const response = await fetch(`/api/agents/${editedAgentId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        name: agentData.name,
-        phoneNumber: agentData.phoneNumber,
-        config: agentData.config
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Error al actualizar el agente');
-
-    // Salir del modo edición para no afectar la próxima vez que se cree un agente
-    agentData.editingAgentId = null;
-    window.editingAgentId = null;
-
-    console.log('✅ Agente actualizado, mostrando progreso...');
-    watchAgentRedeploy(editedAgentId, editedAgentName);
-
-  } catch (error) {
-    console.error('❌ Error actualizando agente:', error);
-    creatingModal.classList.remove('show');
-    alert('Error al guardar los cambios. Por favor intenta de nuevo.');
-  }
-}
-
-// ============================================
-// WATCH AGENT DEPLOYMENT (compartido entre createAgent() y la lógica de
-// "retomar" en my-agents.js cuando el usuario vuelve a la página)
-// ============================================
-function watchAgentDeployment(agentId, agentName, platform) {
-  ensureModalsExist();
-  const creatingModal = document.getElementById('creatingModal');
-  if (!creatingModal) return;
-
-  console.log('✅ Mostrando modal de creación...');
-  setCreatingModalMode('create', agentName);
-  creatingModal.classList.add('show');
-
-  const agentNameDisplay = document.getElementById('agentNameDisplay');
-  if (agentNameDisplay) agentNameDisplay.textContent = agentName;
-
-  let elapsedSeconds = 0;
-  const maxSeconds = 1200;
-  const timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    updateTimer(elapsedSeconds, maxSeconds);
-  }, 1000);
-
-  const checkInterval = setInterval(async () => {
-    try {
-      console.log('🔍 Verificando estado del agente...');
-      const statusResp = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
-
-      if (!statusResp.ok) {
-        console.error('❌ Error al verificar estado:', statusResp.status);
+async function loadMetaCredentialsStatus(agentId) {
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Meta credentials status');
         return;
-      }
-
-      const statusData = await statusResp.json();
-      console.log('📊 Estado actual:', statusData.agent.deployStatus);
-
-      updateCreationStatus(statusData.agent.deployStatus, 'create');
-
-      if (statusData.agent.deployStatus === 'running') {
-        console.log('🎉 ¡Agente completado exitosamente!');
-        clearInterval(checkInterval);
-        clearInterval(timerInterval);
-
-        creatingModal.classList.remove('show');
-
-        if (platform === 'whatsapp') {
-          // ── Flujo 1: AtomicBot ─ mostrar QR para vincular WhatsApp ──────
-          console.log('📱 Plataforma AtomicBot – iniciando flujo QR');
-          startQRPolling(agentId, statusData.agent.name);
-        } else if (platform === 'telegram') {
-          // ── Flujo 3: TelegramBot ─ éxito directo (no requiere QR) ──────
-          console.log('✈️ Plataforma TelegramBot – mostrando éxito directo');
-          showSuccessModal(statusData.agent.name, 'telegram');
-        } else {
-          // ── Flujo 2: OrbitalBot ─ mostrar pantalla de éxito directo ────
-          console.log('🚀 Plataforma OrbitalBot – mostrando éxito directo');
-          showSuccessModal(statusData.agent.name, platform);
-        }
-
-      } else if (statusData.agent.deployStatus === 'error') {
-        console.error('❌ Error en el despliegue del agente');
-        clearInterval(checkInterval);
-        clearInterval(timerInterval);
-
-        creatingModal.classList.remove('show');
-        alert('Error al crear el agente. Por favor contacta a soporte.');
-      }
-    } catch (error) {
-      console.error('❌ Error verificando estado:', error);
     }
-  }, 5000);
-}
-window.watchAgentDeployment = watchAgentDeployment;
-
-// ============================================
-// MODO DEL MODAL DE PROGRESO: 'create' (crear agente) vs 'redeploy'
-// Reutiliza el mismo modal #creatingModal cambiando textos/ícono, para no
-// duplicar el diseño (spinner, anillos, barra de progreso, pasos...).
-// ============================================
-function setCreatingModalMode(mode, agentName) {
-  const titleEl    = document.getElementById('creatingModalTitle');
-  const subtitleEl = document.getElementById('creatingModalSubtitle');
-  const noteEl     = document.getElementById('creatingModalNote');
-  const iconEl     = document.getElementById('creatingModalIcon');
-  const nameEl     = document.getElementById('agentNameDisplay');
-
-  if (nameEl) nameEl.textContent = agentName || '';
-
-  if (mode === 'redeploy') {
-    if (titleEl) titleEl.textContent = 'Redeployando tu Agente';
-    if (subtitleEl) subtitleEl.textContent = 'Reiniciando la infraestructura y reconectando el bot';
-    if (noteEl) noteEl.textContent = 'Esto normalmente toma unos minutos. Tu configuración e historial no se pierden — solo tendrás que volver a escanear el QR.';
-    if (iconEl) iconEl.className = 'lni lni-reload';
-  } else {
-    if (titleEl) titleEl.textContent = 'Creando tu Agente';
-    if (subtitleEl) subtitleEl.textContent = 'Configurando infraestructura y desplegando el bot';
-    if (noteEl) noteEl.textContent = 'Este proceso toma entre 10 y 20 minutos. Estamos configurando tu infraestructura en la nube y desplegando tu bot personalizado.';
-    if (iconEl) iconEl.className = 'lni lni-bot';
-  }
-}
-
-const CREATE_STATUS_MESSAGES = {
-  'pending':      { text: 'Preparando creación...',              icon: 'lni-hourglass',        step: 0 },
-  'creating':     { text: 'Creando infraestructura...',           icon: 'lni-apartment',        step: 1 },
-  'provisioning': { text: 'Inicializando sistema operativo...',   icon: 'lni-cog',              step: 2 },
-  'initializing': { text: 'Instalando dependencias...',           icon: 'lni-package',          step: 2 },
-  'deploying':    { text: 'Desplegando y configurando bot...',    icon: 'lni-bot',              step: 3 },
-  'running':      { text: '¡Agente listo y funcionando!',         icon: 'lni-checkmark-circle', step: 4 },
-  'error':        { text: 'Error en la creación',                 icon: 'lni-cross-circle',     step: 0 }
-};
-
-const REDEPLOY_STATUS_MESSAGES = {
-  'pending':      { text: 'Preparando redeploy...',               icon: 'lni-hourglass',        step: 0 },
-  'creating':     { text: 'Deteniendo el bot actual...',          icon: 'lni-power-switch',     step: 1 },
-  'provisioning': { text: 'Reiniciando infraestructura...',       icon: 'lni-cog',              step: 2 },
-  'initializing': { text: 'Reinstalando dependencias...',         icon: 'lni-package',          step: 2 },
-  'deploying':    { text: 'Reconectando el bot...',               icon: 'lni-bot',              step: 3 },
-  'running':      { text: '¡Bot reiniciado y funcionando!',       icon: 'lni-checkmark-circle', step: 4 },
-  'error':        { text: 'Error en el redeploy',                 icon: 'lni-cross-circle',     step: 0 }
-};
-
-const CREATE_STEPS = [
-  { icon: 'lni-apartment',  text: 'Creando infraestructura' },
-  { icon: 'lni-cog',        text: 'Inicializando sistema' },
-  { icon: 'lni-bot',        text: 'Desplegando bot' },
-  { icon: 'lni-checkmark',  text: 'Completado' }
-];
-
-const REDEPLOY_STEPS = [
-  { icon: 'lni-power-switch', text: 'Deteniendo bot' },
-  { icon: 'lni-cog',          text: 'Reiniciando infraestructura' },
-  { icon: 'lni-bot',          text: 'Reconectando bot' },
-  { icon: 'lni-checkmark',    text: 'Completado' }
-];
-
-// ============================================
-// WATCH AGENT REDEPLOY (mismo modal que watchAgentDeployment, con textos
-// de "redeploy" en vez de "creación"). Al detectar deployStatus === 'running'
-// abre automáticamente el modal de QR para volver a vincular WhatsApp.
-// ============================================
-function watchAgentRedeploy(agentId, agentName) {
-  ensureModalsExist();
-  const creatingModal = document.getElementById('creatingModal');
-  if (!creatingModal) return;
-
-  console.log('🔄 Mostrando modal de redeploy...');
-  setCreatingModalMode('redeploy', agentName);
-  creatingModal.classList.add('show');
-  updateCreationStatus('pending', 'redeploy');
-
-  let elapsedSeconds = 0;
-  const maxSeconds = 300; // ~5 min estimados para un redeploy (vs ~20 min de creación)
-  const timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    updateTimer(elapsedSeconds, maxSeconds);
-  }, 1000);
-  updateTimer(0, maxSeconds);
-
-  const checkInterval = setInterval(async () => {
+    
+    console.log(`🔍 Cargando estado de credenciales Meta para agente ${agentId}...`);
+    
     try {
-      const statusResp = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
-      if (!statusResp.ok) return;
+        const response = await fetch(`/api/meta/credentials/status/${agentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
-      const statusData = await statusResp.json();
-      updateCreationStatus(statusData.agent.deployStatus, 'redeploy');
-
-      if (statusData.agent.deployStatus === 'running') {
-        console.log('🎉 ¡Redeploy completado! Mostrando QR...');
-        clearInterval(checkInterval);
-        clearInterval(timerInterval);
-        creatingModal.classList.remove('show');
-        startQRPolling(agentId, statusData.agent.name || agentName);
-      } else if (statusData.agent.deployStatus === 'error') {
-        console.error('❌ Error en el redeploy');
-        clearInterval(checkInterval);
-        clearInterval(timerInterval);
-        creatingModal.classList.remove('show');
-        if (typeof window.showNotification === 'function') {
-          window.showNotification('❌ Error al hacer redeploy del agente', 'error');
-        } else {
-          alert('Error al hacer redeploy del agente. Por favor contacta a soporte.');
+        if (!response.ok) {
+            throw new Error('Error al cargar estado de credenciales');
         }
-      }
+
+        const data = await response.json();
+        console.log('✅ Estado de credenciales Meta recibido:', data);
+        
+        updateMetaCredentialsUI(data);
+        
     } catch (error) {
-      console.error('❌ Error verificando estado del redeploy:', error);
+        console.error('Error cargando estado de credenciales Meta:', error);
     }
-  }, 3000);
-}
-window.watchAgentRedeploy = watchAgentRedeploy;
-
-function updateTimer(elapsed, max) {
-  const minutes = Math.floor(elapsed / 60);
-  const seconds = elapsed % 60;
-  const percentage = (elapsed / max) * 100;
-  
-  const timeElapsedEl = document.getElementById('timeElapsed');
-  if (timeElapsedEl) {
-    timeElapsedEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-  
-  const estimatedMinutes = Math.floor((max - elapsed) / 60);
-  const estimatedSeconds = (max - elapsed) % 60;
-  const timeRemainingEl = document.getElementById('timeRemaining');
-  if (timeRemainingEl) {
-    timeRemainingEl.textContent = `~${estimatedMinutes}:${estimatedSeconds.toString().padStart(2, '0')}`;
-  }
-  
-  const progressBar = document.getElementById('creationProgressBar');
-  if (progressBar) {
-    progressBar.style.width = Math.min(percentage, 100) + '%';
-  }
 }
 
-function updateCreationStatus(status, mode) {
-  const statusMessages = mode === 'redeploy' ? REDEPLOY_STATUS_MESSAGES : CREATE_STATUS_MESSAGES;
-  const statusInfo = statusMessages[status] || statusMessages['pending'];
-  
-  const statusTextEl = document.getElementById('currentStatusText');
-  if (statusTextEl) {
-    statusTextEl.textContent = statusInfo.text;
-  }
-  
-  const iconElement = document.getElementById('currentStatusIcon');
-  if (iconElement) {
-    iconElement.className = `lni ${statusInfo.icon} status-icon`;
-  }
-  
-  updateStatusSteps(statusInfo.step, mode);
-}
-
-function updateStatusSteps(currentStep, mode) {
-  const steps = mode === 'redeploy' ? REDEPLOY_STEPS : CREATE_STEPS;
-  
-  const container = document.getElementById('statusStepsContainer');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  
-  steps.forEach((step, index) => {
-    const stepDiv = document.createElement('div');
-    stepDiv.className = 'status-step';
+function updateMetaCredentialsUI(data) {
+    const statusBadge = document.getElementById('metaStatusBadge');
+    const inputs = {
+        phoneNumberId: document.getElementById('metaPhoneNumberId'),
+        accessToken: document.getElementById('metaAccessToken'),
+        wabaId: document.getElementById('metaWabaId'),
+        verifyToken: document.getElementById('metaVerifyToken')
+    };
     
-    if (index + 1 < currentStep) {
-      stepDiv.classList.add('completed');
-    } else if (index + 1 === currentStep) {
-      stepDiv.classList.add('active');
+    const toggleButtons = {
+        token: document.getElementById('toggleMetaToken'),
+        verify: document.getElementById('toggleMetaVerify')
+    };
+    
+    const saveActions = document.getElementById('metaActions');
+    const manageActions = document.getElementById('metaManageActions');
+    const connectionInfo = document.getElementById('metaConnectionInfo');
+    
+    if (data.has_credentials && data.connected) {
+        // Credenciales configuradas
+        if (statusBadge) {
+            statusBadge.className = 'status-badge connected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_configured','Configurado')}
+            `;
+        }
+        
+        // Disable inputs y mostrar valores enmascarados
+        Object.values(inputs).forEach(input => {
+            if (input) {
+                input.value = '••••••••••••••••';
+                input.disabled = true;
+            }
+        });
+        
+        Object.values(toggleButtons).forEach(btn => {
+            if (btn) btn.disabled = true;
+        });
+        
+        if (connectionInfo) {
+            connectionInfo.style.display = 'block';
+            
+            const phoneNumber = document.getElementById('metaDisplayNumber');
+            const verifiedName = document.getElementById('metaVerifiedName');
+            const connectedAt = document.getElementById('metaConnectedAt');
+            
+            if (phoneNumber && data.display_number) {
+                phoneNumber.textContent = data.display_number;
+            }
+            
+            if (verifiedName && data.verified_name) {
+                verifiedName.textContent = data.verified_name;
+            }
+            
+            if (connectedAt && data.connected_at) {
+                const date = new Date(data.connected_at);
+                connectedAt.textContent = formatDate(date);
+            }
+        }
+        
+        if (saveActions) saveActions.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'flex';
+        
+        // 🔧 NUEVO: SIEMPRE mostrar Webhook URL para OrbitalBot
+        if (data.bot_type === 'orbital') {
+            updateWebhookUrl(selectedAgentId);
+        }
+        
+    } else {
+        // Sin credenciales
+        if (statusBadge) {
+            statusBadge.className = 'status-badge disconnected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_not_configured','Sin configurar')}
+            `;
+        }
+        
+        Object.values(inputs).forEach(input => {
+            if (input) {
+                input.value = '';
+                input.disabled = false;
+            }
+        });
+        
+        Object.values(toggleButtons).forEach(btn => {
+            if (btn) btn.disabled = false;
+        });
+        
+        if (connectionInfo) connectionInfo.style.display = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+        if (manageActions) manageActions.style.display = 'none';
+        
+        // 🔧 NUEVO: TAMBIÉN mostrar Webhook URL para OrbitalBot (aunque no tenga credenciales)
+        if (data.bot_type === 'orbital') {
+            updateWebhookUrl(selectedAgentId);
+        }
+    }
+}
+
+async function saveMetaCredentials() {
+    if (!requireAgentSelected()) return;
+    
+    const phoneNumberId = document.getElementById('metaPhoneNumberId').value.trim();
+    const accessToken = document.getElementById('metaAccessToken').value.trim();
+    const wabaId = document.getElementById('metaWabaId').value.trim();
+    const verifyToken = document.getElementById('metaVerifyToken').value.trim();
+    
+    if (!phoneNumberId || !accessToken || !wabaId || !verifyToken) {
+        showNotification(t('integ_err_fill_fields','Por favor completa todos los campos'), 'error');
+        return;
     }
     
-    stepDiv.innerHTML = `
-      <div class="status-step-indicator"></div>
-      <div class="status-step-text"><i class="${step.icon}"></i> ${step.text}</div>
+    console.log(`💾 Guardando credenciales de Meta para agente ${selectedAgentId}...`);
+    
+    const btnSave = document.getElementById('btnSaveMetaCredentials');
+    const originalText = btnSave.innerHTML;
+    
+    btnSave.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Guardando...</span>
+    `;
+    btnSave.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/meta/credentials/save/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                phone_number_id: phoneNumberId,
+                access_token: accessToken,
+                waba_id: wabaId,
+                verify_token: verifyToken
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al guardar credenciales');
+        }
+
+        const data = await response.json();
+        console.log('✅ Credenciales guardadas:', data);
+        
+        showNotification(t('integ_ok_credentials_saved','Credenciales guardadas exitosamente'), 'success');
+        await loadMetaCredentialsStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error guardando credenciales Meta:', error);
+        showNotification(error.message || t('integ_err_save_credentials','Error al guardar credenciales'), 'error');
+        
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
+    }
+}
+
+function enableMetaEdit() {
+    const inputs = {
+        phoneNumberId: document.getElementById('metaPhoneNumberId'),
+        accessToken: document.getElementById('metaAccessToken'),
+        wabaId: document.getElementById('metaWabaId'),
+        verifyToken: document.getElementById('metaVerifyToken')
+    };
+    
+    const toggleButtons = {
+        token: document.getElementById('toggleMetaToken'),
+        verify: document.getElementById('toggleMetaVerify')
+    };
+    
+    const saveActions = document.getElementById('metaActions');
+    const manageActions = document.getElementById('metaManageActions');
+    const connectionInfo = document.getElementById('metaConnectionInfo');
+    
+    Object.values(inputs).forEach(input => {
+        if (input) {
+            input.value = '';
+            input.disabled = false;
+        }
+    });
+    
+    Object.values(toggleButtons).forEach(btn => {
+        if (btn) btn.disabled = false;
+    });
+    
+    if (connectionInfo) connectionInfo.style.display = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (manageActions) manageActions.style.display = 'none';
+    
+    // 🔧 MODIFICADO: NO ocultar webhook URL - debe permanecer visible siempre
+    // La URL del webhook debe estar visible en todo momento para OrbitalBot
+    
+    if (inputs.phoneNumberId) inputs.phoneNumberId.focus();
+}
+
+async function removeMetaCredentials() {
+    if (!requireAgentSelected()) return;
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta WhatsApp? Esto desconectará tu bot.')) {
+        return;
+    }
+    
+    console.log(`🗑️ Eliminando credenciales de Meta para agente ${selectedAgentId}...`);
+    
+    const btnRemove = document.getElementById('btnRemoveMetaCredentials');
+    const originalText = btnRemove.innerHTML;
+    
+    btnRemove.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Eliminando...</span>
+    `;
+    btnRemove.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/meta/credentials/remove/${selectedAgentId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(t('integ_err_remove_credentials','Error al eliminar credenciales'));
+        }
+
+        const data = await response.json();
+        console.log('✅ Credenciales eliminadas:', data);
+        
+        showNotification(t('integ_ok_credentials_removed','Credenciales eliminadas exitosamente'), 'success');
+        await loadMetaCredentialsStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error eliminando credenciales Meta:', error);
+        showNotification(t('integ_err_remove_credentials','Error al eliminar credenciales'), 'error');
+        
+        btnRemove.innerHTML = originalText;
+        btnRemove.disabled = false;
+    }
+}
+
+// ============================================
+// 🔧 NUEVAS FUNCIONES: WEBHOOK URL
+// ============================================
+
+function updateWebhookUrl(agentId) {
+    const webhookUrlCode = document.getElementById('webhookUrl');
+    const copyButton = document.getElementById('btnCopyWebhook');
+    
+    if (!webhookUrlCode || !copyButton) return;
+    
+    // Construir la URL del webhook
+    const baseUrl = window.location.origin;
+    const webhookUrl = `${baseUrl}/webhook/meta/${agentId}`;
+    
+    webhookUrlCode.textContent = webhookUrl;
+    copyButton.style.display = 'inline-flex';
+    
+    // Agregar event listener al botón de copiar si no existe
+    if (!copyButton.dataset.listenerAdded) {
+        copyButton.addEventListener('click', function() {
+            copyWebhookUrl(webhookUrl, this);
+        });
+        copyButton.dataset.listenerAdded = 'true';
+    }
+}
+
+function copyWebhookUrl(url, button) {
+    navigator.clipboard.writeText(url).then(() => {
+        const originalHTML = button.innerHTML;
+        button.classList.add('copied');
+        button.innerHTML = `
+            <i class="lni lni-checkmark"></i>
+            Copiado
+        `;
+        
+        setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = originalHTML;
+        }, 2000);
+        
+        showNotification(t('integ_ok_webhook_copied','URL del webhook copiada al portapapeles'), 'success');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        showNotification(t('integ_err_copy','Error al copiar URL'), 'error');
+    });
+}
+
+// ============================================
+// GEMINI AI INTEGRATION
+// ============================================
+
+function initGeminiIntegration() {
+    const saveButton = document.getElementById('btnSaveGeminiKey');
+    const removeButton = document.getElementById('btnRemoveGeminiKey');
+    const updateButton = document.getElementById('btnUpdateGeminiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const apiKeyInput = document.getElementById('geminiApiKey');
+    
+    if (toggleButton) {
+        toggleButton.addEventListener('click', () => {
+            const icon = toggleButton.querySelector('i');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.className = 'lni lni-eye-slash';
+            } else {
+                apiKeyInput.type = 'password';
+                icon.className = 'lni lni-eye';
+            }
+        });
+    }
+    
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('input', function() {
+            if (saveButton) {
+                saveButton.disabled = !this.value.trim();
+            }
+        });
+    }
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', saveGeminiKey);
+    }
+    
+    if (updateButton) {
+        updateButton.addEventListener('click', enableGeminiEdit);
+    }
+    
+    if (removeButton) {
+        removeButton.addEventListener('click', removeGeminiKey);
+    }
+}
+
+function enableGeminiEdit() {
+    const apiKeyInput = document.getElementById('geminiApiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const saveActions = document.getElementById('geminiActions');
+    const manageActions = document.getElementById('geminiManageActions');
+    const connectionInfo = document.getElementById('geminiConnectionInfo');
+    
+    if (apiKeyInput) { apiKeyInput.value = ''; apiKeyInput.disabled = false; apiKeyInput.focus(); }
+    if (toggleButton) toggleButton.disabled = false;
+    if (connectionInfo) connectionInfo.style.display = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (manageActions) manageActions.style.display = 'none';
+}
+
+async function loadGeminiStatus(agentId) {
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Gemini status');
+        return;
+    }
+    
+    console.log(`🔍 Cargando estado de Gemini para agente ${agentId}...`);
+    
+    try {
+        const response = await fetch(`/api/gemini/status/${agentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar estado de Gemini');
+        }
+
+        const data = await response.json();
+        console.log('✅ Estado de Gemini recibido:', data);
+        
+        updateGeminiUI(data);
+        
+    } catch (error) {
+        console.error('Error cargando estado de Gemini:', error);
+    }
+}
+
+function updateGeminiUI(data) {
+    const statusBadge = document.getElementById('geminiStatusBadge');
+    const apiKeyInput = document.getElementById('geminiApiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const saveActions = document.getElementById('geminiActions');
+    const manageActions = document.getElementById('geminiManageActions');
+    const connectionInfo = document.getElementById('geminiConnectionInfo');
+    
+    if (data.has_key && data.configured) {
+        // API Key configurada
+        if (statusBadge) {
+            statusBadge.className = 'status-badge connected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_configured','Configurado')}
+            `;
+        }
+        
+        if (apiKeyInput) {
+            apiKeyInput.value = '••••••••••••••••••••••••••••••••';
+            apiKeyInput.disabled = true;
+        }
+        
+        if (toggleButton) toggleButton.disabled = true;
+        if (connectionInfo) connectionInfo.style.display = 'block';
+        if (saveActions) saveActions.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'flex';
+        
+    } else {
+        // Sin API Key
+        if (statusBadge) {
+            statusBadge.className = 'status-badge disconnected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_not_configured','Sin configurar')}
+            `;
+        }
+        
+        if (apiKeyInput) {
+            apiKeyInput.value = '';
+            apiKeyInput.disabled = false;
+        }
+        
+        if (toggleButton) toggleButton.disabled = false;
+        if (connectionInfo) connectionInfo.style.display = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+        if (manageActions) manageActions.style.display = 'none';
+    }
+}
+
+async function saveGeminiKey() {
+    if (!requireAgentSelected()) return;
+    
+    const apiKey = document.getElementById('geminiApiKey').value.trim();
+    
+    if (!apiKey) {
+        showNotification(t('integ_err_invalid_apikey','Por favor ingresa una API Key válida'), 'error');
+        return;
+    }
+    
+    console.log(`💾 Guardando Gemini API Key para agente ${selectedAgentId}...`);
+    
+    const btnSave = document.getElementById('btnSaveGeminiKey');
+    const originalText = btnSave.innerHTML;
+    
+    btnSave.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Guardando...</span>
+    `;
+    btnSave.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/gemini/save-key/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                apiKey: apiKey
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al guardar API Key');
+        }
+
+        const data = await response.json();
+        console.log('✅ Gemini API Key guardada:', data);
+        
+        showNotification(t('integ_ok_apikey_saved','API Key guardada exitosamente'), 'success');
+        await loadGeminiStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error guardando Gemini API Key:', error);
+        showNotification(error.message || t('integ_err_save_apikey','Error al guardar API Key'), 'error');
+        
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
+    }
+}
+
+async function removeGeminiKey() {
+    if (!requireAgentSelected()) return;
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar la Gemini API Key?')) {
+        return;
+    }
+    
+    console.log(`🗑️ Eliminando Gemini API Key para agente ${selectedAgentId}...`);
+    
+    const btnRemove = document.getElementById('btnRemoveGeminiKey');
+    const originalText = btnRemove.innerHTML;
+    
+    btnRemove.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Eliminando...</span>
+    `;
+    btnRemove.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/gemini/remove-key/${selectedAgentId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(t('integ_err_remove_apikey','Error al eliminar API Key'));
+        }
+
+        const data = await response.json();
+        console.log('✅ Gemini API Key eliminada:', data);
+        
+        showNotification(t('integ_ok_apikey_removed','API Key eliminada exitosamente'), 'success');
+        await loadGeminiStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error eliminando Gemini API Key:', error);
+        showNotification(t('integ_err_remove_apikey','Error al eliminar API Key'), 'error');
+        
+        btnRemove.innerHTML = originalText;
+        btnRemove.disabled = false;
+    }
+}
+
+// ============================================
+// GOOGLE INTEGRATION (CALENDAR & SHEETS)
+// ============================================
+
+function initGoogleIntegration() {
+    document.getElementById('btnConnectGoogle')?.addEventListener('click', () => connectGoogleService('calendar'));
+    document.getElementById('btnDisconnectGoogle')?.addEventListener('click', () => disconnectGoogleService('calendar'));
+    document.getElementById('btnReconnectGoogle')?.addEventListener('click', () => reconnectGoogleService('calendar'));
+
+    document.getElementById('btnConnectSheets')?.addEventListener('click', () => connectGoogleService('sheets'));
+    document.getElementById('btnDisconnectSheets')?.addEventListener('click', () => disconnectGoogleService('sheets'));
+    document.getElementById('btnReconnectSheets')?.addEventListener('click', () => reconnectGoogleService('sheets'));
+
+    // Escuchar el resultado del popup de OAuth (más rápido que esperar al
+    // polling de popup.closed; el polling sigue como respaldo).
+    window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        if (!event.data || event.data.type !== 'google-oauth-result') return;
+
+        if (event.data.success) {
+            const label = event.data.service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+            showNotification(`${label} conectado exitosamente`, 'success');
+        } else {
+            showNotification(t('integ_err_google_connect', 'Error al conectar con Google'), 'error');
+        }
+        if (selectedAgentId) loadGoogleIntegrationStatus(selectedAgentId);
+    });
+}
+
+async function loadGoogleIntegrationStatus(agentId) {
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Google integration status');
+        return;
+    }
+
+    console.log(`🔍 Cargando estado de Google para agente ${agentId}...`);
+
+    try {
+        const response = await fetch(`/api/google/status/${agentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar estado de Google');
+        }
+
+        const data = await response.json();
+        console.log('✅ Estado de Google recibido:', data);
+
+        updateGoogleIntegrationUI(data);
+
+    } catch (error) {
+        console.error('Error cargando estado de Google:', error);
+    }
+}
+
+function updateGoogleIntegrationUI(data) {
+    // ── Calendar ─────────────────────────────────────────────────────────
+    updateGoogleServiceCardUI({
+        connected: data.calendar_connected,
+        connectedAt: data.calendar_connected_at,
+        statusBadgeId: 'googleStatusBadge',
+        connectionInfoId: 'googleConnectionInfo',
+        connectActionsId: 'googleConnectActions',
+        manageActionsId: 'googleManageActions',
+        connectButtonId: 'btnConnectGoogle',
+        connectedAtElId: 'calendarConnectedAt',
+        linkElId: 'calendarLink',
+        linkUrl: data.calendar_url,
+    });
+
+    // ── Sheets ───────────────────────────────────────────────────────────
+    updateGoogleServiceCardUI({
+        connected: data.sheets_connected,
+        connectedAt: data.sheets_connected_at,
+        statusBadgeId: 'sheetsStatusBadge',
+        connectionInfoId: 'sheetsConnectionInfo',
+        connectActionsId: 'sheetsConnectActions',
+        manageActionsId: 'sheetsManageActions',
+        connectButtonId: 'btnConnectSheets',
+        connectedAtElId: 'sheetsConnectedAt',
+        linkElId: 'sheetLink',
+        linkUrl: data.sheet_url,
+    });
+}
+
+// Actualiza una tarjeta de servicio de Google (Calendar o Sheets) — misma
+// lógica para ambas, solo cambian los IDs de los elementos del DOM.
+function updateGoogleServiceCardUI(cfg) {
+    const statusBadge = document.getElementById(cfg.statusBadgeId);
+    const connectionInfo = document.getElementById(cfg.connectionInfoId);
+    const connectActions = document.getElementById(cfg.connectActionsId);
+    const manageActions = document.getElementById(cfg.manageActionsId);
+
+    if (cfg.connected) {
+        if (statusBadge) {
+            statusBadge.className = 'status-badge connected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_connected','Conectado')}
+            `;
+        }
+
+        if (connectionInfo) {
+            connectionInfo.style.display = 'block';
+
+            const linkEl = document.getElementById(cfg.linkElId);
+            if (linkEl && cfg.linkUrl) linkEl.href = cfg.linkUrl;
+
+            const connectedAtEl = document.getElementById(cfg.connectedAtElId);
+            if (connectedAtEl && cfg.connectedAt) {
+                connectedAtEl.textContent = formatDate(new Date(cfg.connectedAt));
+            }
+        }
+
+        if (connectActions) connectActions.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'flex';
+
+    } else {
+        if (statusBadge) {
+            statusBadge.className = 'status-badge disconnected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                ${t('integ_status_disconnected','No conectado')}
+            `;
+        }
+
+        if (connectionInfo) connectionInfo.style.display = 'none';
+        if (connectActions) connectActions.style.display = 'flex';
+        if (manageActions) manageActions.style.display = 'none';
+
+        const connectButton = document.getElementById(cfg.connectButtonId);
+        if (connectButton) connectButton.disabled = false;
+    }
+}
+
+// service: 'calendar' | 'sheets'
+async function connectGoogleService(service) {
+    if (!requireAgentSelected()) return;
+
+    console.log(`🔗 Iniciando conexión de Google ${service} para agente ${selectedAgentId}...`);
+
+    try {
+        const response = await fetch(`/api/google/connect?agent_id=${selectedAgentId}&service=${service}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al obtener URL de autorización');
+        }
+
+        const data = await response.json();
+
+        // El backend ya tenía un token de Google (del otro servicio) y creó
+        // el recurso directo, sin necesidad de mostrarle nada a Google otra vez.
+        if (data.direct) {
+            if (data.success) {
+                if (!data.already_connected) {
+                    const label = service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+                    showNotification(`${label} conectado exitosamente`, 'success');
+                }
+                await loadGoogleIntegrationStatus(selectedAgentId);
+            } else {
+                showNotification(t('integ_err_google_connect', 'Error al conectar con Google'), 'error');
+            }
+            return;
+        }
+
+        if (!data.auth_url) {
+            throw new Error('No se recibió URL de autorización');
+        }
+
+        const width = 600;
+        const height = 700;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+
+        const popup = window.open(
+            data.auth_url,
+            'GoogleOAuth',
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        if (!popup) {
+            showNotification(t('integ_err_popups','Por favor permite ventanas emergentes para continuar'), 'error');
+            return;
+        }
+
+        // El popup se cierra solo al terminar (avisa por postMessage arriba);
+        // este polling queda como respaldo por si el postMessage no llega.
+        const pollTimer = setInterval(async () => {
+            if (popup.closed) {
+                clearInterval(pollTimer);
+                console.log('🔄 Ventana OAuth cerrada, verificando estado...');
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await loadGoogleIntegrationStatus(selectedAgentId);
+            }
+        }, 500);
+
+    } catch (error) {
+        console.error(`Error conectando Google ${service}:`, error);
+        showNotification(t('integ_err_google_connect','Error al conectar con Google'), 'error');
+    }
+}
+
+// service: 'calendar' | 'sheets'
+async function disconnectGoogleService(service) {
+    if (!requireAgentSelected()) return;
+
+    const label = service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
+    if (!confirm(`¿Estás seguro de que quieres desconectar ${label}?`)) {
+        return;
+    }
+
+    console.log(`🔌 Desconectando ${service} para agente ${selectedAgentId}...`);
+
+    const btnDisconnectId = service === 'sheets' ? 'btnDisconnectSheets' : 'btnDisconnectGoogle';
+    const btnDisconnect = document.getElementById(btnDisconnectId);
+    const originalText = btnDisconnect?.innerHTML;
+
+    if (btnDisconnect) {
+        btnDisconnect.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>Desconectando...</span>
+        `;
+        btnDisconnect.disabled = true;
+    }
+
+    try {
+        const response = await fetch(`/api/google/disconnect/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ service })
+        });
+
+        if (!response.ok) {
+            throw new Error(t('integ_err_google_disconnect','Error al desconectar Google'));
+        }
+
+        const data = await response.json();
+        console.log('✅ Google desconectado:', data);
+
+        showNotification(`${label} desconectado exitosamente`, 'success');
+        await loadGoogleIntegrationStatus(selectedAgentId);
+
+    } catch (error) {
+        console.error(`Error desconectando ${service}:`, error);
+        showNotification(t('integ_err_google_disconnect','Error al desconectar Google'), 'error');
+
+        if (btnDisconnect) {
+            btnDisconnect.innerHTML = originalText;
+            btnDisconnect.disabled = false;
+        }
+    }
+}
+
+// "Reconectar" = desconectar y volver a conectar de una — útil si el token
+// quedó en mal estado (revocado desde la cuenta de Google, etc.)
+async function reconnectGoogleService(service) {
+    if (!requireAgentSelected()) return;
+
+    try {
+        await fetch(`/api/google/disconnect/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ service })
+        });
+    } catch (error) {
+        console.error(`Error al desconectar ${service} antes de reconectar:`, error);
+    }
+
+    await connectGoogleService(service);
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function formatDate(date) {
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'Hace un momento';
+    if (diff < 3600000) {
+        const minutes = Math.floor(diff / 60000);
+        return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
+    }
+    if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+    }
+    if (diff < 604800000) {
+        const days = Math.floor(diff / 86400000);
+        return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    }
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('es-MX', options);
+}
+
+// ============================================
+// NOTIFICATION SYSTEM
+// ============================================
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideInRight 0.4s ease;
+        min-width: 300px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     `;
     
-    container.appendChild(stepDiv);
-  });
+    const icon = type === 'success' ? '✓' : '✕';
+    notification.innerHTML = `
+        <span style="font-size: 1.25rem;">${icon}</span>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.4s ease';
+        setTimeout(() => notification.remove(), 400);
+    }, 3000);
 }
 
+// Add CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+
 // ============================================
-// SECCIÓN MENÚ
+// PAYMENTS INTEGRATION
+// Agregar al final de integrations.js (antes del console.log final)
 // ============================================
-function initializeMenu() {
-  const area        = document.getElementById('ob-menuUploadArea');
-  const fileInput   = document.getElementById('ob-menuFileInput');
-  const placeholder = document.getElementById('ob-menuUploadPlaceholder');
-  const btnRemove   = document.getElementById('ob-btnRemoveMenu');
-  if (!area || !fileInput) return;
 
-  placeholder?.addEventListener('click', () => fileInput.click());
+// ── Inicialización ──────────────────────────────────────────
 
-  area.addEventListener('dragover', e => {
-    e.preventDefault();
-    area.classList.add('menu-drag-over');
-  });
-  area.addEventListener('dragleave', () => area.classList.remove('menu-drag-over'));
-  area.addEventListener('drop', e => {
-    e.preventDefault();
-    area.classList.remove('menu-drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) handleMenuFileOnboarding(file);
-  });
+function initPaymentsIntegration() {
+    // SPEI
+    const clabeInput = document.getElementById('clabeNumber');
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    const btnEditSPEI = document.getElementById('btnEditSPEI');
+    const btnRemoveSPEI = document.getElementById('btnRemoveSPEI');
 
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) handleMenuFileOnboarding(fileInput.files[0]);
-  });
+    if (clabeInput) {
+        clabeInput.addEventListener('input', function() {
+            // Solo permitir dígitos
+            this.value = this.value.replace(/\D/g, '').slice(0, 18);
+            if (btnSaveSPEI) {
+                btnSaveSPEI.disabled = this.value.length !== 18;
+            }
+        });
+    }
 
-  btnRemove?.addEventListener('click', () => {
-    document.getElementById('ob-menuUrlInput').value = '';
-    document.getElementById('ob-menuFilePreview').style.display = 'none';
-    document.getElementById('ob-menuUploadPlaceholder').style.display = '';
-    const v = document.getElementById('ob-menuFileViewer');
-    if (v) { v.style.display = 'none'; v.innerHTML = ''; }
-    fileInput.value = '';
-    agentData.menuUrl = '';
-  });
+    if (btnSaveSPEI) btnSaveSPEI.addEventListener('click', saveSPEIConfig);
+    if (btnEditSPEI) btnEditSPEI.addEventListener('click', enableSPEIEdit);
+    if (btnRemoveSPEI) btnRemoveSPEI.addEventListener('click', removeSPEIConfig);
+
+    // Stripe Connect
+    const btnConnectStripe = document.getElementById('btnConnectStripe');
+    const btnDisconnectStripe = document.getElementById('btnDisconnectStripe');
+
+    if (btnConnectStripe) btnConnectStripe.addEventListener('click', connectStripe);
+    if (btnDisconnectStripe) btnDisconnectStripe.addEventListener('click', disconnectStripe);
+
+    // Revisar si venimos de un redirect de Stripe
+    checkStripeRedirect();
+
+    // Click (Uzbekistán)
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    const btnEditClick = document.getElementById('btnEditClick');
+    const btnRemoveClick = document.getElementById('btnRemoveClick');
+    const toggleClickSecret = document.getElementById('toggleClickSecret');
+    initToggleVisibility(toggleClickSecret, 'clickSecretKey');
+    initClickInputValidation();
+    if (btnSaveClick) btnSaveClick.addEventListener('click', saveClickConfig);
+    if (btnEditClick) btnEditClick.addEventListener('click', enableClickEdit);
+    if (btnRemoveClick) btnRemoveClick.addEventListener('click', removeClickConfig);
+
+    // Payme (Uzbekistán)
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    const btnEditPayme = document.getElementById('btnEditPayme');
+    const btnRemovePayme = document.getElementById('btnRemovePayme');
+    const togglePaymeSecret = document.getElementById('togglePaymeSecret');
+    initToggleVisibility(togglePaymeSecret, 'paymeSecretKey');
+    initPaymeInputValidation();
+    if (btnSavePayme) btnSavePayme.addEventListener('click', savePaymeConfig);
+    if (btnEditPayme) btnEditPayme.addEventListener('click', enablePaymeEdit);
+    if (btnRemovePayme) btnRemovePayme.addEventListener('click', removePaymeConfig);
 }
 
-async function handleMenuFileOnboarding(file) {
-  const maxMB = 10;
-  if (file.size > maxMB * 1024 * 1024) {
-    Sileo?.toast(`El archivo supera ${maxMB}MB`, 'error');
-    return;
-  }
+// Helper reutilizable para el botón de mostrar/ocultar contraseña (mismo
+// patrón que ya usa Gemini/RepairDesk) — evita duplicar el listener 4 veces.
+function initToggleVisibility(toggleButton, inputId) {
+    if (!toggleButton) return;
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    toggleButton.addEventListener('click', () => {
+        const icon = toggleButton.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'lni lni-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'lni lni-eye';
+        }
+    });
+}
 
-  const isPdf = file.type === 'application/pdf';
-  document.getElementById('ob-menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
-  document.getElementById('ob-menuFileName').textContent = file.name;
-  document.getElementById('ob-menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
-  document.getElementById('ob-menuUploadPlaceholder').style.display = 'none';
-  document.getElementById('ob-menuFilePreview').style.display = '';
-  document.getElementById('ob-menuUploadProgress').style.display = '';
-  document.getElementById('ob-menuProgressBar').style.width = '0%';
+// Habilita el botón de guardar de Click solo cuando los 3 campos tienen datos
+function initClickInputValidation() {
+    const merchantInput = document.getElementById('clickMerchantId');
+    const serviceInput = document.getElementById('clickServiceId');
+    const secretInput = document.getElementById('clickSecretKey');
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    if (!merchantInput || !serviceInput || !secretInput || !btnSaveClick) return;
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', isPdf ? 'pdf' : 'image');
+    const checkValid = () => {
+        btnSaveClick.disabled = !(merchantInput.value.trim() && serviceInput.value.trim() && secretInput.value.trim());
+    };
+    [merchantInput, serviceInput, secretInput].forEach(el => el.addEventListener('input', checkValid));
+}
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress = Math.min(progress + 10, 85);
-      document.getElementById('ob-menuProgressBar').style.width = progress + '%';
-    }, 150);
+// Habilita el botón de guardar de Payme solo cuando ambos campos tienen datos
+function initPaymeInputValidation() {
+    const merchantInput = document.getElementById('paymeMerchantId');
+    const secretInput = document.getElementById('paymeSecretKey');
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    if (!merchantInput || !secretInput || !btnSavePayme) return;
 
-    const branchId = agentData.branchId || 0;
-    const resp = await fetch(`/api/upload/menu?branch_id=${branchId}`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData
+    const checkValid = () => {
+        btnSavePayme.disabled = !(merchantInput.value.trim() && secretInput.value.trim());
+    };
+    [merchantInput, secretInput].forEach(el => el.addEventListener('input', checkValid));
+}
+
+// ── Cargar estado de pagos ──────────────────────────────────
+
+async function loadPaymentConfig(branchId) {
+    if (!branchId) return;
+    console.log(`💳 Cargando config de pagos para sucursal ${branchId}...`);
+
+    try {
+        const res = await fetch(`/api/payment-config/${branchId}`, {
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error cargando config de pagos');
+        const data = await res.json();
+        console.log('✅ Config de pagos:', data);
+        updatePaymentsUI(data);
+    } catch (err) {
+        console.error('Error cargando pagos:', err);
+    }
+}
+
+function updateClickPaymeUI(data) {
+    // ── Click ─────────────────────────────────────────────────
+    const clickStatusBadge = document.getElementById('clickStatusBadge');
+    const clickConnectionInfo = document.getElementById('clickConnectionInfo');
+    const clickSaveActions = document.getElementById('clickSaveActions');
+    const clickManageActions = document.getElementById('clickManageActions');
+    const clickForm = document.getElementById('clickForm');
+
+    const merchantInput = document.getElementById('clickMerchantId');
+    const serviceInput = document.getElementById('clickServiceId');
+    const secretInput = document.getElementById('clickSecretKey');
+    [merchantInput, serviceInput, secretInput].forEach(el => { if (el) el.disabled = false; });
+
+    if (data.clickEnabled && data.clickMerchantId) {
+        if (clickStatusBadge) {
+            clickStatusBadge.className = 'status-badge connected';
+            clickStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        }
+        if (clickConnectionInfo) {
+            clickConnectionInfo.style.display = 'block';
+            const displayMerchant = document.getElementById('clickDisplayMerchant');
+            const displayService = document.getElementById('clickDisplayService');
+            if (displayMerchant) displayMerchant.textContent = data.clickMerchantId;
+            if (displayService) displayService.textContent = data.clickServiceId || '—';
+        }
+        if (clickForm) clickForm.style.display = 'none';
+        if (clickSaveActions) clickSaveActions.style.display = 'none';
+        if (clickManageActions) clickManageActions.style.display = 'flex';
+    } else {
+        if (clickStatusBadge) {
+            clickStatusBadge.className = 'status-badge disconnected';
+            clickStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
+        }
+        if (clickConnectionInfo) clickConnectionInfo.style.display = 'none';
+        if (clickForm) clickForm.style.display = 'block';
+        if (clickSaveActions) clickSaveActions.style.display = 'flex';
+        if (clickManageActions) clickManageActions.style.display = 'none';
+    }
+
+    // ── Payme ─────────────────────────────────────────────────
+    const paymeStatusBadge = document.getElementById('paymeStatusBadge');
+    const paymeConnectionInfo = document.getElementById('paymeConnectionInfo');
+    const paymeSaveActions = document.getElementById('paymeSaveActions');
+    const paymeManageActions = document.getElementById('paymeManageActions');
+    const paymeForm = document.getElementById('paymeForm');
+
+    const paymeMerchantInput = document.getElementById('paymeMerchantId');
+    const paymeSecretInput = document.getElementById('paymeSecretKey');
+    [paymeMerchantInput, paymeSecretInput].forEach(el => { if (el) el.disabled = false; });
+
+    if (data.paymeEnabled && data.paymeMerchantId) {
+        if (paymeStatusBadge) {
+            paymeStatusBadge.className = 'status-badge connected';
+            paymeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        }
+        if (paymeConnectionInfo) {
+            paymeConnectionInfo.style.display = 'block';
+            const displayMerchant = document.getElementById('paymeDisplayMerchant');
+            if (displayMerchant) displayMerchant.textContent = data.paymeMerchantId;
+        }
+        if (paymeForm) paymeForm.style.display = 'none';
+        if (paymeSaveActions) paymeSaveActions.style.display = 'none';
+        if (paymeManageActions) paymeManageActions.style.display = 'flex';
+    } else {
+        if (paymeStatusBadge) {
+            paymeStatusBadge.className = 'status-badge disconnected';
+            paymeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
+        }
+        if (paymeConnectionInfo) paymeConnectionInfo.style.display = 'none';
+        if (paymeForm) paymeForm.style.display = 'block';
+        if (paymeSaveActions) paymeSaveActions.style.display = 'flex';
+        if (paymeManageActions) paymeManageActions.style.display = 'none';
+    }
+}
+
+function updatePaymentsUI(data) {
+    // Habilitar botones ahora que hay un agente seleccionado
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    const btnConnectStripe = document.getElementById('btnConnectStripe');
+    const clabeInput = document.getElementById('clabeNumber');
+    const bankInput = document.getElementById('bankName');
+    const accountInput = document.getElementById('accountName');
+
+    if (clabeInput) clabeInput.disabled = false;
+    if (bankInput) bankInput.disabled = false;
+    if (accountInput) accountInput.disabled = false;
+    if (btnConnectStripe) btnConnectStripe.disabled = false;
+
+    // ── SPEI ──────────────────────────────────────────────────
+    const speiStatusBadge = document.getElementById('speiStatusBadge');
+    const speiConnectionInfo = document.getElementById('speiConnectionInfo');
+    const speiSaveActions = document.getElementById('speiSaveActions');
+    const speiManageActions = document.getElementById('speiManageActions');
+
+    if (data.speiEnabled && data.clabeNumber) {
+        if (speiStatusBadge) {
+            speiStatusBadge.className = 'status-badge connected';
+            speiStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        }
+        if (speiConnectionInfo) {
+            speiConnectionInfo.style.display = 'block';
+            const displayClabe = document.getElementById('speiDisplayClabe');
+            const displayBank = document.getElementById('speiDisplayBank');
+            const displayName = document.getElementById('speiDisplayName');
+            if (displayClabe) displayClabe.textContent = data.clabeNumber;
+            if (displayBank) displayBank.textContent = data.bankName || '—';
+            if (displayName) displayName.textContent = data.accountName || '—';
+        }
+        // Ocultar form, mostrar manage
+        const speiForm = document.getElementById('speiForm');
+        if (speiForm) speiForm.style.display = 'none';
+        if (speiSaveActions) speiSaveActions.style.display = 'none';
+        if (speiManageActions) speiManageActions.style.display = 'flex';
+    } else {
+        if (speiStatusBadge) {
+            speiStatusBadge.className = 'status-badge disconnected';
+            speiStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_not_configured','No configurado')}`;
+        }
+        if (speiConnectionInfo) speiConnectionInfo.style.display = 'none';
+        const speiForm = document.getElementById('speiForm');
+        if (speiForm) speiForm.style.display = 'block';
+        if (speiSaveActions) speiSaveActions.style.display = 'flex';
+        if (speiManageActions) speiManageActions.style.display = 'none';
+    }
+
+    // ── Stripe Connect ─────────────────────────────────────────
+    const stripeStatusBadge = document.getElementById('stripeConnectStatusBadge');
+    const stripeConnectInfo = document.getElementById('stripeConnectInfo');
+    const stripeConnectActions = document.getElementById('stripeConnectActions');
+    const stripeManageActions = document.getElementById('stripeManageActions');
+
+    if (data.stripeEnabled) {
+        if (stripeStatusBadge) {
+            stripeStatusBadge.className = 'status-badge connected';
+            stripeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`;
+        }
+        if (stripeConnectInfo) {
+            stripeConnectInfo.style.display = 'block';
+            const statusEl = document.getElementById('stripeConnectStatus');
+            const chargesEl = document.getElementById('stripeChargesStatus');
+            const payoutsEl = document.getElementById('stripePayoutsStatus');
+
+            const statusMap = {
+                active: '✅ Activo',
+                pending: '⏳ Pendiente de verificación',
+                pending_verification: '⏳ En revisión',
+                restricted: '⚠️ Restringido'
+            };
+            if (statusEl) statusEl.textContent = statusMap[data.stripeAccountStatus] || data.stripeAccountStatus;
+            if (chargesEl) chargesEl.textContent = data.stripeChargesEnabled ? t('integ_stripe_enabled','✅ Habilitados') : t('integ_stripe_pending','⏳ Pendiente');
+            if (payoutsEl) payoutsEl.textContent = data.stripePayoutsEnabled ? t('integ_stripe_enabled','✅ Habilitados') : t('integ_stripe_pending','⏳ Pendiente');
+        }
+        if (stripeConnectActions) stripeConnectActions.style.display = 'none';
+        if (stripeManageActions) stripeManageActions.style.display = 'flex';
+    } else {
+        if (stripeStatusBadge) {
+            stripeStatusBadge.className = 'status-badge disconnected';
+            stripeStatusBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`;
+        }
+        if (stripeConnectInfo) stripeConnectInfo.style.display = 'none';
+        if (stripeConnectActions) stripeConnectActions.style.display = 'flex';
+        if (stripeManageActions) stripeManageActions.style.display = 'none';
+    }
+
+    // ── Badge general ─────────────────────────────────────────
+    const mainBadge = document.getElementById('paymentsStatusBadge');
+    const anyConfigured = data.speiEnabled || data.stripeEnabled || data.clickEnabled || data.paymeEnabled;
+    if (mainBadge) {
+        if (anyConfigured) {
+            mainBadge.className = 'status-badge connected';
+            mainBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_configured','Configurado')}`;
+        } else {
+            mainBadge.className = 'status-badge disconnected';
+            mainBadge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_without_config','Sin configurar')}`;
+        }
+    }
+
+    updateClickPaymeUI(data);
+}
+
+// ── SPEI: guardar ──────────────────────────────────────────
+
+async function saveSPEIConfig() {
+    if (!requireAgentSelected()) return;
+
+    const clabe = document.getElementById('clabeNumber').value.trim();
+    const bank = document.getElementById('bankName').value.trim();
+    const accountName = document.getElementById('accountName').value.trim();
+
+    if (clabe.length !== 18) {
+        showNotification(t('integ_err_clabe_length','La CLABE debe tener exactamente 18 dígitos'), 'error');
+        return;
+    }
+
+    // Obtener branch_id del agente seleccionado
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSaveSPEI');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/spei/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clabeNumber: clabe,
+                bankName: bank,
+                accountName: accountName,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification(t('integ_ok_clabe_saved','CLABE guardada exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── SPEI: editar ───────────────────────────────────────────
+
+function enableSPEIEdit() {
+    const speiForm = document.getElementById('speiForm');
+    const speiConnectionInfo = document.getElementById('speiConnectionInfo');
+    const speiSaveActions = document.getElementById('speiSaveActions');
+    const speiManageActions = document.getElementById('speiManageActions');
+    const clabeInput = document.getElementById('clabeNumber');
+
+    if (speiForm) speiForm.style.display = 'block';
+    if (speiConnectionInfo) speiConnectionInfo.style.display = 'none';
+    if (speiSaveActions) speiSaveActions.style.display = 'flex';
+    if (speiManageActions) speiManageActions.style.display = 'none';
+
+    if (clabeInput) {
+        clabeInput.value = '';
+        clabeInput.disabled = false;
+        clabeInput.focus();
+    }
+    ['bankName', 'accountName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
     });
 
-    clearInterval(interval);
-    if (!resp.ok) throw new Error('Error al subir el menú');
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    if (btnSaveSPEI) btnSaveSPEI.disabled = true;
+}
 
-    const data = await resp.json();
-    const url = data.url || data.menuUrl || '';
+// ── SPEI: eliminar ─────────────────────────────────────────
 
-    document.getElementById('ob-menuProgressBar').style.width = '100%';
-    document.getElementById('ob-menuUrlInput').value = url;
-    agentData.menuUrl = url;
+async function removeSPEIConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Eliminar la configuración SPEI? El bot ya no podrá ofrecer transferencias.')) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemoveSPEI');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/spei/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification(t('integ_ok_spei_removed','Configuración SPEI eliminada'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_err_spei_remove','Error al eliminar SPEI'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Click: guardar ─────────────────────────────────────────
+
+async function saveClickConfig() {
+    if (!requireAgentSelected()) return;
+
+    const merchantId = document.getElementById('clickMerchantId').value.trim();
+    const serviceId = document.getElementById('clickServiceId').value.trim();
+    const secretKey = document.getElementById('clickSecretKey').value.trim();
+
+    if (!merchantId || !serviceId || !secretKey) {
+        showNotification(t('integ_err_fill_fields','Completa todos los campos'), 'error');
+        return;
+    }
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSaveClick');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/click/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                merchantId: merchantId,
+                serviceId: serviceId,
+                secretKey: secretKey,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification(t('integ_click_ok_saved','Click guardado exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Click: editar ──────────────────────────────────────────
+
+function enableClickEdit() {
+    const clickForm = document.getElementById('clickForm');
+    const clickConnectionInfo = document.getElementById('clickConnectionInfo');
+    const clickSaveActions = document.getElementById('clickSaveActions');
+    const clickManageActions = document.getElementById('clickManageActions');
+
+    if (clickForm) clickForm.style.display = 'block';
+    if (clickConnectionInfo) clickConnectionInfo.style.display = 'none';
+    if (clickSaveActions) clickSaveActions.style.display = 'flex';
+    if (clickManageActions) clickManageActions.style.display = 'none';
+
+    ['clickMerchantId', 'clickServiceId', 'clickSecretKey'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
+    });
+    document.getElementById('clickMerchantId')?.focus();
+
+    const btnSaveClick = document.getElementById('btnSaveClick');
+    if (btnSaveClick) btnSaveClick.disabled = true;
+}
+
+// ── Click: eliminar ────────────────────────────────────────
+
+async function removeClickConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm(t('integ_click_confirm_remove', '¿Eliminar la configuración de Click? El bot ya no podrá ofrecer este método de pago.'))) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemoveClick');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/click/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification(t('integ_click_ok_removed','Configuración de Click eliminada'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_click_err_remove','Error al eliminar Click'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Payme: guardar ─────────────────────────────────────────
+
+async function savePaymeConfig() {
+    if (!requireAgentSelected()) return;
+
+    const merchantId = document.getElementById('paymeMerchantId').value.trim();
+    const secretKey = document.getElementById('paymeSecretKey').value.trim();
+
+    if (!merchantId || !secretKey) {
+        showNotification(t('integ_err_fill_fields','Completa todos los campos'), 'error');
+        return;
+    }
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSavePayme');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/payme/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                merchantId: merchantId,
+                secretKey: secretKey,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification(t('integ_payme_ok_saved','Payme guardado exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Payme: editar ──────────────────────────────────────────
+
+function enablePaymeEdit() {
+    const paymeForm = document.getElementById('paymeForm');
+    const paymeConnectionInfo = document.getElementById('paymeConnectionInfo');
+    const paymeSaveActions = document.getElementById('paymeSaveActions');
+    const paymeManageActions = document.getElementById('paymeManageActions');
+
+    if (paymeForm) paymeForm.style.display = 'block';
+    if (paymeConnectionInfo) paymeConnectionInfo.style.display = 'none';
+    if (paymeSaveActions) paymeSaveActions.style.display = 'flex';
+    if (paymeManageActions) paymeManageActions.style.display = 'none';
+
+    ['paymeMerchantId', 'paymeSecretKey'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
+    });
+    document.getElementById('paymeMerchantId')?.focus();
+
+    const btnSavePayme = document.getElementById('btnSavePayme');
+    if (btnSavePayme) btnSavePayme.disabled = true;
+}
+
+// ── Payme: eliminar ────────────────────────────────────────
+
+async function removePaymeConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm(t('integ_payme_confirm_remove', '¿Eliminar la configuración de Payme? El bot ya no podrá ofrecer este método de pago.'))) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemovePayme');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_deleting','Eliminando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/payme/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification(t('integ_payme_ok_removed','Configuración de Payme eliminada'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_payme_err_remove','Error al eliminar Payme'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Stripe Connect: conectar ───────────────────────────────
+
+async function connectStripe() {
+    if (!requireAgentSelected()) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnConnectStripe');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_starting','Iniciando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/stripe/connect/${branchId}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al iniciar Stripe Connect');
+        }
+        const data = await res.json();
+
+        if (data.onboardingUrl) {
+            // Abrir en ventana nueva — Stripe tiene su propio flujo
+            const w = window.open(data.onboardingUrl, 'StripeConnect', 'width=600,height=700,resizable=yes,scrollbars=yes');
+
+            if (!w) {
+                showNotification(t('integ_err_popups','Permite ventanas emergentes para continuar'), 'error');
+                btn.innerHTML = orig;
+                btn.disabled = false;
+                return;
+            }
+
+            // Polling hasta que cierre la ventana
+            const poll = setInterval(async () => {
+                if (w.closed) {
+                    clearInterval(poll);
+                    await new Promise(r => setTimeout(r, 1500));
+                    await loadPaymentConfig(branchId);
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                }
+            }, 800);
+        }
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Stripe Connect: desconectar ────────────────────────────
+
+async function disconnectStripe() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Desconectar Stripe? El bot ya no podrá generar links de pago con tarjeta.')) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnDisconnectStripe');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_disconnecting','Desconectando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/stripe/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error(t('integ_err_stripe_disconnect','Error al desconectar Stripe'));
+        showNotification(t('integ_ok_stripe_disconnect','Stripe desconectado exitosamente'), 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(t('integ_err_stripe_disconnect','Error al desconectar Stripe'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Helper: obtener branch_id del agente seleccionado ──────
+
+async function getBranchIdForAgent(agentId) {
+    // El agente tiene branchId — lo buscamos en el array de agents ya cargado
+    const agent = agents.find(a => a.id === agentId);
+    if (agent && agent.branchId) return agent.branchId;
+
+    // Fallback: pedir al servidor
+    try {
+        const res = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
+        if (res.ok) {
+            const data = await res.json();
+            return data.branchId || data.branch_id || null;
+        }
+    } catch (e) {
+        console.error('No se pudo obtener branchId:', e);
+    }
+
+    showNotification(t('integ_err_stripe_branch','No se pudo determinar la sucursal del agente'), 'error');
+    return null;
+}
+
+// ── Revisar redirect de Stripe al cargar la página ─────────
+
+function checkStripeRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripe_success')) {
+        showNotification(t('integ_ok_stripe_connected','✅ Stripe conectado exitosamente'), 'success');
+        // Limpiar params de la URL
+        window.history.replaceState({}, '', '/integrations');
+    } else if (params.get('stripe_error')) {
+        showNotification(t('integ_err_stripe_connect','Error al conectar con Stripe. Intenta de nuevo.'), 'error');
+        window.history.replaceState({}, '', '/integrations');
+    } else if (params.get('stripe_refresh')) {
+        showNotification(t('integ_err_stripe_expired','El onboarding de Stripe expiró. Por favor reconecta.'), 'error');
+        window.history.replaceState({}, '', '/integrations');
+    }
+}
+
+
+console.log('🎯 Integrations ready!');
+
+// ============================================
+// ONBOARDING MODAL (adaptado de my-agents.js)
+// ============================================
+
+let _onboardingHTMLCache = null;
+let _onboardingScriptLoaded = false;
+
+function openOnboardingModal() {
+    let modal = document.getElementById('onboardingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'onboardingModal';
+        modal.className = 'onboarding-modal';
+        modal.innerHTML = `
+            <div class="onboarding-overlay" onclick="closeOnboardingModal()"></div>
+            <div class="onboarding-modal-content">
+                <div class="onboarding-modal-header">
+                    <h2 class="onboarding-modal-title">
+                        <i class="lni lni-rocket"></i>
+                        Crear Nuevo Agente
+                    </h2>
+                    <button class="btn-close-onboarding" onclick="closeOnboardingModal()">
+                        <i class="lni lni-close"></i>
+                    </button>
+                </div>
+                <div class="onboarding-modal-body" id="onboardingModalBody">
+                    <div style="display:flex;justify-content:center;align-items:center;padding:3rem;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" style="margin-left:1rem;">Cargando formulario...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.classList.add('active');
+    loadOnboardingContent();
+}
+
+function closeOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => { if (typeof initAgentSelector === 'function') initAgentSelector(); }, 300);
+    }
+}
+
+async function loadOnboardingContent() {
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (!modalBody) return;
+    try {
+        let rawHtml;
+        if (_onboardingHTMLCache) {
+            rawHtml = _onboardingHTMLCache;
+        } else {
+            const response = await fetch('/onboarding', { credentials: 'include' });
+            if (!response.ok) throw new Error('Error al cargar onboarding');
+            rawHtml = await response.text();
+            _onboardingHTMLCache = rawHtml;
+        }
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, 'text/html');
+        const mainContainer = doc.querySelector('.main-container');
+        if (mainContainer) {
+            modalBody.innerHTML = mainContainer.innerHTML;
+            // Re-apply translations to the newly injected onboarding content
+            if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
+
+            if (!document.getElementById('onboarding-css')) {
+                const link = document.createElement('link');
+                link.id = 'onboarding-css'; link.rel = 'stylesheet';
+                link.href = '/static/css/onboarding.css';
+                document.head.appendChild(link);
+            }
+            if (!document.getElementById('onboarding-modal-fixes')) {
+                const fix = document.createElement('style');
+                fix.id = 'onboarding-modal-fixes';
+                fix.textContent = `
+                    .section-nav-btn.completed:hover{background:#d1fae5!important;color:#10b981!important;border-color:#10b981!important;box-shadow:0 4px 12px rgba(16,185,129,.2)!important;}
+                    .section-nav-btn.completed:hover i{color:#10b981!important;}
+                    #onboardingModalBody .progress-wrapper,#onboardingModalBody .progress-header,#onboardingModalBody #progressPercentage,#onboardingModalBody .progress-dots{display:none!important;}
+                    .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
+                    .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
+                    .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
+                    .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
+                    #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
+                    #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
+                    .readonly-notice{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#15803d;margin-bottom:16px;}
+                    .readonly-notice i{font-size:1rem;flex-shrink:0;}
+                    .readonly-notice a{color:#0891b2;text-decoration:underline;}
+                    .form-input[readonly]:not(.form-select){background:#f8fafc;color:#64748b;cursor:not-allowed;border-color:#e2e8f0;}
+                `;
+                document.head.appendChild(fix);
+            }
+            if (!_onboardingScriptLoaded) {
+                const script = document.createElement('script');
+                script.src = '/static/js/onboarding.js?v=' + Date.now();
+                script.onload = () => { _onboardingScriptLoaded = true;
+                    // Re-apply translations after onboarding script loaded
+                    if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
+                    setTimeout(() => {
+                        var _origCreateAgent = window.createAgent;
+                        window.createAgent = function() {
+                            if (typeof collectFormData === 'function') collectFormData();
+                            var nombre = ((window.agentData && window.agentData.name) ? window.agentData.name : '').trim();
+                            if (!nombre) { var inp = document.getElementById('agentName'); if (inp) nombre = inp.value.trim(); }
+                            if (!nombre) {
+                                alert('Por favor ingresa el nombre del agente en la sección "Info. Básica".');
+                                if (typeof window._modalGoToSection === 'function') window._modalGoToSection('section-basic');
+                                return;
+                            }
+                            if (window.agentData) window.agentData.name = nombre;
+                            console.log('[integrations] createAgent validado — nombre:', nombre);
+                            if (typeof _origCreateAgent === 'function') _origCreateAgent();
+                        };
+                    }, 100);
+                    setTimeout(() => reinitializeOnboardingEvents(), 50); };
+                document.body.appendChild(script);
+            } else {
+                if (window.Translations) window.Translations.apply(getLang());
+            if (window.renderLangFlags) window.renderLangFlags();
+                setTimeout(() => {
+                    var _origCA = window.createAgent;
+                    window.createAgent = function() {
+                        if (typeof collectFormData === 'function') collectFormData();
+                        var nombre = ((window.agentData && window.agentData.name) ? window.agentData.name : '').trim();
+                        if (!nombre) { var inp = document.getElementById('agentName'); if (inp) nombre = inp.value.trim(); }
+                        if (!nombre) {
+                            alert('Por favor ingresa el nombre del agente en la sección "Info. Básica".');
+                            if (typeof window._modalGoToSection === 'function') window._modalGoToSection('section-basic');
+                            return;
+                        }
+                        if (window.agentData) window.agentData.name = nombre;
+                        if (typeof _origCA === 'function') _origCA();
+                    };
+                }, 100);
+                setTimeout(() => reinitializeOnboardingEvents(), 20);
+            }
+        } else {
+            throw new Error('No se encontró .main-container');
+        }
+    } catch (error) {
+        console.error('❌ Error cargando onboarding:', error);
+        modalBody.innerHTML = `
+            <div style="text-align:center;padding:3rem;">
+                <i class="lni lni-warning" style="font-size:3rem;color:#ef4444;"></i>
+                <h3 style="margin:1rem 0;color:#1a1a1a;">Error al cargar el formulario</h3>
+                <p style="color:#6b7280;margin-bottom:1.5rem;">Por favor, intenta de nuevo</p>
+                <button class="btn-primary" onclick="loadOnboardingContent()">
+                    <i class="lni lni-reload"></i><span>Reintentar</span>
+                </button>
+            </div>`;
+    }
+}
+
+async function reinitializeOnboardingEvents() {
+    console.log('🔄 Reinicializando modal del agente (integrations)');
+
+    if (typeof window.agentData !== 'undefined') window.agentData = (typeof defaultAgentData === 'function') ? defaultAgentData() : {};
+    if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
+
+    const modal = document.getElementById('onboardingModal');
+    const modalContent = modal?.querySelector('.onboarding-modal-content');
+    if (modalContent) { modalContent.style.maxWidth = '1100px'; modalContent.style.width = '95vw'; modalContent.style.maxHeight = '90vh'; modalContent.style.overflow = 'hidden'; }
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (modalBody) { modalBody.style.maxHeight = '82vh'; modalBody.style.overflowY = 'auto'; modalBody.scrollTop = 0; }
+
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    // Mostrar step1 (selección de red social) primero
+    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    // Ocultar nav de secciones hasta que se complete step1
+    const sectionNavEl = document.getElementById('sectionNavigation');
+    if (sectionNavEl) sectionNavEl.style.display = 'none';
+
+    // ── Habilitar Continuar al seleccionar red social (SINCRÓNICO, antes de cualquier await) ──
+    (function setupSocialSelectionEarly() {
+        function _enableContinuarEarly(value) {
+            try { window.selectedSocial = value; } catch(e) {}
+            try { window.agentData = window.agentData || {}; window.agentData.social = value; } catch(e) {}
+            var btn = document.getElementById('btnStep1');
+            if (btn) { btn.disabled = false; btn.removeAttribute('disabled'); }
+        }
+        document.querySelectorAll('input[name="social"]').forEach(function(radio) {
+            radio.addEventListener('change', function() { _enableContinuarEarly(this.value); });
+        });
+        document.querySelectorAll('.social-card').forEach(function(label) {
+            label.addEventListener('click', function() {
+                var radio = label.querySelector('input[type="radio"]');
+                if (radio && !radio.disabled) {
+                    setTimeout(function() { _enableContinuarEarly(radio.value); }, 10);
+                }
+            });
+        });
+    })();
+
+    const AGENT_SECTIONS_BUSINESS = [
+        { id:1, containerId:'section-business',    name:() => t('onb_tab_business','Info. Negocio'),   icon:'lni-briefcase' },
+        { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
+        { id:6, containerId:'section-schedule',    name:() => t('onb_tab_schedule','Horarios'),        icon:'lni-calendar' },
+        { id:7, containerId:'section-holidays',    name:() => t('onb_tab_holidays','Días Festivos'),   icon:'lni-gift' },
+        { id:8, containerId:'section-services',    name:() => t('onb_tab_services','Servicios / Productos'),       icon:'lni-package' },
+        { id:9, containerId:'section-menu',        name:() => t('onb_sec_menu','Menú'),            icon:'lni-files' },
+        { id:10,containerId:'section-workers',     name:() => t('onb_tab_workers','Trabajadores'),    icon:'lni-users' },
+    ];
+    const AGENT_SECTIONS_GOV = [
+        { id:1, containerId:'section-business',    name:() => t('onb_tab_agency','Dependencia'),     icon:'lni-government' },
+        { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:3, containerId:'section-location',    name:() => t('onb_tab_location','Ubicación'),       icon:'lni-map-marker' },
+        { id:4, containerId:'section-social',      name:() => t('onb_tab_social','Redes Sociales'),  icon:'lni-share-alt' },
+        { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
+        { id:6, containerId:'section-schedule',    name:() => t('onb_tab_schedule','Horarios'),        icon:'lni-calendar' },
+        { id:7, containerId:'section-holidays',    name:() => t('onb_tab_holidays_gov','Días Inhábiles'),  icon:'lni-gift' },
+        { id:8, containerId:'section-services',    name:() => t('onb_tab_courses','Cursos'),          icon:'lni-graduation' },
+    ];
+
+    // Detectar modo gobierno antes de construir la navegación
+    let _isGovModal = false;
+    try {
+        const _meCheck = await fetch('/api/me', { credentials: 'include' });
+        if (_meCheck.ok) {
+            const _meCheckData = await _meCheck.json();
+            _isGovModal = (_meCheckData.user?.businessType || '').toLowerCase().includes('gubernamental') ||
+                          !!_meCheckData.user?.isGovernment ||
+                          _meCheckData.user?.userType === 'government';
+        }
+    } catch (_) {}
+
+    // Ocultar secciones que no aplican para gobierno
+    if (_isGovModal) {
+        const menuSec    = document.getElementById('section-menu');
+        const workersSec = document.getElementById('section-workers');
+        if (menuSec)    menuSec.style.display    = 'none';
+        if (workersSec) workersSec.style.display = 'none';
+    }
+
+    let AGENT_SECTIONS = _isGovModal ? AGENT_SECTIONS_GOV : AGENT_SECTIONS_BUSINESS;
+    const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
+
+    ['section-location','section-social'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
+
+    if (typeof initializeRichEditor === 'function') initializeRichEditor();
+    if (typeof initializePhoneToggle === 'function') initializePhoneToggle();
+    if (typeof initializeSchedule === 'function') initializeSchedule();
+    if (typeof initializeHolidays === 'function') initializeHolidays();
+    if (typeof initializeServices === 'function') initializeServices();
+    if (typeof initializeWorkers === 'function') initializeWorkers();
+    if (typeof initializeMenu === 'function') initializeMenu();
+    if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
+    if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();
+    if (typeof initializeBusinessTypeSelect === 'function') initializeBusinessTypeSelect();
+    if (typeof initializeToneSelection === 'function') initializeToneSelection();
+    if (typeof initializeLanguageSelection === 'function') initializeLanguageSelection();
+    setTimeout(() => {
+        if (typeof fetchUserData === 'function') fetchUserData();
+        if (typeof initBusinessTimePickers === 'function') initBusinessTimePickers();
+        if (typeof initHolidayDatePickers === 'function') initHolidayDatePickers();
+        if (typeof initWorkerTimePickers === 'function') initWorkerTimePickers();
+        // Cargar bizType y aplicar labels del giro
+        (async () => {
+            try {
+                let bizType = '';
+                const meResp = await fetch('/api/me', { credentials: 'include' });
+                if (meResp.ok) {
+                    const meData = await meResp.json();
+                    bizType = (meData.user?.businessType || '').toLowerCase();
+                }
+                // Si es gubernamental, fetchUserData ya llamará applyGovernmentMode
+                if (bizType.includes('gubernamental')) {
+                    if (window.agentData) window.agentData.businessType = bizType;
+                    // applyGovernmentMode ya fue llamado arriba, no repetir
+                    return;
+                }
+                const bizResp = await fetch('/api/my-business', { credentials: 'include' });
+                if (bizResp.ok) {
+                    const bizData = await bizResp.json();
+                    const branch = bizData.activeBranch || bizData.defaultBranch;
+                    const branchType = (branch?.business?.type || branch?.business?.typeName || '').toLowerCase();
+                    if (branchType) bizType = branchType;
+                }
+                if (bizType) {
+                    if (window.agentData) window.agentData.businessType = bizType;
+                    if (typeof updateSectionLabels === 'function') updateSectionLabels(bizType);
+                }
+            } catch (_) {}
+        })();
+    }, 100);
+
+    const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav) {
+        sectionNav.innerHTML = '';
+        sectionNav.style.justifyContent = 'center';
+        sectionNav.style.flexWrap = 'wrap';
+        sectionNav.style.gap = '0.5rem';
+        AGENT_SECTIONS.forEach(sec => {
+            const btn = document.createElement('button');
+            btn.type = 'button'; btn.className = 'section-nav-btn'; btn.dataset.sectionId = sec.id;
+            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${typeof sec.name === "function" ? sec.name() : sec.name}</span>`;
+            btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
+            sectionNav.appendChild(btn);
+        });
+        const resumenBtn = document.createElement('button');
+        resumenBtn.type = 'button'; resumenBtn.id = 'modal-resumen-tab'; resumenBtn.className = 'section-nav-btn';
+        resumenBtn.innerHTML = `<i class="lni lni-checkmark-circle"></i><span>${t('integ_onb_resume','Resumen')}</span>`;
+        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
+        sectionNav.appendChild(resumenBtn);
+    }
+
+    window._modalGoToSection = function(targetId) {
+        AGENT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.style.display = 'none'; } });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+        const target = document.getElementById(targetId);
+        if (target) { target.style.display = ''; target.classList.add('active'); }
+        const currentIdx = AGENT_SECTIONS.findIndex(s => s.containerId === targetId);
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(btn => {
+            btn.classList.remove('active', 'completed');
+            const sid = parseInt(btn.dataset.sectionId);
+            const sec = AGENT_SECTIONS.find(s => s.id === sid);
+            if (!sec) return;
+            const idx = AGENT_SECTIONS.indexOf(sec);
+            if (idx === currentIdx) btn.classList.add('active');
+            else if (idx < currentIdx) btn.classList.add('completed');
+        });
+        const el = document.getElementById(targetId);
+        if (el) el.querySelectorAll('.btn-prev-section').forEach(b => { b.style.display = currentIdx === 0 ? 'none' : 'flex'; });
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        if (modalBody) modalBody.scrollTop = 0;
+    };
+
+    window._modalGoToResumen = function() {
+        AGENT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.style.display = 'none'; } });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        const step3 = document.getElementById('step3');
+        if (step3) { step3.classList.add('active'); step3.style.display = ''; }
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(b => {
+            b.classList.remove('active', 'completed');
+            if (b.id === 'modal-resumen-tab') b.classList.add('active');
+            else b.classList.add('completed');
+        });
+        if (typeof collectFormData === 'function') collectFormData();
+        if (typeof generateSummary === 'function') generateSummary();
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        if (modalBody) modalBody.scrollTop = 0;
+    };
 
     setTimeout(() => {
-      document.getElementById('ob-menuUploadProgress').style.display = 'none';
-      _renderMenuViewerOnboarding(url);
-    }, 500);
+        AGENT_SECTIONS.forEach((sec, idx) => {
+            const el = document.getElementById(sec.containerId);
+            if (!el) return;
+            const prevSec = AGENT_SECTIONS[idx - 1], nextSec = AGENT_SECTIONS[idx + 1];
+            el.querySelectorAll('.btn-prev-section').forEach(btn => {
+                btn.style.display = idx === 0 ? 'none' : 'flex';
+                if (prevSec) btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(prevSec.containerId); };
+            });
+            el.querySelectorAll('.btn-next-section,[class*="next"]').forEach(btn => {
+                btn.onclick = (e) => { e.stopPropagation(); nextSec ? window._modalGoToSection(nextSec.containerId) : window._modalGoToResumen(); };
+            });
+        });
+        const b3 = document.getElementById('btnBackStep3');
+        if (b3) { const last = AGENT_SECTIONS[AGENT_SECTIONS.length - 1]; b3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(last.containerId); }; }
 
-    Sileo?.toast('Menú subido correctamente', 'success');
-  } catch (err) {
-    console.error('❌ Error subiendo menú:', err);
-    document.getElementById('ob-menuUploadProgress').style.display = 'none';
-    document.getElementById('ob-menuFilePreview').style.display = 'none';
-    document.getElementById('ob-menuUploadPlaceholder').style.display = '';
-    Sileo?.toast('Error al subir el menú', 'error');
-  }
+        const btnSubmit = document.getElementById('btnCreateAgent');
+        if (btnSubmit) {
+            const btnClone = btnSubmit.cloneNode(true);
+            btnSubmit.parentNode.replaceChild(btnClone, btnSubmit);
+            btnClone.addEventListener('click', () => { if (typeof createAgent === 'function') createAgent(); });
+            console.log('✅ [integrations] Listener de btnCreateAgent registrado');
+        }
+        // Parchar navigateToSection para que use _modalGoToSection en el modal.
+        // Esto resuelve el conflicto de raíz: rebuildSectionNav (llamado por
+        // applyGovernmentMode) crea botones con navigateToSection, pero en el
+        // modal necesitamos que use style.display (no solo classList).
+        window.navigateToSection = function(sectionId) {
+            const sec = AGENT_SECTIONS.find(s => s.id === sectionId);
+            if (sec && typeof window._modalGoToSection === 'function') {
+                window._modalGoToSection(sec.containerId);
+            }
+        };
+
+        // Aplicar modo gobierno DESPUÉS de construir nav y _modalGoToSection
+        if (_isGovModal && typeof applyGovernmentMode === 'function') {
+            try {
+                applyGovernmentMode();
+                // applyGovernmentMode llama rebuildSectionNav con listeners de
+                // navigateToSection — como ya está parcheado arriba, funciona
+                // correctamente con _modalGoToSection.
+            } catch (_) {}
+        }
+    }, 150);
+
+    // Hook btnStep1 (Continuar de Red Social) → mostrar step2 + sectionNav
+    const btnStep1El = document.getElementById('btnStep1');
+    if (btnStep1El) {
+        const btnStep1Clone = btnStep1El.cloneNode(true);
+        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+        btnStep1Clone.addEventListener('click', () => {
+            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+            const nav = document.getElementById('sectionNavigation');
+            if (nav) nav.style.display = '';
+            window._modalGoToSection('section-basic');
+        });
+        console.log('✅ [integrations] Hook btnStep1 registrado');
+    }
+
+    // Listeners en los radios de red social
+
+    // ── Social radio: event delegation robusta sobre step1 ──────────────────
+    const _step1El = document.getElementById('step1');
+    if (_step1El) {
+        _step1El.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'social') {
+                if (window.agentData) window.agentData.social = e.target.value;
+                const btn = document.getElementById('btnStep1');
+                if (btn) btn.disabled = false;
+            }
+        });
+    }
+    // También llamar initializeSocialSelection si ya está disponible
+    if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
+    // Si ya hay radio pre-seleccionado, habilitar botón de inmediato
+    const preSelected = document.querySelector('input[name="social"]:checked');
+    if (preSelected) {
+        if (typeof selectedSocial !== 'undefined') selectedSocial = preSelected.value;
+        if (typeof agentData !== 'undefined') agentData.social = preSelected.value;
+        const btnPre = document.getElementById('btnStep1');
+        if (btnPre) { btnPre.disabled = false; console.log('✅ [integrations] btnStep1 habilitado por pre-selección:', preSelected.value); }
+    }
+
+    if (typeof updateProgressBar === 'function') updateProgressBar();
 }
 
-function _renderMenuViewerOnboarding(url) {
-  const viewer = document.getElementById('ob-menuFileViewer');
-  if (!viewer || !url) return;
-  const isPdf = url.toLowerCase().endsWith('.pdf');
-  viewer.style.display = 'block';
-  if (isPdf) {
-    viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú" style="width:100%;height:300px;border:none;border-radius:8px;"></iframe>`;
-  } else {
-    viewer.innerHTML = `<img src="${url}" alt="Vista previa del menú" style="max-width:100%;border-radius:8px;margin-top:0.75rem;">`;
-  }
+window.reinitializeOnboardingEvents = reinitializeOnboardingEvents;
+
+// ============================================
+// REPAIRDESK INTEGRATION
+// ============================================
+
+function initRepairDeskIntegration() {
+    const toggleBtn   = document.getElementById('toggleRepairDeskKey');
+    const apiKeyInput = document.getElementById('repairDeskApiKey');
+    const saveBtn     = document.getElementById('btnSaveRepairDesk');
+    const syncBtn     = document.getElementById('btnSyncRepairDesk');
+    const updateBtn   = document.getElementById('btnUpdateRepairDesk');
+    const disconnBtn  = document.getElementById('btnDisconnectRepairDesk');
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (!apiKeyInput) return;
+            const icon = toggleBtn.querySelector('i');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.className = 'lni lni-eye-slash';
+            } else {
+                apiKeyInput.type = 'password';
+                icon.className = 'lni lni-eye';
+            }
+        });
+    }
+
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('input', () => {
+            if (saveBtn) saveBtn.disabled = !apiKeyInput.value.trim();
+        });
+    }
+
+    if (saveBtn)    saveBtn.addEventListener('click',    saveRepairDeskKey);
+    if (syncBtn)    syncBtn.addEventListener('click',    syncRepairDeskNow);
+    if (updateBtn)  updateBtn.addEventListener('click',  enableRepairDeskEdit);
+    if (disconnBtn) disconnBtn.addEventListener('click', disconnectRepairDesk);
+}
+
+async function loadRepairDeskStatus(agentId) {
+    if (!agentId) return;
+    try {
+        const res  = await fetch(`/api/repairdesk/status/${agentId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        updateRepairDeskUI(data);
+    } catch (e) {
+        console.error('RepairDesk status error:', e);
+    }
+}
+
+function updateRepairDeskUI(data) {
+    const badge       = document.getElementById('repairDeskStatusBadge');
+    const form        = document.getElementById('repairDeskForm');
+    const connInfo    = document.getElementById('repairDeskConnectionInfo');
+    const saveActions = document.getElementById('repairDeskActions');
+    const mgmtActions = document.getElementById('repairDeskManageActions');
+    const lastSync    = document.getElementById('repairDeskLastSync');
+    const apiInput    = document.getElementById('repairDeskApiKey');
+    const toggleBtn   = document.getElementById('toggleRepairDeskKey');
+
+    if (data.connected) {
+        if (badge) {
+            badge.className = 'status-badge connected';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`;
+        }
+        if (apiInput)   { apiInput.value = '••••••••••••••••••••••'; apiInput.disabled = true; }
+        if (toggleBtn)  toggleBtn.disabled = true;
+        if (lastSync && data.last_sync) {
+            lastSync.textContent = formatDate(new Date(data.last_sync));
+        }
+        if (form)        form.style.display        = 'block';
+        if (connInfo)    connInfo.style.display     = 'block';
+        if (saveActions) saveActions.style.display  = 'none';
+        if (mgmtActions) mgmtActions.style.display  = 'flex';
+    } else {
+        if (badge) {
+            badge.className = 'status-badge disconnected';
+            badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`;
+        }
+        if (apiInput)   { apiInput.value = ''; apiInput.disabled = false; }
+        if (toggleBtn)  toggleBtn.disabled = false;
+        if (connInfo)    connInfo.style.display     = 'none';
+        if (form)        form.style.display         = 'block';
+        if (saveActions) saveActions.style.display  = 'flex';
+        if (mgmtActions) mgmtActions.style.display  = 'none';
+
+        const saveBtn = document.getElementById('btnSaveRepairDesk');
+        if (saveBtn)    saveBtn.disabled = true;
+    }
+}
+
+async function saveRepairDeskKey() {
+    if (!requireAgentSelected()) return;
+    const apiKey = document.getElementById('repairDeskApiKey')?.value.trim();
+    if (!apiKey)  { showNotification(t('integ_err_rd_apikey','Ingresa tu API Key de RepairDesk'), 'error'); return; }
+
+    const btn = document.getElementById('btnSaveRepairDesk');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_connecting','Conectando...')}</span>`;
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/repairdesk/connect/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey })
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al conectar'); }
+        showNotification(t('integ_ok_rd_connected','RepairDesk conectado exitosamente'), 'success');
+        await loadRepairDeskStatus(selectedAgentId);
+        // Disparar sync inicial para reflejar inventario en My Business
+        syncRepairDeskNow();
+    } catch (err) {
+        showNotification(err.message || t('integ_err_rd_connect','Error al conectar RepairDesk'), 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+async function syncRepairDeskNow() {
+    if (!requireAgentSelected()) return;
+    const btn = document.getElementById('btnSyncRepairDesk');
+    if (btn) { if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_syncing','Sincronizando...')}</span>` ; btn.disabled = true; }; btn.disabled = true; }
+
+    try {
+        const res = await fetch(`/api/repairdesk/sync/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al sincronizar'); }
+        const data = await res.json();
+        showNotification(`${t('integ_ok_rd_synced','Inventario sincronizado')}: ${data.synced_count ?? ''} ${t('integ_ok_rd_synced_count','productos')}`, 'success');
+        await loadRepairDeskStatus(selectedAgentId);
+    } catch (err) {
+        showNotification(err.message || t('integ_err_rd_sync','Error al sincronizar'), 'error');
+    } finally {
+        if (btn) { btn.innerHTML = `<i class="lni lni-reload"></i> ${t('integ_rd_sync','Sincronizar ahora')}`; btn.disabled = false; }
+    }
+}
+
+function enableRepairDeskEdit() {
+    const apiInput   = document.getElementById('repairDeskApiKey');
+    const toggleBtn  = document.getElementById('toggleRepairDeskKey');
+    const saveActions = document.getElementById('repairDeskActions');
+    const mgmtActions = document.getElementById('repairDeskManageActions');
+    const connInfo    = document.getElementById('repairDeskConnectionInfo');
+    const saveBtn     = document.getElementById('btnSaveRepairDesk');
+
+    if (apiInput)    { apiInput.value = ''; apiInput.disabled = false; apiInput.focus(); }
+    if (toggleBtn)   toggleBtn.disabled = false;
+    if (connInfo)    connInfo.style.display  = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (mgmtActions) mgmtActions.style.display = 'none';
+    if (saveBtn)     saveBtn.disabled = true;
+}
+
+async function disconnectRepairDesk() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Desconectar RepairDesk? Se dejará de sincronizar el inventario.')) return;
+
+    try {
+        const res = await fetch(`/api/repairdesk/disconnect/${selectedAgentId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || t('integ_err_sr_disconnect','Error al desconectar')); }
+        showNotification(t('integ_ok_rd_disconnect','RepairDesk desconectado'), 'success');
+        updateRepairDeskUI({ connected: false });
+    } catch (err) {
+        showNotification(err.message || t('integ_err_rd_disconnect',t('integ_err_sr_disconnect','Error al desconectar')), 'error');
+    }
+}
+// ============================================
+// SOFTRESTAURANT INTEGRATION
+// ============================================
+
+function initSoftRestaurantIntegration() {
+    // Eye toggle
+    const toggleBtn = document.getElementById('toggleSrKey');
+    const keyInput  = document.getElementById('srApiKey');
+    if (toggleBtn && keyInput) {
+        toggleBtn.addEventListener('click', () => {
+            const icon = toggleBtn.querySelector('i');
+            if (keyInput.type === 'password') { keyInput.type = 'text'; icon.className = 'lni lni-eye-slash'; }
+            else                              { keyInput.type = 'password'; icon.className = 'lni lni-eye'; }
+        });
+    }
+
+    // Enable save when URL has value
+    const urlInput = document.getElementById('srApiUrl');
+    if (urlInput) {
+        urlInput.addEventListener('input', () => {
+            const saveBtn = document.getElementById('btnSaveSr');
+            const testBtn = document.getElementById('btnSrTest');
+            const hasVal  = urlInput.value.trim().length > 0;
+            if (saveBtn) saveBtn.disabled = !hasVal;
+            if (testBtn) testBtn.disabled = !hasVal;
+        });
+    }
+
+    document.getElementById('btnSrTest')?.addEventListener('click', () => srTestConnection(false));
+    document.getElementById('btnSaveSr')?.addEventListener('click', srSaveConfig);
+    document.getElementById('btnSrTestConnected')?.addEventListener('click', () => srTestConnection(true));
+    document.getElementById('btnEditSr')?.addEventListener('click', srEnableEdit);
+    document.getElementById('btnDisconnectSr')?.addEventListener('click', srDisconnect);
+}
+
+async function loadSoftRestaurantStatus(agentId) {
+    if (!agentId) return;
+    try {
+        const res  = await fetch(`/api/softrestaurant/status/${agentId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        updateSoftRestaurantUI(data);
+    } catch (e) {
+        console.warn('SR status error:', e);
+    }
+}
+
+function updateSoftRestaurantUI(data) {
+    const badge       = document.getElementById('srStatusBadge');
+    const connInfo    = document.getElementById('srConnectionInfo');
+    const saveActions = document.getElementById('srSaveActions');
+    const mgmtActions = document.getElementById('srManageActions');
+    const urlInput    = document.getElementById('srApiUrl');
+    const keyInput    = document.getElementById('srApiKey');
+    const toggleBtn   = document.getElementById('toggleSrKey');
+    const timeoutIn   = document.getElementById('srTimeout');
+    const autoSendIn  = document.getElementById('srAutoSend');
+    const syncStatusIn= document.getElementById('srSyncStatus');
+    const displayUrl  = document.getElementById('srDisplayUrl');
+    const lastPush    = document.getElementById('srLastPush');
+
+    if (data.connected) {
+        if (badge) { badge.className = 'status-badge connected'; badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_connected','Conectado')}`; }
+        if (urlInput)    { urlInput.value = data.url || ''; urlInput.disabled = true; }
+        if (keyInput)    { keyInput.value = '••••••••••••••••••••'; keyInput.disabled = true; }
+        if (toggleBtn)   toggleBtn.disabled = true;
+        if (timeoutIn)   { timeoutIn.value = data.timeout || 10; timeoutIn.disabled = true; }
+        if (autoSendIn)  { autoSendIn.checked = data.auto_send !== false; autoSendIn.disabled = true; }
+        if (syncStatusIn){ syncStatusIn.checked = !!data.sync_status; syncStatusIn.disabled = true; }
+        if (displayUrl)  displayUrl.textContent = data.url || '—';
+        if (lastPush && data.last_push) lastPush.textContent = formatDate(new Date(data.last_push));
+        if (connInfo)    connInfo.style.display  = 'block';
+        if (saveActions) saveActions.style.display = 'none';
+        if (mgmtActions) mgmtActions.style.display = 'flex';
+    } else {
+        if (badge) { badge.className = 'status-badge disconnected'; badge.innerHTML = `<span class="status-indicator"></span>${t('integ_status_disconnected','No conectado')}`; }
+        if (urlInput)    { urlInput.value = data.url || ''; urlInput.disabled = false; }
+        if (keyInput)    { keyInput.value = ''; keyInput.disabled = false; }
+        if (toggleBtn)   toggleBtn.disabled = false;
+        if (timeoutIn)   { timeoutIn.value = data.timeout || 10; timeoutIn.disabled = false; }
+        if (autoSendIn)  { autoSendIn.checked = data.auto_send !== false; autoSendIn.disabled = false; }
+        if (syncStatusIn){ syncStatusIn.checked = !!data.sync_status; syncStatusIn.disabled = false; }
+        if (connInfo)    connInfo.style.display  = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+        if (mgmtActions) mgmtActions.style.display = 'none';
+        // Re-evaluar botones
+        const hasUrl = (urlInput?.value || '').trim().length > 0;
+        const saveBtn = document.getElementById('btnSaveSr');
+        const testBtn = document.getElementById('btnSrTest');
+        if (saveBtn) saveBtn.disabled = !hasUrl;
+        if (testBtn) testBtn.disabled = !hasUrl;
+    }
+    srHideTestResult();
+}
+
+async function srTestConnection(isConnected) {
+    if (!requireAgentSelected()) return;
+    const url    = document.getElementById('srApiUrl')?.value.trim();
+    const apiKey = document.getElementById('srApiKey')?.value.trim();
+    if (!url) { showNotification(t('integ_err_sr_url','Ingresa la URL de la API local'), 'error'); return; }
+
+    const btnId  = isConnected ? 'btnSrTestConnected' : 'btnSrTest';
+    const btn    = document.getElementById(btnId);
+    const orig   = btn?.innerHTML;
+    if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_testing','Probando...')}</span>`; btn.disabled = true; }
+    srHideTestResult();
+
+    try {
+        const res = await fetch(`/api/softrestaurant/test/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, api_key: apiKey && !apiKey.startsWith('•') ? apiKey : undefined }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+            srShowTestResult('ok', `✓ Conexión exitosa${data.version ? ' · Versión: ' + data.version : ''}`);
+        } else {
+            srShowTestResult('err', `✗ ${data.error || 'No se pudo conectar con SoftRestaurant'}`);
+        }
+    } catch (e) {
+        srShowTestResult('err', '✗ Error de red: ' + e.message);
+    } finally {
+        if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    }
+}
+
+function srShowTestResult(type, msg) {
+    const el = document.getElementById('srTestResultInline');
+    if (!el) return;
+    el.style.display = 'block';
+    el.className = `sr-test-result-inline sr-result-${type}`;
+    el.textContent = msg;
+}
+function srHideTestResult() {
+    const el = document.getElementById('srTestResultInline');
+    if (el) el.style.display = 'none';
+}
+
+async function srSaveConfig() {
+    if (!requireAgentSelected()) return;
+    const url      = document.getElementById('srApiUrl')?.value.trim();
+    const apiKeyRaw= document.getElementById('srApiKey')?.value.trim();
+    const timeout  = parseInt(document.getElementById('srTimeout')?.value) || 10;
+    const autoSend = document.getElementById('srAutoSend')?.checked ?? true;
+    const syncStat = document.getElementById('srSyncStatus')?.checked ?? false;
+
+    if (!url) { showNotification(t('integ_err_sr_url','Ingresa la URL de la API local'), 'error'); return; }
+
+    const payload = { url, timeout, auto_send: autoSend, sync_status: syncStat };
+    if (apiKeyRaw && !apiKeyRaw.startsWith('•')) payload.api_key = apiKeyRaw;
+
+    const btn  = document.getElementById('btnSaveSr');
+    const orig = btn?.innerHTML;
+    if (btn) { btn.innerHTML = `<div class="loading-spinner"></div><span>${t('integ_loading_saving','Guardando...')}</span>`; btn.disabled = true; }
+
+    try {
+        const res = await fetch(`/api/softrestaurant/config/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Error al guardar'); }
+        showNotification(t('integ_ok_sr_connected','SoftRestaurant conectado'), 'success');
+        await loadSoftRestaurantStatus(selectedAgentId);
+    } catch (err) {
+        showNotification(err.message || t('integ_err_sr_save','Error al guardar'), 'error');
+        if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    }
+}
+
+function srEnableEdit() {
+    const urlInput    = document.getElementById('srApiUrl');
+    const keyInput    = document.getElementById('srApiKey');
+    const toggleBtn   = document.getElementById('toggleSrKey');
+    const timeoutIn   = document.getElementById('srTimeout');
+    const autoSendIn  = document.getElementById('srAutoSend');
+    const syncStatusIn= document.getElementById('srSyncStatus');
+    const connInfo    = document.getElementById('srConnectionInfo');
+    const saveActions = document.getElementById('srSaveActions');
+    const mgmtActions = document.getElementById('srManageActions');
+    const saveBtn     = document.getElementById('btnSaveSr');
+    const testBtn     = document.getElementById('btnSrTest');
+
+    if (urlInput)    { urlInput.disabled = false; }
+    if (keyInput)    { keyInput.value = ''; keyInput.disabled = false; keyInput.focus(); }
+    if (toggleBtn)   toggleBtn.disabled = false;
+    if (timeoutIn)   timeoutIn.disabled = false;
+    if (autoSendIn)  autoSendIn.disabled = false;
+    if (syncStatusIn)syncStatusIn.disabled = false;
+    if (connInfo)    connInfo.style.display  = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (mgmtActions) mgmtActions.style.display = 'none';
+    if (saveBtn)     saveBtn.disabled = false;
+    if (testBtn)     testBtn.disabled = false;
+    srHideTestResult();
+}
+
+async function srDisconnect() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Desconectar SoftRestaurant? Los pedidos nuevos ya no se enviarán automáticamente.')) return;
+    try {
+        const res = await fetch(`/api/softrestaurant/config/${selectedAgentId}`, {
+            method: 'DELETE', credentials: 'include'
+        });
+        if (!res.ok) throw new Error();
+        showNotification(t('integ_ok_sr_disconnect','SoftRestaurant desconectado'), 'success');
+        updateSoftRestaurantUI({ connected: false });
+    } catch {
+        showNotification(t('integ_err_sr_disconnect','Error al desconectar'), 'error');
+    }
 }
