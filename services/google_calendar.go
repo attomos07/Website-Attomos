@@ -31,7 +31,8 @@ func (s *GoogleCalendarService) GetOAuthConfig() *oauth2.Config {
 			calendar.CalendarScope,                           // Acceso completo a Calendar
 			sheets.SpreadsheetsScope,                         // Acceso completo a Sheets
 			"https://www.googleapis.com/auth/userinfo.email", // Email del usuario
-			"https://www.googleapis.com/auth/drive.file",     // ← NUEVO: Modificar archivos creados por la app
+			"https://www.googleapis.com/auth/drive.file",     // Modificar archivos creados por la app (fotos subidas)
+			"https://www.googleapis.com/auth/drive.readonly", // ← NUEVO: ver/vigilar hojas que el usuario conectó por URL (no creadas por la app) — necesario para Files.Watch
 		},
 		Endpoint: google.Endpoint,
 	}

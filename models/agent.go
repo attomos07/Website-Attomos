@@ -210,6 +210,14 @@ type Agent struct {
 	// fallback compartido.
 	InventoryGeminiAPIKey string `gorm:"type:text" json:"-"`
 
+	// Suscripción de notificaciones push de Google Drive (opción 3: "en
+	// tiempo real" sin depender de que el usuario le dé clic a Actualizar).
+	// Se renueva sola antes de vencer — ver RenewExpiringInventoryWatches.
+	InventoryWatchChannelID  string     `gorm:"size:255" json:"-"`
+	InventoryWatchResourceID string     `gorm:"size:255" json:"-"`
+	InventoryWatchToken      string     `gorm:"size:255" json:"-"`
+	InventoryWatchExpiresAt  *time.Time `json:"-"`
+
 	// Columnas elegidas por el usuario para nombrar las fotos que NO coinciden
 	// con el VIN detectado (ej. "Marca", o "Marca,Vehículo"). La foto donde sí
 	// se detectó el VIN siempre se nombra con el VIN mismo, sin importar esto.

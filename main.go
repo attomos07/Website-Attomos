@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"attomos/config"
 	"attomos/handlers"
@@ -176,6 +177,14 @@ func main() {
 	router.GET("/webhook/meta/:agent_id", handlers.WebhookProxy)
 	router.POST("/webhook/meta/:agent_id", handlers.WebhookProxy)
 	log.Println("✅ Webhook Proxy configurado en: /webhook/meta/:agent_id")
+
+	// ============================================
+	// 🔔 WEBHOOK - Notificaciones push de Drive (inventario, PÚBLICO)
+	// ============================================
+	if googleIntegrationHandler != nil {
+		router.POST("/webhook/drive-inventory/:agent_id", googleIntegrationHandler.InventoryWebhook)
+		log.Println("✅ Webhook de inventario configurado en: /webhook/drive-inventory/:agent_id")
+	}
 
 	// ============================================
 	// 🛒 NINDA — Marketplace público (sin auth)
@@ -620,6 +629,19 @@ func main() {
 	log.Println("║    • 🛒 Ninda Marketplace en: /ninda                    ║")
 	log.Println("║    • 🍕 Orders en: /orders (giros de comida)            ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
+
+	// 🔔 Renovación periódica de las suscripciones push de Drive (inventario)
+	if googleIntegrationHandler != nil {
+		go func() {
+			ticker := time.NewTicker(6 * time.Hour)
+			defer ticker.Stop()
+			googleIntegrationHandler.RenewExpiringInventoryWatches() // una pasada al arrancar
+			for range ticker.C {
+				googleIntegrationHandler.RenewExpiringInventoryWatches()
+			}
+		}()
+		log.Println("✅ Renovación de suscripciones de inventario: cada 6h")
+	}
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)

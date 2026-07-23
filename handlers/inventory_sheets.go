@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -90,6 +92,7 @@ func (h *GoogleIntegrationHandler) getAgentForUser(c *gin.Context) (*models.Agen
 
 // GetInventorySheetStatus — GET /api/inventory-sheets/status/:agent_id
 func (h *GoogleIntegrationHandler) GetInventorySheetStatus(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
 	agent, _, ok := h.getAgentForUser(c)
 	if !ok {
 		return
@@ -158,6 +161,13 @@ func (h *GoogleIntegrationHandler) ConnectInventorySheet(c *gin.Context) {
 		return
 	}
 
+	// Notificaciones push de Drive ("tiempo real"): si falla, no bloquea la
+	// conexión — el polling que ya existe (frontend cada 45s / al abrir la
+	// vista) sigue funcionando como respaldo.
+	if err := h.ensureInventoryWatch(agent); err != nil {
+		log.Printf("⚠️  [Agent %d] no se pudo suscribir a notificaciones de Drive: %v", agent.ID, err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"connected":       true,
 		"spreadsheet_id":  agent.InventorySheetID,
@@ -173,6 +183,8 @@ func (h *GoogleIntegrationHandler) DisconnectInventorySheet(c *gin.Context) {
 		return
 	}
 
+	h.stopInventoryWatch(agent) // best-effort, no bloquea la desconexión
+
 	agent.InventorySheetID = ""
 	agent.InventorySheetConnected = false
 	agent.InventorySheetConnectedAt = nil
@@ -186,6 +198,8 @@ func (h *GoogleIntegrationHandler) DisconnectInventorySheet(c *gin.Context) {
 
 // GetInventorySheetRows — GET /api/inventory-sheets/rows/:agent_id
 func (h *GoogleIntegrationHandler) GetInventorySheetRows(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+
 	agent, _, ok := h.getAgentForUser(c)
 	if !ok {
 		return
@@ -205,6 +219,14 @@ func (h *GoogleIntegrationHandler) GetInventorySheetRows(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo leer la hoja: " + err.Error()})
 		return
+	}
+	log.Printf("📄 [Agent %d] rows: leídas %d filas de la hoja %s en %s", agent.ID, len(data.Rows), agent.InventorySheetID, time.Now().Format("15:04:05"))
+	if len(data.Rows) > 0 {
+		var preview []string
+		for _, cell := range data.Rows[0].Cells {
+			preview = append(preview, cell.Text)
+		}
+		log.Printf("📄 [Agent %d] rows: fila 2 tal como la trajo Google ahora mismo: %v", agent.ID, preview)
 	}
 
 	resp := gin.H{
@@ -770,4 +792,147 @@ func (h *GoogleIntegrationHandler) SyncInventoryProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"synced_products": count})
+}
+
+// =============================================================================
+// NOTIFICACIONES PUSH DE DRIVE (opción "tiempo real")
+// =============================================================================
+
+func generateRandomHex(nBytes int) (string, error) {
+	b := make([]byte, nBytes)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// ensureInventoryWatch crea (o renueva) la suscripción push de Drive para la
+// hoja conectada de este agente. No es fatal si falla — el polling que ya
+// existe en el frontend sigue funcionando como respaldo.
+func (h *GoogleIntegrationHandler) ensureInventoryWatch(agent *models.Agent) error {
+	if !agent.InventorySheetConnected || agent.InventorySheetID == "" || agent.GoogleToken == "" {
+		return nil
+	}
+
+	baseURL := strings.TrimRight(os.Getenv("BASE_URL"), "/")
+	if baseURL == "" {
+		return fmt.Errorf("falta configurar BASE_URL en el servidor (ej. https://attomos.com)")
+	}
+
+	channelID, err := generateRandomHex(16)
+	if err != nil {
+		return err
+	}
+	token, err := generateRandomHex(24)
+	if err != nil {
+		return err
+	}
+	webhookURL := fmt.Sprintf("%s/webhook/drive-inventory/%d", baseURL, agent.ID)
+
+	result, err := h.sheetsService.WatchSpreadsheetFile(context.Background(), agent.GoogleToken, agent.InventorySheetID, channelID, webhookURL, token)
+	if err != nil {
+		return err
+	}
+
+	// Si ya había una suscripción anterior activa para esta hoja, la cancelamos
+	// (Google no lo hace solo — si no, se quedaría avisando de más).
+	if agent.InventoryWatchChannelID != "" && agent.InventoryWatchChannelID != result.ChannelID {
+		_ = h.sheetsService.StopWatchChannel(context.Background(), agent.GoogleToken, agent.InventoryWatchChannelID, agent.InventoryWatchResourceID)
+	}
+
+	agent.InventoryWatchChannelID = result.ChannelID
+	agent.InventoryWatchResourceID = result.ResourceID
+	agent.InventoryWatchToken = token
+	agent.InventoryWatchExpiresAt = &result.Expiration
+
+	if err := config.DB.Save(agent).Error; err != nil {
+		return fmt.Errorf("no se pudo guardar la suscripción: %w", err)
+	}
+
+	log.Printf("🔔 [Agent %d] suscripción push de Drive activa (vence %s)", agent.ID, result.Expiration.Format("2006-01-02 15:04"))
+	return nil
+}
+
+// stopInventoryWatch cancela la suscripción activa (best-effort).
+func (h *GoogleIntegrationHandler) stopInventoryWatch(agent *models.Agent) {
+	if agent.InventoryWatchChannelID == "" || agent.GoogleToken == "" {
+		return
+	}
+	if err := h.sheetsService.StopWatchChannel(context.Background(), agent.GoogleToken, agent.InventoryWatchChannelID, agent.InventoryWatchResourceID); err != nil {
+		log.Printf("⚠️  [Agent %d] no se pudo cancelar la suscripción de Drive: %v", agent.ID, err)
+	}
+	agent.InventoryWatchChannelID = ""
+	agent.InventoryWatchResourceID = ""
+	agent.InventoryWatchToken = ""
+	agent.InventoryWatchExpiresAt = nil
+}
+
+// InventoryWebhook — POST /webhook/drive-inventory/:agent_id  (PÚBLICO, sin
+// AuthRequired — lo llama Google, no un usuario con sesión). Se verifica con
+// el canal + token que se guardaron al crear la suscripción, no con un login.
+func (h *GoogleIntegrationHandler) InventoryWebhook(c *gin.Context) {
+	agentID := c.Param("agent_id")
+
+	var agent models.Agent
+	if err := config.DB.Where("id = ?", agentID).First(&agent).Error; err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	channelID := c.GetHeader("X-Goog-Channel-ID")
+	resourceState := c.GetHeader("X-Goog-Resource-State")
+	token := c.GetHeader("X-Goog-Channel-Token")
+
+	if channelID == "" || channelID != agent.InventoryWatchChannelID || token != agent.InventoryWatchToken {
+		// Canal/token que no coincide con lo que guardamos — se ignora (puede
+		// ser una suscripción vieja ya reemplazada). Igual respondemos 200
+		// para que Google no reintente indefinidamente.
+		c.Status(http.StatusOK)
+		return
+	}
+
+	// Google espera un ack rápido — respondemos ya y hacemos el trabajo aparte.
+	c.Status(http.StatusOK)
+
+	if resourceState == "sync" {
+		return // primer mensaje al crear el canal, no es un cambio real todavía
+	}
+	if !agent.InventorySheetConnected || agent.InventorySheetID == "" || agent.GoogleToken == "" {
+		return
+	}
+
+	log.Printf("🔔 [Agent %d] webhook de Drive: cambio detectado en la hoja (%s)", agent.ID, resourceState)
+
+	go func(a models.Agent) {
+		data, err := h.sheetsService.GetInventorySheetData(context.Background(), a.GoogleToken, a.InventorySheetID)
+		if err != nil {
+			log.Printf("❌ [Agent %d] webhook: error leyendo la hoja: %v", a.ID, err)
+			return
+		}
+		if a.InventoryTitleColumn != "" {
+			if _, err := h.syncInventoryToCatalogWithData(&a, data); err != nil {
+				log.Printf("❌ [Agent %d] webhook: error sincronizando catálogo: %v", a.ID, err)
+			}
+		}
+	}(agent)
+}
+
+// RenewExpiringInventoryWatches revisa qué agentes tienen su suscripción por
+// vencer pronto (o sin suscripción todavía) y la renueva. Pensado para
+// correr cada pocas horas desde main.go — ver ese archivo.
+func (h *GoogleIntegrationHandler) RenewExpiringInventoryWatches() {
+	var agents []models.Agent
+	soon := time.Now().Add(24 * time.Hour)
+	err := config.DB.
+		Where("inventory_sheet_connected = ? AND (inventory_watch_expires_at IS NULL OR inventory_watch_expires_at < ?)", true, soon).
+		Find(&agents).Error
+	if err != nil {
+		log.Printf("❌ renovación de suscripciones de inventario: error consultando agentes: %v", err)
+		return
+	}
+	for i := range agents {
+		if err := h.ensureInventoryWatch(&agents[i]); err != nil {
+			log.Printf("⚠️  [Agent %d] no se pudo renovar la suscripción de Drive: %v", agents[i].ID, err)
+		}
+	}
 }
