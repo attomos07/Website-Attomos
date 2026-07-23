@@ -256,6 +256,8 @@ let inventoryTitleColumn = null;
 let inventoryDescriptionColumn = null;
 let inventoryOriginalPriceColumn = null;
 let inventoryPromoPriceColumn = null;
+let inventoryVinColumn = null;
+let inventoryNewArrivalColumn = null;
 let hasOwnGeminiKey = false;
 let hasSharedGeminiKey = false;
 
@@ -276,7 +278,7 @@ async function initSheetInventory() {
 async function refreshSheetStatus() {
     if (!currentAgentId) return;
     try {
-        const res = await fetch(`/api/inventory-sheets/status/${currentAgentId}`, { credentials: 'include' });
+        const res = await fetch(`/api/inventory-sheets/status/${currentAgentId}`, { credentials: 'include', cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         applySheetStatus(data);
@@ -318,6 +320,8 @@ function applySheetStatus(data) {
         inventoryDescriptionColumn = data.description_column || null;
         inventoryOriginalPriceColumn = data.original_price_column || null;
         inventoryPromoPriceColumn = data.promo_price_column || null;
+        inventoryVinColumn = data.vin_column || null;
+        inventoryNewArrivalColumn = data.new_arrival_column || null;
         hasOwnGeminiKey = !!data.has_own_gemini_key;
         hasSharedGeminiKey = !!data.has_shared_gemini_key;
         updateGeminiKeyUI();
@@ -339,7 +343,7 @@ function applySheetStatus(data) {
 async function loadSheetRows() {
     if (!currentAgentId) return;
     try {
-        const res = await fetch(`/api/inventory-sheets/rows/${currentAgentId}`, { credentials: 'include' });
+        const res = await fetch(`/api/inventory-sheets/rows/${currentAgentId}`, { credentials: 'include', cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         sheetHeaders = data.headers || [];
@@ -465,6 +469,8 @@ function openColumnConfigModal(focusField) {
     fillOptionalSelect('sheetInvDescColSelect', inventoryDescriptionColumn, 'Ninguna');
     fillOptionalSelect('sheetInvOrigPriceColSelect', inventoryOriginalPriceColumn, 'Ninguna');
     fillOptionalSelect('sheetInvPromoPriceColSelect', inventoryPromoPriceColumn, 'Ninguna');
+    fillOptionalSelect('sheetInvVinColSelect', inventoryVinColumn, 'No vincular');
+    fillOptionalSelect('sheetInvNewArrivalColSelect', inventoryNewArrivalColumn, 'Ninguna');
 
     overlay.classList.add('open');
     // Si vinimos del ícono de álbum, deja el foco ahí en vez de en el de fotos
@@ -490,6 +496,8 @@ async function saveInventoryColumns() {
     const descriptionColumn = document.getElementById('sheetInvDescColSelect')?.value || '';
     const originalPriceColumn = document.getElementById('sheetInvOrigPriceColSelect')?.value || '';
     const promoPriceColumn = document.getElementById('sheetInvPromoPriceColSelect')?.value || '';
+    const vinColumn = document.getElementById('sheetInvVinColSelect')?.value || '';
+    const newArrivalColumn = document.getElementById('sheetInvNewArrivalColSelect')?.value || '';
     if (!photoColumn) return;
 
     const btn = document.getElementById('btnSaveInventoryColumns');
@@ -508,6 +516,8 @@ async function saveInventoryColumns() {
                 description_column: descriptionColumn,
                 original_price_column: originalPriceColumn,
                 promo_price_column: promoPriceColumn,
+                vin_column: vinColumn,
+                new_arrival_column: newArrivalColumn,
             }),
         });
         const data = await res.json();
@@ -520,6 +530,8 @@ async function saveInventoryColumns() {
         inventoryDescriptionColumn = data.description_column || null;
         inventoryOriginalPriceColumn = data.original_price_column || null;
         inventoryPromoPriceColumn = data.promo_price_column || null;
+        inventoryVinColumn = data.vin_column || null;
+        inventoryNewArrivalColumn = data.new_arrival_column || null;
         updateColumnConfigUI();
         closeColumnConfigModal();
         renderSheet(sheetHeaders, sheetRows); // vuelve a pintar para activar los botones de subida
@@ -643,6 +655,8 @@ async function disconnectSheetInventory() {
         inventoryDescriptionColumn = null;
         inventoryOriginalPriceColumn = null;
         inventoryPromoPriceColumn = null;
+        inventoryVinColumn = null;
+        inventoryNewArrivalColumn = null;
         applySheetStatus({ connected: false });
         if (typeof showToast === 'function') showToast('success', 'Hoja desconectada');
     } catch (err) {
@@ -695,11 +709,26 @@ function wireSheetInventoryButtons() {
         if (e.target === aiOverlay) closeAiUploadModal();
     });
 
+    document.getElementById('btnOpenBulkUpdate')?.addEventListener('click', openBulkUpdateModal);
+    document.getElementById('btnCloseBulkUpdate')?.addEventListener('click', closeBulkUpdateModal);
+    document.getElementById('btnCancelBulkUpdate')?.addEventListener('click', closeBulkUpdateModal);
+    document.getElementById('btnSubmitBulkUpdate')?.addEventListener('click', submitBulkUpdate);
+    document.getElementById('bulkUpdateDropzone')?.addEventListener('click', () => {
+        document.getElementById('bulkUpdateFileInput')?.click();
+    });
+    document.getElementById('bulkUpdateFileInput')?.addEventListener('change', onBulkUpdateFileChosen);
+
+    const bulkOverlay = document.getElementById('bulkUpdateModalOverlay');
+    bulkOverlay?.addEventListener('click', (e) => {
+        if (e.target === bulkOverlay) closeBulkUpdateModal();
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         if (columnOverlay?.classList.contains('open')) closeColumnConfigModal();
         if (aiOverlay?.classList.contains('open')) closeAiUploadModal();
         if (geminiOverlay?.classList.contains('open')) closeGeminiKeyModal();
+        if (bulkOverlay?.classList.contains('open')) closeBulkUpdateModal();
     });
 }
 
@@ -772,6 +801,82 @@ async function submitAiUpload() {
         await loadSheetRows();
     } catch (err) {
         if (typeof showToast === 'function') showToast('error', err.message || 'No se pudo procesar la foto con IA');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
+}
+
+/* ============================================
+   ACTUALIZAR DESDE ARCHIVO (Excel) — compara por
+   VIN contra la hoja: actualiza, agrega, y marca
+   "Nuevas llegadas" (solo la celda, se limpia en
+   cada corrida). Lo que ya no aparece en el
+   archivo no se toca. Necesita que ya se haya
+   configurado la columna de VIN.
+   ============================================ */
+
+function openBulkUpdateModal() {
+    const overlay = document.getElementById('bulkUpdateModalOverlay');
+    const fileInput = document.getElementById('bulkUpdateFileInput');
+    const label = document.getElementById('bulkUpdateFileLabel');
+    if (!overlay) return;
+
+    if (!inventoryVinColumn) {
+        if (typeof showToast === 'function') showToast('error', 'Primero configura cuál es la columna de VIN (ícono de configuración)');
+        return;
+    }
+
+    if (fileInput) fileInput.value = '';
+    if (label) label.textContent = 'Elegir archivo .xlsx…';
+    overlay.classList.add('open');
+}
+
+function closeBulkUpdateModal() {
+    document.getElementById('bulkUpdateModalOverlay')?.classList.remove('open');
+}
+
+function onBulkUpdateFileChosen() {
+    const fileInput = document.getElementById('bulkUpdateFileInput');
+    const label = document.getElementById('bulkUpdateFileLabel');
+    const file = fileInput?.files?.[0];
+    if (label) label.textContent = file ? file.name : 'Elegir archivo .xlsx…';
+}
+
+async function submitBulkUpdate() {
+    const fileInput = document.getElementById('bulkUpdateFileInput');
+    const file = fileInput?.files?.[0];
+    if (!file) {
+        if (typeof showToast === 'function') showToast('error', 'Elige un archivo .xlsx primero');
+        return;
+    }
+    if (!currentAgentId) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const btn = document.getElementById('btnSubmitBulkUpdate');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;"></div> Actualizando...';
+    }
+
+    try {
+        const res = await fetch(`/api/inventory-sheets/bulk-update/${currentAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo actualizar el inventario');
+
+        if (typeof showToast === 'function') {
+            showToast('success', `Actualizados: ${data.updated || 0} · Nuevos: ${data.added || 0}`);
+        }
+        closeBulkUpdateModal();
+        await loadSheetRows();
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('error', err.message || 'No se pudo actualizar el inventario');
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     }
@@ -1042,6 +1147,23 @@ function notifyParentReady() {
     window.parent.postMessage({ type: 'attomos:inventory:ready' }, window.location.origin);
 }
 
+// Le avisa al padre (Mi Negocio) si hay algún modal abierto dentro del
+// iframe, para que oculte su botón flotante "Guardar Cambios" mientras
+// tanto — si no, ese botón queda brillando por encima del fondo oscurecido
+// del modal, porque vive fuera del iframe y el overlay no lo puede cubrir.
+function notifyParentModalState() {
+    if (!IS_EMBEDDED) return;
+    const anyOpen = !!document.querySelector('.modal-overlay.open');
+    window.parent.postMessage({ type: 'attomos:inventory:modal-state', open: anyOpen }, window.location.origin);
+}
+
+function initModalVisibilityBridge() {
+    const overlays = document.querySelectorAll('.modal-overlay');
+    if (!overlays.length || !IS_EMBEDDED) return;
+    const observer = new MutationObserver(notifyParentModalState);
+    overlays.forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+}
+
 /* ============================================
    REPAIRDESK — trasladado desde my-business.js.
    Es independiente de la pestaña Mi Negocio (usa
@@ -1180,4 +1302,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initSheetInventory();
     initRepairDeskInventory();
     notifyParentReady();
+    initModalVisibilityBridge();
 });

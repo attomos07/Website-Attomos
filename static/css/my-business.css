@@ -2062,6 +2062,72 @@ textarea:focus {
 }
 @media (max-width: 768px) { .acct-flujo-grid { grid-template-columns: 1fr; } }
 
+.acct-mov-row-flex {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ── Contabilidad: mobile ── */
+@media (max-width: 768px) {
+  /* KPIs siempre en 1 columna (no depender del auto-fit tan cerca del límite) */
+  .acct-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .acct-kpi-card {
+    padding: 1rem;
+  }
+
+  /* Barra de periodo: más compacta y con los botones ocupando el ancho */
+  .acct-period-bar {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  .acct-select {
+    flex: 1 1 auto;
+  }
+  .acct-btn-load, .acct-btn-export {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Sub-tabs: en vez de encimarse, se desliza horizontal (patrón típico
+     de tabs en mobile) */
+  .acct-subtabs {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .acct-subtab {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.85rem;
+  }
+
+  /* Tablas (movimientos del banco / del sistema): scroll horizontal en vez
+     de aplastar las columnas hasta volverlas ilegibles */
+  .acct-bank-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .acct-table {
+    min-width: 520px;
+  }
+
+  /* Resumen de conciliación: ya colapsa a 1 columna (regla existente arriba);
+     aquí solo se ajusta el padding para pantallas chicas */
+  .acct-concil-box {
+    padding: 0.85rem;
+  }
+
+  /* Modal de agregar movimiento: los dos inputs lado a lado (monto/fecha)
+     se apilan para que no queden ilegibles */
+  .acct-mov-row-flex {
+    flex-direction: column;
+  }
+}
+
 .acct-flujo-section {
   background: #f9fafb;
   border: 1px solid #e5e7eb;

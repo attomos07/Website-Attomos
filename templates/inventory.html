@@ -232,6 +232,10 @@
                                     <i class="lni lni-cloud-upload"></i>
                                     <span>Subir foto (IA)</span>
                                 </button>
+                                <button type="button" class="sheet-toolbar-action" id="btnOpenBulkUpdate" title="Actualizar inventario desde un archivo Excel">
+                                    <i class="lni lni-file-multiple"></i>
+                                    <span>Actualizar desde archivo</span>
+                                </button>
                             </div>
 
                             <!-- Hoja de inventario -->
@@ -341,6 +345,37 @@
                         <option value="">Ninguna</option>
                     </select>
                 </div>
+
+                <div class="modal-section-divider">
+                    <i class="lni lni-file-multiple"></i>
+                    <span>Actualizar desde archivo (opcional)</span>
+                </div>
+                <p class="modal-hint-text" style="margin-bottom:0.9rem;">
+                    Para poder subir un Excel y que Attomos actualice/agregue/marque vendido comparando por VIN.
+                </p>
+
+                <div class="input-group">
+                    <label class="input-label" for="sheetInvVinColSelect">
+                        <i class="lni lni-barcode"></i>
+                        <span>Columna de VIN</span>
+                    </label>
+                    <select id="sheetInvVinColSelect" class="api-key-input">
+                        <option value="">No vincular</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top:1.1rem;">
+                    <label class="input-label" for="sheetInvNewArrivalColSelect">
+                        <i class="lni lni-star"></i>
+                        <span>Columna de "Nuevas llegadas" (opcional)</span>
+                    </label>
+                    <select id="sheetInvNewArrivalColSelect" class="api-key-input">
+                        <option value="">Ninguna</option>
+                    </select>
+                    <small class="input-hint">
+                        <i class="lni lni-information"></i>
+                        <span>Se marca en verde solo la celda de las unidades agregadas en la subida más reciente — la marca anterior desaparece cada vez que actualizas.</span>
+                    </small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="btnCancelColumnConfig">Cancelar</button>
@@ -410,6 +445,37 @@
                 <button type="button" class="btn btn-secondary" id="btnCancelGeminiKey">Cancelar</button>
                 <button type="button" class="btn btn-connect" id="btnSaveGeminiKey">
                     <span>Guardar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: actualizar inventario desde un archivo Excel -->
+    <div class="modal-overlay" id="bulkUpdateModalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="lni lni-file-multiple"></i><span>Actualizar desde archivo</span></h3>
+                <button type="button" class="modal-close" id="btnCloseBulkUpdate" aria-label="Cerrar">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint-text">
+                    Sube el catálogo actualizado (Excel .xlsx). Se compara por VIN contra tu inventario actual:
+                    se actualizan los que coincidan y se agregan los nuevos (marcados en la columna de "Nuevas llegadas"
+                    si la configuraste). Lo que ya no aparece en el archivo no se toca.
+                </p>
+                <div class="ai-upload-dropzone" id="bulkUpdateDropzone">
+                    <i class="lni lni-cloud-upload"></i>
+                    <span id="bulkUpdateFileLabel">Elegir archivo .xlsx…</span>
+                </div>
+                <input type="file" id="bulkUpdateFileInput" accept=".xlsx" hidden>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelBulkUpdate">Cancelar</button>
+                <button type="button" class="btn btn-connect" id="btnSubmitBulkUpdate">
+                    <i class="lni lni-file-multiple"></i>
+                    <span>Actualizar inventario</span>
                 </button>
             </div>
         </div>

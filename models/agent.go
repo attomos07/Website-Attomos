@@ -231,6 +231,14 @@ type Agent struct {
 	InventoryOriginalPriceColumn string `gorm:"size:255" json:"inventoryOriginalPriceColumn"`
 	InventoryPromoPriceColumn    string `gorm:"size:255" json:"inventoryPromoPriceColumn"`
 
+	// Columnas para "Actualizar desde archivo (Excel)": VIN identifica cada
+	// fila para saber si es actualización o unidad nueva; NuevaLlegada marca
+	// en verde (solo esa celda) las unidades agregadas en la corrida más
+	// reciente — se limpia y se vuelve a marcar en cada subida. Lo que ya no
+	// aparece en el archivo NO se toca (no se marca como "Vendido" ni nada).
+	InventoryVinColumn        string `gorm:"size:255" json:"inventoryVinColumn"`
+	InventoryNewArrivalColumn string `gorm:"size:255" json:"inventoryNewArrivalColumn"`
+
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

@@ -1347,7 +1347,7 @@ function stopServicesAutoRefresh() {
 async function refreshServicesOnly() {
     if (!activeBranchId) return;
     try {
-        const res = await fetch(`/api/my-business/${activeBranchId}`, { credentials: 'include' });
+        const res = await fetch(`/api/my-business/${activeBranchId}`, { credentials: 'include', cache: 'no-store' });
         if (!res.ok) return;
         const branch = await res.json();
         renderServices(branch.services || []);
@@ -1370,6 +1370,34 @@ function renderServices(services = []) {
     }
     hint && (hint.style.display = 'none');
     services.forEach((s, i) => addServiceItem(null, s));
+}
+
+// ── Precios con separador de miles ──
+// Al mostrar: "949000" -> "949,000". Al enfocar el campo se le quitan las
+// comas (para editar cómodo), y al salir se le vuelven a poner.
+function formatPriceDisplay(value) {
+    if (value === '' || value === null || value === undefined) return '';
+    const num = parseFloat(String(value).toString().replace(/,/g, ''));
+    if (isNaN(num)) return '';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function parsePriceValue(value) {
+    const num = parseFloat(String(value || '').replace(/,/g, ''));
+    return isNaN(num) ? 0 : num;
+}
+
+function initPriceInputFormatting(scope) {
+    (scope || document).querySelectorAll('.price-input').forEach(input => {
+        if (input.dataset.priceFormatBound) return;
+        input.dataset.priceFormatBound = '1';
+        input.addEventListener('focus', () => {
+            input.value = input.value.replace(/,/g, '');
+        });
+        input.addEventListener('blur', () => {
+            if (input.value !== '') input.value = formatPriceDisplay(input.value);
+        });
+    });
 }
 
 function addServiceItem(e, data = null) {
@@ -1466,14 +1494,14 @@ function addServiceItem(e, data = null) {
             </div>
             <div class="price-fields price-normal-fields" style="display:${isPromo ? 'none' : 'flex'}">
                 <span class="price-symbol">$</span>
-                <input type="number" class="info-input service-price" placeholder="0.00" step="0.01" value="${data?.price || ''}">
+                <input type="text" inputmode="decimal" class="info-input service-price price-input" placeholder="0.00" value="${formatPriceDisplay(data?.price)}">
             </div>
             <div class="price-fields price-promo-fields" style="display:${isPromo ? 'flex' : 'none'}">
                 <span class="price-symbol">$</span>
-                <input type="number" class="info-input service-original-price" placeholder="Precio original" step="0.01" value="${data?.originalPrice || ''}">
+                <input type="text" inputmode="decimal" class="info-input service-original-price price-input" placeholder="Precio original" value="${formatPriceDisplay(data?.originalPrice)}">
                 <span class="price-arrow">→</span>
                 <span class="price-symbol">$</span>
-                <input type="number" class="info-input service-promo-price" placeholder="Precio promo" step="0.01" value="${data?.promoPrice || ''}">
+                <input type="text" inputmode="decimal" class="info-input service-promo-price price-input" placeholder="Precio promo" value="${formatPriceDisplay(data?.promoPrice)}">
             </div>
         </div>
 
@@ -1657,6 +1685,7 @@ function addServiceItem(e, data = null) {
     div.querySelector('.service-title')?.addEventListener('input', refreshInventoryTable);
 
     list.appendChild(div);
+    initPriceInputFormatting(div);
 
     // Mostrar existencias solo si es giro de comercio
     const qtyRow = div.querySelector('.service-stock-qty-row');
@@ -1699,9 +1728,9 @@ function collectServicesData() {
             stockQty:       stockQtyVal !== '' && stockQtyVal !== undefined ? parseInt(stockQtyVal, 10) : null,
             imageUrls:      (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean),
             priceType:      isPromo ? 'promo' : 'normal',
-            price:          parseFloat(item.querySelector('.service-price')?.value) || 0,
-            originalPrice:  parseFloat(item.querySelector('.service-original-price')?.value) || 0,
-            promoPrice:     parseFloat(item.querySelector('.service-promo-price')?.value) || 0,
+            price:          parsePriceValue(item.querySelector('.service-price')?.value),
+            originalPrice:  parsePriceValue(item.querySelector('.service-original-price')?.value),
+            promoPrice:     parsePriceValue(item.querySelector('.service-promo-price')?.value),
             promoPeriodType: isPromo ? promoPeriodType : '',
             promoDays:       isPromo && promoPeriodType === 'days' ? promoDays : [],
             promoDateStart:  isPromo && promoPeriodType === 'range' ? promoDateStart : '',
@@ -1874,6 +1903,12 @@ window.addEventListener('message', (event) => {
         invAdjust(data.idx, data.delta);
     } else if (data.type === 'attomos:inventory:setqty') {
         invSetQty(data.idx, data.value);
+    } else if (data.type === 'attomos:inventory:modal-state') {
+        // Un modal del iframe de inventario está abierto/cerrado: el botón
+        // flotante "Guardar Cambios" vive fuera del iframe, así que el fondo
+        // oscurecido del modal no lo puede cubrir — lo ocultamos nosotros.
+        const saveBtn = document.getElementById('saveProfileBtn');
+        if (saveBtn) saveBtn.style.visibility = data.open ? 'hidden' : '';
     }
 });
 
@@ -2205,17 +2240,31 @@ async function _renderMenuViewer(url, isPdf) {
 /* ============================================
    PAGE TABS — Mi Negocio / Inventario
    ============================================ */
+const MYBIZ_TAB_STORAGE_KEY = 'attomos_mybiz_active_tab';
+
+function activateBusinessTab(target) {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
+    document.querySelectorAll('.page-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+    if (target === 'inventario') refreshInventoryTable();
+}
+
 document.querySelectorAll('.page-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         const target = tab.dataset.tab;
-        document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.page-tab-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        const panel = document.getElementById('tab-' + target);
-        if (panel) panel.classList.add('active');
-        if (target === 'inventario') refreshInventoryTable();
+        activateBusinessTab(target);
+        try { sessionStorage.setItem(MYBIZ_TAB_STORAGE_KEY, target); } catch (e) { /* modo privado, etc. — no pasa nada */ }
     });
 });
+
+// Al cargar/recargar la página: si venías de la pestaña Inventario, te
+// quedas ahí en vez de regresar siempre a Mi Negocio.
+(function restoreBusinessTab() {
+    let saved = null;
+    try { saved = sessionStorage.getItem(MYBIZ_TAB_STORAGE_KEY); } catch (e) { /* modo privado, etc. */ }
+    if (saved && document.getElementById('tab-' + saved)) {
+        activateBusinessTab(saved);
+    }
+})();
 
 /* ============================================
    CONTABILIDAD

@@ -114,6 +114,8 @@ func (h *GoogleIntegrationHandler) GetInventorySheetStatus(c *gin.Context) {
 		resp["description_column"] = agent.InventoryDescriptionColumn
 		resp["original_price_column"] = agent.InventoryOriginalPriceColumn
 		resp["promo_price_column"] = agent.InventoryPromoPriceColumn
+		resp["vin_column"] = agent.InventoryVinColumn
+		resp["new_arrival_column"] = agent.InventoryNewArrivalColumn
 	}
 	c.JSON(http.StatusOK, resp)
 }
@@ -270,6 +272,8 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 		DescriptionColumn   string   `json:"description_column"`
 		OriginalPriceColumn string   `json:"original_price_column"`
 		PromoPriceColumn    string   `json:"promo_price_column"`
+		VinColumn           string   `json:"vin_column"`
+		NewArrivalColumn    string   `json:"new_arrival_column"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
@@ -286,6 +290,8 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 	agent.InventoryDescriptionColumn = strings.TrimSpace(body.DescriptionColumn)
 	agent.InventoryOriginalPriceColumn = strings.TrimSpace(body.OriginalPriceColumn)
 	agent.InventoryPromoPriceColumn = strings.TrimSpace(body.PromoPriceColumn)
+	agent.InventoryVinColumn = strings.TrimSpace(body.VinColumn)
+	agent.InventoryNewArrivalColumn = strings.TrimSpace(body.NewArrivalColumn)
 
 	cleanCols := make([]string, 0, len(body.FileNameColumns))
 	for _, col := range body.FileNameColumns {
@@ -309,6 +315,8 @@ func (h *GoogleIntegrationHandler) SetInventoryColumns(c *gin.Context) {
 		"description_column":    agent.InventoryDescriptionColumn,
 		"original_price_column": agent.InventoryOriginalPriceColumn,
 		"promo_price_column":    agent.InventoryPromoPriceColumn,
+		"vin_column":            agent.InventoryVinColumn,
+		"new_arrival_column":    agent.InventoryNewArrivalColumn,
 	}
 
 	// "Al asignarlos debería vincularse automáticamente": si ya quedó
@@ -935,4 +943,75 @@ func (h *GoogleIntegrationHandler) RenewExpiringInventoryWatches() {
 			log.Printf("⚠️  [Agent %d] no se pudo renovar la suscripción de Drive: %v", agents[i].ID, err)
 		}
 	}
+}
+
+// BulkUpdateInventoryFromFile — POST /api/inventory-sheets/bulk-update/:agent_id
+// multipart/form-data: file=<archivo .xlsx>
+// Compara el archivo contra la hoja por VIN: actualiza lo que coincide,
+// agrega lo nuevo, y marca en verde (solo esa celda) lo agregado en esta
+// corrida en la columna de nuevas llegadas. Lo que ya no aparece en el
+// archivo no se toca — no hay marca de "vendido" en este flujo.
+func (h *GoogleIntegrationHandler) BulkUpdateInventoryFromFile(c *gin.Context) {
+	agent, _, ok := h.getAgentForUser(c)
+	if !ok {
+		return
+	}
+
+	if !agent.InventorySheetConnected || agent.InventorySheetID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No hay una hoja de inventario conectada"})
+		return
+	}
+	if agent.GoogleToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La conexión con Google se perdió, vuelve a conectarla desde Integraciones"})
+		return
+	}
+	if agent.InventoryVinColumn == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Primero configura cuál es la columna de VIN"})
+		return
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se recibió ningún archivo"})
+		return
+	}
+	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Por ahora solo se admite Excel (.xlsx). PDF todavía no está soportado."})
+		return
+	}
+
+	f, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se pudo abrir el archivo"})
+		return
+	}
+	fileBytes, err := io.ReadAll(f)
+	f.Close()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se pudo leer el archivo"})
+		return
+	}
+
+	headers, rows, err := services.ParseXLSXRows(fileBytes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	result, err := h.sheetsService.BulkUpdateInventoryFromFile(
+		ctx, agent.GoogleToken, agent.InventorySheetID,
+		headers, rows,
+		agent.InventoryVinColumn, agent.InventoryNewArrivalColumn,
+	)
+	if err != nil {
+		log.Printf("❌ [Agent %d] bulk-update: %v", agent.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	log.Printf("✅ [Agent %d] bulk-update: %d actualizados, %d agregados, %d nuevas llegadas",
+		agent.ID, result.Updated, result.Added, result.NewArrivals)
+
+	c.JSON(http.StatusOK, result)
 }

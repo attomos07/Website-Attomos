@@ -343,6 +343,7 @@ func main() {
 			protected.POST("/inventory-sheets/gemini-key/:agent_id", googleIntegrationHandler.SetInventoryGeminiKey)
 			protected.POST("/inventory-sheets/gemini-key/:agent_id/remove", googleIntegrationHandler.RemoveInventoryGeminiKey)
 			protected.POST("/inventory-sheets/sync-products/:agent_id", googleIntegrationHandler.SyncInventoryProducts)
+			protected.POST("/inventory-sheets/bulk-update/:agent_id", googleIntegrationHandler.BulkUpdateInventoryFromFile)
 		}
 
 		// ============================================
