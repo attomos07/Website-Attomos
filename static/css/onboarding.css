@@ -1464,6 +1464,39 @@ input:checked + .toggle-slider:before {
   font-size: 1rem;
 }
 
+/* .time-input es la clase real usada en el HTML de horarios (onboarding.html).
+   Antes no tenía reglas propias — solo existía .time-input-custom, que nunca
+   se usa en el markup — por eso se veía como un <input type=time> nativo sin
+   estilo alguno. */
+.time-input {
+  padding: 0.65rem 0.85rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  background: white;
+  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.time-input:hover {
+  border-color: #06b6d4;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.time-input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
 .holidays-list {
   display: flex;
   flex-direction: column;

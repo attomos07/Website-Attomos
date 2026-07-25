@@ -1308,3 +1308,177 @@ style.textContent = `
     /* slideIn / slideOut removed — using Sileo toast system */
 `;
 document.head.appendChild(style);
+// ============================================
+// DÍAS FESTIVOS / SERVICIOS / TRABAJADORES (wizard del agente)
+// reinitializeOnboardingEvents() (aquí y en dashboard.js/my-agents.js/integrations.js)
+// siempre llamó a initializeHolidays/initializeServices/initializeWorkers de forma
+// defensiva (typeof === 'function') pero esas funciones nunca existieron en ningún
+// archivo — por eso los botones "Agregar" no hacían nada. Se agregan aquí: como
+// onboarding.js se carga (directo o inyectado dinámicamente) en las 4 superficies
+// antes de llamar reinitializeOnboardingEvents, quedan disponibles en las 4 sin
+// tocar los otros archivos. No se reutilizan los nombres de my-business.js
+// (addServiceItem, addWorkerItem, addHoliday, removeItem, etc.) porque my-business.js
+// también carga onboarding.js dinámicamente (para el modal de QR) — usar los mismos
+// nombres globales pisaría las funciones reales de Mi Negocio si ambos scripts
+// conviven en la página.
+// ============================================
+
+function initializeHolidays() {
+    const btn = document.getElementById('addHolidayBtn');
+    if (!btn || btn.dataset.obWired) return;
+    btn.dataset.obWired = '1';
+    btn.addEventListener('click', () => _obAddHolidayRow());
+}
+
+function _obAddHolidayRow(data) {
+    const list = document.getElementById('holidaysList');
+    if (!list) return;
+    const row = document.createElement('div');
+    row.className = 'holiday-item';
+    row.innerHTML = `
+        <input type="date" class="form-input holiday-date" value="${data?.date || ''}">
+        <input type="text" class="form-input holiday-name" placeholder="${t('onb_hol_name_ph','Nombre del día festivo')}" value="${(data?.name || '').replace(/"/g, '&quot;')}">
+        <button type="button" class="btn-remove-holiday" title="${t('onb_remove_item','Eliminar')}">
+            <i class="lni lni-trash-can"></i>
+        </button>
+    `;
+    row.querySelector('.btn-remove-holiday').addEventListener('click', () => row.remove());
+    list.appendChild(row);
+}
+
+function initializeServices() {
+    const btn = document.getElementById('addServiceBtn');
+    if (!btn || btn.dataset.obWired) return;
+    btn.dataset.obWired = '1';
+    btn.addEventListener('click', () => _obAddServiceRow());
+}
+
+function _obRenumberServices() {
+    const list = document.getElementById('servicesList');
+    if (!list) return;
+    list.querySelectorAll('.service-item .service-number').forEach((el, idx) => {
+        el.textContent = `${t('onb_svc_label','Servicio')} #${idx + 1}`;
+    });
+}
+
+function _obAddServiceRow(data) {
+    const list = document.getElementById('servicesList');
+    if (!list) return;
+    const isPromo = data?.priceType === 'promo';
+    const item = document.createElement('div');
+    item.className = 'service-item';
+    item.innerHTML = `
+        <div class="service-header">
+            <span class="service-number"></span>
+            <button type="button" class="btn-remove-service" title="${t('onb_remove_item','Eliminar')}">
+                <i class="lni lni-trash-can"></i>
+            </button>
+        </div>
+        <div class="service-fields">
+            <input type="text" class="form-input service-title" placeholder="${t('onb_svc_name_ph','Nombre del servicio o producto')}" value="${(data?.title || '').replace(/"/g, '&quot;')}">
+            <div class="price-input-wrapper">
+                <span class="price-currency">$</span>
+                <input type="number" min="0" step="0.01" class="form-input price-input service-price" placeholder="${t('onb_svc_price_ph','Precio')}" value="${data?.price ?? ''}">
+            </div>
+            <div class="price-type-selector">
+                <div class="price-type-option${isPromo ? '' : ' active'}" data-type="normal">${t('onb_svc_price_normal','Precio normal')}</div>
+                <div class="price-type-option${isPromo ? ' active' : ''}" data-type="promo">${t('onb_svc_price_promo','En promoción')}</div>
+            </div>
+            <div class="promotion-prices${isPromo ? ' show' : ''}">
+                <input type="number" min="0" step="0.01" class="form-input service-price-original" placeholder="${t('onb_svc_price_original','Precio original')}" value="${data?.originalPrice ?? ''}">
+                <input type="number" min="0" step="0.01" class="form-input service-price-promo" placeholder="${t('onb_svc_price_promo_val','Precio en promoción')}" value="${data?.promoPrice ?? ''}">
+            </div>
+            <div class="service-description-editor">
+                <div class="service-editor-toolbar">
+                    <button type="button" class="service-editor-btn" data-cmd="bold" title="${t('onb_editor_bold','Negrita')}"><i class="lni lni-text-format"></i></button>
+                    <button type="button" class="service-editor-btn" data-cmd="italic" title="${t('onb_editor_italic','Cursiva')}"><i class="lni lni-italic"></i></button>
+                    <button type="button" class="service-editor-btn" data-cmd="insertUnorderedList" title="${t('onb_editor_list','Lista')}"><i class="lni lni-list"></i></button>
+                </div>
+                <div class="service-editor-content" contenteditable="true" data-placeholder="${t('onb_svc_desc_ph','Descripción (opcional)')}">${data?.description || ''}</div>
+            </div>
+        </div>
+    `;
+    item.querySelector('.btn-remove-service').addEventListener('click', () => { item.remove(); _obRenumberServices(); });
+    const options = item.querySelectorAll('.price-type-option');
+    const promoBox = item.querySelector('.promotion-prices');
+    options.forEach(opt => {
+        opt.addEventListener('click', () => {
+            options.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            promoBox.classList.toggle('show', opt.dataset.type === 'promo');
+        });
+    });
+    item.querySelectorAll('.service-editor-btn').forEach(tbtn => {
+        tbtn.addEventListener('click', () => {
+            item.querySelector('.service-editor-content').focus();
+            document.execCommand(tbtn.dataset.cmd, false, null);
+        });
+    });
+    list.appendChild(item);
+    _obRenumberServices();
+}
+
+function initializeWorkers() {
+    const btn = document.getElementById('addWorkerBtn');
+    if (!btn || btn.dataset.obWired) return;
+    btn.dataset.obWired = '1';
+    btn.addEventListener('click', () => _obAddWorkerRow());
+}
+
+function _obRenumberWorkers() {
+    const list = document.getElementById('workersList');
+    if (!list) return;
+    list.querySelectorAll('.worker-item .worker-number').forEach((el, idx) => {
+        el.textContent = `${t('onb_wkr_label','Trabajador')} #${idx + 1}`;
+    });
+}
+
+function _obAddWorkerRow(data) {
+    const list = document.getElementById('workersList');
+    if (!list) return;
+    // Declarado local (no a nivel de archivo) a propósito: este mismo bloque
+    // se duplica en onboarding.js/dashboard.js/my-agents.js/integrations.js —
+    // un const/let a nivel de archivo repetido en 2 scripts que conviven en
+    // la misma página revienta con "Identifier ya declarado" (SyntaxError),
+    // igual que pasó con STATUS_BADGE_KEY_MAP. Dentro de una función no hay ese riesgo.
+    const weekDays = [
+        { key: 'monday',    label: () => t('day_monday','Lunes') },
+        { key: 'tuesday',   label: () => t('day_tuesday','Martes') },
+        { key: 'wednesday', label: () => t('day_wednesday','Miércoles') },
+        { key: 'thursday',  label: () => t('day_thursday','Jueves') },
+        { key: 'friday',    label: () => t('day_friday','Viernes') },
+        { key: 'saturday',  label: () => t('day_saturday','Sábado') },
+        { key: 'sunday',    label: () => t('day_sunday','Domingo') },
+    ];
+    const checkedDays = data?.days || ['monday','tuesday','wednesday','thursday','friday'];
+    const daysHTML = weekDays.map(d => `
+        <label class="availability-day">
+            <input type="checkbox" value="${d.key}" ${checkedDays.includes(d.key) ? 'checked' : ''}>
+            <span>${d.label()}</span>
+        </label>
+    `).join('');
+    const item = document.createElement('div');
+    item.className = 'worker-item';
+    item.innerHTML = `
+        <div class="worker-header">
+            <span class="worker-number"></span>
+            <button type="button" class="btn-remove-worker" title="${t('onb_remove_item','Eliminar')}">
+                <i class="lni lni-trash-can"></i>
+            </button>
+        </div>
+        <div class="worker-fields">
+            <input type="text" class="form-input worker-name" placeholder="${t('onb_wkr_name_ph','Nombre del trabajador')}" value="${(data?.name || '').replace(/"/g, '&quot;')}">
+            <div class="worker-availability">
+                <div class="availability-title">${t('onb_wkr_availability','Disponibilidad')}</div>
+                <div class="availability-grid">${daysHTML}</div>
+            </div>
+            <div class="worker-hours">
+                <input type="time" class="form-input worker-start" value="${data?.startTime || '09:00'}">
+                <input type="time" class="form-input worker-end" value="${data?.endTime || '18:00'}">
+            </div>
+        </div>
+    `;
+    item.querySelector('.btn-remove-worker').addEventListener('click', () => { item.remove(); _obRenumberWorkers(); });
+    list.appendChild(item);
+    _obRenumberWorkers();
+}

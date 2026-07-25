@@ -1124,51 +1124,28 @@ async function reinitializeOnboardingEvents() {
     }, 150);
 
     // ── Hook btnStep1: al hacer clic en "Continuar" de Red Social ──
-    setTimeout(() => {
-        // Reemplazar btnStep1 con clone para limpiar listeners previos
-        const btnStep1El = document.getElementById('btnStep1');
-        if (btnStep1El) {
-            const btnStep1Clone = btnStep1El.cloneNode(true);
-            btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
-            btnStep1Clone.addEventListener('click', () => {
-                if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
-                if (step2) { step2.classList.add('active'); step2.style.display = ''; }
-                const nav = document.getElementById('sectionNavigation');
-                if (nav) nav.style.display = '';
-                window._modalGoToSection(_hasExistingAgents ? 'section-basic' : (_isGovModal ? 'section-business' : 'section-business'));
-            });
-            console.log('[dashboard] Hook btnStep1 registrado');
-        }
-
-        // ── Habilitar Continuar al seleccionar red social ──────────────────
-        function _enableContinuar(value) {
-            try { window.selectedSocial = value; } catch(e) {}
-            try { window.agentData = window.agentData || {}; window.agentData.social = value; } catch(e) {}
-            var btn = document.getElementById('btnStep1');
-            if (btn) { btn.disabled = false; btn.removeAttribute('disabled'); }
-            console.log('[dashboard] Red social:', value, '=> Continuar habilitado');
-        }
-
-        // change en radio inputs
-        document.querySelectorAll('input[name="social"]').forEach(function(radio) {
-            radio.addEventListener('change', function() { _enableContinuar(this.value); });
+    // Antes esto vivía dentro de un setTimeout(...,200) — pero
+    // setupSocialSelectionEarly() (arriba, síncrono) ya deja el botón
+    // habilitado de inmediato al elegir la primera red. Si el usuario
+    // hacía clic en esos primeros 200ms, el botón ya estaba habilitado
+    // pero SIN el listener de clic (que recién se agregaba al vencer el
+    // timeout) — por eso el primer clic no hacía nada y solo funcionaba
+    // al elegir una segunda red (para entonces ya habían pasado los
+    // 200ms). Se saca del setTimeout para que quede enganchado de
+    // inmediato, igual que ya está en my-agents.js/integrations.js.
+    const btnStep1El = document.getElementById('btnStep1');
+    if (btnStep1El) {
+        const btnStep1Clone = btnStep1El.cloneNode(true);
+        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+        btnStep1Clone.addEventListener('click', () => {
+            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+            const nav = document.getElementById('sectionNavigation');
+            if (nav) nav.style.display = '';
+            window._modalGoToSection(_hasExistingAgents ? 'section-basic' : (_isGovModal ? 'section-business' : 'section-business'));
         });
-
-        // click en label .social-card (fallback)
-        document.querySelectorAll('.social-card').forEach(function(label) {
-            label.addEventListener('click', function() {
-                var radio = this.querySelector('input[type="radio"]');
-                if (radio && !radio.disabled) {
-                    setTimeout(function() { _enableContinuar(radio.value); }, 10);
-                }
-            });
-        });
-
-        // Si ya hay uno preseleccionado
-        var checkedRadio = document.querySelector('input[name="social"]:checked');
-        if (checkedRadio) _enableContinuar(checkedRadio.value);
-
-    }, 200);
+        console.log('[dashboard] Hook btnStep1 registrado');
+    }
 
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }
