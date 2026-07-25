@@ -846,9 +846,71 @@ async function watchAgentDeployment(agentId, agentName) {
     _obDeployPollTimer = setInterval(poll, 3000);
 }
 
-// Redeploy usa exactamente el mismo modal/polling que la creación inicial.
+// Redeploy manual (botón en Mis Agentes) usa el mismo modal/polling que la
+// creación inicial — el usuario lo pidió a propósito, tiene sentido verlo.
 function watchAgentRedeploy(agentId, agentName) {
     return watchAgentDeployment(agentId, agentName);
+}
+
+// Variante SOLO para el auto-redeploy silencioso de Mi Negocio al guardar
+// ("sin pedir confirmación") — ahí el modal grande se siente pesado para
+// algo que no pediste explícitamente, así que usa el toast de Sileo con
+// progreso en su lugar. Si el bot es WhatsApp, al terminar sí abre el modal
+// de QR (eso no cabe en un toast). my-business.js debe llamar a ESTA
+// función, no a watchAgentRedeploy.
+function watchAgentRedeployToast(agentId, agentName) {
+    if (typeof Sileo === 'undefined') {
+        // Sin Sileo disponible en esta página, se usa el modal como respaldo.
+        return watchAgentDeployment(agentId, agentName);
+    }
+
+    let pollTimer = null;
+    const p = new Promise((resolve, reject) => {
+        const poll = async () => {
+            try {
+                const res = await fetch('/api/agents', { credentials: 'include' });
+                if (!res.ok) return;
+                const data = await res.json();
+                const agent = (data.agents || []).find(a => a.id === agentId);
+                if (!agent) return;
+                if (agent.deployStatus === 'running') {
+                    clearInterval(pollTimer);
+                    resolve(agent);
+                } else if (agent.deployStatus === 'error') {
+                    clearInterval(pollTimer);
+                    reject(new Error(t('onb_err_deploy','Hubo un error desplegando el agente')));
+                }
+            } catch (e) {
+                console.warn('Error consultando estado del redeploy:', e);
+            }
+        };
+        pollTimer = setInterval(poll, 3000);
+        poll();
+    });
+
+    Sileo.promise(p, {
+        loading: {
+            title: t('onb_redeploy_loading_title','Actualizando agente'),
+            description: agentName || '',
+        },
+        success: (agent) => ({
+            title: t('onb_redeploy_success_title','Agente actualizado'),
+            description: (agent && agent.botType === 'atomic')
+                ? t('onb_redeploy_success_qr','Escanea el nuevo QR para reconectar WhatsApp')
+                : t('onb_redeploy_success_desc','Los cambios ya están activos'),
+        }),
+        error: (err) => ({
+            title: t('onb_redeploy_error_title','Error al actualizar'),
+            description: (err && err.message) || t('onb_err_deploy','Hubo un error desplegando el agente'),
+        }),
+    });
+
+    p.then((agent) => {
+        if (typeof loadAgents === 'function') loadAgents();
+        if (agent && agent.botType === 'atomic') startQRPolling(agentId, agentName);
+    }).catch(() => {});
+
+    return p;
 }
 
 function _obStopQRPolling() {

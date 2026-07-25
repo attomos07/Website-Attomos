@@ -1174,11 +1174,12 @@ async function saveProfile(opts = {}) {
 // ============================================
 let _onboardingScriptLoadedForBusiness = false;
 
-// onboarding.js trae watchAgentRedeploy/ensureModalsExist (el mismo modal de
-// progreso + QR que usa "Mis Agentes" al hacer redeploy). Se carga bajo
-// demanda porque my-business.html no lo incluye por defecto.
+// onboarding.js trae watchAgentRedeployToast/ensureModalsExist (toast de
+// Sileo con progreso — no el modal grande, que es solo para creación nueva
+// o el botón manual de "Redeploy" en Mis Agentes). Se carga bajo demanda
+// porque my-business.html no lo incluye por defecto.
 async function ensureOnboardingScriptLoadedForBusiness() {
-    if (_onboardingScriptLoadedForBusiness || typeof window.watchAgentRedeploy === 'function') {
+    if (_onboardingScriptLoadedForBusiness || typeof window.watchAgentRedeployToast === 'function') {
         _onboardingScriptLoadedForBusiness = true;
         return;
     }
@@ -1186,7 +1187,7 @@ async function ensureOnboardingScriptLoadedForBusiness() {
         const script = document.createElement('script');
         script.src = '/static/js/onboarding.js?v=' + Date.now();
         script.onload  = () => { _onboardingScriptLoadedForBusiness = true; resolve(); };
-        script.onerror = () => resolve(); // si falla, watchAgentRedeploy no existirá y hacemos fallback
+        script.onerror = () => resolve(); // si falla, watchAgentRedeployToast no existirá y hacemos fallback
         document.body.appendChild(script);
     });
 }
@@ -1224,10 +1225,9 @@ async function redeployAgentsList(agents) {
 
             if (agent.botType === 'atomic') {
                 await ensureOnboardingScriptLoadedForBusiness();
-                if (typeof window.ensureModalsExist === 'function') window.ensureModalsExist();
-                if (typeof window.watchAgentRedeploy === 'function') {
-                    window.watchAgentRedeploy(agent.id, agent.name);
-                    return; // el propio modal se encarga de avisar cuando termine
+                if (typeof window.watchAgentRedeployToast === 'function') {
+                    window.watchAgentRedeployToast(agent.id, agent.name);
+                    return; // el propio toast se encarga de avisar cuando termine
                 }
             }
             showNotification('Agente actualizado con la nueva información del negocio.', 'success');
