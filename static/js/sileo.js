@@ -130,6 +130,71 @@ const Sileo = {
       updateToast(id, { ...e, state: 'error', id });
     });
     return p;
+  },
+
+  // Toast con barra de progreso real (mismo patrón que demoUpload, pero
+  // expuesto públicamente). Uso:
+  //   const h = Sileo.progress({ title: 'Actualizando agente', state: 'info' });
+  //   h.setProgress(40, 'Desplegando bot...');
+  //   h.complete({ title: 'Listo', description: '...' });   // o h.fail({...})
+  progress(opts = {}) {
+    const id = opts.id || ('sileo-progress-' + genId());
+
+    const progressContainer = document.createElement('div');
+    const progressWrapper = document.createElement('div');
+    progressWrapper.className = 'sileo-progress';
+
+    const toneState = opts.state || 'info';
+    const progressBar = document.createElement('div');
+    progressBar.className = 'sileo-progress-bar c-' + toneState;
+    progressBar.style.setProperty('--_c', `var(--c-${toneState})`);
+    progressBar.style.width = '0%';
+    progressWrapper.appendChild(progressBar);
+
+    const progressText = document.createElement('div');
+    progressText.className = 'sileo-progress-text';
+    progressText.textContent = opts.initialText || '';
+
+    progressContainer.appendChild(progressWrapper);
+    progressContainer.appendChild(progressText);
+
+    createToast({
+      id,
+      state: toneState,
+      title: opts.title || '',
+      icon: opts.icon,
+      description: progressContainer,
+      duration: null,
+      autopilot: false,
+    });
+
+    // Sin autopilot (duration:null la desactiva de todos modos), el toast
+    // arranca colapsado — se expande a mano para que la barra se vea desde
+    // el inicio, igual que hace demoUpload.
+    setTimeout(() => {
+      const inst = instances.get(id);
+      if (inst) expand(inst);
+    }, 100);
+
+    return {
+      id,
+      setProgress(pct, text) {
+        const clamped = Math.max(0, Math.min(100, pct));
+        progressBar.style.width = clamped + '%';
+        if (text !== undefined) progressText.textContent = text;
+      },
+      complete(finalOpts = {}) {
+        const dur = finalOpts.duration !== undefined ? finalOpts.duration : DEFAULT_DURATION;
+        updateToast(id, { ...finalOpts, id, state: 'success' });
+        scheduleDismiss({ id, duration: dur });
+      },
+      fail(finalOpts = {}) {
+        const dur = finalOpts.duration !== undefined ? finalOpts.duration : DEFAULT_DURATION;
+        updateToast(id, { ...finalOpts, id, state: 'error' });
+        scheduleDismiss({ id, duration: dur });
+      },
+      dismiss() { dismissToast(id); },
+    };
   }
 };
 

@@ -859,12 +859,31 @@ function watchAgentRedeploy(agentId, agentName) {
 // de QR (eso no cabe en un toast). my-business.js debe llamar a ESTA
 // función, no a watchAgentRedeploy.
 function watchAgentRedeployToast(agentId, agentName) {
-    if (typeof Sileo === 'undefined') {
-        // Sin Sileo disponible en esta página, se usa el modal como respaldo.
+    if (typeof Sileo === 'undefined' || typeof Sileo.progress !== 'function') {
+        // Sin Sileo (o sin la versión nueva con barra de progreso) disponible
+        // en esta página, se usa el modal como respaldo.
         return watchAgentDeployment(agentId, agentName);
     }
 
+    const handle = Sileo.progress({
+        title: t('onb_redeploy_loading_title','Actualizando agente'),
+        state: 'info',
+        initialText: t('onb_redeploy_step_pending','Preparando servidor...'),
+    });
+    handle.setProgress(10);
+
     let pollTimer = null;
+    const STEP_PCT = {
+        pending: 20,
+        deploying: 65,
+        running: 100,
+    };
+    const STEP_TEXT = {
+        pending: () => t('onb_redeploy_step_pending','Preparando servidor...'),
+        deploying: () => t('onb_redeploy_step_deploying','Desplegando bot...'),
+        running: () => t('onb_redeploy_step_running','¡Listo!'),
+    };
+
     const p = new Promise((resolve, reject) => {
         const poll = async () => {
             try {
@@ -873,6 +892,11 @@ function watchAgentRedeployToast(agentId, agentName) {
                 const data = await res.json();
                 const agent = (data.agents || []).find(a => a.id === agentId);
                 if (!agent) return;
+
+                const pct = STEP_PCT[agent.deployStatus];
+                const textFn = STEP_TEXT[agent.deployStatus];
+                if (pct !== undefined) handle.setProgress(pct, textFn ? textFn() : undefined);
+
                 if (agent.deployStatus === 'running') {
                     clearInterval(pollTimer);
                     resolve(agent);
@@ -888,27 +912,21 @@ function watchAgentRedeployToast(agentId, agentName) {
         poll();
     });
 
-    Sileo.promise(p, {
-        loading: {
-            title: t('onb_redeploy_loading_title','Actualizando agente'),
-            description: agentName || '',
-        },
-        success: (agent) => ({
+    p.then((agent) => {
+        handle.complete({
             title: t('onb_redeploy_success_title','Agente actualizado'),
             description: (agent && agent.botType === 'atomic')
                 ? t('onb_redeploy_success_qr','Escanea el nuevo QR para reconectar WhatsApp')
                 : t('onb_redeploy_success_desc','Los cambios ya están activos'),
-        }),
-        error: (err) => ({
-            title: t('onb_redeploy_error_title','Error al actualizar'),
-            description: (err && err.message) || t('onb_err_deploy','Hubo un error desplegando el agente'),
-        }),
-    });
-
-    p.then((agent) => {
+        });
         if (typeof loadAgents === 'function') loadAgents();
         if (agent && agent.botType === 'atomic') startQRPolling(agentId, agentName);
-    }).catch(() => {});
+    }).catch((err) => {
+        handle.fail({
+            title: t('onb_redeploy_error_title','Error al actualizar'),
+            description: (err && err.message) || t('onb_err_deploy','Hubo un error desplegando el agente'),
+        });
+    });
 
     return p;
 }

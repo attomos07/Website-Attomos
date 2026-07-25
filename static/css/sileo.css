@@ -236,7 +236,7 @@
   transition: opacity calc(var(--dur)*.6) ease calc(var(--dur)*.3);
 }
 .sileo-description {
-  padding: 2.2rem 1rem 1.2rem;
+  padding: 2.2rem 1rem 1.2rem !important;
   font-size: .875rem;
   line-height: 1.4rem;
   color: #52525b;
@@ -248,8 +248,8 @@
   display: inline-flex;
   align-items: center;
   height: 1.75rem;
-  padding: 0 .625rem;
-  margin-top: .75rem;
+  padding: 0 .625rem !important;
+  margin-top: .75rem !important;
   border-radius: 9999px;
   border: 1px solid color-mix(in oklch, var(--_c) 40%, transparent);
   font-size: .75rem;
@@ -266,7 +266,7 @@
 
 /* Progress bar */
 .sileo-progress {
-  margin-top: .75rem;
+  margin-top: .75rem !important;
   height: 6px;
   width: 100%;
   background: rgba(0,0,0,0.08);
@@ -283,7 +283,7 @@
 }
 .sileo-progress-text {
   font-size: .7rem;
-  margin-top: .4rem;
+  margin-top: .4rem !important;
   color: #a1a1aa;
   font-weight: 500;
 }
