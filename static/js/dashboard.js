@@ -729,11 +729,15 @@ async function loadOnboardingContent() {
                         align-items: center !important; justify-content: center !important;
                         font-size: 1.1rem !important;
                         flex-shrink: 0 !important;
-                        transition: all 0.2s !important;
+                        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
                     }
                     .btn-close-onboarding:hover {
                         background: #fee2e2 !important; color: #ef4444 !important;
+                        transform: rotate(90deg) scale(1.1) !important;
+                        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
                     }
+                    .btn-close-onboarding i { transition: all 0.3s ease !important; }
+                    .btn-close-onboarding:hover i { transform: scale(1.2) !important; }
                     /* Quitar padding extra que agrega el onboarding dentro del modal */
                     #onboardingModalBody .main-container,
                     #onboardingModalBody .onboarding-container {

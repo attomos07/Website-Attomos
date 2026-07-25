@@ -210,8 +210,10 @@ async function loadOnboardingContent() {
                     #onboardingModalBody .progress-dots{display:none!important;}
                     .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
                     .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
-                    .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
-                    .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
+                    .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)!important;}
+                    .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;transform:rotate(90deg) scale(1.1)!important;box-shadow:0 4px 12px rgba(239, 68, 68, 0.2)!important;}
+                    .btn-close-onboarding i{transition:all 0.3s ease!important;}
+                    .btn-close-onboarding:hover i{transform:scale(1.2)!important;}
                     #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
                     #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
                     .readonly-notice{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#15803d;margin-bottom:16px;}
