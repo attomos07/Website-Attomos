@@ -938,14 +938,22 @@ async function saveGeminiKey() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ api_key: apiKey }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar la API Key');
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch (parseErr) {
+            console.error('[saveGeminiKey] respuesta no-JSON del backend:', { status: res.status, rawText, parseErr });
+        }
+        if (!res.ok) {
+            console.error('[saveGeminiKey] fetch no-ok:', { status: res.status, statusText: res.statusText, data, rawText });
+            throw new Error(data.error || `No se pudo guardar la API Key (HTTP ${res.status})`);
+        }
 
         hasOwnGeminiKey = true;
         updateGeminiKeyUI();
         closeGeminiKeyModal();
         if (typeof showToast === 'function') showToast('success', 'API Key de Gemini guardada');
     } catch (err) {
+        console.error('[saveGeminiKey] error:', err);
         if (typeof showToast === 'function') showToast('error', err.message || 'Error al guardar la API Key');
     } finally {
         if (btn) btn.disabled = false;
@@ -959,14 +967,22 @@ async function removeGeminiKey() {
             method: 'POST',
             credentials: 'include',
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo quitar la API Key');
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch (parseErr) {
+            console.error('[removeGeminiKey] respuesta no-JSON del backend:', { status: res.status, rawText, parseErr });
+        }
+        if (!res.ok) {
+            console.error('[removeGeminiKey] fetch no-ok:', { status: res.status, statusText: res.statusText, data, rawText });
+            throw new Error(data.error || `No se pudo quitar la API Key (HTTP ${res.status})`);
+        }
 
         hasOwnGeminiKey = false;
         updateGeminiKeyUI();
         closeGeminiKeyModal();
         if (typeof showToast === 'function') showToast('success', 'API Key propia eliminada — ahora se usa la compartida');
     } catch (err) {
+        console.error('[removeGeminiKey] error:', err);
         if (typeof showToast === 'function') showToast('error', err.message || 'Error al quitar la API Key');
     }
 }

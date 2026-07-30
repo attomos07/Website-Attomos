@@ -76,6 +76,7 @@ func splitFileNameColumns(stored string) []string {
 func (h *GoogleIntegrationHandler) getAgentForUser(c *gin.Context) (*models.Agent, *models.User, bool) {
 	userInterface, exists := c.Get("user")
 	if !exists {
+		log.Printf("⚠️ [getAgentForUser] sin usuario en contexto (no autenticado) — path=%s", c.Request.URL.Path)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
 		return nil, nil, false
 	}
@@ -84,6 +85,7 @@ func (h *GoogleIntegrationHandler) getAgentForUser(c *gin.Context) (*models.Agen
 	agentID := c.Param("agent_id")
 	var agent models.Agent
 	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		log.Printf("⚠️ [getAgentForUser] agente no encontrado — agent_id=%s user_id=%d err=%v", agentID, user.ID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
 		return nil, nil, false
 	}
@@ -603,7 +605,8 @@ func (h *GoogleIntegrationHandler) DetectAndUploadInventoryPhotos(c *gin.Context
 }
 
 // SetInventoryGeminiKey — POST /api/inventory-sheets/gemini-key/:agent_id
-// Body: {"api_key": "AIzaSy..."}
+// Body: {"api_key": "..."}  (Google emite keys con distintos prefijos —
+// AIza..., AQ...., etc. — no validamos formato, solo longitud)
 // API Key de Gemini PROPIA de este cliente para la detección de VIN — no
 // toca ni depende de la que usa su bot (esa vive en el servidor/GCP).
 func (h *GoogleIntegrationHandler) SetInventoryGeminiKey(c *gin.Context) {
@@ -616,21 +619,35 @@ func (h *GoogleIntegrationHandler) SetInventoryGeminiKey(c *gin.Context) {
 		APIKey string `json:"api_key"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
+		log.Printf("⚠️ [Agent %d] SetInventoryGeminiKey: JSON inválido — err=%v", agent.ID, err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
 		return
 	}
 	key := strings.TrimSpace(body.APIKey)
-	if len(key) < 30 || !strings.HasPrefix(key, "AIzaSy") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "API Key inválida. Debe comenzar con 'AIzaSy'"})
+	// Nota: Google emite API keys con más de un formato de prefijo (AIza...,
+	// AQ...., y potencialmente otros a futuro) — no hay un prefijo fijo y
+	// confiable en el que validar, así que solo chequeamos un rango de
+	// longitud razonable y dejamos que la propia llamada a Gemini sea la
+	// que confirme si la key es válida o no.
+	safeSnippet := key
+	if len(key) > 10 {
+		safeSnippet = key[:6] + "…" + key[len(key)-4:]
+	}
+	if len(key) < 15 || len(key) > 150 {
+		log.Printf("⚠️ [Agent %d] SetInventoryGeminiKey: key rechazada — len=%d snippet=%q", agent.ID, len(key), safeSnippet)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "API Key inválida (longitud fuera de rango)"})
 		return
 	}
+	log.Printf("ℹ️ [Agent %d] SetInventoryGeminiKey: key aceptada — len=%d snippet=%q", agent.ID, len(key), safeSnippet)
 
 	agent.InventoryGeminiAPIKey = key
 	if err := config.DB.Save(agent).Error; err != nil {
+		log.Printf("❌ [Agent %d] SetInventoryGeminiKey: error al guardar en DB — err=%v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo guardar la API Key"})
 		return
 	}
 
+	log.Printf("✅ [Agent %d] SetInventoryGeminiKey: key propia guardada", agent.ID)
 	c.JSON(http.StatusOK, gin.H{"success": true, "has_own_gemini_key": true})
 }
 
@@ -643,10 +660,12 @@ func (h *GoogleIntegrationHandler) RemoveInventoryGeminiKey(c *gin.Context) {
 
 	agent.InventoryGeminiAPIKey = ""
 	if err := config.DB.Save(agent).Error; err != nil {
+		log.Printf("❌ [Agent %d] RemoveInventoryGeminiKey: error al guardar en DB — err=%v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo quitar la API Key"})
 		return
 	}
 
+	log.Printf("✅ [Agent %d] RemoveInventoryGeminiKey: key propia eliminada", agent.ID)
 	c.JSON(http.StatusOK, gin.H{"success": true, "has_own_gemini_key": false})
 }
 
