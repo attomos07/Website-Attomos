@@ -1506,6 +1506,9 @@ async function scrapeAllWebsiteVehicles() {
         showWebsiteScrapeAllError('Pega la URL del listado de inventario primero');
         return;
     }
+    const maxInput = document.getElementById('websiteListingMaxInput');
+    const maxValue = maxInput ? maxInput.value.trim() : '';
+    const maxParam = maxValue ? `&max=${encodeURIComponent(maxValue)}` : '';
 
     showWebsiteScrapeAllError(null);
     document.getElementById('websiteScrapeAllResult').style.display = 'none';
@@ -1514,7 +1517,7 @@ async function scrapeAllWebsiteVehicles() {
     document.getElementById('websiteScrapeAllProgressBar').style.width = '5%';
 
     try {
-        const res = await fetch(`/api/inventory-website/${currentAgentId}/scrape-all?url=${encodeURIComponent(url)}`, {
+        const res = await fetch(`/api/inventory-website/${currentAgentId}/scrape-all?url=${encodeURIComponent(url)}${maxParam}`, {
             method: 'POST',
             credentials: 'include',
         });

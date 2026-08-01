@@ -118,6 +118,23 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 	return browserCtx, cancel
 }
 
+func buildVehicleData(pageURL string, raw jsExtractResult) *VehicleWebsiteData {
+	data := &VehicleWebsiteData{
+		URL:         pageURL,
+		VehicleID:   raw.VehicleID,
+		Description: raw.Description,
+		Features:    raw.Features,
+		RawSpecs:    raw.Specs,
+	}
+	data.Year = pickSpec(raw.Specs, "AÑO", "ANO", "AÑO ")
+	data.Mileage = pickSpec(raw.Specs, "KILOMETRAJE", "KM")
+	data.Fuel = pickSpec(raw.Specs, "COMBUSTIBLE")
+	data.Transmission = pickSpec(raw.Specs, "TRANSMISIÓN", "TRANSMISION")
+	data.Color = pickSpec(raw.Specs, "COLOR")
+	data.Location = pickSpec(raw.Specs, "UBICACIÓN", "UBICACION")
+	return data
+}
+
 // ScrapeVehiclePage abre `pageURL` en un Chrome headless, espera a que el
 // contenido cliente-renderizado (Next.js) termine de cargar, y extrae los
 // datos del vehículo. Pensado para sitios donde el HTML crudo llega vacío
@@ -143,20 +160,7 @@ func ScrapeVehiclePage(browserCtx context.Context, pageURL string) (*VehicleWebs
 		return nil, fmt.Errorf("chromedp: %w", err)
 	}
 
-	data := &VehicleWebsiteData{
-		URL:         pageURL,
-		VehicleID:   raw.VehicleID,
-		Description: raw.Description,
-		Features:    raw.Features,
-		RawSpecs:    raw.Specs,
-	}
-	data.Year = pickSpec(raw.Specs, "AÑO", "ANO", "AÑO ")
-	data.Mileage = pickSpec(raw.Specs, "KILOMETRAJE", "KM")
-	data.Fuel = pickSpec(raw.Specs, "COMBUSTIBLE")
-	data.Transmission = pickSpec(raw.Specs, "TRANSMISIÓN", "TRANSMISION")
-	data.Color = pickSpec(raw.Specs, "COLOR")
-	data.Location = pickSpec(raw.Specs, "UBICACIÓN", "UBICACION")
-
+	data := buildVehicleData(pageURL, raw)
 	if data.Year == "" && data.Mileage == "" && data.Color == "" {
 		return nil, fmt.Errorf("no se encontraron specs reconocibles en %s (¿cambió el HTML del sitio?)", pageURL)
 	}
@@ -245,9 +249,10 @@ func ScrapeVehicleListing(browserCtx context.Context, listingURL string) ([]stri
 		abs.RawQuery = ""
 		urls = append(urls, abs.String())
 	}
-	if len(urls) == 0 {
-		return nil, fmt.Errorf("no se encontraron vehículos en %s (¿cambió el HTML del sitio?)", listingURL)
-	}
+	// Nota: a propósito NO es un error devolver 0 URLs aquí — algunos sitios
+	// (como uno basado en <button onClick> en vez de <a href>) simplemente no
+	// tienen hrefs que encontrar. El caller (ScrapeAllVehicles) decide si cae
+	// al método de clics en ese caso.
 	return urls, nil
 }
 
@@ -286,13 +291,22 @@ type VehicleScrapeOutcome struct {
 	Error   string              `json:"error,omitempty"`
 }
 
-// ScrapeAllVehicles recorre la página de listado, saca todas las URLs de
-// vehículo que encuentre, y scrapea cada una reutilizando el mismo navegador
-// (mucho más rápido que abrir un Chrome por vehículo). Reporta progreso vía
-// onProgress después de cada vehículo procesado (done, total) para que el
-// caller pueda ir actualizando un job en curso. Un vehículo que falla no
-// detiene el resto — queda registrado en el resultado con su error.
-func ScrapeAllVehicles(parentCtx context.Context, listingURL string, onProgress func(done, total int)) ([]VehicleScrapeOutcome, error) {
+// ScrapeAllVehicles recorre la página de listado y scrapea cada vehículo
+// que encuentre, reutilizando el mismo navegador (mucho más rápido que abrir
+// un Chrome por vehículo). Primero intenta el método rápido (leer hrefs
+// reales del HTML) — funciona en sitios donde las tarjetas son <a href>
+// normales. Si no encuentra ninguno (p.ej. el sitio navega con
+// onClick+router en vez de links reales, como Gran Auto Seminuevos), cae
+// automáticamente al método de clics: le da clic a cada botón "Ver", lee la
+// URL resultante, extrae los datos ahí mismo, y regresa al listado.
+//
+// maxVehicles limita cuántos procesa como máximo (protección ante listados
+// enormes o loops infinitos de scroll) — 0 usa un default razonable.
+func ScrapeAllVehicles(parentCtx context.Context, listingURL string, maxVehicles int, onProgress func(done, total int)) ([]VehicleScrapeOutcome, error) {
+	if maxVehicles <= 0 {
+		maxVehicles = 500
+	}
+
 	browserCtx, cancel := NewHeadlessBrowser(parentCtx)
 	defer cancel()
 
@@ -301,19 +315,133 @@ func ScrapeAllVehicles(parentCtx context.Context, listingURL string, onProgress 
 		return nil, err
 	}
 
-	results := make([]VehicleScrapeOutcome, 0, len(urls))
-	for i, u := range urls {
-		data, err := ScrapeVehiclePage(browserCtx, u)
-		outcome := VehicleScrapeOutcome{URL: u}
-		if err != nil {
-			outcome.Error = err.Error()
+	if len(urls) > 0 {
+		if len(urls) > maxVehicles {
+			urls = urls[:maxVehicles]
+		}
+		results := make([]VehicleScrapeOutcome, 0, len(urls))
+		for i, u := range urls {
+			data, err := ScrapeVehiclePage(browserCtx, u)
+			outcome := VehicleScrapeOutcome{URL: u}
+			if err != nil {
+				outcome.Error = err.Error()
+			} else {
+				outcome.Vehicle = data
+			}
+			results = append(results, outcome)
+			if onProgress != nil {
+				onProgress(i+1, len(urls))
+			}
+		}
+		return results, nil
+	}
+
+	// No se encontraron hrefs reales — caer al método de clics.
+	return scrapeAllVehiclesByClicking(browserCtx, listingURL, maxVehicles, onProgress)
+}
+
+// jsClickNextUnvisited busca, entre las tarjetas visibles en este momento,
+// la primera cuyo botón "Ver" no se haya clickeado todavía en esta sesión
+// (lo recuerda en window.__attomosScraped, que persiste entre navegaciones
+// de cliente porque Next.js no recarga la página completa). Usa el texto
+// completo de la tarjeta como identidad — no depende de ningún atributo o
+// clase CSS específica, así que sobrevive a cambios de estilo del sitio.
+const jsClickNextUnvisited = `
+(() => {
+	window.__attomosScraped = window.__attomosScraped || new Set();
+	const buttons = Array.from(document.querySelectorAll('button, a')).filter(el => (el.textContent || '').trim() === 'Ver');
+	for (const btn of buttons) {
+		let card = btn;
+		for (let i = 0; i < 6 && card.parentElement; i++) card = card.parentElement;
+		const key = (card.innerText || btn.outerHTML).replace(/\s+/g, ' ').trim();
+		if (!key || window.__attomosScraped.has(key)) continue;
+		window.__attomosScraped.add(key);
+		btn.scrollIntoView({block: 'center'});
+		btn.click();
+		return key;
+	}
+	return null;
+})()
+`
+
+// scrapeAllVehiclesByClicking recorre el listado dándole clic a cada tarjeta
+// (para sitios sin hrefs reales), extrae los datos de la página de detalle a
+// la que navega, y regresa al listado para seguir con la siguiente. Cuando
+// ya no encuentra tarjetas sin visitar, intenta cargar más (scroll / botón
+// "cargar más") antes de darse por vencido.
+func scrapeAllVehiclesByClicking(browserCtx context.Context, listingURL string, maxVehicles int, onProgress func(done, total int)) ([]VehicleScrapeOutcome, error) {
+	navCtx, cancelNav := context.WithTimeout(browserCtx, 30*time.Second)
+	err := chromedp.Run(navCtx,
+		chromedp.Navigate(listingURL),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
+		chromedp.Sleep(3*time.Second),
+	)
+	cancelNav()
+	if err != nil {
+		return nil, fmt.Errorf("chromedp (listado): %w", err)
+	}
+
+	var results []VehicleScrapeOutcome
+	consecutiveEmpty := 0
+	for len(results) < maxVehicles && consecutiveEmpty < 3 {
+		var clickedKey *string
+		clickCtx, cancelClick := context.WithTimeout(browserCtx, 10*time.Second)
+		clickErr := chromedp.Run(clickCtx, chromedp.Evaluate(jsClickNextUnvisited, &clickedKey))
+		cancelClick()
+		if clickErr != nil {
+			// un fallo puntual de evaluate no debería tumbar todo el lote —
+			// lo tratamos como "no encontró nada esta vuelta" y seguimos
+			clickedKey = nil
+		}
+
+		if clickedKey == nil {
+			// no hay tarjetas nuevas visibles — intentamos cargar más
+			scrollCtx, cancelScroll := context.WithTimeout(browserCtx, 15*time.Second)
+			var loadedMore bool
+			_ = chromedp.Run(scrollCtx, chromedp.Evaluate(jsClickLoadMore, &loadedMore))
+			_ = chromedp.Run(scrollCtx, chromedp.KeyEvent(`End`), chromedp.Sleep(2*time.Second))
+			cancelScroll()
+			consecutiveEmpty++
+			continue
+		}
+		consecutiveEmpty = 0
+
+		waitCtx, cancelWait := context.WithTimeout(browserCtx, 15*time.Second)
+		var currentURL string
+		_ = chromedp.Run(waitCtx, chromedp.Sleep(2500*time.Millisecond), chromedp.Location(&currentURL))
+		cancelWait()
+
+		outcome := VehicleScrapeOutcome{URL: currentURL}
+		if currentURL == "" || currentURL == listingURL || !strings.Contains(currentURL, "/inventory/") {
+			outcome.Error = "el clic en \"Ver\" no navegó a una ficha de vehículo"
 		} else {
-			outcome.Vehicle = data
+			var raw jsExtractResult
+			extractCtx, cancelExtract := context.WithTimeout(browserCtx, 15*time.Second)
+			extractErr := chromedp.Run(extractCtx, chromedp.Evaluate(jsExtractSpecs, &raw))
+			cancelExtract()
+			if extractErr != nil {
+				outcome.Error = extractErr.Error()
+			} else {
+				data := buildVehicleData(currentURL, raw)
+				if data.Year == "" && data.Mileage == "" && data.Color == "" {
+					outcome.Error = "no se encontraron specs reconocibles en la ficha"
+				} else {
+					outcome.Vehicle = data
+				}
+			}
 		}
 		results = append(results, outcome)
 		if onProgress != nil {
-			onProgress(i+1, len(urls))
+			onProgress(len(results), maxVehicles)
 		}
+
+		backCtx, cancelBack := context.WithTimeout(browserCtx, 15*time.Second)
+		_ = chromedp.Run(backCtx, chromedp.NavigateBack(), chromedp.Sleep(2500*time.Millisecond))
+		cancelBack()
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no se pudo hacer clic en ningún vehículo del listado (¿cambió el HTML del sitio?)")
 	}
 	return results, nil
 }

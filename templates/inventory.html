@@ -366,6 +366,19 @@
                                         <span>Recorre todo el listado y extrae cada vehículo. Puede tardar varios minutos según cuántos tengas.</span>
                                     </small>
                                 </div>
+                                <div class="input-group" style="margin-top:.75rem;max-width:220px;">
+                                    <label class="input-label" for="websiteListingMaxInput">
+                                        <i class="lni lni-hand"></i>
+                                        <span>Límite (opcional)</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="number" id="websiteListingMaxInput" class="api-key-input" placeholder="ej. 5 para probar" min="1">
+                                    </div>
+                                    <small class="input-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span>Déjalo vacío para extraer todo. Útil poner un número chico la primera vez para probar.</span>
+                                    </small>
+                                </div>
                                 <div class="card-actions" style="margin-top:1rem;">
                                     <button type="button" class="btn btn-connect" id="btnScrapeAllWebsiteVehicles">
                                         <i class="lni lni-reload"></i>

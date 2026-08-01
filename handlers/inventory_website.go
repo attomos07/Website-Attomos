@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -115,6 +116,15 @@ func (h *GoogleIntegrationHandler) StartScrapeAllVehicles(c *gin.Context) {
 		return
 	}
 
+	maxVehicles := 0 // 0 → default interno de services.ScrapeAllVehicles (500)
+	if maxStr := c.Query("max"); maxStr != "" {
+		if n, err := strconv.Atoi(maxStr); err == nil && n > 0 {
+			maxVehicles = n
+		} else {
+			log.Printf("⚠️ [Agent %d] StartScrapeAllVehicles: max inválido — max=%q, se ignora", agent.ID, maxStr)
+		}
+	}
+
 	websiteScrapeJobsMu.Lock()
 	if existing, ok := websiteScrapeJobs[agent.ID]; ok && existing.Status == "running" {
 		websiteScrapeJobsMu.Unlock()
@@ -126,16 +136,18 @@ func (h *GoogleIntegrationHandler) StartScrapeAllVehicles(c *gin.Context) {
 	websiteScrapeJobs[agent.ID] = job
 	websiteScrapeJobsMu.Unlock()
 
-	log.Printf("🌐 [Agent %d] StartScrapeAllVehicles: iniciando lote — listado=%s", agent.ID, rawURL)
+	log.Printf("🌐 [Agent %d] StartScrapeAllVehicles: iniciando lote — listado=%s max=%d", agent.ID, rawURL, maxVehicles)
 
-	go func(agentID uint, listingURL string) {
+	go func(agentID uint, listingURL string, maxV int) {
 		// Job independiente de la petición HTTP original (que ya respondió) —
 		// se le da su propio límite de tiempo generoso en vez de heredar el
 		// contexto de la request, que se cancela apenas Gin devuelve la respuesta.
-		bgCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+		// 60 min porque el método de clics (sitios sin <a href> reales) navega
+		// vehículo por vehículo y puede tardar bastante con inventarios grandes.
+		bgCtx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 		defer cancel()
 
-		results, err := services.ScrapeAllVehicles(bgCtx, listingURL, func(done, total int) {
+		results, err := services.ScrapeAllVehicles(bgCtx, listingURL, maxV, func(done, total int) {
 			websiteScrapeJobsMu.Lock()
 			if j, ok := websiteScrapeJobs[agentID]; ok {
 				j.Done = done
@@ -166,7 +178,7 @@ func (h *GoogleIntegrationHandler) StartScrapeAllVehicles(c *gin.Context) {
 		log.Printf("✅ [Agent %d] StartScrapeAllVehicles: terminado — %d/%d vehículos extraídos con éxito", agentID, okCount, len(results))
 		j.Status = "done"
 		j.Results = results
-	}(agent.ID, rawURL)
+	}(agent.ID, rawURL, maxVehicles)
 
 	c.JSON(http.StatusAccepted, gin.H{"success": true, "job": job})
 }
