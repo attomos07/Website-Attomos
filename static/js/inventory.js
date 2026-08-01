@@ -1308,6 +1308,243 @@ function renderRepairDeskInventory(items, lastSync) {
 }
 
 /* ============================================
+   VISTA: SITIO WEB (scraping)
+   ============================================ */
+
+function setWebsiteScrapeLoading(loading) {
+    const loadingEl = document.getElementById('websiteScrapeLoading');
+    const btn = document.getElementById('btnScrapeWebsiteVehicle');
+    if (loadingEl) loadingEl.style.display = loading ? 'flex' : 'none';
+    if (btn) btn.disabled = loading;
+}
+
+function showWebsiteScrapeError(message) {
+    const el = document.getElementById('websiteScrapeError');
+    if (!el) return;
+    if (!message) { el.style.display = 'none'; el.textContent = ''; return; }
+    el.style.display = 'block';
+    el.textContent = message;
+}
+
+function renderWebsiteScrapeResult(vehicle) {
+    const resultEl = document.getElementById('websiteScrapeResult');
+    if (!resultEl) return;
+    resultEl.style.display = 'block';
+
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value && String(value).trim() ? value : 'No especificado';
+    };
+    setText('wsVehicleId', vehicle.vehicle_id);
+    setText('wsYear', vehicle.year);
+    setText('wsMileage', vehicle.mileage);
+    setText('wsFuel', vehicle.fuel);
+    setText('wsTransmission', vehicle.transmission);
+    setText('wsColor', vehicle.color);
+    setText('wsLocation', vehicle.location);
+    setText('wsDescription', vehicle.description);
+
+    const featuresEl = document.getElementById('wsFeatures');
+    if (featuresEl) {
+        featuresEl.innerHTML = '';
+        const features = Array.isArray(vehicle.features) ? vehicle.features : [];
+        if (features.length === 0) {
+            featuresEl.innerHTML = '<li style="list-style:none;color:#9ca3af;">No especificadas</li>';
+        } else {
+            featuresEl.innerHTML = features.map(f => `<li>${f}</li>`).join('');
+        }
+    }
+}
+
+async function scrapeWebsiteVehicle() {
+    const input = document.getElementById('websiteVehicleUrlInput');
+    const url = input ? input.value.trim() : '';
+    if (!url) {
+        showWebsiteScrapeError('Pega la URL del vehículo primero');
+        return;
+    }
+
+    showWebsiteScrapeError(null);
+    document.getElementById('websiteScrapeResult').style.display = 'none';
+    setWebsiteScrapeLoading(true);
+
+    try {
+        const res = await fetch(`/api/inventory-website/${currentAgentId}/scrape?url=${encodeURIComponent(url)}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch (parseErr) {
+            console.error('[scrapeWebsiteVehicle] respuesta no-JSON del backend:', { status: res.status, rawText, parseErr });
+        }
+        if (!res.ok) {
+            console.error('[scrapeWebsiteVehicle] fetch no-ok:', { status: res.status, statusText: res.statusText, data, rawText });
+            throw new Error(data.error || `No se pudo extraer la información (HTTP ${res.status})`);
+        }
+
+        renderWebsiteScrapeResult(data.vehicle || {});
+    } catch (err) {
+        console.error('[scrapeWebsiteVehicle] error:', err);
+        showWebsiteScrapeError(err.message || 'Error al extraer la información del sitio');
+    } finally {
+        setWebsiteScrapeLoading(false);
+    }
+}
+
+function wireWebsiteScrapeButton() {
+    const btn = document.getElementById('btnScrapeWebsiteVehicle');
+    if (btn) btn.addEventListener('click', scrapeWebsiteVehicle);
+}
+
+/* ============================================
+   VISTA: SITIO WEB (scraping masivo — todo el inventario)
+   ============================================ */
+
+let websiteScrapeAllPolling = null;
+
+function showWebsiteScrapeAllError(message) {
+    const el = document.getElementById('websiteScrapeAllError');
+    if (!el) return;
+    if (!message) { el.style.display = 'none'; el.textContent = ''; return; }
+    el.style.display = 'block';
+    el.textContent = message;
+}
+
+function renderWebsiteScrapeAllTable(job) {
+    const results = job.results || [];
+    const tbody = document.getElementById('websiteScrapeAllTableBody');
+    const resultEl = document.getElementById('websiteScrapeAllResult');
+    if (!tbody || !resultEl) return;
+
+    resultEl.style.display = 'block';
+    let okCount = 0, errCount = 0;
+    tbody.innerHTML = results.map(r => {
+        if (r.vehicle) {
+            okCount++;
+            const v = r.vehicle;
+            return `<tr>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.url}">${r.url}</td>
+                <td>${v.vehicle_id || '-'}</td>
+                <td>${v.year || '-'}</td>
+                <td>${v.mileage || '-'}</td>
+                <td>${v.color || '-'}</td>
+                <td>${v.location || '-'}</td>
+                <td style="color:#16a34a;">✓ OK</td>
+            </tr>`;
+        }
+        errCount++;
+        return `<tr>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.url}">${r.url}</td>
+            <td colspan="4" style="color:#9ca3af;">${r.error || 'Error desconocido'}</td>
+            <td style="color:#dc2626;">✗ Error</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('websiteScrapeAllOkCount').textContent = okCount;
+    document.getElementById('websiteScrapeAllErrCount').textContent = errCount;
+}
+
+function stopWebsiteScrapeAllPolling() {
+    if (websiteScrapeAllPolling) {
+        clearInterval(websiteScrapeAllPolling);
+        websiteScrapeAllPolling = null;
+    }
+}
+
+async function pollScrapeAllStatus() {
+    try {
+        const res = await fetch(`/api/inventory-website/${currentAgentId}/scrape-all/status`, { credentials: 'include' });
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch (parseErr) {
+            console.error('[pollScrapeAllStatus] respuesta no-JSON:', { status: res.status, rawText, parseErr });
+        }
+        if (!res.ok) {
+            console.error('[pollScrapeAllStatus] fetch no-ok:', { status: res.status, data, rawText });
+            stopWebsiteScrapeAllPolling();
+            showWebsiteScrapeAllError(data.error || 'Error consultando el progreso');
+            document.getElementById('websiteScrapeAllProgress').style.display = 'none';
+            return;
+        }
+
+        const job = data.job || {};
+        const progressEl = document.getElementById('websiteScrapeAllProgress');
+        const textEl = document.getElementById('websiteScrapeAllProgressText');
+        const barEl = document.getElementById('websiteScrapeAllProgressBar');
+
+        if (job.status === 'running') {
+            progressEl.style.display = 'block';
+            if (job.total > 0) {
+                textEl.textContent = `Extrayendo vehículo ${job.done} de ${job.total}…`;
+                barEl.style.width = `${Math.round((job.done / job.total) * 100)}%`;
+            } else {
+                textEl.textContent = 'Buscando vehículos en el listado…';
+                barEl.style.width = '5%';
+            }
+        } else if (job.status === 'done') {
+            stopWebsiteScrapeAllPolling();
+            progressEl.style.display = 'none';
+            renderWebsiteScrapeAllTable(job);
+        } else if (job.status === 'error') {
+            stopWebsiteScrapeAllPolling();
+            progressEl.style.display = 'none';
+            showWebsiteScrapeAllError(job.error || 'La extracción falló');
+        }
+    } catch (err) {
+        console.error('[pollScrapeAllStatus] error:', err);
+        stopWebsiteScrapeAllPolling();
+        showWebsiteScrapeAllError('Se perdió la conexión al consultar el progreso');
+        document.getElementById('websiteScrapeAllProgress').style.display = 'none';
+    }
+}
+
+async function scrapeAllWebsiteVehicles() {
+    const input = document.getElementById('websiteListingUrlInput');
+    const url = input ? input.value.trim() : '';
+    if (!url) {
+        showWebsiteScrapeAllError('Pega la URL del listado de inventario primero');
+        return;
+    }
+
+    showWebsiteScrapeAllError(null);
+    document.getElementById('websiteScrapeAllResult').style.display = 'none';
+    document.getElementById('websiteScrapeAllProgress').style.display = 'block';
+    document.getElementById('websiteScrapeAllProgressText').textContent = 'Buscando vehículos en el listado…';
+    document.getElementById('websiteScrapeAllProgressBar').style.width = '5%';
+
+    try {
+        const res = await fetch(`/api/inventory-website/${currentAgentId}/scrape-all?url=${encodeURIComponent(url)}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch (parseErr) {
+            console.error('[scrapeAllWebsiteVehicles] respuesta no-JSON:', { status: res.status, rawText, parseErr });
+        }
+        if (!res.ok && res.status !== 409) {
+            console.error('[scrapeAllWebsiteVehicles] fetch no-ok:', { status: res.status, data, rawText });
+            throw new Error(data.error || `No se pudo iniciar la extracción (HTTP ${res.status})`);
+        }
+        // 409 = ya había un job corriendo; igual seguimos el polling del que ya está activo
+
+        stopWebsiteScrapeAllPolling();
+        websiteScrapeAllPolling = setInterval(pollScrapeAllStatus, 3000);
+        pollScrapeAllStatus();
+    } catch (err) {
+        console.error('[scrapeAllWebsiteVehicles] error:', err);
+        showWebsiteScrapeAllError(err.message || 'Error al iniciar la extracción');
+        document.getElementById('websiteScrapeAllProgress').style.display = 'none';
+    }
+}
+
+function wireWebsiteScrapeAllButton() {
+    const btn = document.getElementById('btnScrapeAllWebsiteVehicles');
+    if (btn) btn.addEventListener('click', scrapeAllWebsiteVehicles);
+}
+
+/* ============================================
    INIT
    ============================================ */
 
@@ -1317,6 +1554,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wireSheetInventoryButtons();
     initSheetInventory();
     initRepairDeskInventory();
+    wireWebsiteScrapeButton();
+    wireWebsiteScrapeAllButton();
     notifyParentReady();
     initModalVisibilityBridge();
 });

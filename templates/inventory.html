@@ -63,6 +63,10 @@
                             <i class="lni lni-grid-alt"></i>
                             <span>Ver Sheets</span>
                         </button>
+                        <button type="button" class="inv-view-tab" data-view="website">
+                            <i class="lni lni-world"></i>
+                            <span>Sitio web</span>
+                        </button>
                     </div>
 
                     <!-- ══════════ VISTA: EXISTENCIAS DEL NEGOCIO ══════════ -->
@@ -255,6 +259,160 @@
                             <div class="empty-list-hint" id="sheetInvEmpty" style="display:none; margin-top:1.5rem;">
                                 <i class="lni lni-package"></i>
                                 <span>La hoja está vacía (o solo tiene encabezados).</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════ VISTA: SITIO WEB (scraping de un vehículo) ══════════ -->
+                    <div class="inv-view-panel" data-view="website" id="invViewWebsite">
+                        <div class="profile-card" style="margin-top:0;">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-world"></i>
+                                    <h2>Extraer de tu sitio web</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="input-group">
+                                    <label class="input-label" for="websiteVehicleUrlInput">
+                                        <i class="lni lni-link"></i>
+                                        <span>URL del vehículo en tu sitio</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="text" id="websiteVehicleUrlInput" class="api-key-input" placeholder="https://tusitio.com/inventory/5722">
+                                    </div>
+                                    <small class="input-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span>Pega el enlace de la ficha de un vehículo específico. Puede tardar unos segundos.</span>
+                                    </small>
+                                </div>
+                                <div class="card-actions" style="margin-top:1rem;">
+                                    <button type="button" class="btn btn-connect" id="btnScrapeWebsiteVehicle">
+                                        <i class="lni lni-search-alt"></i>
+                                        <span>Extraer datos</span>
+                                    </button>
+                                </div>
+
+                                <div id="websiteScrapeLoading" style="display:none; margin-top:1.5rem;" class="inv-sync-hint">
+                                    <i class="lni lni-reload"></i>
+                                    <span>Cargando la página y leyendo los datos…</span>
+                                </div>
+
+                                <div id="websiteScrapeError" class="empty-list-hint" style="display:none; margin-top:1.5rem;"></div>
+
+                                <!-- Resultado -->
+                                <div id="websiteScrapeResult" style="display:none; margin-top:1.5rem;">
+                                    <div class="inv-summary-bar" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">ID Vehículo</span>
+                                            <span class="inv-sum-num" id="wsVehicleId" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Año</span>
+                                            <span class="inv-sum-num" id="wsYear" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Kilometraje</span>
+                                            <span class="inv-sum-num" id="wsMileage" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Combustible</span>
+                                            <span class="inv-sum-num" id="wsFuel" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Transmisión</span>
+                                            <span class="inv-sum-num" id="wsTransmission" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Color</span>
+                                            <span class="inv-sum-num" id="wsColor" style="font-size:1rem;">-</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Ubicación</span>
+                                            <span class="inv-sum-num" id="wsLocation" style="font-size:1rem;">-</span>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:1rem;">
+                                        <strong style="display:block;margin-bottom:.4rem;">Descripción</strong>
+                                        <p id="wsDescription" style="color:#4b5563;font-size:.9rem;">-</p>
+                                    </div>
+                                    <div style="margin-top:1rem;">
+                                        <strong style="display:block;margin-bottom:.4rem;">Características</strong>
+                                        <ul id="wsFeatures" style="color:#4b5563;font-size:.9rem;padding-left:1.2rem;"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Extracción masiva (todos los vehículos del sitio) ── -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-layers"></i>
+                                    <h2>Extraer todo el inventario del sitio</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="input-group">
+                                    <label class="input-label" for="websiteListingUrlInput">
+                                        <i class="lni lni-link"></i>
+                                        <span>URL del listado de inventario</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="text" id="websiteListingUrlInput" class="api-key-input" placeholder="https://tusitio.com/inventory">
+                                    </div>
+                                    <small class="input-hint">
+                                        <i class="lni lni-information"></i>
+                                        <span>Recorre todo el listado y extrae cada vehículo. Puede tardar varios minutos según cuántos tengas.</span>
+                                    </small>
+                                </div>
+                                <div class="card-actions" style="margin-top:1rem;">
+                                    <button type="button" class="btn btn-connect" id="btnScrapeAllWebsiteVehicles">
+                                        <i class="lni lni-reload"></i>
+                                        <span>Extraer todos los vehículos</span>
+                                    </button>
+                                </div>
+
+                                <div id="websiteScrapeAllError" class="empty-list-hint" style="display:none; margin-top:1.5rem;"></div>
+
+                                <div id="websiteScrapeAllProgress" style="display:none; margin-top:1.5rem;">
+                                    <div class="inv-sync-hint">
+                                        <i class="lni lni-reload spinning"></i>
+                                        <span id="websiteScrapeAllProgressText">Buscando vehículos…</span>
+                                    </div>
+                                    <div style="background:#e5e7eb;border-radius:999px;height:8px;margin-top:.6rem;overflow:hidden;">
+                                        <div id="websiteScrapeAllProgressBar" style="background:#2563eb;height:100%;width:0%;transition:width .3s;"></div>
+                                    </div>
+                                </div>
+
+                                <div id="websiteScrapeAllResult" style="display:none; margin-top:1.5rem;">
+                                    <div class="inv-summary-bar" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Extraídos con éxito</span>
+                                            <span class="inv-sum-num" id="websiteScrapeAllOkCount">0</span>
+                                        </div>
+                                        <div class="inv-summary-card">
+                                            <span class="inv-sum-lbl">Con error</span>
+                                            <span class="inv-sum-num" id="websiteScrapeAllErrCount">0</span>
+                                        </div>
+                                    </div>
+                                    <div style="overflow-x:auto;margin-top:1rem;">
+                                        <table class="inv-table" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL</th>
+                                                    <th>ID</th>
+                                                    <th>Año</th>
+                                                    <th>Km</th>
+                                                    <th>Color</th>
+                                                    <th>Ubicación</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="websiteScrapeAllTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

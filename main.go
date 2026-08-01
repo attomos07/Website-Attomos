@@ -344,6 +344,11 @@ func main() {
 			protected.POST("/inventory-sheets/gemini-key/:agent_id/remove", googleIntegrationHandler.RemoveInventoryGeminiKey)
 			protected.POST("/inventory-sheets/sync-products/:agent_id", googleIntegrationHandler.SyncInventoryProducts)
 			protected.POST("/inventory-sheets/bulk-update/:agent_id", googleIntegrationHandler.BulkUpdateInventoryFromFile)
+
+			// Inventario desde el sitio web del cliente (scraping con navegador headless)
+			protected.GET("/inventory-website/:agent_id/scrape", googleIntegrationHandler.ScrapeVehicleFromWebsite)
+			protected.POST("/inventory-website/:agent_id/scrape-all", googleIntegrationHandler.StartScrapeAllVehicles)
+			protected.GET("/inventory-website/:agent_id/scrape-all/status", googleIntegrationHandler.GetScrapeAllStatus)
 		}
 
 		// ============================================
