@@ -115,6 +115,11 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true), // necesario corriendo como root en el contenedor de Railway
 		chromedp.Flag("disable-dev-shm-usage", true),
+		// EXPERIMENTAL: si esto arregla el "context canceled" silencioso,
+		// confirma que el problema era la arquitectura multi-proceso de
+		// Chromium chocando con restricciones del contenedor de Railway.
+		chromedp.Flag("single-process", true),
+		chromedp.Flag("no-zygote", true),
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("disable-background-networking", true),
 		chromedp.Flag("disable-default-apps", true),
