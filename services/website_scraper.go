@@ -115,7 +115,6 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true), // necesario corriendo como root en el contenedor de Railway
 		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("blink-settings", "imagesEnabled=false"), // no cargar imágenes — solo nos interesa el texto
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("disable-background-networking", true),
 		chromedp.Flag("disable-default-apps", true),
