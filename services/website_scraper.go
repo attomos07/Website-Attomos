@@ -100,6 +100,12 @@ type jsExtractResult struct {
 // listo para navegar varias páginas seguidas (mucho más rápido que abrir un
 // proceso de Chrome nuevo por cada vehículo). El caller debe llamar la
 // función `cancel` devuelta cuando termine.
+//
+// Configurado para consumir la menor memoria posible: no necesitamos ver
+// nada (solo leer texto), así que desactivamos carga de imágenes y otras
+// cosas que no usamos — importante porque un contenedor de Railway con RAM
+// limitada puede matar a Chromium si intenta cargar fotos en alta
+// resolución de varias tarjetas de golpe (típico en páginas de listado).
 func NewHeadlessBrowser(parent context.Context) (context.Context, context.CancelFunc) {
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(parent, append(
 		chromedp.DefaultExecAllocatorOptions[:],
@@ -107,6 +113,14 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true), // necesario corriendo como root en el contenedor de Railway
 		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("blink-settings", "imagesEnabled=false"), // no cargar imágenes — solo nos interesa el texto
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-background-networking", true),
+		chromedp.Flag("disable-default-apps", true),
+		chromedp.Flag("disable-sync", true),
+		chromedp.Flag("mute-audio", true),
+		chromedp.Flag("no-first-run", true),
+		chromedp.Flag("metrics-recording-only", true),
 	)...)
 
 	browserCtx, cancelBrowser := chromedp.NewContext(allocCtx)
@@ -205,23 +219,26 @@ func ScrapeVehicleListing(browserCtx context.Context, listingURL string) ([]stri
 		return nil, fmt.Errorf("URL de listado inválida: %w", err)
 	}
 
-	timeoutCtx, cancelTimeout := context.WithTimeout(browserCtx, 60*time.Second)
-	defer cancelTimeout()
-
-	if err := chromedp.Run(timeoutCtx,
+	navCtx, cancelNav := context.WithTimeout(browserCtx, 30*time.Second)
+	navErr := chromedp.Run(navCtx,
 		chromedp.Navigate(listingURL),
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.Sleep(3*time.Second),
-	); err != nil {
-		return nil, fmt.Errorf("chromedp (listado): %w", err)
+	)
+	cancelNav()
+	if navErr != nil {
+		return nil, fmt.Errorf("chromedp (listado): %w", navErr)
 	}
 
 	seen := map[string]bool{}
 	const maxScrolls = 20
 	stableRounds := 0
 	for i := 0; i < maxScrolls && stableRounds < 2; i++ {
+		roundCtx, cancelRound := context.WithTimeout(browserCtx, 15*time.Second)
+
 		var links []string
-		if err := chromedp.Run(timeoutCtx, chromedp.Evaluate(jsExtractListingLinks, &links)); err != nil {
+		if err := chromedp.Run(roundCtx, chromedp.Evaluate(jsExtractListingLinks, &links)); err != nil {
+			cancelRound()
 			return nil, fmt.Errorf("chromedp (extraer links): %w", err)
 		}
 		before := len(seen)
@@ -235,11 +252,12 @@ func ScrapeVehicleListing(browserCtx context.Context, listingURL string) ([]stri
 		}
 
 		var clicked bool
-		_ = chromedp.Run(timeoutCtx, chromedp.Evaluate(jsClickLoadMore, &clicked))
-		_ = chromedp.Run(timeoutCtx,
+		_ = chromedp.Run(roundCtx, chromedp.Evaluate(jsClickLoadMore, &clicked))
+		_ = chromedp.Run(roundCtx,
 			chromedp.KeyEvent(`End`),
 			chromedp.Sleep(1500*time.Millisecond),
 		)
+		cancelRound()
 	}
 
 	urls := make([]string, 0, len(seen))
@@ -312,8 +330,18 @@ func ScrapeAllVehicles(parentCtx context.Context, listingURL string, maxVehicles
 
 	urls, err := ScrapeVehicleListing(browserCtx, listingURL)
 	if err != nil {
-		return nil, err
+		// reintento con un Chromium nuevo — un crash del navegador (p.ej. por
+		// memoria) deja el contexto anterior inservible, así que no vale la
+		// pena reintentar sobre el mismo browserCtx.
+		cancel()
+		browserCtx, cancel = NewHeadlessBrowser(parentCtx)
+		urls, err = ScrapeVehicleListing(browserCtx, listingURL)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("%w (falló también en el reintento)", err)
+		}
 	}
+	defer cancel()
 
 	if len(urls) > 0 {
 		if len(urls) > maxVehicles {
