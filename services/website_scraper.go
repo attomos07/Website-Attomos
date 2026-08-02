@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	neturl "net/url"
 	"regexp"
 	"strings"
@@ -107,6 +108,7 @@ type jsExtractResult struct {
 // limitada puede matar a Chromium si intenta cargar fotos en alta
 // resolución de varias tarjetas de golpe (típico en páginas de listado).
 func NewHeadlessBrowser(parent context.Context) (context.Context, context.CancelFunc) {
+	chromeOutput := &chromedpLogWriter{prefix: "🌐 [chromium stdout/stderr] "}
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(parent, append(
 		chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
@@ -121,15 +123,35 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 		chromedp.Flag("mute-audio", true),
 		chromedp.Flag("no-first-run", true),
 		chromedp.Flag("metrics-recording-only", true),
+		chromedp.CombinedOutput(chromeOutput), // captura stdout/stderr crudo del proceso de Chromium — suele traer el motivo real de un crash
 	)...)
 
-	browserCtx, cancelBrowser := chromedp.NewContext(allocCtx)
+	browserCtx, cancelBrowser := chromedp.NewContext(allocCtx,
+		// Sin esto, cuando el navegador se cae por dentro (crash, error de
+		// red, lo que sea) solo vemos "context canceled" del lado de Go, sin
+		// ninguna pista de la causa real. Con esto, chromedp manda esos
+		// detalles internos a nuestro log.
+		chromedp.WithErrorf(func(format string, args ...interface{}) {
+			log.Printf("🔴 [chromedp] "+format, args...)
+		}),
+	)
 
 	cancel := func() {
 		cancelBrowser()
 		cancelAlloc()
 	}
 	return browserCtx, cancel
+}
+
+// chromedpLogWriter adapta un io.Writer (lo que pide CombinedOutput) para
+// que la salida del proceso de Chromium vaya al log del servidor.
+type chromedpLogWriter struct {
+	prefix string
+}
+
+func (w *chromedpLogWriter) Write(p []byte) (int, error) {
+	log.Printf("%s%s", w.prefix, strings.TrimRight(string(p), "\n"))
+	return len(p), nil
 }
 
 func buildVehicleData(pageURL string, raw jsExtractResult) *VehicleWebsiteData {
