@@ -115,11 +115,12 @@ func NewHeadlessBrowser(parent context.Context) (context.Context, context.Cancel
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true), // necesario corriendo como root en el contenedor de Railway
 		chromedp.Flag("disable-dev-shm-usage", true),
-		// EXPERIMENTAL: si esto arregla el "context canceled" silencioso,
-		// confirma que el problema era la arquitectura multi-proceso de
-		// Chromium chocando con restricciones del contenedor de Railway.
-		chromedp.Flag("single-process", true),
-		chromedp.Flag("no-zygote", true),
+		// disable-hang-monitor: evita que Chrome mate por su cuenta una
+		// pestaña que considera "no responde" — pasa con páginas muy pesadas
+		// (472 tarjetas renderizando de golpe) aunque no sea un crash real ni
+		// falta de memoria. Es el flag estándar que usan Puppeteer/Playwright
+		// para scraping justamente por esto.
+		chromedp.Flag("disable-hang-monitor", true),
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("disable-background-networking", true),
 		chromedp.Flag("disable-default-apps", true),
@@ -245,11 +246,15 @@ func ScrapeVehicleListing(browserCtx context.Context, listingURL string) ([]stri
 		return nil, fmt.Errorf("URL de listado inválida: %w", err)
 	}
 
-	navCtx, cancelNav := context.WithTimeout(browserCtx, 30*time.Second)
+	navCtx, cancelNav := context.WithTimeout(browserCtx, 60*time.Second)
 	navErr := chromedp.Run(navCtx,
+		chromedp.EmulateViewport(1280, 1024),
 		chromedp.Navigate(listingURL),
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
-		chromedp.Sleep(3*time.Second),
+		// una página de listado con cientos de tarjetas tarda mucho más en
+		// asentarse que la ficha de un solo vehículo — le damos más margen
+		// antes de tocarla, para no interrumpir un render todavía en curso.
+		chromedp.Sleep(12*time.Second),
 	)
 	cancelNav()
 	if navErr != nil {
@@ -424,11 +429,12 @@ const jsClickNextUnvisited = `
 // ya no encuentra tarjetas sin visitar, intenta cargar más (scroll / botón
 // "cargar más") antes de darse por vencido.
 func scrapeAllVehiclesByClicking(browserCtx context.Context, listingURL string, maxVehicles int, onProgress func(done, total int)) ([]VehicleScrapeOutcome, error) {
-	navCtx, cancelNav := context.WithTimeout(browserCtx, 30*time.Second)
+	navCtx, cancelNav := context.WithTimeout(browserCtx, 60*time.Second)
 	err := chromedp.Run(navCtx,
+		chromedp.EmulateViewport(1280, 1024),
 		chromedp.Navigate(listingURL),
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
-		chromedp.Sleep(3*time.Second),
+		chromedp.Sleep(12*time.Second),
 	)
 	cancelNav()
 	if err != nil {
