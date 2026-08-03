@@ -1049,7 +1049,10 @@ function initViewToggle() {
 
     // Dentro de Mi Negocio arrancamos en la vista de existencias (la que ya
     // conocía el usuario); accediendo directo a /inventory arrancamos en Sheets.
-    const initial = params.get('view') || (IS_EMBED_MODE ? 'negocio' : 'sheets');
+    // "website" está oculto temporalmente — si alguien llega con ?view=website
+    // en la URL (ej. un enlace viejo guardado), no lo dejamos entrar por ahí.
+    let initial = params.get('view') || (IS_EMBED_MODE ? 'negocio' : 'sheets');
+    if (initial === 'website') initial = IS_EMBED_MODE ? 'negocio' : 'sheets';
     setActiveView(initial);
 }
 
