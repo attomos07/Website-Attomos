@@ -137,6 +137,19 @@
         height: 70vh;
         border: none;
         display: block;
+        position: relative;
+        z-index: 10000; /* por encima del overlay de pantalla completa que se activa cuando el iframe tiene un modal abierto */
+    }
+    /* Se activa/desactiva desde JS cuando el iframe de inventario avisa que
+       abrió/cerró un modal — el overlay del modal vive DENTRO del iframe y
+       solo puede oscurecer lo que hay dentro de él; esto oscurece el resto
+       de la pantalla (sidebar, header) que vive fuera. */
+    #inventoryModalBridgeOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 9999;
     }
 </style>
     <style>
@@ -1239,6 +1252,10 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
 
     <!-- Sileo viewport -->
     <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <!-- Oscurecido de pantalla completa cuando un modal del iframe de
+         inventario está abierto — ver #inventoryModalBridgeOverlay en el CSS -->
+    <div id="inventoryModalBridgeOverlay"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <script src="/static/js/sileo.js"></script>

@@ -1904,11 +1904,14 @@ window.addEventListener('message', (event) => {
     } else if (data.type === 'attomos:inventory:setqty') {
         invSetQty(data.idx, data.value);
     } else if (data.type === 'attomos:inventory:modal-state') {
-        // Un modal del iframe de inventario está abierto/cerrado: el botón
-        // flotante "Guardar Cambios" vive fuera del iframe, así que el fondo
-        // oscurecido del modal no lo puede cubrir — lo ocultamos nosotros.
+        // Un modal del iframe de inventario está abierto/cerrado: el overlay
+        // oscuro del modal vive DENTRO del iframe, así que solo cubre lo que
+        // hay ahí — el botón flotante "Guardar Cambios" y el resto de la
+        // pantalla (sidebar, header) viven fuera y hay que taparlos aparte.
         const saveBtn = document.getElementById('saveProfileBtn');
         if (saveBtn) saveBtn.style.visibility = data.open ? 'hidden' : '';
+        const bridgeOverlay = document.getElementById('inventoryModalBridgeOverlay');
+        if (bridgeOverlay) bridgeOverlay.style.display = data.open ? 'block' : 'none';
     }
 });
 
