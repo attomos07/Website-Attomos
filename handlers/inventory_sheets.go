@@ -697,7 +697,29 @@ func (h *GoogleIntegrationHandler) syncInventoryToCatalogWithData(agent *models.
 		return 0, nil
 	}
 	if agent.BranchID == 0 {
-		return 0, fmt.Errorf("este agente no tiene una sucursal (Mi Negocio) vinculada")
+		// Si el usuario solo tiene una sucursal, no hay ambigüedad — la
+		// vinculamos automáticamente en vez de exigir un paso manual que
+		// hoy no existe en la interfaz. Si tiene varias, sí necesitamos que
+		// se vincule explícitamente (no podemos adivinar cuál le toca).
+		var branchCount int64
+		if err := config.DB.Model(&models.MyBusinessInfo{}).Where("user_id = ?", agent.UserID).Count(&branchCount).Error; err != nil {
+			return 0, fmt.Errorf("no se pudo verificar las sucursales del usuario: %w", err)
+		}
+		if branchCount == 0 {
+			return 0, fmt.Errorf("todavía no has creado tu negocio en \"Mi Negocio\"")
+		}
+		if branchCount > 1 {
+			return 0, fmt.Errorf("este agente no tiene una sucursal (Mi Negocio) vinculada, y tienes varias — hay que vincularlo explícitamente")
+		}
+		var onlyBranch models.MyBusinessInfo
+		if err := config.DB.Where("user_id = ?", agent.UserID).First(&onlyBranch).Error; err != nil {
+			return 0, fmt.Errorf("no se encontró la sucursal del usuario: %w", err)
+		}
+		agent.BranchID = onlyBranch.ID
+		if err := config.DB.Model(agent).Update("branch_id", onlyBranch.ID).Error; err != nil {
+			return 0, fmt.Errorf("no se pudo vincular la sucursal automáticamente: %w", err)
+		}
+		log.Printf("🔗 [Agent %d] auto-vinculado a la única sucursal del usuario (branch_id=%d)", agent.ID, onlyBranch.ID)
 	}
 
 	var branch models.MyBusinessInfo
