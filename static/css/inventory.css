@@ -421,7 +421,6 @@ body {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(17, 24, 39, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -431,11 +430,24 @@ body {
     visibility: hidden;
     transition: opacity 0.22s ease;
 }
+/* El fondo oscuro + blur vive en un ::before detrás de la tarjeta, en vez
+   de en el propio .modal-overlay, para que el backdrop-filter no termine
+   desenfocando también .modal-card (que es hija, no hermana, del overlay). */
+.modal-overlay::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+}
 .modal-overlay.open {
     opacity: 1;
     visibility: visible;
 }
 .modal-card {
+    position: relative;
+    z-index: 1;
     background: #ffffff;
     border-radius: 18px;
     width: min(440px, 100%);

@@ -148,7 +148,8 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.55);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(4px);
         z-index: 9999;
         pointer-events: none; /* puramente visual — nunca debe poder bloquear clics al modal real, que vive dentro del iframe */
     }
@@ -940,6 +941,14 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                          postMessage cuando se activa este tab. -->
                     <div id="tab-inventario" class="page-tab-panel">
                         <iframe id="inventoryFrame" class="inventory-iframe" src="/inventory?embed=1" title="Inventario"></iframe>
+                        <!-- Oscurecido de pantalla completa cuando un modal del iframe de
+                             inventario está abierto — ver #inventoryModalBridgeOverlay en el CSS.
+                             Tiene que vivir DENTRO de #tab-inventario (mismo stacking context
+                             que el iframe) para que su z-index compita de verdad contra el del
+                             iframe; puesto fuera de .content-wrapper, el z-index:1 de
+                             .content-wrapper lo atrapaba por debajo sin importar qué z-index
+                             tuviera el iframe. -->
+                        <div id="inventoryModalBridgeOverlay"></div>
                     </div><!-- /tab-inventario -->
 
                     <!-- ══════════════════════════════════════════
@@ -1253,10 +1262,6 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
 
     <!-- Sileo viewport -->
     <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
-
-    <!-- Oscurecido de pantalla completa cuando un modal del iframe de
-         inventario está abierto — ver #inventoryModalBridgeOverlay en el CSS -->
-    <div id="inventoryModalBridgeOverlay"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <script src="/static/js/sileo.js"></script>
