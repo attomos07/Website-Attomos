@@ -239,6 +239,16 @@ type Agent struct {
 	InventoryVinColumn        string `gorm:"size:255" json:"inventoryVinColumn"`
 	InventoryNewArrivalColumn string `gorm:"size:255" json:"inventoryNewArrivalColumn"`
 
+	// API Explorer — conecta cualquier endpoint externo que responda JSON
+	// (independiente del negocio/esquema). El fetch al endpoint externo lo
+	// hace el backend (ver handlers/api_explorer.go), no el navegador: la
+	// key nunca se manda al cliente y se evita el problema de CORS.
+	APIExplorerEndpoint    string     `gorm:"size:1000" json:"apiExplorerEndpoint"`
+	APIExplorerKey         string     `gorm:"type:text" json:"-"`
+	APIExplorerAuthMode    string     `gorm:"size:20;default:header" json:"apiExplorerAuthMode"`
+	APIExplorerConnected   bool       `gorm:"default:false" json:"apiExplorerConnected"`
+	APIExplorerConnectedAt *time.Time `json:"apiExplorerConnectedAt"`
+
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

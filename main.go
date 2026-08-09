@@ -345,6 +345,13 @@ func main() {
 			protected.POST("/inventory-sheets/sync-products/:agent_id", googleIntegrationHandler.SyncInventoryProducts)
 			protected.POST("/inventory-sheets/bulk-update/:agent_id", googleIntegrationHandler.BulkUpdateInventoryFromFile)
 
+			// 🔌 API EXPLORER — conecta cualquier endpoint externo que responda JSON.
+			// El fetch al endpoint externo lo hace el backend (proxy), no el navegador.
+			protected.GET("/api-explorer/status/:agent_id", handlers.GetAPIExplorerStatus)
+			protected.POST("/api-explorer/connect/:agent_id", handlers.ConnectAPIExplorer)
+			protected.POST("/api-explorer/disconnect/:agent_id", handlers.DisconnectAPIExplorer)
+			protected.GET("/api-explorer/data/:agent_id", handlers.GetAPIExplorerData)
+
 			// Inventario desde el sitio web del cliente (scraping con navegador headless)
 			protected.GET("/inventory-website/:agent_id/scrape", googleIntegrationHandler.ScrapeVehicleFromWebsite)
 			protected.POST("/inventory-website/:agent_id/scrape-all", googleIntegrationHandler.StartScrapeAllVehicles)
