@@ -1,0 +1,285 @@
+/* ============================================
+   API EXPLORER — estilos propios, autocontenidos
+   (no depende de inventory.css / my-business.css)
+   ============================================ */
+
+.apx-layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-bottom: 3rem;
+}
+
+.apx-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.apx-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.apx-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.apx-card-title i {
+    font-size: 1.2rem;
+    color: #06b6d4;
+}
+.apx-card-title h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* ---------- status badge ---------- */
+.apx-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.apx-status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.apx-disconnected { background: #f3f4f6; color: #6b7280; }
+.apx-disconnected .apx-status-dot { background: #9ca3af; }
+.apx-connected { background: #ecfdf5; color: #16a34a; }
+.apx-connected .apx-status-dot { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+.apx-error { background: #fef2f2; color: #dc2626; }
+.apx-error .apx-status-dot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.18); }
+.apx-pending { background: #fffbeb; color: #b45309; }
+.apx-pending .apx-status-dot { background: #f59e0b; animation: apx-pulse 1s infinite; }
+@keyframes apx-pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+/* ---------- form ---------- */
+.apx-form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.apx-field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.apx-label {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; font-weight: 600; color: #374151;
+}
+.apx-label i { color: #06b6d4; font-size: 0.95rem; }
+
+.apx-input {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.88rem;
+    font-family: inherit;
+    color: #111827;
+    background: #fff;
+    outline: none;
+    transition: border-color .15s;
+}
+.apx-input:focus { border-color: #06b6d4; }
+
+select.apx-input { cursor: pointer; }
+
+.apx-input-row { display: flex; gap: 0.5rem; }
+.apx-input-row .apx-input { flex: 1; }
+.apx-eye-btn {
+    flex-shrink: 0;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb;
+    color: #6b7280;
+    border-radius: 8px;
+    padding: 0 0.9rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+.apx-eye-btn:hover { color: #374151; background: #f3f4f6; }
+
+.apx-hint {
+    display: flex; align-items: flex-start; gap: 0.35rem;
+    font-size: 0.76rem; color: #9ca3af; line-height: 1.4;
+}
+.apx-hint i { margin-top: 0.15rem; flex-shrink: 0; }
+
+.apx-remember {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: #374151; cursor: pointer;
+}
+.apx-remember input { accent-color: #06b6d4; width: 15px; height: 15px; cursor: pointer; }
+
+.apx-security-note {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 8px; padding: 0.7rem 0.9rem;
+    font-size: 0.78rem; color: #92400e; line-height: 1.45;
+    margin: 0;
+}
+.apx-security-note i { margin-top: 0.15rem; flex-shrink: 0; color: #d97706; }
+
+/* ---------- buttons ---------- */
+.apx-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+.apx-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border: none; border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.84rem; font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s, background .15s;
+    font-family: inherit;
+}
+.apx-btn-primary { background: #06b6d4; color: #fff; }
+.apx-btn-primary:hover { filter: brightness(1.06); }
+.apx-btn-secondary { background: #f3f4f6; color: #374151; }
+.apx-btn-secondary:hover { background: #e5e7eb; }
+.apx-btn-danger { background: #fef2f2; color: #dc2626; }
+.apx-btn-danger:hover { background: #fee2e2; }
+.apx-btn:disabled { opacity: 0.55; cursor: default; }
+
+/* ---------- connection info ---------- */
+.apx-connection-info {
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.9rem;
+}
+.apx-connection-detail { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; flex-wrap: wrap; }
+.apx-connection-label { color: #6b7280; font-weight: 600; flex-shrink: 0; }
+.apx-connection-link {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    color: #06b6d4; text-decoration: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    word-break: break-all;
+}
+.apx-connection-link:hover { text-decoration: underline; }
+
+/* ---------- indicators ---------- */
+.apx-indicators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin: 1.1rem 0;
+}
+.apx-indicator-card {
+    background: #f9fafb;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    display: flex; flex-direction: column; gap: 0.25rem;
+}
+.apx-ind-value {
+    font-size: 1.35rem; font-weight: 700; color: #111827;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    line-height: 1.15;
+}
+.apx-ind-value-sm { font-size: 0.92rem; font-weight: 600; }
+.apx-ind-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: #9ca3af; font-weight: 600;
+}
+
+/* ---------- table ---------- */
+.apx-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    margin-top: 0.5rem;
+}
+.apx-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+.apx-table th {
+    background: #f9fafb;
+    color: #6b7280;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.65rem 0.9rem;
+    white-space: nowrap;
+    border-bottom: 1px solid #eef0f2;
+    position: sticky;
+    top: 0;
+}
+.apx-table td {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+    vertical-align: middle;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.apx-table tbody tr:last-child td { border-bottom: none; }
+.apx-table tbody tr:hover { background: #fafafa; }
+
+.apx-photo-cell { white-space: nowrap; }
+.apx-thumb {
+    width: 44px; height: 44px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eef0f2;
+    vertical-align: middle;
+    display: inline-block;
+    background: #f3f4f6;
+}
+.apx-thumb-extra {
+    margin-left: 0.4rem;
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* ---------- raw json ---------- */
+.apx-raw {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin-top: 0.75rem;
+    max-height: 60vh;
+    overflow: auto;
+}
+.apx-raw pre {
+    margin: 0;
+    color: #d1d9e6;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ---------- empty state ---------- */
+.apx-empty {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1rem;
+    color: #9ca3af;
+    text-align: center;
+    font-size: 0.85rem;
+}
+.apx-empty i { font-size: 1.6rem; color: #d1d5db; }
+
+@media (max-width: 640px) {
+    .apx-card { padding: 1.1rem; }
+    .apx-indicators { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de API - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/api-explorer.css">
+
+    <!-- Sileo toast system -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <link rel="stylesheet" href="/static/css/sileo.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div id="sidebarWrap">
+            {{template "sidebar.html" .}}
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            <div id="userbarWrap">
+                {{template "userbar.html" .}}
+            </div>
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="apx-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-code"></i>
+                                <span>Explorador de API</span>
+                            </h1>
+                            <p class="page-subtitle">Conecta cualquier endpoint que responda JSON y visualízalo en tabla, con todo e imágenes</p>
+                        </div>
+                    </div>
+
+                    <div class="apx-card">
+                        <div class="apx-card-header">
+                            <div class="apx-card-title">
+                                <i class="lni lni-cloud"></i>
+                                <h2>Endpoint</h2>
+                            </div>
+                            <div class="apx-status-badge apx-disconnected" id="apxStatusBadge">
+                                <span class="apx-status-dot"></span>
+                                <span id="apxStatusText">Sin conectar</span>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de conexión -->
+                        <div id="apxConnectForm" class="apx-form">
+                            <div class="apx-field">
+                                <label class="apx-label" for="apxEndpointInput">
+                                    <i class="lni lni-link"></i>
+                                    <span>Endpoint (URL de la API)</span>
+                                </label>
+                                <input type="text" id="apxEndpointInput" class="apx-input" placeholder="https://tu-dominio.com/api/v1/vehiculos">
+                                <small class="apx-hint">
+                                    <i class="lni lni-information"></i>
+                                    <span>Funciona con cualquier API que responda JSON — no está atado a ningún negocio en particular.</span>
+                                </small>
+                            </div>
+
+                            <div class="apx-field">
+                                <label class="apx-label" for="apxKeyInput">
+                                    <i class="lni lni-key"></i>
+                                    <span>API Key (opcional, según lo pida esa API)</span>
+                                </label>
+                                <div class="apx-input-row">
+                                    <input type="password" id="apxKeyInput" class="apx-input" placeholder="gaa_...">
+                                    <button type="button" class="apx-eye-btn" id="apxToggleEye" title="Mostrar/ocultar">
+                                        <i class="lni lni-eye" id="apxEyeIcon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="apx-field">
+                                <label class="apx-label" for="apxAuthModeSelect">
+                                    <i class="lni lni-settings-alt"></i>
+                                    <span>Cómo enviar la key</span>
+                                </label>
+                                <select id="apxAuthModeSelect" class="apx-input">
+                                    <option value="header">Header X-API-Key</option>
+                                    <option value="bearer">Header Authorization: Bearer</option>
+                                    <option value="query">Parámetro en la URL (?api_key=)</option>
+                                </select>
+                            </div>
+
+                            <label class="apx-remember">
+                                <input type="checkbox" id="apxRemember">
+                                <span>Recordar esta key en este navegador (localStorage — ver nota abajo)</span>
+                            </label>
+                            <p class="apx-security-note">
+                                <i class="lni lni-shield"></i>
+                                <span>Guardar la key aquí la deja visible para cualquiera con acceso a este navegador. Úsalo solo en tu equipo personal; en una compu compartida, mejor déjalo sin marcar y pégala cada vez.</span>
+                            </p>
+
+                            <div class="apx-actions">
+                                <button type="button" class="apx-btn apx-btn-primary" id="btnApxConnect">
+                                    <i class="lni lni-link"></i>
+                                    <span>Conectar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Info + acciones (visible tras conectar) -->
+                        <div id="apxConnectionInfo" class="apx-connection-info" style="display:none;">
+                            <div class="apx-connection-detail">
+                                <span class="apx-connection-label">Endpoint:</span>
+                                <a href="#" id="apxLink" class="apx-connection-link" target="_blank" rel="noopener">
+                                    <span id="apxLinkText">—</span>
+                                    <i class="lni lni-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="apx-actions" id="apxManageActions" style="display:none;">
+                            <button type="button" class="apx-btn apx-btn-secondary" id="btnApxRefresh">
+                                <i class="lni lni-reload"></i>
+                                <span>Actualizar</span>
+                            </button>
+                            <button type="button" class="apx-btn apx-btn-secondary" id="btnApxChange">
+                                <i class="lni lni-pencil"></i>
+                                <span>Cambiar endpoint</span>
+                            </button>
+                            <button type="button" class="apx-btn apx-btn-secondary" id="btnApxToggleRaw">
+                                <i class="lni lni-code"></i>
+                                <span id="btnApxToggleRawLabel">Ver JSON crudo</span>
+                            </button>
+                            <button type="button" class="apx-btn apx-btn-danger" id="btnApxDisconnect">
+                                <i class="lni lni-unlink"></i>
+                                <span>Olvidar esta key</span>
+                            </button>
+                        </div>
+
+                        <!-- Indicadores -->
+                        <div class="apx-indicators" id="apxIndicators" style="display:none;">
+                            <div class="apx-indicator-card">
+                                <span class="apx-ind-value" id="apxIndEstado">—</span>
+                                <span class="apx-ind-label">Estado</span>
+                            </div>
+                            <div class="apx-indicator-card">
+                                <span class="apx-ind-value" id="apxIndTotal">0</span>
+                                <span class="apx-ind-label">Total</span>
+                            </div>
+                            <div class="apx-indicator-card">
+                                <span class="apx-ind-value" id="apxIndTiempo">—</span>
+                                <span class="apx-ind-label">Respuesta</span>
+                            </div>
+                            <div class="apx-indicator-card">
+                                <span class="apx-ind-value apx-ind-value-sm" id="apxIndActualizado">—</span>
+                                <span class="apx-ind-label">Actualizado</span>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de resultados (columnas dinámicas) -->
+                        <div class="apx-table-wrap" id="apxTableWrap" style="display:none;">
+                            <table class="apx-table" id="apxTable">
+                                <thead><tr id="apxTableHead"></tr></thead>
+                                <tbody id="apxTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- JSON crudo -->
+                        <div class="apx-raw" id="apxRawContainer" style="display:none;">
+                            <pre id="apxRawJson"></pre>
+                        </div>
+
+                        <!-- Estado vacío -->
+                        <div class="apx-empty" id="apxEmpty" style="display:none;">
+                            <i class="lni lni-cloud"></i>
+                            <span id="apxEmptyText">La API respondió pero no se encontraron elementos para mostrar.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport (toasts) -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/api-explorer.js"></script>
+</body>
+</html>
