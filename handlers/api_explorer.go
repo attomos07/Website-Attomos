@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -178,6 +179,42 @@ func GetAPIExplorerData(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, result)
+}
+
+// GetAPIExplorerForBot — GET /api/bot/api-explorer/:agent_id
+// Lo consume el bot de WhatsApp (no el navegador) para leer el inventario
+// conectado y poder responder preguntas del cliente con esos datos. Se
+// autentica con BOT_API_TOKEN — el mismo secreto que ya usan
+// /api/bot/orders, /api/bot/inscriptions y /api/payment-config/bot/:branch_id
+// — en vez de sesión de usuario, porque el bot no tiene una.
+func GetAPIExplorerForBot(c *gin.Context) {
+	botToken := os.Getenv("BOT_API_TOKEN")
+	if botToken == "" || c.GetHeader("Authorization") != "Bearer "+botToken {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	agentID := c.Param("agent_id")
+	var agent models.Agent
+	if err := config.DB.Where("id = ?", agentID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	if !agent.APIExplorerConnected || agent.APIExplorerEndpoint == "" {
+		c.JSON(http.StatusOK, gin.H{"connected": false})
+		return
+	}
+
+	result, err := fetchExternalJSON(agent.APIExplorerEndpoint, agent.APIExplorerKey, agent.APIExplorerAuthMode)
+	if err != nil {
+		log.Printf("⚠️  [Agent %d] API Explorer (bot): error consultando endpoint externo — %v", agent.ID, err)
+		c.JSON(http.StatusOK, gin.H{"connected": true, "ok": false, "error": err.Error()})
+		return
+	}
+
+	result["connected"] = true
 	c.JSON(http.StatusOK, result)
 }
 

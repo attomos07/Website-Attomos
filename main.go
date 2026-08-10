@@ -271,6 +271,7 @@ func main() {
 		// Bot endpoints (no requieren JWT, usan BOT_API_TOKEN)
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
+		router.GET("/api/bot/api-explorer/:agent_id", handlers.GetAPIExplorerForBot)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
 		router.GET("/ws/bot/crm", handlers.BotCRMSocket)

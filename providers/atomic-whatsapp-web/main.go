@@ -119,6 +119,11 @@ func main() {
 		log.Println("ℹ️  No hay métodos de pago configurados en este negocio")
 	}
 
+	// Cargar inventario/endpoint conectado vía API Explorer (si el negocio
+	// configuró uno desde el panel) y refrescarlo cada 5 min en segundo plano.
+	log.Println("🔌 Cargando inventario de API Explorer...")
+	src.StartAPIExplorerPolling()
+
 	// Conectar con el CRM en vivo (hub del backend) — reporta cada mensaje y
 	// permite que un humano tome la conversación desde el CRM. Se reconecta
 	// solo si se cae; no bloquea el arranque si no está configurado.

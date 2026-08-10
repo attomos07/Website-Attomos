@@ -137,8 +137,12 @@ NO listes productos. NO expliques. NO agregues texto antes ni después. Solo esc
 		}
 	}
 
+	// ── Catálogo del API Explorer (endpoint externo conectado por el cliente) ──
+	apiExplorerCatalog := GetAPIExplorerContext()
+
 	// ── Construir prompt completo ─────────────────────────────────────────────
 	fullPrompt := fmt.Sprintf(`%s
+%s
 %s
 HISTORIAL DE CONVERSACIÓN:
 %s
@@ -158,6 +162,7 @@ INSTRUCCIONES:
 RESPUESTA:`,
 		systemPrompt,
 		mediaCatalog,
+		apiExplorerCatalog,
 		conversationHistory,
 		promptContext,
 		userMessage)
