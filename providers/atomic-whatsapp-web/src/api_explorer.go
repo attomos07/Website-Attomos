@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -152,6 +153,110 @@ func IsAPIExplorerConnected() bool {
 	return apxCache.connected && len(apxCache.items) > 0
 }
 
+// apxStopwords son palabras comunes en español que no aportan nada como
+// criterio de búsqueda (artículos, muletillas típicas al preguntar por algo).
+// Deliberadamente corta — mejor dejar pasar una palabra de más que quitar una
+// que sí importaba.
+var apxStopwords = map[string]bool{
+	"el": true, "la": true, "los": true, "las": true, "de": true, "del": true,
+	"que": true, "un": true, "una": true, "unos": true, "unas": true,
+	"y": true, "en": true, "a": true, "por": true, "para": true, "con": true,
+	"tienen": true, "tiene": true, "hay": true, "me": true, "puedes": true,
+	"quiero": true, "busco": true, "quisiera": true, "algun": true, "alguna": true,
+	"cual": true, "cuales": true, "cuanto": true, "cuanta": true, "cuantos": true,
+	"cuantas": true, "sobre": true, "info": true, "informacion": true, "dame": true,
+	"podrias": true, "hola": true, "buenas": true, "tienes": true,
+}
+
+var apxTokenRe = regexp.MustCompile(`[a-záéíóúñü0-9]+`)
+
+// apxTokenize saca las palabras "de contenido" de la pregunta del cliente
+// (sin acentos raros de por medio — no normaliza, pero regexp ya incluye
+// vocales acentuadas) para usarlas como criterio de búsqueda.
+func apxTokenize(s string) []string {
+	tokens := apxTokenRe.FindAllString(strings.ToLower(s), -1)
+	out := make([]string, 0, len(tokens))
+	for _, t := range tokens {
+		if len(t) < 3 || apxStopwords[t] {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
+}
+
+// apxItemHaystack aplana todos los valores del item a un solo string en
+// minúsculas, para poder buscar tokens con un simple Contains por campo sin
+// importar el nombre/esquema de las columnas (cada cliente tiene el suyo).
+func apxItemHaystack(item map[string]interface{}) string {
+	var sb strings.Builder
+	for _, v := range item {
+		if v == nil {
+			continue
+		}
+		sb.WriteString(strings.ToLower(fmt.Sprintf("%v", v)))
+		sb.WriteByte(' ')
+	}
+	return sb.String()
+}
+
+type apxScoredItem struct {
+	item  map[string]interface{}
+	score int
+}
+
+// apxSelectRelevant elige qué elementos del catálogo mandarle a Gemini:
+//   - Si la pregunta trae palabras de búsqueda reales, puntúa cada item por
+//     cuántas de esas palabras aparecen en alguno de sus campos y regresa los
+//     mejores (mejor cubrir bien pocos relevantes que 40 al azar).
+//   - Si no hay palabras útiles (pregunta genérica, "qué tienen", saludo,
+//     etc.) o ninguna coincide con nada, cae al comportamiento anterior:
+//     los primeros `max` tal cual, para no dejar al bot sin nada que mostrar.
+func apxSelectRelevant(items []map[string]interface{}, query string, max int) (selected []map[string]interface{}, wasSearch bool) {
+	tokens := apxTokenize(query)
+	if len(tokens) == 0 {
+		return apxFirstN(items, max), false
+	}
+
+	scored := make([]apxScoredItem, 0, len(items))
+	for _, it := range items {
+		hay := apxItemHaystack(it)
+		score := 0
+		for _, t := range tokens {
+			if strings.Contains(hay, t) {
+				score++
+			}
+		}
+		if score > 0 {
+			scored = append(scored, apxScoredItem{item: it, score: score})
+		}
+	}
+
+	if len(scored) == 0 {
+		// Ningún item matchea las palabras de la pregunta — mandamos una
+		// muestra genérica de todos modos, para que el bot pueda decir "no
+		// tenemos eso" con datos reales en la mano en vez de solo adivinar.
+		return apxFirstN(items, max), false
+	}
+
+	sort.SliceStable(scored, func(i, j int) bool { return scored[i].score > scored[j].score })
+	if len(scored) > max {
+		scored = scored[:max]
+	}
+	out := make([]map[string]interface{}, len(scored))
+	for i, s := range scored {
+		out[i] = s.item
+	}
+	return out, true
+}
+
+func apxFirstN(items []map[string]interface{}, n int) []map[string]interface{} {
+	if len(items) <= n {
+		return items
+	}
+	return items[:n]
+}
+
 func apxLooksLikeImage(v interface{}) bool {
 	s, ok := v.(string)
 	if !ok {
@@ -183,7 +288,13 @@ func apxFormatFieldValue(key string, v interface{}) string {
 // GetAPIExplorerContext arma el bloque de texto para inyectar en el prompt de
 // Gemini con los datos del endpoint conectado. Vacío si no hay nada conectado
 // (así no se agrega ruido al prompt cuando el negocio no usa esta función).
-func GetAPIExplorerContext() string {
+//
+// query es el mensaje del cliente: se usa para elegir CUÁLES elementos del
+// catálogo mandar (los que realmente coinciden con lo que está preguntando)
+// en vez de siempre los primeros N por orden de llegada — importante cuando
+// el catálogo tiene cientos de elementos y los primeros N casi nunca son los
+// relevantes para una pregunta puntual.
+func GetAPIExplorerContext(query string) string {
 	apxCache.mu.RLock()
 	defer apxCache.mu.RUnlock()
 
@@ -191,15 +302,16 @@ func GetAPIExplorerContext() string {
 		return ""
 	}
 
-	items := apxCache.items
-	truncated := false
-	if len(items) > apiExplorerMaxItemsInPrompt {
-		items = items[:apiExplorerMaxItemsInPrompt]
-		truncated = true
-	}
+	total := len(apxCache.items)
+	items, wasSearch := apxSelectRelevant(apxCache.items, query, apiExplorerMaxItemsInPrompt)
+	truncated := len(items) < total
 
 	var sb strings.Builder
-	sb.WriteString("\nINVENTARIO / DATOS CONECTADOS (API Explorer):\n")
+	if wasSearch {
+		sb.WriteString(fmt.Sprintf("\nINVENTARIO / DATOS CONECTADOS (API Explorer) — %d de %d elemento(s) en total, los más relevantes para la pregunta del cliente:\n", len(items), total))
+	} else {
+		sb.WriteString(fmt.Sprintf("\nINVENTARIO / DATOS CONECTADOS (API Explorer) — %d de %d elemento(s) en total:\n", len(items), total))
+	}
 	for i, item := range items {
 		var parts []string
 		for k, v := range item {
@@ -212,7 +324,11 @@ func GetAPIExplorerContext() string {
 		sb.WriteString(fmt.Sprintf("%d. %s\n", i+1, strings.Join(parts, " | ")))
 	}
 	if truncated {
-		sb.WriteString(fmt.Sprintf("(...hay más elementos disponibles; se muestran los primeros %d)\n", apiExplorerMaxItemsInPrompt))
+		if wasSearch {
+			sb.WriteString("(puede haber más elementos que también coinciden; estos son los más relevantes)\n")
+		} else {
+			sb.WriteString(fmt.Sprintf("(...hay más elementos disponibles; se muestran los primeros %d)\n", apiExplorerMaxItemsInPrompt))
+		}
 	}
 	sb.WriteString("Usa esta información para responder preguntas del cliente sobre disponibilidad, precio, características, etc. Si pregunta por algo que NO aparece en esta lista, dilo claramente — no inventes datos.\n")
 

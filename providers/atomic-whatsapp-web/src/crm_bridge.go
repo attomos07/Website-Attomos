@@ -37,12 +37,14 @@ type crmEvent struct {
 	Timestamp   int64  `json:"timestamp"`
 }
 
-// crmSendCommand es lo que el backend manda AL bot cuando un humano contesta
-// desde el CRM.
+// crmSendCommand es lo que el backend manda AL bot por este mismo socket —
+// tanto comandos de conversación (un humano contestando desde el CRM) como
+// avisos generales del backend que no son por conversación (ej. "refresca tu
+// caché del API Explorer"), que por eso no traen phone.
 type crmSendCommand struct {
-	Type  string `json:"type"` // "send"
-	Phone string `json:"phone"`
-	Text  string `json:"text"`
+	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_api_explorer"
+	Phone string `json:"phone,omitempty"`
+	Text  string `json:"text,omitempty"`
 }
 
 var (
@@ -140,6 +142,21 @@ func crmReadLoop(conn *websocket.Conn) {
 		if err := conn.ReadJSON(&cmd); err != nil {
 			return
 		}
+		switch cmd.Type {
+		case "refresh_api_explorer":
+			// No trae phone (no es un mensaje de conversación) — se procesa
+			// aparte, antes del filtro de "phone vacío" de abajo, que es solo
+			// para los comandos que sí son por conversación.
+			go func() {
+				if err := FetchAPIExplorerData(); err != nil {
+					log.Printf("⚠️  [CRM] refresh_api_explorer: %v", err)
+				} else {
+					log.Println("🔄 [CRM] Inventario de API Explorer refrescado por aviso del backend")
+				}
+			}()
+			continue
+		}
+
 		if cmd.Phone == "" {
 			continue
 		}

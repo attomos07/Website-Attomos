@@ -133,6 +133,7 @@ func ConnectAPIExplorer(c *gin.Context) {
 	}
 
 	log.Printf("✅ [Agent %d] API Explorer conectado — endpoint=%s", agent.ID, endpoint)
+	notifyBotToRefreshAPIExplorer(agent.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"connected":    true,
 		"endpoint":     endpoint,
@@ -168,6 +169,7 @@ func DisconnectAPIExplorer(c *gin.Context) {
 	}
 
 	log.Printf("✅ [Agent %d] API Explorer desconectado (key olvidada del servidor)", agent.ID)
+	notifyBotToRefreshAPIExplorer(agent.ID)
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
@@ -255,6 +257,21 @@ func getAgentForAPIExplorer(c *gin.Context) (*models.Agent, *models.User, bool) 
 		return nil, nil, false
 	}
 	return &agent, user, true
+}
+
+// notifyBotToRefreshAPIExplorer avisa al bot conectado de este agente (si
+// hay uno conectado ahora mismo al hub del CRM — mismo WebSocket de
+// crm_hub.go) que refresque su caché del API Explorer de inmediato, en vez
+// de esperar hasta 5 min a su siguiente ciclo de polling. Best-effort: si el
+// bot no está conectado (apagado, redesplegándose, etc.) no pasa nada — el
+// polling normal lo recoge de todas formas en su siguiente ciclo.
+func notifyBotToRefreshAPIExplorer(agentID uint) {
+	sent := CRMHub.sendToBot(agentID, crmSendCommand{Type: "refresh_api_explorer"})
+	if sent {
+		log.Printf("🔄 [Agent %d] Aviso de refresco de API Explorer enviado al bot", agentID)
+	} else {
+		log.Printf("ℹ️  [Agent %d] Bot no conectado al hub del CRM ahora mismo — recogerá el cambio en su próximo ciclo de polling", agentID)
+	}
 }
 
 // fetchExternalJSON hace el request al endpoint externo del cliente,
