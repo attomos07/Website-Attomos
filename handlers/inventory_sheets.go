@@ -189,15 +189,65 @@ func (h *GoogleIntegrationHandler) DisconnectInventorySheet(c *gin.Context) {
 
 	h.stopInventoryWatch(agent) // best-effort, no bloquea la desconexión
 
-	agent.InventorySheetID = ""
-	agent.InventorySheetConnected = false
-	agent.InventorySheetConnectedAt = nil
+	removed, err := h.removeSheetSyncedServices(agent)
+	if err != nil {
+		// No bloqueamos la desconexión por esto — es más importante que el
+		// usuario pueda desconectar la hoja aunque falle la limpieza del
+		// catálogo. Queda log para revisar manualmente si pasa.
+		log.Printf("⚠️  [Agent %d] no se pudieron quitar los productos sincronizados al desconectar: %v", agent.ID, err)
+	} else if removed > 0 {
+		log.Printf("🧹 [Agent %d] %d producto(s) sincronizado(s) desde Sheets eliminados del catálogo al desconectar", agent.ID, removed)
+	}
 
-	if err := config.DB.Save(agent).Error; err != nil {
+	// IMPORTANTE: usamos Updates (UPDATE parcial) en vez de Save (UPDATE de
+	// TODAS las columnas) precisamente para no arrastrar el mismo bug del
+	// problema 1 — ver nota más abajo sobre por qué esto importa.
+	if err := config.DB.Model(agent).Updates(map[string]interface{}{
+		"inventory_sheet_id":           "",
+		"inventory_sheet_connected":    false,
+		"inventory_sheet_connected_at": nil,
+	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo desconectar"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	c.JSON(http.StatusOK, gin.H{"success": true, "removed_products": removed})
+}
+
+// removeSheetSyncedServices quita del catálogo (MyBusinessInfo.Services) todos
+// los productos que vinieron del inventario de Sheets (FromSheetRow != 0),
+// dejando intactos los que el usuario creó a mano. Se llama al desconectar la
+// hoja para que no queden productos huérfanos que ya nadie puede editar desde
+// Sheets ni borrar manualmente (la UI bloquea el borrado de los sincronizados).
+func (h *GoogleIntegrationHandler) removeSheetSyncedServices(agent *models.Agent) (int, error) {
+	if agent.BranchID == 0 {
+		return 0, nil // nunca se llegó a vincular una sucursal, nada que limpiar
+	}
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", agent.BranchID, agent.UserID).First(&branch).Error; err != nil {
+		return 0, fmt.Errorf("no se encontró la sucursal vinculada a este agente: %w", err)
+	}
+
+	kept := models.BranchServices{}
+	removed := 0
+	for _, s := range branch.Services {
+		if s.FromSheetRow == 0 {
+			kept = append(kept, s)
+		} else {
+			removed++
+		}
+	}
+	if removed == 0 {
+		return 0, nil
+	}
+
+	branch.Services = kept
+	if err := config.DB.Save(&branch).Error; err != nil {
+		return 0, fmt.Errorf("no se pudo guardar el catálogo: %w", err)
+	}
+
+	syncAtomicBots(&branch)
+	return removed, nil
 }
 
 // GetInventorySheetRows — GET /api/inventory-sheets/rows/:agent_id

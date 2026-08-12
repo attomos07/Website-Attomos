@@ -216,7 +216,7 @@ func CreateAgent(c *gin.Context) {
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error obteniendo servidor compartido: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 
@@ -230,7 +230,7 @@ func CreateAgent(c *gin.Context) {
 					case <-timeout:
 						log.Printf("❌ [Agent %d] Timeout esperando servidor compartido", agent.ID)
 						agent.DeployStatus = "error"
-						config.DB.Save(&agent)
+						config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 						return
 					case <-ticker.C:
 						updatedServer, err := serverManager.GetServerStatus(globalServer.ID)
@@ -250,7 +250,7 @@ func CreateAgent(c *gin.Context) {
 			if !globalServer.IsReady() {
 				log.Printf("❌ [Agent %d] Servidor compartido no está listo (Status: %s)", agent.ID, globalServer.Status)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 
@@ -258,16 +258,16 @@ func CreateAgent(c *gin.Context) {
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error asignando puerto: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 			agent.Port = assignedPort
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"port": agent.Port})
 
 			log.Printf("✅ [Agent %d] Servidor compartido: IP=%s Puerto=%d", agent.ID, globalServer.IPAddress, assignedPort)
 
 			agent.DeployStatus = "deploying"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
 			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
@@ -289,7 +289,7 @@ func CreateAgent(c *gin.Context) {
 			if connectErr != nil {
 				log.Printf("❌ [Agent %d] No se pudo conectar: %v", agent.ID, connectErr)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				serverManager.ReleaseAgentPort(globalServer)
 				return
 			}
@@ -313,14 +313,14 @@ func CreateAgent(c *gin.Context) {
 			if err := atomicService.DeployAtomicBot(&agent, branch, geminiAPIKey, googleCredentials); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando AtomicBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				serverManager.ReleaseAgentPort(globalServer)
 				return
 			}
 
 			agent.IsActive = true
 			agent.DeployStatus = "running"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"is_active": agent.IsActive, "deploy_status": agent.DeployStatus})
 			log.Printf("🎉 [Agent %d] ATOMIC BOT DESPLEGADO EXITOSAMENTE | IP=%s Puerto=%d", agent.ID, globalServer.IPAddress, agent.Port)
 
 		} else if agent.IsTelegramBot() {
@@ -336,7 +336,7 @@ func CreateAgent(c *gin.Context) {
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error obteniendo servidor compartido: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 
@@ -350,7 +350,7 @@ func CreateAgent(c *gin.Context) {
 					case <-timeout:
 						log.Printf("❌ [Agent %d] Timeout esperando servidor compartido", agent.ID)
 						agent.DeployStatus = "error"
-						config.DB.Save(&agent)
+						config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 						return
 					case <-ticker.C:
 						updatedServer, err := serverManager.GetServerStatus(globalServer.ID)
@@ -369,7 +369,7 @@ func CreateAgent(c *gin.Context) {
 			if !globalServer.IsReady() {
 				log.Printf("❌ [Agent %d] Servidor compartido no está listo", agent.ID)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 
@@ -377,16 +377,16 @@ func CreateAgent(c *gin.Context) {
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error asignando puerto: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 			agent.Port = assignedPort
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"port": agent.Port})
 
 			log.Printf("✅ [Agent %d] Puerto asignado: %d en %s", agent.ID, assignedPort, globalServer.IPAddress)
 
 			agent.DeployStatus = "deploying"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
 			telegramService := services.NewTelegramBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
@@ -408,7 +408,7 @@ func CreateAgent(c *gin.Context) {
 			if connectErr != nil {
 				log.Printf("❌ [Agent %d] No se pudo conectar: %v", agent.ID, connectErr)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				serverManager.ReleaseAgentPort(globalServer)
 				return
 			}
@@ -432,14 +432,14 @@ func CreateAgent(c *gin.Context) {
 			if err := telegramService.DeployTelegramBot(&agent, branch, geminiAPIKey, googleCredentials); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando TelegramBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				serverManager.ReleaseAgentPort(globalServer)
 				return
 			}
 
 			agent.IsActive = true
 			agent.DeployStatus = "running"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"is_active": agent.IsActive, "deploy_status": agent.DeployStatus})
 
 			log.Printf("🎉 [Agent %d] TELEGRAM BOT DESPLEGADO EXITOSAMENTE", agent.ID)
 			log.Printf("   - Servidor Compartido: %s", globalServer.IPAddress)
@@ -499,18 +499,18 @@ func CreateAgent(c *gin.Context) {
 				agent.ServerIP = existingAgent.ServerIP
 				agent.ServerPassword = existingAgent.ServerPassword
 				agent.ServerStatus = "ready"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"server_id": agent.ServerID, "server_ip": agent.ServerIP, "server_password": agent.ServerPassword, "server_status": agent.ServerStatus})
 			} else {
 				log.Printf("🖥️  [Agent %d] Creando servidor para el usuario...", agent.ID)
 				agent.ServerStatus = "creating"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus})
 
 				hetznerService, err := services.NewHetznerService()
 				if err != nil {
 					log.Printf("❌ [Agent %d] Error Hetzner: %v", agent.ID, err)
 					agent.ServerStatus = "error"
 					agent.DeployStatus = "error"
-					config.DB.Save(&agent)
+					config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus, "deploy_status": agent.DeployStatus})
 					return
 				}
 
@@ -520,7 +520,7 @@ func CreateAgent(c *gin.Context) {
 					log.Printf("❌ [Agent %d] Error creando servidor: %v", agent.ID, err)
 					agent.ServerStatus = "error"
 					agent.DeployStatus = "error"
-					config.DB.Save(&agent)
+					config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus, "deploy_status": agent.DeployStatus})
 					return
 				}
 
@@ -528,18 +528,18 @@ func CreateAgent(c *gin.Context) {
 				agent.ServerIP = serverResp.Server.PublicNet.IPv4.IP
 				agent.ServerPassword = serverResp.RootPassword
 				agent.ServerStatus = "provisioning"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"server_id": agent.ServerID, "server_ip": agent.ServerIP, "server_password": agent.ServerPassword, "server_status": agent.ServerStatus})
 
 				if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
 					log.Printf("❌ [Agent %d] Timeout servidor: %v", agent.ID, err)
 					agent.ServerStatus = "error"
 					agent.DeployStatus = "error"
-					config.DB.Save(&agent)
+					config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus, "deploy_status": agent.DeployStatus})
 					return
 				}
 
 				agent.ServerStatus = "initializing"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus})
 				go hetznerService.MonitorCloudInitLogs(agent.ServerIP, agent.ServerPassword, 10*time.Minute)
 			}
 
@@ -568,13 +568,13 @@ func CreateAgent(c *gin.Context) {
 				agent.ChatwootInboxID = credentials.InboxID
 				agent.ChatwootInboxName = credentials.InboxName
 				agent.ChatwootURL = credentials.ChatwootURL
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"chatwoot_email": agent.ChatwootEmail, "chatwoot_password": agent.ChatwootPassword, "chatwoot_account_id": agent.ChatwootAccountID, "chatwoot_account_name": agent.ChatwootAccountName, "chatwoot_inbox_id": agent.ChatwootInboxID, "chatwoot_inbox_name": agent.ChatwootInboxName, "chatwoot_url": agent.ChatwootURL})
 				log.Printf("✅ [Agent %d] Chatwoot: %s", agent.ID, credentials.ChatwootURL)
 			}
 
 			// PASO 5: Desplegar OrbitalBot
 			agent.DeployStatus = "deploying"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
 			orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 
@@ -595,7 +595,7 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("❌ [Agent %d] No se pudo conectar: %v", agent.ID, connectErr)
 				agent.DeployStatus = "error"
 				agent.ServerStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus, "server_status": agent.ServerStatus})
 				return
 			}
 			defer orbitalService.Close()
@@ -609,14 +609,14 @@ func CreateAgent(c *gin.Context) {
 			if err := orbitalService.DeployOrbitalBot(&agent, geminiAPIKey, googleCredentials); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando OrbitalBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
+				config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 				return
 			}
 
 			agent.IsActive = true
 			agent.DeployStatus = "running"
 			agent.ServerStatus = "ready"
-			config.DB.Save(&agent)
+			config.DB.Model(&agent).Updates(map[string]interface{}{"is_active": agent.IsActive, "deploy_status": agent.DeployStatus, "server_status": agent.ServerStatus})
 			log.Printf("🎉 [Agent %d] ORBITAL BOT DESPLEGADO EXITOSAMENTE | IP=%s Puerto=%d", agent.ID, agent.ServerIP, agent.Port)
 		}
 	}()
@@ -726,7 +726,16 @@ func UpdateAgent(c *gin.Context) {
 	// que perdía cambios de tono, idiomas, horario, personal, etc.
 	agent.Config = req.Config
 
-	if err := config.DB.Save(&agent).Error; err != nil {
+	// Updates() parcial (solo estas 3 columnas) en vez de Save() del struct
+	// completo: el agente puede seguir desplegándose en segundo plano (la
+	// goroutine de CreateAgent tarda hasta ~20 min) o tener otra integración
+	// (ej. inventario de Sheets) recién conectada — un Save() del struct
+	// completo pisaría esos campos con lo que había al momento de leer aquí.
+	if err := config.DB.Model(&agent).Updates(map[string]interface{}{
+		"name":         agent.Name,
+		"phone_number": agent.PhoneNumber,
+		"config":       agent.Config,
+	}).Error; err != nil {
 		log.Printf("❌ [Agent %s] Error guardando actualización: %v", agentID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el agente"})
 		return
@@ -763,7 +772,7 @@ func ToggleAgentStatus(c *gin.Context) {
 		return
 	}
 	agent.IsActive = !agent.IsActive
-	if err := config.DB.Save(&agent).Error; err != nil {
+	if err := config.DB.Model(&agent).Update("is_active", agent.IsActive).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cambiar estado"})
 		return
 	}
