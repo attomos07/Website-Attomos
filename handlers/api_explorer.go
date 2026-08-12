@@ -114,7 +114,19 @@ func ConnectAPIExplorer(c *gin.Context) {
 	agent.APIExplorerConnected = true
 	agent.APIExplorerConnectedAt = &now
 
-	if err := config.DB.Save(agent).Error; err != nil {
+	// Updates() parcial (solo estas 5 columnas) en vez de Save() del struct
+	// completo — mismo motivo que en inventory_sheets.go: el agente puede
+	// seguir desplegándose en segundo plano (la goroutine de CreateAgent
+	// tarda hasta ~20 min) y un Save() completo pisaría cualquier cambio
+	// hecho en paralelo en otros campos (incluido este mismo Explorer si
+	// dos requests se cruzan).
+	if err := config.DB.Model(agent).Updates(map[string]interface{}{
+		"api_explorer_endpoint":     agent.APIExplorerEndpoint,
+		"api_explorer_key":          agent.APIExplorerKey,
+		"api_explorer_auth_mode":    agent.APIExplorerAuthMode,
+		"api_explorer_connected":    agent.APIExplorerConnected,
+		"api_explorer_connected_at": agent.APIExplorerConnectedAt,
+	}).Error; err != nil {
 		log.Printf("❌ [Agent %d] API Explorer: error guardando en DB — err=%v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo guardar la conexión"})
 		return
@@ -138,13 +150,18 @@ func DisconnectAPIExplorer(c *gin.Context) {
 		return
 	}
 
-	agent.APIExplorerEndpoint = ""
-	agent.APIExplorerKey = ""
-	agent.APIExplorerAuthMode = ""
-	agent.APIExplorerConnected = false
-	agent.APIExplorerConnectedAt = nil
-
-	if err := config.DB.Save(agent).Error; err != nil {
+	// Updates() parcial con map (no struct): un Updates() de struct omite
+	// campos en su valor zero (string vacío, bool false, nil), así que
+	// "olvidar" la key NUNCA se guardaría con ese approach — el map fuerza a
+	// escribir esos ceros de verdad. También evita pisar cualquier otro
+	// campo del agente cambiado en paralelo (ver nota en ConnectAPIExplorer).
+	if err := config.DB.Model(agent).Updates(map[string]interface{}{
+		"api_explorer_endpoint":     "",
+		"api_explorer_key":          "",
+		"api_explorer_auth_mode":    "",
+		"api_explorer_connected":    false,
+		"api_explorer_connected_at": nil,
+	}).Error; err != nil {
 		log.Printf("❌ [Agent %d] API Explorer: error al desconectar — err=%v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo desconectar"})
 		return
