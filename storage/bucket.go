@@ -52,25 +52,40 @@ import (
 // getBucketClient arma el cliente S3 apuntando al bucket de Railway a
 // partir de las credenciales que Railway inyecta como variables de entorno.
 //
-// Railway ofrece varios "presets" de nombres en la pestaña Credentials del
-// bucket, y no siempre es el mismo entre buckets (ej. Avante usa
-// BUCKET_ENDPOINT/BUCKET_ACCESS_KEY_ID/... mientras que otro preset da
-// AWS_ENDPOINT_URL/AWS_ACCESS_KEY_ID/...) — así que se aceptan AMBOS
-// formatos, tomando el que esté configurado. No hace falta que coincida
-// con el preset que uses en otros proyectos.
+// IMPORTANTE: se toma el set COMPLETO de un solo estilo (BUCKET_* o AWS_*),
+// nunca mezclado campo por campo — mezclar el access key de un set con el
+// secret key del otro produce SignatureDoesNotMatch (403) porque nunca
+// coinciden como pareja real, aunque cada variable individual "exista".
+// Se prueba primero el set BUCKET_* (tu convención en Avante); si
+// BUCKET_ACCESS_KEY_ID no está, se usa el set AWS_* completo en su lugar.
 func getBucketClient() (*s3.Client, string, error) {
-	endpoint := firstNonEmptyEnv("AWS_ENDPOINT_URL", "BUCKET_ENDPOINT")
-	accessKey := firstNonEmptyEnv("AWS_ACCESS_KEY_ID", "BUCKET_ACCESS_KEY_ID")
-	secretKey := firstNonEmptyEnv("AWS_SECRET_ACCESS_KEY", "BUCKET_SECRET_ACCESS_KEY")
-	bucket := firstNonEmptyEnv("AWS_S3_BUCKET_NAME", "BUCKET_NAME")
-	region := firstNonEmptyEnv("AWS_DEFAULT_REGION", "BUCKET_REGION")
+	var endpoint, accessKey, secretKey, bucket, region, urlStyle string
+
+	switch {
+	case os.Getenv("BUCKET_ACCESS_KEY_ID") != "":
+		endpoint = os.Getenv("BUCKET_ENDPOINT")
+		accessKey = os.Getenv("BUCKET_ACCESS_KEY_ID")
+		secretKey = os.Getenv("BUCKET_SECRET_ACCESS_KEY")
+		bucket = os.Getenv("BUCKET_NAME")
+		region = os.Getenv("BUCKET_REGION")
+		urlStyle = os.Getenv("BUCKET_URL_STYLE")
+	case os.Getenv("AWS_ACCESS_KEY_ID") != "":
+		endpoint = os.Getenv("AWS_ENDPOINT_URL")
+		accessKey = os.Getenv("AWS_ACCESS_KEY_ID")
+		secretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+		bucket = os.Getenv("AWS_S3_BUCKET_NAME")
+		region = os.Getenv("AWS_DEFAULT_REGION")
+		urlStyle = os.Getenv("AWS_S3_URL_STYLE")
+	default:
+		return nil, "", fmt.Errorf("variables del bucket no configuradas (falta BUCKET_ACCESS_KEY_ID o AWS_ACCESS_KEY_ID)")
+	}
+
 	if region == "" {
 		region = "auto"
 	}
-	urlStyle := firstNonEmptyEnv("AWS_S3_URL_STYLE", "BUCKET_URL_STYLE")
 
 	if endpoint == "" || accessKey == "" || secretKey == "" || bucket == "" {
-		return nil, "", fmt.Errorf("variables del bucket no configuradas (revisa AWS_ENDPOINT_URL o BUCKET_ENDPOINT, AWS_ACCESS_KEY_ID o BUCKET_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY o BUCKET_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME o BUCKET_NAME)")
+		return nil, "", fmt.Errorf("variables del bucket incompletas — revisa que el set elegido (BUCKET_* o AWS_*) tenga las 4: endpoint, access key, secret key y nombre del bucket, sin mezclar con el otro set")
 	}
 
 	usePathStyle := strings.EqualFold(urlStyle, "path")
@@ -88,9 +103,9 @@ func getBucketClient() (*s3.Client, string, error) {
 	return client, bucket, nil
 }
 
-// firstNonEmptyEnv devuelve el valor de la primera variable de entorno no
-// vacía entre las dadas — permite soportar distintos presets de nombres de
-// Railway sin tener que adivinar cuál eligió el usuario.
+// firstNonEmptyEnv: ya NO se usa en getBucketClient (que ahora toma el set
+// completo de un solo estilo para evitar mezclar credenciales — ver arriba).
+// Se deja por si sirve para otra cosa; bórrala si no la necesitas.
 func firstNonEmptyEnv(names ...string) string {
 	for _, n := range names {
 		if v := os.Getenv(n); v != "" {
