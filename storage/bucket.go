@@ -63,19 +63,19 @@ func getBucketClient() (*s3.Client, string, error) {
 
 	switch {
 	case os.Getenv("BUCKET_ACCESS_KEY_ID") != "":
-		endpoint = os.Getenv("BUCKET_ENDPOINT")
-		accessKey = os.Getenv("BUCKET_ACCESS_KEY_ID")
-		secretKey = os.Getenv("BUCKET_SECRET_ACCESS_KEY")
-		bucket = os.Getenv("BUCKET_NAME")
-		region = os.Getenv("BUCKET_REGION")
-		urlStyle = os.Getenv("BUCKET_URL_STYLE")
+		endpoint = strings.TrimSpace(os.Getenv("BUCKET_ENDPOINT"))
+		accessKey = strings.TrimSpace(os.Getenv("BUCKET_ACCESS_KEY_ID"))
+		secretKey = strings.TrimSpace(os.Getenv("BUCKET_SECRET_ACCESS_KEY"))
+		bucket = strings.TrimSpace(os.Getenv("BUCKET_NAME"))
+		region = strings.TrimSpace(os.Getenv("BUCKET_REGION"))
+		urlStyle = strings.TrimSpace(os.Getenv("BUCKET_URL_STYLE"))
 	case os.Getenv("AWS_ACCESS_KEY_ID") != "":
-		endpoint = os.Getenv("AWS_ENDPOINT_URL")
-		accessKey = os.Getenv("AWS_ACCESS_KEY_ID")
-		secretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-		bucket = os.Getenv("AWS_S3_BUCKET_NAME")
-		region = os.Getenv("AWS_DEFAULT_REGION")
-		urlStyle = os.Getenv("AWS_S3_URL_STYLE")
+		endpoint = strings.TrimSpace(os.Getenv("AWS_ENDPOINT_URL"))
+		accessKey = strings.TrimSpace(os.Getenv("AWS_ACCESS_KEY_ID"))
+		secretKey = strings.TrimSpace(os.Getenv("AWS_SECRET_ACCESS_KEY"))
+		bucket = strings.TrimSpace(os.Getenv("AWS_S3_BUCKET_NAME"))
+		region = strings.TrimSpace(os.Getenv("AWS_DEFAULT_REGION"))
+		urlStyle = strings.TrimSpace(os.Getenv("AWS_S3_URL_STYLE"))
 	default:
 		return nil, "", fmt.Errorf("variables del bucket no configuradas (falta BUCKET_ACCESS_KEY_ID o AWS_ACCESS_KEY_ID)")
 	}
@@ -87,6 +87,12 @@ func getBucketClient() (*s3.Client, string, error) {
 	if endpoint == "" || accessKey == "" || secretKey == "" || bucket == "" {
 		return nil, "", fmt.Errorf("variables del bucket incompletas — revisa que el set elegido (BUCKET_* o AWS_*) tenga las 4: endpoint, access key, secret key y nombre del bucket, sin mezclar con el otro set")
 	}
+
+	// Log temporal de diagnóstico — NO expone el secret, solo confirma forma
+	// y longitud para detectar espacios/saltos de línea pegados por error.
+	// Bórralo una vez que el 403 quede resuelto.
+	log.Printf("🪣 [Bucket] endpoint=%q bucket=%q region=%q urlStyle=%q accessKeyLen=%d secretKeyLen=%d",
+		endpoint, bucket, region, urlStyle, len(accessKey), len(secretKey))
 
 	usePathStyle := strings.EqualFold(urlStyle, "path")
 
