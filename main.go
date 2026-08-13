@@ -10,6 +10,7 @@ import (
 	"attomos/handlers"
 	"attomos/middleware"
 	"attomos/models"
+	"attomos/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -249,8 +250,8 @@ func main() {
 		protected.DELETE("/my-agency/office/:id", handlers.DeleteAgencyOffice)
 
 		// Upload de imágenes para servicios/productos
-		protected.POST("/upload/service-image", handlers.UploadServiceImage)
-		protected.POST("/upload/menu", handlers.UploadMenu)
+		protected.POST("/upload/service-image", storage.UploadServiceImage)
+		protected.POST("/upload/menu", storage.UploadMenu)
 
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
@@ -272,6 +273,7 @@ func main() {
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
 		router.GET("/api/bot/api-explorer/:agent_id", handlers.GetAPIExplorerForBot)
+		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
 		router.GET("/ws/bot/crm", handlers.BotCRMSocket)
@@ -411,7 +413,12 @@ func main() {
 	router.POST("/api/bot/quota-filled", handlers.QuotaFilled)
 
 	// Proxy de imágenes — sirve recursos de Hetzner por HTTPS para evitar mixed content
-	router.GET("/api/uploads/proxy", handlers.ProxyUpload)
+	// (se deja por compatibilidad con URLs antiguas ya guardadas en BD)
+	router.GET("/api/uploads/proxy", storage.ProxyUpload)
+
+	// Proxy del bucket de Railway — los Buckets son privados, así que todo
+	// archivo nuevo (fotos, menús) se sirve por aquí en vez de por proxy a Hetzner
+	router.GET("/api/uploads/bucket", storage.ProxyBucketFile)
 
 	// ============================================
 	// PÁGINAS WEB

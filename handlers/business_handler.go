@@ -11,7 +11,6 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -136,7 +135,9 @@ func SaveMyBusiness(c *gin.Context) {
 		}
 	}
 
-	// Sincronizar business_config.json en bots atómicos vinculados a esta sucursal
+	// Avisar a los AtomicBots vinculados a esta sucursal para que refresquen
+	// su business_config al instante (vía WebSocket del CRM bridge) — ya no
+	// se conecta por SSH/SFTP a reescribir un archivo.
 	syncAtomicBots(&branch)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -147,33 +148,31 @@ func SaveMyBusiness(c *gin.Context) {
 	})
 }
 
-// syncAtomicBots actualiza el business_config.json de todos los AtomicBots
-// vinculados a la sucursal guardada, en goroutines para no bloquear la respuesta.
+// syncAtomicBots avisa a todos los AtomicBots vinculados a la sucursal
+// guardada que deben refrescar su business_config (fotos, servicios,
+// horario, etc.) — ya NO abre SSH/SFTP ni reescribe archivos en el
+// servidor: solo manda "refresh_business_config" por el WebSocket que el
+// bot ya mantiene abierto con el CRM hub (ver crm_hub.go / bot/crm_bridge.go).
+// Si el bot no está conectado al hub justo en ese momento, su propio
+// polling de 5 min (src.StartBusinessConfigPolling en el bot) lo recoge de
+// todas formas — mismo criterio best-effort que ya usa refresh_api_explorer.
 func syncAtomicBots(branch *models.MyBusinessInfo) {
 	var agents []models.Agent
 	if err := config.DB.Where(
-		"branch_id = ? AND bot_type = ? AND server_ip != '' AND is_active = ?",
+		"branch_id = ? AND bot_type = ? AND is_active = ?",
 		branch.ID, "atomic", true,
 	).Find(&agents).Error; err != nil || len(agents) == 0 {
 		return
 	}
 
-	log.Printf("🔄 [SyncBots] Sincronizando %d bot(s) atómico(s) para sucursal %d...", len(agents), branch.ID)
+	log.Printf("🔄 [SyncBots] Avisando a %d bot(s) atómico(s) para sucursal %d (refresh_business_config)...", len(agents), branch.ID)
 
 	for _, agent := range agents {
-		go func(a models.Agent) {
-			svc := services.NewAtomicBotDeployService(a.ServerIP, a.ServerPassword)
-			if err := svc.Connect(); err != nil {
-				log.Printf("⚠️  [SyncBots] No se pudo conectar al servidor del agente %d: %v", a.ID, err)
-				return
-			}
-			defer svc.Close()
-			if err := svc.UpdateBusinessConfig(&a, branch); err != nil {
-				log.Printf("⚠️  [SyncBots] Error actualizando config del agente %d: %v", a.ID, err)
-			} else {
-				log.Printf("✅ [SyncBots] Agente %d actualizado con datos de sucursal %d", a.ID, branch.ID)
-			}
-		}(agent)
+		if CRMHub.sendToBot(agent.ID, crmSendCommand{Type: "refresh_business_config"}) {
+			log.Printf("✅ [SyncBots] Agente %d avisado por WebSocket", agent.ID)
+		} else {
+			log.Printf("ℹ️  [SyncBots] Agente %d no conectado al hub ahora — lo recogerá su polling de 5 min", agent.ID)
+		}
 	}
 }
 

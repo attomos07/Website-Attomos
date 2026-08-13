@@ -265,10 +265,11 @@ func (s *TelegramBotDeployService) TransferBotFiles(_ uint, dir string) error {
 
 // configureEnvironment escribe .env, business_config.json y google.json
 func (s *TelegramBotDeployService) configureEnvironment(agent *models.Agent, branch *models.MyBusinessInfo, dir, geminiAPIKey string, googleCredentials []byte) error {
-	// business_config.json — reutiliza generateBusinessConfig de AtomicBotDeployService
-	// Instanciamos un AtomicBotDeployService temporal solo para generar la config
-	atomicHelper := &AtomicBotDeployService{}
-	businessConfig := atomicHelper.generateBusinessConfig(agent, branch)
+	// business_config.json — reutiliza GenerateBusinessConfig (bot_config.go),
+	// función standalone compartida con AtomicBotDeployService y con el
+	// endpoint GET /api/bot/business-config/:agent_id — ya no hace falta
+	// instanciar un AtomicBotDeployService vacío solo para llamarla.
+	businessConfig := GenerateBusinessConfig(agent, branch)
 	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error serializando business_config: %w", err)
@@ -476,8 +477,7 @@ func (s *TelegramBotDeployService) RestartBot(agentID uint) error {
 
 // UpdateBusinessConfig actualiza el business_config.json y reinicia el bot
 func (s *TelegramBotDeployService) UpdateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) error {
-	atomicHelper := &AtomicBotDeployService{}
-	businessConfig := atomicHelper.generateBusinessConfig(agent, branch)
+	businessConfig := GenerateBusinessConfig(agent, branch)
 	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error serializando business_config: %w", err)
@@ -639,12 +639,14 @@ func (s *TelegramBotDeployService) DiagnoseBotFailure(agentID uint, userID uint)
 	}
 
 	for _, c := range commands {
-		d.WriteString(c.label + "\n")
+		d.WriteString(c.label)
+		d.WriteByte('\n')
 		output, err := s.executeCommand(c.cmd)
 		if err != nil {
 			d.WriteString(fmt.Sprintf("❌ Error: %v\n", err))
 		} else if strings.TrimSpace(output) != "" {
-			d.WriteString(output + "\n")
+			d.WriteString(output)
+			d.WriteByte('\n')
 		} else {
 			d.WriteString("(vacío)\n")
 		}
