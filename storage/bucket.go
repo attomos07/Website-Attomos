@@ -107,6 +107,14 @@ func getBucketClient() (*s3.Client, string, error) {
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(endpoint)
 		o.UsePathStyle = usePathStyle
+		// DIAGNÓSTICO TEMPORAL — imprime la petición real (headers, sin
+		// body) y la respuesta real completa (con body: el XML de error de
+		// Tigris trae CanonicalRequest/StringToSign, que es justo lo que
+		// necesitamos ver para saber qué no está coincidiendo). No expone
+		// el secret key en texto plano — el header Authorization solo trae
+		// la firma HMAC ya calculada, no el secret. Bórralo en cuanto quede
+		// resuelto el 403.
+		o.ClientLogMode = aws.LogRequest | aws.LogResponseWithBody
 	})
 
 	return client, bucket, nil
