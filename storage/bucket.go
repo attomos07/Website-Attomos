@@ -88,17 +88,20 @@ func getBucketClient() (*s3.Client, string, error) {
 		return nil, "", fmt.Errorf("variables del bucket incompletas — revisa que el set elegido (BUCKET_* o AWS_*) tenga las 4: endpoint, access key, secret key y nombre del bucket, sin mezclar con el otro set")
 	}
 
-	// Log temporal de diagnóstico — NO expone el secret, solo confirma forma
-	// y longitud para detectar espacios/saltos de línea pegados por error.
-	// Bórralo una vez que el 403 quede resuelto.
-	log.Printf("🪣 [Bucket] endpoint=%q bucket=%q region=%q urlStyle=%q accessKeyLen=%d secretKeyLen=%d",
-		endpoint, bucket, region, urlStyle, len(accessKey), len(secretKey))
-
 	usePathStyle := strings.EqualFold(urlStyle, "path")
 
 	cfg := aws.Config{
 		Region:      region,
 		Credentials: credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
+		// Desde aws-sdk-go-v2/service/s3 v1.74.1, el cliente agrega por
+		// defecto un checksum CRC32 a cada PutObject (integridad extra).
+		// Muchos proveedores S3-compatibles de terceros (Tigris, detrás del
+		// bucket de Railway, incluido) no lo validan igual que AWS real —
+		// eso rompe la firma completa de la petición con
+		// SignatureDoesNotMatch, sin que las credenciales tengan nada malo.
+		// Se revierte al comportamiento anterior (compatible) con esto:
+		RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired,
+		ResponseChecksumValidation: aws.ResponseChecksumValidationWhenRequired,
 	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
