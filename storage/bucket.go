@@ -43,6 +43,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go/logging"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pkg/sftp"     // usado solo por uploadViaSFTP, que se deja sin llamar (legacy) por si algo más del paquete lo referencia
@@ -102,6 +103,9 @@ func getBucketClient() (*s3.Client, string, error) {
 		// Se revierte al comportamiento anterior (compatible) con esto:
 		RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired,
 		ResponseChecksumValidation: aws.ResponseChecksumValidationWhenRequired,
+		// DIAGNÓSTICO TEMPORAL — sin un Logger real, ClientLogMode no
+		// imprime nada (el SDK usa un logger mudo por default).
+		Logger: logging.NewStandardLogger(os.Stdout),
 	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
