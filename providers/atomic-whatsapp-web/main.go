@@ -129,6 +129,10 @@ func main() {
 	// solo si se cae; no bloquea el arranque si no está configurado.
 	src.InitCRMBridge()
 
+	// Reporta métricas de recursos (CPU, RAM, goroutines, disco) al panel
+	// superadmin cada minuto, por el mismo WebSocket del CRM — ver metrics.go.
+	src.StartMetricsReporting()
+
 	// Iniciar watchdog para recargar configuración
 	go configWatchdog()
 

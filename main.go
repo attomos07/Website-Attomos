@@ -598,6 +598,10 @@ func main() {
 		adminGroup.GET("/sellers", func(c *gin.Context) {
 			c.HTML(200, "admin-sellers", nil)
 		})
+		adminGroup.GET("/metrics", func(c *gin.Context) {
+			c.HTML(200, "admin-metrics", nil)
+		})
+		adminGroup.GET("/api/metrics", handlers.GetAdminMetrics)
 		adminGroup.GET("/api/invoices", handlers.AdminGetInvoices)
 		adminGroup.PATCH("/api/invoices/:id", handlers.AdminUpdateInvoiceStatus)
 		adminGroup.POST("/api/logout", handlers.AdminLogout)

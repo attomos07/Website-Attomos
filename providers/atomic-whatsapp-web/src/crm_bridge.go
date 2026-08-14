@@ -27,22 +27,26 @@ import (
 	"go.mau.fi/whatsmeow/types"
 )
 
-// crmEvent es lo que el bot manda al backend: un mensaje entrante o saliente.
+// crmEvent es lo que el bot manda al backend: un mensaje entrante/saliente,
+// o (Type: "metrics") una muestra de recursos del proceso.
 type crmEvent struct {
-	Direction   string `json:"direction"`      // "in" (cliente) | "out" (bot/humano)
-	From        string `json:"from,omitempty"` // "customer" | "bot" | "human"
-	Phone       string `json:"phone"`
-	ContactName string `json:"contactName,omitempty"`
-	Text        string `json:"text"`
-	Timestamp   int64  `json:"timestamp"`
+	Type        string      `json:"type,omitempty"` // "message" (default) | "metrics"
+	Direction   string      `json:"direction,omitempty"`
+	From        string      `json:"from,omitempty"` // "customer" | "bot" | "human"
+	Phone       string      `json:"phone,omitempty"`
+	ContactName string      `json:"contactName,omitempty"`
+	Text        string      `json:"text,omitempty"`
+	Timestamp   int64       `json:"timestamp"`
+	Metrics     *BotMetrics `json:"metrics,omitempty"`
 }
 
 // crmSendCommand es lo que el backend manda AL bot por este mismo socket —
 // tanto comandos de conversación (un humano contestando desde el CRM) como
 // avisos generales del backend que no son por conversación (ej. "refresca tu
-// caché del API Explorer"), que por eso no traen phone.
+// caché del API Explorer" o "refresca tu business_config"), que por eso no
+// traen phone.
 type crmSendCommand struct {
-	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_api_explorer"
+	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_api_explorer" | "refresh_business_config"
 	Phone string `json:"phone,omitempty"`
 	Text  string `json:"text,omitempty"`
 }
@@ -155,6 +159,19 @@ func crmReadLoop(conn *websocket.Conn) {
 				}
 			}()
 			continue
+		case "refresh_business_config":
+			// El backend manda esto justo después de guardar Mi Negocio
+			// (fotos, servicios, horario, etc.) o la config del agente, para
+			// que el bot tome los cambios sin esperar el polling de 5 min y
+			// sin necesidad de redeploy.
+			go func() {
+				if err := LoadBusinessConfig(); err != nil {
+					log.Printf("⚠️  [CRM] refresh_business_config: %v", err)
+				} else {
+					log.Println("🔄 [CRM] business_config refrescado por aviso del backend")
+				}
+			}()
+			continue
 		}
 
 		if cmd.Phone == "" {
@@ -225,6 +242,7 @@ func NotifyCRM(direction, phone, contactName, text, from string) {
 	}
 
 	evt := crmEvent{
+		Type:        "message",
 		Direction:   direction,
 		From:        from,
 		Phone:       phone,
@@ -239,6 +257,35 @@ func NotifyCRM(direction, phone, contactName, text, from string) {
 
 	if err != nil {
 		log.Printf("⚠️  [CRM] Error reportando mensaje: %v", err)
+	}
+}
+
+// NotifyMetrics manda una muestra de métricas de recursos del bot (CPU,
+// RAM, goroutines, disco — ver metrics.go) al hub del CRM, por el mismo
+// WebSocket que ya usa NotifyCRM. No bloquea ni interrumpe el bot si el CRM
+// no está conectado en ese momento.
+func NotifyMetrics(m BotMetrics) {
+	crmConnMu.Lock()
+	conn := crmConn
+	connected := crmConnected
+	crmConnMu.Unlock()
+
+	if !connected || conn == nil {
+		return
+	}
+
+	evt := crmEvent{
+		Type:      "metrics",
+		Timestamp: time.Now().UnixMilli(),
+		Metrics:   &m,
+	}
+
+	crmConnMu.Lock()
+	err := conn.WriteJSON(evt)
+	crmConnMu.Unlock()
+
+	if err != nil {
+		log.Printf("⚠️  [CRM] Error reportando métricas: %v", err)
 	}
 }
 

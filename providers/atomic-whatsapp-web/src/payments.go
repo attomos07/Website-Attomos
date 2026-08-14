@@ -294,7 +294,9 @@ func BuildStripeOnlyMessage(checkoutURL string, precio float64) string {
 	if precio > 0 {
 		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
 	}
-	sb.WriteString("👉 " + checkoutURL + "\n")
+	sb.WriteString("👉 ")
+	sb.WriteString(checkoutURL)
+	sb.WriteByte('\n')
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 	sb.WriteString("_El link expira en 24 horas_ ⏱️")
 	return sb.String()

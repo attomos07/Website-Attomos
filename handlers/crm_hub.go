@@ -29,14 +29,34 @@ import (
 
 // CRMEvent es el mensaje que viaja tanto bot→hub como hub→navegador.
 type CRMEvent struct {
-	Type         string `json:"type"`                // "message" | "status"
-	Direction    string `json:"direction,omitempty"` // "in" (cliente) | "out" (bot/humano)
-	From         string `json:"from,omitempty"`      // "customer" | "bot" | "human"
-	Phone        string `json:"phone"`
-	ContactName  string `json:"contactName,omitempty"`
-	Text         string `json:"text"`
-	Timestamp    int64  `json:"timestamp"`
-	BotConnected *bool  `json:"botConnected,omitempty"` // solo presente en Type == "status"
+	Type         string      `json:"type"`                // "message" | "status" | "metrics"
+	Direction    string      `json:"direction,omitempty"` // "in" (cliente) | "out" (bot/humano)
+	From         string      `json:"from,omitempty"`      // "customer" | "bot" | "human"
+	Phone        string      `json:"phone"`
+	ContactName  string      `json:"contactName,omitempty"`
+	Text         string      `json:"text"`
+	Timestamp    int64       `json:"timestamp"`
+	BotConnected *bool       `json:"botConnected,omitempty"` // solo presente en Type == "status"
+	Metrics      *BotMetrics `json:"metrics,omitempty"`      // solo presente en Type == "metrics"
+}
+
+// BotMetrics — misma forma que src.BotMetrics del lado del bot
+// (metrics.go). Si agregas un campo allá, agrégalo aquí también.
+type BotMetrics struct {
+	CPUPercent    float64 `json:"cpuPercent"`
+	MemRSSMB      float64 `json:"memRssMb"`
+	Goroutines    int     `json:"goroutines"`
+	UptimeSeconds int64   `json:"uptimeSeconds"`
+	DBSizeMB      float64 `json:"dbSizeMb"`
+	DiskFreeGB    float64 `json:"diskFreeGb"`
+}
+
+// metricsSnapshot es la última muestra de métricas recibida de un agente,
+// con la hora en que llegó (para poder mostrar "hace cuánto" en el panel y
+// distinguir un bot conectado-pero-callado de uno que dejó de reportar).
+type metricsSnapshot struct {
+	BotMetrics
+	UpdatedAt int64 `json:"updatedAt"` // unix ms
 }
 
 // crmSendCommand es lo que el hub manda AL bot: enviar un mensaje, o pausar
@@ -74,16 +94,18 @@ func (bc *botConn) writePing() error {
 }
 
 type crmHub struct {
-	mu   sync.RWMutex
-	bots map[uint]*botConn               // agentID → conexión del bot
-	subs map[uint]map[chan CRMEvent]bool // agentID → suscriptores SSE (pestañas del CRM)
+	mu      sync.RWMutex
+	bots    map[uint]*botConn               // agentID → conexión del bot
+	subs    map[uint]map[chan CRMEvent]bool // agentID → suscriptores SSE (pestañas del CRM)
+	metrics map[uint]metricsSnapshot        // agentID → última muestra de recursos reportada
 }
 
 // CRMHub es el hub global del proceso — un único backend maneja todos los
 // agentes, cada uno con su propia entrada en los mapas de arriba.
 var CRMHub = &crmHub{
-	bots: make(map[uint]*botConn),
-	subs: make(map[uint]map[chan CRMEvent]bool),
+	bots:    make(map[uint]*botConn),
+	subs:    make(map[uint]map[chan CRMEvent]bool),
+	metrics: make(map[uint]metricsSnapshot),
 }
 
 func (h *crmHub) registerBot(agentID uint, conn *websocket.Conn) *botConn {
@@ -177,6 +199,29 @@ func (h *crmHub) isBotConnected(agentID uint) bool {
 	return ok
 }
 
+// recordMetrics guarda la última muestra de recursos reportada por el bot
+// de un agente — sobrescribe la anterior, no se guarda histórico (si más
+// adelante quieres graficar tendencias, aquí es donde engancharías guardado
+// a BD en vez de solo memoria).
+func (h *crmHub) recordMetrics(agentID uint, m *BotMetrics) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.metrics[agentID] = metricsSnapshot{BotMetrics: *m, UpdatedAt: time.Now().UnixMilli()}
+}
+
+// getAllMetrics regresa una copia de todas las últimas muestras conocidas
+// (de bots conectados ahora Y de los que reportaron alguna vez en lo que
+// lleva corriendo el backend, aunque ya se hayan desconectado).
+func (h *crmHub) getAllMetrics() map[uint]metricsSnapshot {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	out := make(map[uint]metricsSnapshot, len(h.metrics))
+	for k, v := range h.metrics {
+		out[k] = v
+	}
+	return out
+}
+
 var crmUpgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
@@ -250,10 +295,18 @@ func BotCRMSocket(c *gin.Context) {
 		if err := conn.ReadJSON(&evt); err != nil {
 			break
 		}
-		evt.Type = "message"
 		if evt.Timestamp == 0 {
 			evt.Timestamp = time.Now().UnixMilli()
 		}
+
+		if evt.Type == "metrics" && evt.Metrics != nil {
+			// Muestra de recursos del proceso — no es un mensaje de
+			// conversación, no se manda a las pestañas del CRM abiertas.
+			CRMHub.recordMetrics(agentID, evt.Metrics)
+			continue
+		}
+
+		evt.Type = "message"
 		CRMHub.broadcast(agentID, evt)
 	}
 }

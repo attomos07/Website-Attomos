@@ -1532,7 +1532,8 @@ func buildMenuResponse() string {
 	}
 	sb.WriteString("¿Qué deseas ordenar? 😋 Tenemos:\n\n")
 	for _, line := range lines {
-		sb.WriteString(line + "\n")
+		sb.WriteString(line)
+		sb.WriteByte('\n')
 	}
 	sb.WriteString("\n¿Cuánto quieres ordenar?")
 	return sb.String()
@@ -2207,7 +2208,11 @@ func buildAgencyWelcome(userName string) string {
 	if dep == "" {
 		dep = "la dependencia"
 	}
-	return fmt.Sprintf("Hola, bienvenido/a a *%s* 🏛️\n\nPuedo ayudarte con:\n• 📚 Ver cursos disponibles\n• ✏️ Inscribirte a un curso\n• 📅 Horarios de atención\n• 📍 Ubicación y sedes\n\n¿En qué te puedo ayudar?", dep)
+	saludo := "Hola"
+	if strings.TrimSpace(userName) != "" {
+		saludo = fmt.Sprintf("Hola %s", strings.TrimSpace(userName))
+	}
+	return fmt.Sprintf("%s, bienvenido/a a *%s* 🏛️\n\nPuedo ayudarte con:\n• 📚 Ver cursos disponibles\n• ✏️ Inscribirte a un curso\n• 📅 Horarios de atención\n• 📍 Ubicación y sedes\n\n¿En qué te puedo ayudar?", saludo, dep)
 }
 
 func buildAgencyCuposMsg() string {
@@ -2238,7 +2243,8 @@ func buildAgencyCourseDetail(c *AgencyCourse) string {
 		desc := strings.ReplaceAll(c.Description, "<br>", " ")
 		desc = strings.ReplaceAll(desc, "</p>", " ")
 		desc = strings.ReplaceAll(desc, "<p>", "")
-		sb.WriteString(strings.TrimSpace(desc) + "\n\n")
+		sb.WriteString(strings.TrimSpace(desc))
+		sb.WriteString("\n\n")
 	}
 	modMap := map[string]string{"presencial": "Presencial 🏫", "en-linea": "En línea 💻", "hibrido": "Híbrido 🔀"}
 	mod := modMap[c.Modalidad]
