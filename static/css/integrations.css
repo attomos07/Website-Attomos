@@ -300,6 +300,16 @@ body {
     cursor: not-allowed;
 }
 
+.api-key-input.api-key-masked {
+    background: #f0fdfa;
+    border-color: #5eead4;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    cursor: not-allowed;
+}
+
 .api-key-input::placeholder {
     color: #9ca3af;
 }
