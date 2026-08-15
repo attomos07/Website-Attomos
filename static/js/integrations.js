@@ -807,7 +807,7 @@ function updateGeminiUI(data) {
     const manageActions = document.getElementById('geminiManageActions');
     const connectionInfo = document.getElementById('geminiConnectionInfo');
     
-    if (data.has_key && data.configured) {
+    if (data.has_api_key) {
         // API Key configurada
         if (statusBadge) {
             statusBadge.className = 'status-badge connected';
@@ -818,8 +818,9 @@ function updateGeminiUI(data) {
         }
         
         if (apiKeyInput) {
-            apiKeyInput.value = '••••••••••••••••••••••••••••••••';
+            apiKeyInput.value = '●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●';
             apiKeyInput.disabled = true;
+            apiKeyInput.classList.add('api-key-masked');
         }
         
         if (toggleButton) toggleButton.disabled = true;
@@ -840,6 +841,7 @@ function updateGeminiUI(data) {
         if (apiKeyInput) {
             apiKeyInput.value = '';
             apiKeyInput.disabled = false;
+            apiKeyInput.classList.remove('api-key-masked');
         }
         
         if (toggleButton) toggleButton.disabled = false;
