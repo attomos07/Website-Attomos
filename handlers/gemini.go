@@ -46,8 +46,11 @@ func SaveGeminiKey(c *gin.Context) {
 		return
 	}
 
-	if len(req.APIKey) < 30 || req.APIKey[:6] != "AIzaSy" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "API Key inválida. Debe comenzar con 'AIzaSy'"})
+	validPrefix := (len(req.APIKey) >= 6 && req.APIKey[:6] == "AIzaSy") ||
+		(len(req.APIKey) >= 2 && req.APIKey[:2] == "AQ")
+
+	if len(req.APIKey) < 30 || !validPrefix {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "API Key inválida. Debe comenzar con 'AIzaSy' o 'AQ'"})
 		return
 	}
 
