@@ -29,6 +29,7 @@ type apiExplorerCache struct {
 	mu          sync.RWMutex
 	connected   bool
 	items       []map[string]interface{}
+	siteURL     string // web pública del cliente (mismo host que el endpoint), si el backend la manda
 	lastFetched time.Time
 	lastError   string
 }
@@ -81,6 +82,7 @@ func FetchAPIExplorerData() error {
 		Ok        bool        `json:"ok"`
 		Error     string      `json:"error"`
 		Data      interface{} `json:"data"`
+		SiteURL   string      `json:"site_url"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return fmt.Errorf("error parseando respuesta: %w", err)
@@ -90,6 +92,7 @@ func FetchAPIExplorerData() error {
 	defer apxCache.mu.Unlock()
 
 	apxCache.connected = result.Connected
+	apxCache.siteURL = result.SiteURL
 	apxCache.lastFetched = time.Now()
 
 	if !result.Connected {
@@ -346,6 +349,9 @@ func GetAPIExplorerContext(query string) string {
 	sb.WriteString("Usa esta información para responder preguntas del cliente sobre disponibilidad, precio, características, etc. Si pregunta por algo que NO aparece en esta lista, dilo claramente — no inventes datos.\n")
 	sb.WriteString("Si describes las características de UN elemento específico (motor, transmisión, extras, etc.), preséntalas en formato lista con viñetas (•), no en párrafo corrido.\n")
 	sb.WriteString("Si el cliente pide FOTOS de algún elemento de esta lista, tu ÚNICA respuesta debe ser exactamente:\nSEND_APX_PHOTOS:url1,url2\nUsando las URLs de imagen (campos que empiecen con http/https) que aparecen en los campos de ESE elemento. Sin texto antes ni después. Si ese elemento no trae ninguna URL de imagen en sus campos, dile al cliente que no tienes fotos de ese elemento — no uses SEND_APX_PHOTOS.\n")
+	if apxCache.siteURL != "" {
+		sb.WriteString(fmt.Sprintf("También pueden ver el catálogo completo en la página web: %s — menciónalo de forma natural cuando sea útil (el cliente quiere ver más opciones, comparar varios elementos, o ya le mostraste varios y podría interesarle ver el resto).\n", apxCache.siteURL))
+	}
 
 	return sb.String()
 }

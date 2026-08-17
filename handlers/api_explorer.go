@@ -234,10 +234,29 @@ func GetAPIExplorerForBot(c *gin.Context) {
 	}
 
 	result["connected"] = true
+	// site_url — la web pública del cliente (mismo host que el endpoint,
+	// sin el path de la API), para que el bot pueda invitar al cliente a
+	// verlo también ahí, además de por WhatsApp.
+	if siteURL := apxSiteURLFromEndpoint(agent.APIExplorerEndpoint); siteURL != "" {
+		result["site_url"] = siteURL
+	}
 	c.JSON(http.StatusOK, result)
 }
 
 // ---------- helpers ----------
+
+// apxSiteURLFromEndpoint deriva la URL pública del sitio (scheme + host) a
+// partir del endpoint de API guardado — ej. de
+// "https://fabianmongeautos.online/api/v1/vehiculos" saca
+// "https://fabianmongeautos.online". Best-effort: si el endpoint no trae un
+// host válido, regresa "".
+func apxSiteURLFromEndpoint(endpoint string) string {
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	return parsed.Scheme + "://" + parsed.Host
+}
 
 // getAgentForAPIExplorer obtiene el agente verificando que pertenece al
 // usuario autenticado. Función libre (no método) para no chocar con
