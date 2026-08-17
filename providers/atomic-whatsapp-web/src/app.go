@@ -259,6 +259,43 @@ func respondToText(chat types.JID, messageText, phoneNumber, senderName string) 
 		return
 	}
 
+	// ── Interceptar SEND_APX_PHOTOS: fotos de un elemento del API Explorer ──
+	if idx := strings.Index(response, "SEND_APX_PHOTOS:"); idx != -1 {
+		raw := response[idx+len("SEND_APX_PHOTOS:"):]
+		end := len(raw)
+		for i, ch := range raw {
+			if ch == '\n' || ch == '\r' {
+				end = i
+				break
+			}
+		}
+		urlList := strings.TrimSpace(raw[:end])
+		log.Printf("📸 Gemini solicita fotos del API Explorer: %s", urlList)
+
+		sentCount := 0
+		for _, u := range strings.Split(urlList, ",") {
+			u = strings.TrimSpace(u)
+			if u == "" || (!strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://")) {
+				continue
+			}
+			if err := SendImage(chat, u, ""); err != nil {
+				log.Printf("❌ Error enviando foto del API Explorer (%s): %v", u, err)
+				continue
+			}
+			sentCount++
+		}
+
+		if sentCount == 0 {
+			log.Println("⚠️  SEND_APX_PHOTOS sin URLs válidas — nada que enviar")
+			SendMessage(chat, "No encontré fotos de ese elemento. ¿Puedes ser más específico?")
+		} else {
+			log.Printf("✅ %d foto(s) del API Explorer enviadas", sentCount)
+		}
+		NotifyCRM("out", phoneNumber, "", "[Fotos de inventario enviadas]", "bot")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
 	// Limpiar formato markdown de Gemini
 	response = strings.ReplaceAll(response, "**", "*")
 	response = cleanBoldSpaces(response)

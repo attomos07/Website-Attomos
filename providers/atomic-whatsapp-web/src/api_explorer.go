@@ -266,22 +266,21 @@ func apxLooksLikeImage(v interface{}) bool {
 }
 
 // apxFormatFieldValue recorta/aplana un valor para que quepa en una línea del
-// prompt sin desperdiciar tokens en URLs de imagen o blobs largos.
+// prompt sin desperdiciar tokens en blobs largos.
 //
-// IMPORTANTE: el endpoint externo del cliente puede mandar texto que no es
-// UTF-8 válido (típico cuando su backend usa Latin-1/Windows-1252 y no lo
-// convierte bien — acentos, "ñ", etc. mal codificados). Si ese texto crudo
-// llega tal cual al prompt de Gemini, la librería genai lo rechaza de raíz
-// ("proto: field ... contains invalid UTF-8") y el bot cae siempre en
-// "¿podrías repetir tu pregunta?" — sin ni siquiera intentar la llamada real
-// (0ms de latencia). strings.ToValidUTF8 limpia esos bytes inválidos antes
-// de que lleguen a Gemini.
+// Nota UTF-8: el endpoint externo del cliente puede mandar texto que no es
+// UTF-8 válido (Latin-1/Windows-1252 mal convertido). Si llega crudo al
+// prompt, la librería genai lo rechaza de raíz ("invalid UTF-8") y el bot
+// cae siempre en "¿podrías repetir tu pregunta?". strings.ToValidUTF8 limpia
+// esos bytes antes de que lleguen a Gemini.
+//
+// Nota fotos: a diferencia de antes, las URLs de imagen SÍ se mandan tal
+// cual (no se reemplazan por "(tiene foto)") — así Gemini puede citarlas de
+// vuelta con SEND_APX_PHOTOS cuando el cliente las pide (ver
+// GetAPIExplorerContext y el interceptor en app.go).
 func apxFormatFieldValue(key string, v interface{}) string {
 	if v == nil {
 		return ""
-	}
-	if apxLooksLikeImage(v) || apxImageFieldRe.MatchString(key) {
-		return "(tiene foto)"
 	}
 	s := fmt.Sprintf("%v", v)
 	s = strings.ToValidUTF8(s, "")
@@ -289,9 +288,12 @@ func apxFormatFieldValue(key string, v interface{}) string {
 	if s == "" {
 		return ""
 	}
+	if apxLooksLikeImage(v) || apxImageFieldRe.MatchString(key) {
+		return s // URL completa — Gemini la necesita para poder reenviarla
+	}
 	if len(s) > apiExplorerMaxFieldLen {
 		s = s[:apiExplorerMaxFieldLen] + "…"
-		s = strings.ToValidUTF8(s, "") // cortar por bytes puede partir un carácter multibyte a la mitad
+		s = strings.ToValidUTF8(s, "") // cortar por bytes puede partir un carácter multibyte
 	}
 	return s
 }
@@ -342,6 +344,8 @@ func GetAPIExplorerContext(query string) string {
 		}
 	}
 	sb.WriteString("Usa esta información para responder preguntas del cliente sobre disponibilidad, precio, características, etc. Si pregunta por algo que NO aparece en esta lista, dilo claramente — no inventes datos.\n")
+	sb.WriteString("Si describes las características de UN elemento específico (motor, transmisión, extras, etc.), preséntalas en formato lista con viñetas (•), no en párrafo corrido.\n")
+	sb.WriteString("Si el cliente pide FOTOS de algún elemento de esta lista, tu ÚNICA respuesta debe ser exactamente:\nSEND_APX_PHOTOS:url1,url2\nUsando las URLs de imagen (campos que empiecen con http/https) que aparecen en los campos de ESE elemento. Sin texto antes ni después. Si ese elemento no trae ninguna URL de imagen en sus campos, dile al cliente que no tienes fotos de ese elemento — no uses SEND_APX_PHOTOS.\n")
 
 	return sb.String()
 }
