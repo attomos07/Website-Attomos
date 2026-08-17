@@ -267,6 +267,15 @@ func apxLooksLikeImage(v interface{}) bool {
 
 // apxFormatFieldValue recorta/aplana un valor para que quepa en una línea del
 // prompt sin desperdiciar tokens en URLs de imagen o blobs largos.
+//
+// IMPORTANTE: el endpoint externo del cliente puede mandar texto que no es
+// UTF-8 válido (típico cuando su backend usa Latin-1/Windows-1252 y no lo
+// convierte bien — acentos, "ñ", etc. mal codificados). Si ese texto crudo
+// llega tal cual al prompt de Gemini, la librería genai lo rechaza de raíz
+// ("proto: field ... contains invalid UTF-8") y el bot cae siempre en
+// "¿podrías repetir tu pregunta?" — sin ni siquiera intentar la llamada real
+// (0ms de latencia). strings.ToValidUTF8 limpia esos bytes inválidos antes
+// de que lleguen a Gemini.
 func apxFormatFieldValue(key string, v interface{}) string {
 	if v == nil {
 		return ""
@@ -275,12 +284,14 @@ func apxFormatFieldValue(key string, v interface{}) string {
 		return "(tiene foto)"
 	}
 	s := fmt.Sprintf("%v", v)
+	s = strings.ToValidUTF8(s, "")
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return ""
 	}
 	if len(s) > apiExplorerMaxFieldLen {
 		s = s[:apiExplorerMaxFieldLen] + "…"
+		s = strings.ToValidUTF8(s, "") // cortar por bytes puede partir un carácter multibyte a la mitad
 	}
 	return s
 }
