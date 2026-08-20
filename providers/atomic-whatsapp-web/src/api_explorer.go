@@ -268,6 +268,29 @@ func apxLooksLikeImage(v interface{}) bool {
 	return apxImageURLRe.MatchString(s) || strings.HasPrefix(s, "data:image")
 }
 
+// apxPreviousUserMessage saca el mensaje anterior del cliente (no el
+// actual) de conversationHistory, formateado por joinHistory() en app.go
+// como líneas "Usuario: ..." / "Asistente: ...". El mensaje actual ya se
+// agrega al historial ANTES de llamar a Chat(), así que la última línea
+// "Usuario:" es un duplicado del mensaje que ya tenemos por separado — nos
+// interesa la penúltima. Best-effort: si no hay suficiente historial,
+// regresa "".
+func apxPreviousUserMessage(conversationHistory string) string {
+	lines := strings.Split(conversationHistory, "\n")
+	found := 0
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if !strings.HasPrefix(line, "Usuario: ") {
+			continue
+		}
+		found++
+		if found == 2 {
+			return strings.TrimPrefix(line, "Usuario: ")
+		}
+	}
+	return ""
+}
+
 // apxFormatFieldValue recorta/aplana un valor para que quepa en una línea del
 // prompt sin desperdiciar tokens en blobs largos.
 //
@@ -348,7 +371,7 @@ func GetAPIExplorerContext(query string) string {
 	}
 	sb.WriteString("Usa esta información para responder preguntas del cliente sobre disponibilidad, precio, características, etc. Si pregunta por algo que NO aparece en esta lista, dilo claramente — no inventes datos.\n")
 	sb.WriteString("Si describes las características de UN elemento específico (motor, transmisión, extras, etc.), preséntalas en formato lista con viñetas (•), no en párrafo corrido.\n")
-	sb.WriteString("Si el cliente pide FOTOS de algún elemento de esta lista, tu ÚNICA respuesta debe ser exactamente:\nSEND_APX_PHOTOS:url1,url2\nUsando las URLs de imagen (campos que empiecen con http/https) que aparecen en los campos de ESE elemento. Sin texto antes ni después. Si ese elemento no trae ninguna URL de imagen en sus campos, dile al cliente que no tienes fotos de ese elemento — no uses SEND_APX_PHOTOS.\n")
+	sb.WriteString("\n⚠️ REGLA ABSOLUTA DE FOTOS (NO IGNORAR): Si el cliente pide ver fotos, imágenes, o cómo se ve algún elemento — de esta lista o de uno que ya identificaste en mensajes anteriores de esta misma conversación — tu ÚNICA respuesta permitida es exactamente:\nSEND_APX_PHOTOS:url1,url2\nUsando las URLs de imagen (los valores que empiecen con http/https) de los campos de ESE elemento. NUNCA escribas las URLs como texto normal, en una lista, ni las expliques — el sistema las convierte en fotos reales automáticamente SOLO si usas exactamente ese formato. NO agregues explicación, emojis ni texto adicional antes o después de SEND_APX_PHOTOS. Si ese elemento no trae ninguna URL de imagen en sus campos, dile al cliente que no tienes fotos de ese elemento — no uses SEND_APX_PHOTOS.\n")
 	if apxCache.siteURL != "" {
 		sb.WriteString(fmt.Sprintf("También pueden ver el catálogo completo en la página web: %s — menciónalo de forma natural cuando sea útil (el cliente quiere ver más opciones, comparar varios elementos, o ya le mostraste varios y podría interesarle ver el resto).\n", apxCache.siteURL))
 	}

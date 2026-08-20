@@ -138,7 +138,18 @@ NO listes productos. NO expliques. NO agregues texto antes ni después. Solo esc
 	}
 
 	// ── Catálogo del API Explorer (endpoint externo conectado por el cliente) ──
-	apiExplorerCatalog := GetAPIExplorerContext(userMessage)
+	// La búsqueda de qué elementos mandar (apxSelectRelevant) usa palabras
+	// clave de la pregunta — pero si el cliente responde algo corto tipo "sí,
+	// mándamelas" varios turnos después de mencionar el producto, el mensaje
+	// actual solo no trae ninguna palabra útil para encontrarlo. Le sumamos el
+	// mensaje anterior del cliente (el penúltimo "Usuario:" en el historial —
+	// el último es este mismo mensaje, ya se agregó antes de llamar a Chat)
+	// como contexto extra de búsqueda.
+	apiExplorerQuery := userMessage
+	if prev := apxPreviousUserMessage(conversationHistory); prev != "" {
+		apiExplorerQuery = prev + " " + userMessage
+	}
+	apiExplorerCatalog := GetAPIExplorerContext(apiExplorerQuery)
 
 	// ── Construir prompt completo ─────────────────────────────────────────────
 	fullPrompt := fmt.Sprintf(`%s
