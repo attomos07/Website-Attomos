@@ -1160,8 +1160,14 @@ async function saveProfile(opts = {}) {
             }
 
             if (!opts.silent) {
+                // El guardado en sí ya avisa al bot por WebSocket
+                // (SaveMyBusiness → syncAtomicBots en el backend), que lo
+                // toma al instante sin redeploy. Ya NO llamamos a
+                // autoRedeployAgentsAfterSave() aquí: ese redeploy completo
+                // recompila, reinicia, y además borra la sesión de WhatsApp
+                // del bot (forzando reescanear el QR) — innecesario para un
+                // simple cambio de datos del negocio.
                 showNotification('¡Cambios guardados exitosamente!', 'success');
-                autoRedeployAgentsAfterSave();
             }
         } else {
             throw new Error(result.error || 'Error desconocido');
