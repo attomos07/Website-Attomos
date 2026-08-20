@@ -15,7 +15,7 @@
 
 const APX_AUTO_REFRESH_MS = 60000; // cada 60s mientras la vista esté abierta y conectada
 
-let apxAgentId = null;
+let apxBranchId = null;
 let apxConnected = false;
 let apxEndpoint = '';
 let apxAuthMode = 'header';
@@ -29,25 +29,26 @@ function apxEscapeHtml(s) {
     return div.innerHTML;
 }
 
-/* ---------- agente actual ---------- */
-// Si esta página ya cargó inventory.js en el mismo DOM (embebida en el tab
-// de Inventario), reutilizamos su getAgentId()/currentAgentId para no pedir
-// /api/agents dos veces. Si no existe (api-explorer.html standalone), cae a
-// su propia implementación con nombre único para no chocar con la de
-// inventory.js si en algún momento ambas conviven.
+/* ---------- sucursal actual ---------- */
+// API Explorer vive en la sucursal (MyBusinessInfo), no en el agente — así
+// sobrevive a que el agente/bot se borre y se vuelva a crear. Si esta página
+// ya cargó my-business.js en el mismo DOM (embebida en el tab de Mi
+// Negocio), reutilizamos su getActiveBranchId() para no pedir
+// /api/my-business dos veces. Si no existe (api-explorer.html standalone),
+// cae a su propia implementación con nombre único.
 
-let _apxAgentIdPromise = null;
-function apxGetAgentId() {
-    if (typeof window.getAgentId === 'function') {
-        return window.getAgentId();
+let _apxBranchIdPromise = null;
+function apxGetBranchId() {
+    if (typeof window.getActiveBranchId === 'function') {
+        return window.getActiveBranchId();
     }
-    if (!_apxAgentIdPromise) {
-        _apxAgentIdPromise = fetch('/api/agents', { credentials: 'include' })
-            .then(res => (res.ok ? res.json() : { agents: [] }))
-            .then(data => (data.agents && data.agents.length ? data.agents[0].id : null))
+    if (!_apxBranchIdPromise) {
+        _apxBranchIdPromise = fetch('/api/my-business', { credentials: 'include' })
+            .then(res => (res.ok ? res.json() : { activeBranch: null }))
+            .then(data => (data.activeBranch && data.activeBranch.id ? data.activeBranch.id : null))
             .catch(() => null);
     }
-    return _apxAgentIdPromise;
+    return _apxBranchIdPromise;
 }
 
 /* ---------- auto refresh ---------- */
@@ -313,14 +314,14 @@ function applyApxFetchResult(result) {
 /* ---------- fetch principal (vía backend) ---------- */
 
 async function fetchApiExplorerData() {
-    if (!apxAgentId || !apxConnected) return;
+    if (!apxBranchId || !apxConnected) return;
 
     const btnRefresh = document.getElementById('btnApxRefresh');
     if (btnRefresh) btnRefresh.disabled = true;
     renderApxIndicators({ estadoOk: null, estadoText: 'Consultando…', total: null, tiempoMs: null, actualizado: null });
 
     try {
-        const res = await fetch(`/api/api-explorer/data/${apxAgentId}`, { credentials: 'include', cache: 'no-store' });
+        const res = await fetch(`/api/api-explorer/data/${apxBranchId}`, { credentials: 'include', cache: 'no-store' });
         const result = await res.json().catch(() => ({ ok: false, error: 'Respuesta inválida del servidor' }));
         applyApxFetchResult(result);
     } catch (err) {
@@ -333,9 +334,9 @@ async function fetchApiExplorerData() {
 /* ---------- status / connect / disconnect (vía backend) ---------- */
 
 async function apxRefreshStatus() {
-    if (!apxAgentId) return;
+    if (!apxBranchId) return;
     try {
-        const res = await fetch(`/api/api-explorer/status/${apxAgentId}`, { credentials: 'include', cache: 'no-store' });
+        const res = await fetch(`/api/api-explorer/status/${apxBranchId}`, { credentials: 'include', cache: 'no-store' });
         if (!res.ok) { applyApxConnectionUI(false); return; }
         const data = await res.json();
 
@@ -372,7 +373,7 @@ async function apxConnect() {
         if (typeof showToast === 'function') showToast('error', 'Ingresa el endpoint de la API.');
         return;
     }
-    if (!apxAgentId) {
+    if (!apxBranchId) {
         if (typeof showToast === 'function') showToast('error', 'No se encontró el agente. Recarga la página.');
         return;
     }
@@ -384,7 +385,7 @@ async function apxConnect() {
     apxSetStatus('pending', 'Conectando…');
 
     try {
-        const res = await fetch(`/api/api-explorer/connect/${apxAgentId}`, {
+        const res = await fetch(`/api/api-explorer/connect/${apxBranchId}`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -417,9 +418,9 @@ async function apxConnect() {
 }
 
 async function apxDisconnect() {
-    if (!apxAgentId) return;
+    if (!apxBranchId) return;
     try {
-        const res = await fetch(`/api/api-explorer/disconnect/${apxAgentId}`, {
+        const res = await fetch(`/api/api-explorer/disconnect/${apxBranchId}`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -450,8 +451,8 @@ async function apxDisconnect() {
 /* ---------- init + botones ---------- */
 
 async function initApiExplorer() {
-    apxAgentId = await apxGetAgentId();
-    if (!apxAgentId) {
+    apxBranchId = await apxGetBranchId();
+    if (!apxBranchId) {
         applyApxConnectionUI(false);
         return;
     }

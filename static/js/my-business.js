@@ -6,6 +6,10 @@
 let branches = [];
 let activeBranchId = null;
 
+// Expuesto para que api-explorer.js (si va embebido en esta misma página)
+// reutilice la sucursal activa en vez de pedir /api/my-business otra vez.
+window.getActiveBranchId = () => activeBranchId || null;
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🔧 Profile JS cargado correctamente');
 

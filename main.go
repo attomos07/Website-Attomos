@@ -350,10 +350,10 @@ func main() {
 
 			// 🔌 API EXPLORER — conecta cualquier endpoint externo que responda JSON.
 			// El fetch al endpoint externo lo hace el backend (proxy), no el navegador.
-			protected.GET("/api-explorer/status/:agent_id", handlers.GetAPIExplorerStatus)
-			protected.POST("/api-explorer/connect/:agent_id", handlers.ConnectAPIExplorer)
-			protected.POST("/api-explorer/disconnect/:agent_id", handlers.DisconnectAPIExplorer)
-			protected.GET("/api-explorer/data/:agent_id", handlers.GetAPIExplorerData)
+			protected.GET("/api-explorer/status/:branch_id", handlers.GetAPIExplorerStatus)
+			protected.POST("/api-explorer/connect/:branch_id", handlers.ConnectAPIExplorer)
+			protected.POST("/api-explorer/disconnect/:branch_id", handlers.DisconnectAPIExplorer)
+			protected.GET("/api-explorer/data/:branch_id", handlers.GetAPIExplorerData)
 
 			// Inventario desde el sitio web del cliente (scraping con navegador headless)
 			protected.GET("/inventory-website/:agent_id/scrape", googleIntegrationHandler.ScrapeVehicleFromWebsite)

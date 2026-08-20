@@ -157,6 +157,20 @@ type MyBusinessInfo struct {
 	BannerURL string `gorm:"size:500" json:"bannerUrl"` // Banner/portada horizontal
 	MenuURL   string `gorm:"size:500" json:"menuUrl"`   // Menú (PDF o imagen)
 
+	// API Explorer — conecta cualquier endpoint externo que responda JSON
+	// (independiente del negocio/esquema). El fetch al endpoint externo lo
+	// hace el backend (ver handlers/api_explorer.go), no el navegador: la
+	// key nunca se manda al cliente y se evita el problema de CORS.
+	//
+	// Movido aquí desde models.Agent: es dato del NEGOCIO (la sucursal),
+	// no del agente/bot — antes se perdía si el agente se borraba y se
+	// volvía a crear, aunque la sucursal siguiera existiendo.
+	APIExplorerEndpoint    string     `gorm:"size:1000" json:"apiExplorerEndpoint"`
+	APIExplorerKey         string     `gorm:"type:text" json:"-"`
+	APIExplorerAuthMode    string     `gorm:"size:20;default:header" json:"apiExplorerAuthMode"`
+	APIExplorerConnected   bool       `gorm:"default:false" json:"apiExplorerConnected"`
+	APIExplorerConnectedAt *time.Time `json:"apiExplorerConnectedAt"`
+
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
