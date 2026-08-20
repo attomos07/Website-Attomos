@@ -3,8 +3,12 @@ package src
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // ============================================
@@ -114,20 +118,49 @@ var BusinessCfg *BusinessConfig
 // CARGAR CONFIGURACIÓN
 // ============================================
 
-// LoadBusinessConfig carga la configuración del negocio desde JSON
+// LoadBusinessConfig carga la configuración del negocio desde el backend de
+// Attomos — GET /api/bot/business-config/:agent_id (handlers.GetBotBusinessConfig,
+// generado con services.GenerateBusinessConfig(agent, branch)).
+//
+// Antes esto leía un business_config.json local que el deploy escribía por
+// SFTP. Ese paso ya no existe (atomicService.UpdateBusinessConfig quedó
+// no-op del lado del backend — el reemplazo es este fetch directo, mismo
+// patrón que ya usa FetchAPIExplorerData en api_explorer.go). Se llama al
+// arrancar, cada businessConfigRefreshInterval como respaldo, y al instante
+// cuando el backend avisa "refresh_business_config" por el WebSocket del
+// CRM bridge (ver crm_bridge.go).
+const businessConfigRefreshInterval = 5 * time.Minute
+
 func LoadBusinessConfig() error {
-	configPath := os.Getenv("BUSINESS_CONFIG_PATH")
-	if configPath == "" {
-		configPath = "business_config.json"
+	attomosURL := os.Getenv("ATTOMOS_API_URL")
+	botToken := os.Getenv("BOT_API_TOKEN")
+	agentID := os.Getenv("AGENT_ID")
+	if attomosURL == "" || botToken == "" || agentID == "" {
+		return fmt.Errorf("ATTOMOS_API_URL, BOT_API_TOKEN o AGENT_ID no configurados")
 	}
 
-	data, err := os.ReadFile(configPath)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/bot/business-config/%s", attomosURL, agentID), nil)
 	if err != nil {
-		return fmt.Errorf("error leyendo configuración: %w", err)
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+botToken)
+
+	resp, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
+	if err != nil {
+		return fmt.Errorf("error llamando business-config: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error leyendo respuesta: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("backend retornó %d: %s", resp.StatusCode, body)
 	}
 
 	var config BusinessConfig
-	if err := json.Unmarshal(data, &config); err != nil {
+	if err := json.Unmarshal(body, &config); err != nil {
 		return fmt.Errorf("error parseando configuración: %w", err)
 	}
 
@@ -137,6 +170,24 @@ func LoadBusinessConfig() error {
 	HORARIOS = getHorarios()
 
 	return nil
+}
+
+// StartBusinessConfigPolling refresca BusinessCfg cada businessConfigRefreshInterval
+// como respaldo — el aviso normal llega al instante por WebSocket
+// ("refresh_business_config" en crm_bridge.go), pero si el bot estuvo
+// desconectado del hub del CRM cuando se guardó el cambio, este polling lo
+// recoge de todas formas sin esperar un redeploy manual. Llamar una vez
+// desde main.go, junto a StartAPIExplorerPolling().
+func StartBusinessConfigPolling() {
+	go func() {
+		ticker := time.NewTicker(businessConfigRefreshInterval)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := LoadBusinessConfig(); err != nil {
+				log.Printf("⚠️  [BusinessConfig] Error refrescando: %v", err)
+			}
+		}
+	}()
 }
 
 // ============================================

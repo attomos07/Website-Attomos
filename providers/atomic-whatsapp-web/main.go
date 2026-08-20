@@ -40,10 +40,11 @@ func main() {
 	}
 	log.Println("")
 
-	// Cargar configuración del negocio
+	// Cargar configuración del negocio (desde el backend de Attomos, ya no
+	// de un archivo local — ver LoadBusinessConfig en config.go)
 	log.Println("🏢 Cargando configuración del negocio...")
 	if err := src.LoadBusinessConfig(); err != nil {
-		log.Printf("⚠️  Error cargando business_config.json: %v\n", err)
+		log.Printf("⚠️  Error cargando configuración del negocio: %v\n", err)
 		log.Println("💡 El bot continuará con configuración por defecto")
 	} else {
 		log.Println("✅ Configuración del negocio cargada correctamente")
@@ -123,6 +124,11 @@ func main() {
 	// configuró uno desde el panel) y refrescarlo cada 5 min en segundo plano.
 	log.Println("🔌 Cargando inventario de API Explorer...")
 	src.StartAPIExplorerPolling()
+
+	// Refrescar la config del negocio (giro, nombre, horario, servicios...)
+	// cada 5 min como respaldo — el aviso normal llega al instante por
+	// WebSocket cuando guardas en Mi Negocio (ver crm_bridge.go).
+	src.StartBusinessConfigPolling()
 
 	// Conectar con el CRM en vivo (hub del backend) — reporta cada mensaje y
 	// permite que un humano tome la conversación desde el CRM. Se reconecta
@@ -414,18 +420,12 @@ func configWatchdog() {
 
 	lastEnvMod := getFileModTime(".env")
 	lastGoogleMod := getFileModTime("google.json")
-	lastConfigMod := getFileModTime("business_config.json")
 
 	for range ticker.C {
-		// Verificar si business_config.json cambió
-		currentConfigMod := getFileModTime("business_config.json")
-		if currentConfigMod != lastConfigMod {
-			log.Println("\n🔄 Detectado cambio en business_config.json, recargando...")
-			if err := src.LoadBusinessConfig(); err == nil {
-				log.Println("✅ Configuración del negocio recargada")
-			}
-			lastConfigMod = currentConfigMod
-		}
+		// Nota: business_config.json ya NO se vigila aquí — la config del
+		// negocio se refresca vía LoadBusinessConfig() (HTTP al backend),
+		// disparado por WebSocket al instante o por StartBusinessConfigPolling()
+		// cada 5 min como respaldo. Ver config.go.
 
 		// Verificar si .env cambió
 		currentEnvMod := getFileModTime(".env")
