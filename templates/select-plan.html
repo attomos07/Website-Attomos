@@ -132,6 +132,70 @@
 <p id="loadingMessage">Procesando tu selección...</p>
 </div>
 </div>
+
+<!-- Modal: ¿Ya tienes tu propia API key de Gemini? -->
+<div class="apikey-modal-overlay" id="apiKeyModalOverlay" style="display:none;">
+<div class="apikey-modal">
+<div class="apikey-modal-icon">
+<i class="lni lni-key"></i>
+</div>
+<h3 class="apikey-modal-title">¿Ya tienes tu propia API key de Gemini?</h3>
+<p class="apikey-modal-desc">
+Si ya cuentas con una API key de Google Gemini, la usaremos directamente. Si no, nosotros creamos y configuramos una automáticamente por ti — no tienes que hacer nada.
+</p>
+
+<div class="apikey-modal-field" id="apiKeyInputWrap" style="display:none;">
+<label for="apiKeyModalInput">Pega tu API key (opcional, también puedes agregarla después en Integraciones)</label>
+<input autocomplete="off" id="apiKeyModalInput" placeholder="AIzaSy..." type="text">
+</div>
+
+<div class="apikey-modal-actions">
+<button class="apikey-modal-btn secondary" id="apiKeyModalNo" type="button">
+No, créenmela automáticamente
+</button>
+<button class="apikey-modal-btn primary" id="apiKeyModalYes" type="button">
+Sí, ya tengo una
+</button>
+</div>
+</div>
+</div>
+
+<style>
+    .apikey-modal-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(15, 15, 20, 0.6);
+        display: flex; align-items: center; justify-content: center;
+        padding: 1rem;
+    }
+    .apikey-modal {
+        background: #fff; border-radius: 16px; max-width: 440px; width: 100%;
+        padding: 2rem; text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .apikey-modal-icon {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #eef2ff; color: #4f46e5;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin: 0 auto 1rem;
+    }
+    .apikey-modal-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.6rem; }
+    .apikey-modal-desc { font-size: 0.92rem; color: #6b7280; line-height: 1.5; margin: 0 0 1.25rem; }
+    .apikey-modal-field { text-align: left; margin-bottom: 1.25rem; }
+    .apikey-modal-field label { display: block; font-size: 0.82rem; color: #6b7280; margin-bottom: 0.4rem; }
+    .apikey-modal-field input {
+        width: 100%; padding: 0.6rem 0.8rem; border-radius: 8px;
+        border: 1px solid #d1d5db; font-size: 0.9rem; box-sizing: border-box;
+    }
+    .apikey-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+    .apikey-modal-btn {
+        padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.92rem; font-weight: 600;
+        cursor: pointer; border: none; transition: opacity 0.15s;
+    }
+    .apikey-modal-btn:hover { opacity: 0.85; }
+    .apikey-modal-btn.primary { background: #4f46e5; color: #fff; }
+    .apikey-modal-btn.secondary { background: #f3f4f6; color: #374151; }
+</style>
+
 <script src="/static/js/select-plan.js"></script>
 </body>
 </html>

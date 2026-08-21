@@ -245,9 +245,23 @@ function updatePrices() {
 // SELECCIÓN DE PLAN
 // ============================================
 
+let pendingPlanSelection = null; // { plan, billingCycle } mientras el modal de API key está abierto
+
 async function selectPlan(plan, billingCycle) {
     console.log(`Seleccionando plan: ${plan} (${billingCycle})`);
-    
+
+    // El plan gratuito no necesita GCP ni API key propia — va directo,
+    // mismo comportamiento de siempre.
+    if (plan === 'gratuito') {
+        return submitPlanSelection(plan, billingCycle, false, '');
+    }
+
+    // Planes de pago: preguntar primero si ya tienen su propia API key.
+    pendingPlanSelection = { plan, billingCycle };
+    openApiKeyModal();
+}
+
+async function submitPlanSelection(plan, billingCycle, hasOwnApiKey, ownApiKey) {
     // Mostrar modal de carga
     const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
     showLoading(`Activando plan ${planName}...`);
@@ -261,7 +275,9 @@ async function selectPlan(plan, billingCycle) {
             credentials: 'include',
             body: JSON.stringify({
                 plan: plan,
-                billingCycle: billingCycle
+                billingCycle: billingCycle,
+                hasOwnApiKey: !!hasOwnApiKey,
+                ownApiKey: ownApiKey || ''
             })
         });
         
@@ -291,6 +307,70 @@ async function selectPlan(plan, billingCycle) {
         showErrorModal(error.message);
     }
 }
+
+// ── Modal: ¿ya tienes tu propia API key de Gemini? ──────────────────────────
+
+function openApiKeyModal() {
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    const inputWrap = document.getElementById('apiKeyInputWrap');
+    const input = document.getElementById('apiKeyModalInput');
+    if (!overlay || !pendingPlanSelection) {
+        // Si el modal no está en el DOM, no bloquear el flujo de selección
+        if (pendingPlanSelection) {
+            submitPlanSelection(pendingPlanSelection.plan, pendingPlanSelection.billingCycle, false, '');
+        }
+        return;
+    }
+    if (inputWrap) inputWrap.style.display = 'none';
+    if (input) input.value = '';
+    overlay.style.display = 'flex';
+}
+
+function closeApiKeyModal() {
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    const btnNo = document.getElementById('apiKeyModalNo');
+    const btnYes = document.getElementById('apiKeyModalYes');
+    const inputWrap = document.getElementById('apiKeyInputWrap');
+    const input = document.getElementById('apiKeyModalInput');
+
+    if (!overlay || !btnNo || !btnYes) return;
+
+    // "No, créenmela automáticamente" → GCP corre normal
+    btnNo.addEventListener('click', function() {
+        const sel = pendingPlanSelection;
+        closeApiKeyModal();
+        if (sel) submitPlanSelection(sel.plan, sel.billingCycle, false, '');
+        pendingPlanSelection = null;
+    });
+
+    // "Sí, ya tengo una" → primer click revela el campo para pegarla;
+    // segundo click confirma y sigue, con o sin key pegada.
+    btnYes.addEventListener('click', function() {
+        if (inputWrap && inputWrap.style.display === 'none') {
+            inputWrap.style.display = 'block';
+            if (input) input.focus();
+            btnYes.textContent = 'Continuar';
+            return;
+        }
+        const sel = pendingPlanSelection;
+        const ownKey = input ? input.value.trim() : '';
+        closeApiKeyModal();
+        if (sel) submitPlanSelection(sel.plan, sel.billingCycle, true, ownKey);
+        pendingPlanSelection = null;
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeApiKeyModal();
+            pendingPlanSelection = null;
+        }
+    });
+});
 
 // ============================================
 // MODAL DE CARGA

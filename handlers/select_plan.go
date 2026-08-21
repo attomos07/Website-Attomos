@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"attomos/config"
@@ -14,6 +15,13 @@ import (
 type SelectPlanRequest struct {
 	Plan         string `json:"plan" binding:"required"`
 	BillingCycle string `json:"billingCycle" binding:"required"`
+
+	// Si el usuario ya tiene su propia API key de Gemini (elegida en el
+	// modal de la página de Planes), no queremos que CreateAgent dispare la
+	// automatización de GCP (creación de proyecto + key) más adelante — ver
+	// el guard en agent.go, rama "PASO 1: GCP si primer agente".
+	HasOwnAPIKey bool   `json:"hasOwnApiKey"`
+	OwnAPIKey    string `json:"ownApiKey"`
 }
 
 // GetSelectPlanPage renderiza la página de selección de plan
@@ -154,6 +162,50 @@ func SelectPlan(c *gin.Context) {
 			"redirectTo": "/dashboard",
 		})
 		return
+	}
+
+	// ============================================
+	// API KEY PROPIA — evitar que CreateAgent dispare GCP más adelante
+	// ============================================
+	// Si el usuario indicó en el modal de Planes que ya tiene su propia API
+	// key de Gemini, dejamos su GoogleCloudProject marcado como "manual"
+	// desde ahora. El guard que agregamos en agent.go (CreateAgent, rama
+	// Orbital "PASO 1: GCP si primer agente") revisa este estado y, si ya
+	// es "ready" o "manual", NO llama a gca.CreateProjectForUser — así el
+	// proyecto GCP real nunca se crea para este usuario.
+	if req.HasOwnAPIKey {
+		var gcpProject models.GoogleCloudProject
+		err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
+		ownKey := strings.TrimSpace(req.OwnAPIKey)
+
+		if err != nil {
+			gcpProject = models.GoogleCloudProject{
+				UserID:        user.ID,
+				ProjectID:     "manual-user-key",
+				ProjectName:   "API key propia del usuario",
+				ProjectStatus: "manual",
+				GeminiAPIKey:  ownKey,
+			}
+			if createErr := config.DB.Create(&gcpProject).Error; createErr != nil {
+				log.Printf("⚠️  [User %d] Error guardando API key propia: %v", user.ID, createErr)
+			} else {
+				log.Printf("🔑 [User %d] API key propia registrada — GCP automático deshabilitado", user.ID)
+			}
+		} else if gcpProject.ProjectStatus != "ready" {
+			// No pisar un proyecto que YA se creó y quedó listo — si el
+			// usuario ya tenía un proyecto GCP real funcionando, lo
+			// dejamos como está. Solo marcamos "manual" si no había nada
+			// utilizable todavía (vacío, en error, o "creating" atorado).
+			gcpProject.ProjectStatus = "manual"
+			if ownKey != "" {
+				gcpProject.GeminiAPIKey = ownKey
+			}
+			if saveErr := config.DB.Save(&gcpProject).Error; saveErr != nil {
+				log.Printf("⚠️  [User %d] Error actualizando API key propia: %v", user.ID, saveErr)
+			} else {
+				log.Printf("🔑 [User %d] Proyecto GCP marcado como manual — API key propia registrada", user.ID)
+			}
+		}
 	}
 
 	// ============================================

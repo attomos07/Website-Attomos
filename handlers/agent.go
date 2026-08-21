@@ -456,34 +456,49 @@ func CreateAgent(c *gin.Context) {
 
 			// PASO 1: GCP si primer agente
 			if isFirstAgent {
-				log.Printf("🎉 [User %d] Primer agente — intentando crear proyecto GCP", user.ID)
+				log.Printf("🎉 [User %d] Primer agente — verificando proyecto GCP", user.ID)
 				var gcpProject models.GoogleCloudProject
 				err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
-				if err != nil {
-					gcpProject = models.GoogleCloudProject{UserID: user.ID, ProjectStatus: "creating"}
-					config.DB.Create(&gcpProject)
+
+				alreadyUsable := err == nil && (gcpProject.ProjectStatus == "ready" || gcpProject.ProjectStatus == "manual")
+
+				if alreadyUsable {
+					// Ya hay una key utilizable — o bien el usuario indicó
+					// en el modal de Planes que ya tiene su propia API key
+					// (ver select_plan.go, que deja ProjectStatus="manual"
+					// en ese caso), o el proyecto GCP real ya se había
+					// creado antes. En ambos casos NO llamamos a
+					// gca.CreateProjectForUser — eso es justamente lo que
+					// evita que el GCP corra cuando el usuario no lo necesita.
+					log.Printf("✅ [User %d] Ya hay una API key utilizable (status=%s) — se omite creación de proyecto GCP", user.ID, gcpProject.ProjectStatus)
 				} else {
-					gcpProject.MarkAsCreating()
-					config.DB.Save(&gcpProject)
-				}
-				gca, err := services.NewGoogleCloudAutomation()
-				if err != nil {
-					log.Printf("⚠️ [User %d] GCP no disponible (NO CRÍTICO): %v", user.ID, err)
-					gcpProject.MarkAsError()
-					config.DB.Save(&gcpProject)
-				} else {
-					projectID, apiKey, err := gca.CreateProjectForUser(user.ID, user.Email)
 					if err != nil {
-						log.Printf("⚠️ [User %d] Error creando GCP (NO CRÍTICO): %v", user.ID, err)
+						gcpProject = models.GoogleCloudProject{UserID: user.ID, ProjectStatus: "creating"}
+						config.DB.Create(&gcpProject)
+					} else {
+						gcpProject.MarkAsCreating()
+						config.DB.Save(&gcpProject)
+					}
+
+					gca, gcaErr := services.NewGoogleCloudAutomation()
+					if gcaErr != nil {
+						log.Printf("⚠️ [User %d] GCP no disponible (NO CRÍTICO): %v", user.ID, gcaErr)
 						gcpProject.MarkAsError()
 						config.DB.Save(&gcpProject)
 					} else {
-						gcpProject.ProjectID = projectID
-						gcpProject.ProjectName = fmt.Sprintf("Attomos User %d", user.ID)
-						gcpProject.GeminiAPIKey = apiKey
-						gcpProject.MarkAsReady()
-						config.DB.Save(&gcpProject)
-						log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
+						projectID, apiKey, createErr := gca.CreateProjectForUser(user.ID, user.Email)
+						if createErr != nil {
+							log.Printf("⚠️ [User %d] Error creando GCP (NO CRÍTICO): %v", user.ID, createErr)
+							gcpProject.MarkAsError()
+							config.DB.Save(&gcpProject)
+						} else {
+							gcpProject.ProjectID = projectID
+							gcpProject.ProjectName = fmt.Sprintf("Attomos User %d", user.ID)
+							gcpProject.GeminiAPIKey = apiKey
+							gcpProject.MarkAsReady()
+							config.DB.Save(&gcpProject)
+							log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
+						}
 					}
 				}
 			}

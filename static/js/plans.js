@@ -162,7 +162,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const planButtons = document.querySelectorAll('.plan-button');
     planButtons.forEach(button => {
         button.addEventListener('click', function() {
-            if (this.classList.contains('upgrade') || this.classList.contains('free-trial')) {
+            if (this.classList.contains('upgrade')) {
+                const plan = this.closest('.pricing-card').getAttribute('data-plan');
+                openApiKeyModal(plan);
+            } else if (this.classList.contains('free-trial')) {
                 const plan = this.closest('.pricing-card').getAttribute('data-plan');
                 handleUpgrade(plan);
             } else if (this.classList.contains('secondary')) {
@@ -212,23 +215,97 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function handleUpgrade(plan) {
-    console.log('Upgrading to plan:', plan);
-    
+function handleUpgrade(plan, hasOwnKey, ownApiKey) {
+    console.log('Upgrading to plan:', plan, 'hasOwnKey:', hasOwnKey);
+
     // Si es el plan gratuito, ir directo a select-plan
     if (plan === 'gratuito') {
         window.location.href = '/select-plan';
         return;
     }
-    
+
     // Detectar si está en modo anual
     const billingToggle = document.getElementById('billingToggle');
     const isAnnual = billingToggle ? billingToggle.checked : false;
     const billingPeriod = isAnnual ? 'annual' : 'monthly';
-    
-    // Redirigir con parámetros de plan y período
-    window.location.href = `/checkout?plan=${plan}&billing=${billingPeriod}`;
+
+    // Redirigir con parámetros de plan y período — hasOwnKey le dice al
+    // backend si debe saltarse el aprovisionamiento automático de GCP
+    // (creación de proyecto + API key de Gemini) para este usuario.
+    let url = `/checkout?plan=${plan}&billing=${billingPeriod}`;
+    if (typeof hasOwnKey === 'boolean') {
+        url += `&hasOwnKey=${hasOwnKey}`;
+        if (hasOwnKey && ownApiKey) {
+            url += `&apiKey=${encodeURIComponent(ownApiKey)}`;
+        }
+    }
+    window.location.href = url;
 }
+
+// ── Modal: ¿ya tienes tu propia API key de Gemini? ──────────────────────────
+// Solo aplica a planes de pago ("Actualizar Plan") — el plan gratuito no
+// pasa por aquí, sigue yendo directo a /select-plan.
+let apiKeyModalPlan = null;
+
+function openApiKeyModal(plan) {
+    apiKeyModalPlan = plan;
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    const inputWrap = document.getElementById('apiKeyInputWrap');
+    const input = document.getElementById('apiKeyModalInput');
+    if (!overlay) {
+        // Si por lo que sea el modal no está en el DOM, no bloquear el flujo
+        handleUpgrade(plan);
+        return;
+    }
+    if (inputWrap) inputWrap.style.display = 'none';
+    if (input) input.value = '';
+    overlay.style.display = 'flex';
+}
+
+function closeApiKeyModal() {
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+    apiKeyModalPlan = null;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('apiKeyModalOverlay');
+    const btnNo = document.getElementById('apiKeyModalNo');
+    const btnYes = document.getElementById('apiKeyModalYes');
+    const inputWrap = document.getElementById('apiKeyInputWrap');
+    const input = document.getElementById('apiKeyModalInput');
+
+    if (!overlay || !btnNo || !btnYes) return;
+
+    // "No, créenmela automáticamente" → GCP corre normal (hasOwnKey=false)
+    btnNo.addEventListener('click', function() {
+        const plan = apiKeyModalPlan;
+        closeApiKeyModal();
+        handleUpgrade(plan, false);
+    });
+
+    // "Sí, ya tengo una" → primer click revela el campo para pegarla;
+    // segundo click (mismo botón) confirma y sigue, con o sin key pegada.
+    btnYes.addEventListener('click', function() {
+        if (inputWrap && inputWrap.style.display === 'none') {
+            inputWrap.style.display = 'block';
+            if (input) input.focus();
+            btnYes.textContent = window.Translations?.dict?.[getLang()]?.plans_apikey_modal_continue || 'Continuar';
+            return;
+        }
+        const plan = apiKeyModalPlan;
+        const ownKey = input ? input.value.trim() : '';
+        closeApiKeyModal();
+        handleUpgrade(plan, true, ownKey);
+    });
+
+    // Cerrar el modal si le dan clic al overlay fuera de la tarjeta
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeApiKeyModal();
+        }
+    });
+});
 
 function handleContactSales() {
     console.log('Contact sales clicked');
