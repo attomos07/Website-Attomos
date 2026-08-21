@@ -110,8 +110,14 @@ func Chat(promptContext, userMessage, conversationHistory string) (string, error
 	// Obtener el prompt del sistema desde la configuración del negocio
 	systemPrompt := GetSystemPrompt()
 
+	// Inventario/endpoint conectado vía API Explorer (si el negocio configuró
+	// uno desde el panel) — vacío si no hay nada conectado, así no se agrega
+	// ruido al prompt. Ver api_explorer.go.
+	apiExplorerCatalog := GetAPIExplorerContext(userMessage)
+
 	// Construir prompt completo
 	fullPrompt := fmt.Sprintf(`%s
+%s
 
 HISTORIAL DE CONVERSACIÓN:
 %s
@@ -128,6 +134,7 @@ INSTRUCCIONES:
 
 RESPUESTA:`,
 		systemPrompt,
+		apiExplorerCatalog,
 		conversationHistory,
 		promptContext,
 		userMessage)

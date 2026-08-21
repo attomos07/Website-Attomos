@@ -469,7 +469,7 @@ func saveAppointment(state *UserState, phoneNumber, senderName string) string {
 	if HasPaymentMethods() {
 		servicio := state.Data["servicio"]
 		precio := GetServicePrice(servicio)
-		paymentMsg := BuildPaymentMessage(servicio, precio)
+		paymentMsg := BuildPaymentMessage(servicio, precio, "")
 		if paymentMsg != "" {
 			log.Println("💳 [Payments] Agregando opciones de pago al mensaje")
 			confirmMsg += "\n\n" + paymentMsg

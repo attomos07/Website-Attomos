@@ -210,6 +210,86 @@ func (c *MetaClient) SendMessage(to, message string) error {
 	return nil
 }
 
+// MetaImageMessage representa un mensaje de imagen de WhatsApp (Meta Cloud API).
+// A diferencia de whatsmeow (AtomicBot), que sube el binario de la imagen,
+// Meta Cloud API acepta mandarla directo por URL pública — no hace falta
+// descargar/subir nada, el link ya viene servido por el bucket.
+type MetaImageMessage struct {
+	MessagingProduct string     `json:"messaging_product"`
+	RecipientType    string     `json:"recipient_type"`
+	To               string     `json:"to"`
+	Type             string     `json:"type"`
+	Image            *MetaImage `json:"image,omitempty"`
+}
+
+// MetaImage contenido de imagen del mensaje
+type MetaImage struct {
+	Link    string `json:"link"`
+	Caption string `json:"caption,omitempty"`
+}
+
+// SendImage envía una imagen por URL a un número de WhatsApp vía Meta Cloud API.
+// Usado por el interceptor de SEND_APX_PHOTOS (ver webhook.go) cuando el
+// cliente pide fotos de algún elemento del API Explorer.
+func (c *MetaClient) SendImage(to, imageURL, caption string) error {
+	if !c.IsConfigured() {
+		return fmt.Errorf("cliente Meta no configurado - configura las credenciales en Integraciones")
+	}
+
+	url := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", c.APIVersion, c.PhoneNumberID)
+
+	payload := MetaImageMessage{
+		MessagingProduct: "whatsapp",
+		RecipientType:    "individual",
+		To:               to,
+		Type:             "image",
+		Image: &MetaImage{
+			Link:    imageURL,
+			Caption: caption,
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error marshaling payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(c.ctx, "POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	log.Printf("✅ Imagen enviada a %s: %s", to, imageURL)
+	return nil
+}
+
+// SendImageFromBot envía una imagen usando el cliente global (helper, mismo
+// patrón que SendMessageFromBot).
+func SendImageFromBot(to, imageURL, caption string) error {
+	if globalMetaClient == nil {
+		return fmt.Errorf("Meta client no está inicializado")
+	}
+	if !globalMetaClient.IsConfigured() {
+		return fmt.Errorf("Meta client no está configurado")
+	}
+	return globalMetaClient.SendImage(to, imageURL, caption)
+}
+
 // MarkAsRead marca un mensaje como leído
 func (c *MetaClient) MarkAsRead(messageID string) error {
 	// Verificar si el cliente está configurado

@@ -31,10 +31,11 @@ func main() {
 	}
 	log.Println("")
 
-	// Cargar configuración del negocio
+	// Cargar configuración del negocio (desde el backend de Attomos, ya no
+	// de un archivo local — ver LoadBusinessConfig en config.go)
 	log.Println("🏢 Cargando configuración del negocio...")
 	if err := src.LoadBusinessConfig(); err != nil {
-		log.Printf("⚠️  Error cargando business_config.json: %v\n", err)
+		log.Printf("⚠️  Error cargando configuración del negocio: %v\n", err)
 		log.Println("💡 El bot continuará con configuración por defecto")
 	} else {
 		log.Println("✅ Configuración del negocio cargada correctamente")
@@ -102,7 +103,26 @@ func main() {
 		log.Println("ℹ️  No hay métodos de pago configurados en este negocio")
 	}
 
-	// Iniciar watchdog para recargar configuración
+	// Cargar inventario/endpoint conectado vía API Explorer (si el negocio
+	// configuró uno desde el panel) y refrescarlo cada 5 min en segundo plano.
+	log.Println("🔌 Cargando inventario de API Explorer...")
+	src.StartAPIExplorerPolling()
+
+	// Conectar con el CRM en vivo (hub del backend) — reporta cada mensaje y
+	// permite que un humano tome la conversación desde el CRM. Se reconecta
+	// solo si se cae; no bloquea el arranque si no está configurado.
+	src.InitCRMBridge()
+
+	// Reporta métricas de recursos (CPU, RAM, goroutines, disco) al panel
+	// superadmin cada minuto, por el mismo WebSocket del CRM — ver metrics.go.
+	src.StartMetricsReporting()
+
+	// Refrescar la config del negocio cada 5 min como respaldo — el aviso
+	// normal llega al instante por WebSocket (InitCRMBridge, arriba) cuando
+	// guardan en Mi Negocio.
+	src.StartBusinessConfigPolling()
+
+	// Iniciar watchdog para recargar configuración (.env, google.json)
 	go configWatchdog()
 
 	// Inicializar Meta WhatsApp Client
@@ -186,13 +206,6 @@ func showConfigurationStatus() {
 		log.Println("   💡 Necesario para Google Sheets y Calendar")
 	}
 
-	// Verificar business_config.json
-	if info, err := os.Stat("business_config.json"); err == nil {
-		log.Printf("✅ Archivo business_config.json: Encontrado (%d bytes)\n", info.Size())
-	} else {
-		log.Println("⚠️  Archivo business_config.json: No encontrado")
-	}
-
 	log.Println("")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("🔑 VARIABLES DE ENTORNO")
@@ -209,6 +222,8 @@ func showConfigurationStatus() {
 		"GEMINI_API_KEY":       "Gemini AI",
 		"SPREADSHEETID":        "Google Sheets",
 		"GOOGLE_CALENDAR_ID":   "Google Calendar",
+		"ATTOMOS_API_URL":      "URL del backend de Attomos",
+		"BOT_API_TOKEN":        "Token de autenticación del bot",
 	}
 
 	for env, description := range vars {
@@ -307,18 +322,12 @@ func configWatchdog() {
 
 	lastEnvMod := getFileModTime(".env")
 	lastGoogleMod := getFileModTime("google.json")
-	lastConfigMod := getFileModTime("business_config.json")
 
 	for range ticker.C {
-		// Verificar si business_config.json cambió
-		currentConfigMod := getFileModTime("business_config.json")
-		if currentConfigMod != lastConfigMod {
-			log.Println("\n🔄 Detectado cambio en business_config.json, recargando...")
-			if err := src.LoadBusinessConfig(); err == nil {
-				log.Println("✅ Configuración del negocio recargada")
-			}
-			lastConfigMod = currentConfigMod
-		}
+		// Nota: business_config.json ya NO se vigila aquí — la config del
+		// negocio se refresca vía LoadBusinessConfig() (HTTP al backend),
+		// disparado por WebSocket al instante (InitCRMBridge) o por
+		// StartBusinessConfigPolling() cada 5 min como respaldo. Ver config.go.
 
 		// Verificar si .env cambió
 		currentEnvMod := getFileModTime(".env")

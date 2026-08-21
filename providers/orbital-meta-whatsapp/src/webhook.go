@@ -322,17 +322,40 @@ func processMessage(message *struct {
 		log.Printf("⚠️  Error marcando mensaje como leído: %v", err)
 	}
 
+	// Reportar el mensaje entrante al CRM en vivo (no bloquea si no hay
+	// nadie viendo el panel en este momento — ver crm_bridge.go).
+	NotifyCRM("in", phoneNumber, senderName, messageText, "customer")
+
+	// Si un humano tomó esta conversación desde el CRM recientemente, el
+	// bot se queda callado — ya se reportó el mensaje arriba para que lo
+	// vean, pero no generamos ni mandamos respuesta automática.
+	if IsHumanControlled(phoneNumber) {
+		log.Printf("⏸️  Bot pausado para %s (control humano activo) — no se genera respuesta automática", phoneNumber)
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
 	// Procesar mensaje (usar la misma lógica de AtomicBot)
 	response := ProcessMessage(messageText, phoneNumber, senderName)
 
 	// Enviar respuesta
 	if response != "" {
+		// Interceptar SEND_APX_PHOTOS: el cliente pidió fotos de algún
+		// elemento del API Explorer — Gemini responde con ese token en vez
+		// de texto normal (ver la instrucción en api_explorer.go).
+		if idx := strings.Index(response, "SEND_APX_PHOTOS:"); idx != -1 {
+			sendAPXPhotos(client, phoneNumber, senderName, response[idx+len("SEND_APX_PHOTOS:"):])
+			log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+			return
+		}
+
 		log.Printf("📤 ENVIANDO RESPUESTA a %s...", senderName)
 		if err := client.SendMessage(phoneNumber, response); err != nil {
 			log.Printf("❌ ERROR enviando mensaje: %v", err)
 		} else {
 			log.Printf("✅ RESPUESTA ENVIADA correctamente")
 			log.Printf("   📝 Contenido: %s", truncateString(response, 100))
+			NotifyCRM("out", phoneNumber, senderName, response, "bot")
 		}
 	} else {
 		log.Printf("⚠️  No se generó respuesta para este mensaje")
@@ -379,4 +402,45 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen] + "..."
+}
+
+// sendAPXPhotos parsea la lista de URLs que Gemini devolvió tras
+// "SEND_APX_PHOTOS:" y las manda una por una vía Meta Cloud API. Mismo
+// patrón que el interceptor de AtomicBot en app.go, adaptado a
+// client.SendImage (Meta manda por link directo, no hace falta descargar
+// el binario de la imagen).
+func sendAPXPhotos(client *MetaClient, phoneNumber, senderName, rawURLList string) {
+	end := len(rawURLList)
+	for i, ch := range rawURLList {
+		if ch == '\n' || ch == '\r' {
+			end = i
+			break
+		}
+	}
+	urlList := strings.TrimSpace(rawURLList[:end])
+	log.Printf("📸 Gemini solicita fotos del API Explorer: %s", urlList)
+
+	sentCount := 0
+	for _, u := range strings.Split(urlList, ",") {
+		u = strings.TrimSpace(u)
+		if u == "" || (!strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://")) {
+			continue
+		}
+		if err := client.SendImage(phoneNumber, u, ""); err != nil {
+			log.Printf("❌ Error enviando foto del API Explorer (%s): %v", u, err)
+			continue
+		}
+		sentCount++
+	}
+
+	if sentCount == 0 {
+		log.Println("⚠️  SEND_APX_PHOTOS sin URLs válidas — nada que enviar")
+		if err := client.SendMessage(phoneNumber, "No encontré fotos de ese elemento. ¿Puedes ser más específico?"); err != nil {
+			log.Printf("❌ Error enviando mensaje de fallback: %v", err)
+		}
+		return
+	}
+
+	log.Printf("✅ %d foto(s) del API Explorer enviadas a %s", sentCount, senderName)
+	NotifyCRM("out", phoneNumber, senderName, "[Fotos de inventario enviadas]", "bot")
 }
