@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 // PaymentConfig configuración de pagos leída desde la API de Attomos
@@ -49,7 +50,7 @@ func LoadPaymentConfig() error {
 	req.Header.Set("Authorization", "Bearer "+botToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error llamando API de pagos: %w", err)
@@ -259,7 +260,7 @@ func CreateBotCheckoutURL(customerName, customerPhone string, items []OrderItem)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+botToken)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error llamando API de payment link: %w", err)
@@ -343,7 +344,7 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+botToken)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error llamando API: %w", err)
