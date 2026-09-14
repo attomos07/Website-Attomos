@@ -1004,6 +1004,7 @@ func GetAgentQRCode(c *gin.Context) {
 	globalServer := servers[0]
 	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := atomicService.Connect(); err != nil {
+		log.Printf("❌ [Agent %d] GetAgentQRCode: no se pudo conectar por SSH al servidor %s: %v", agent.ID, globalServer.IPAddress, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo conectar al servidor"})
 		return
 	}
@@ -1011,7 +1012,8 @@ func GetAgentQRCode(c *gin.Context) {
 
 	qrCode, connected, err := atomicService.GetQRCodeFromLogs(agent.ID)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"connected": false, "qrCode": nil, "message": "Esperando QR code..."})
+		log.Printf("⚠️  [Agent %d] GetQRCodeFromLogs falló: %v", agent.ID, err)
+		c.JSON(http.StatusOK, gin.H{"connected": false, "qrCode": nil, "message": "Esperando QR code...", "debugError": err.Error()})
 		return
 	}
 	if connected {
