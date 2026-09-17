@@ -10,6 +10,7 @@
     </a>
 
     <nav class="comy-sidebar-nav" id="comySidebarLinks">
+      <div class="comy-side-indicator" id="comySideIndicator"></div>
       <a href="/comy" class="comy-side-link" data-match="/comy" title="Directorio">
         <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         <span class="comy-side-tooltip">Directorio</span>
@@ -126,19 +127,27 @@
     padding: 1px 4px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em;
   }
 
-  .comy-sidebar-nav { display: flex; flex-direction: column; gap: .5rem; width: 100%; align-items: center; }
+  .comy-sidebar-nav { position: relative; display: flex; flex-direction: column; gap: .5rem; width: 100%; align-items: center; }
+  .comy-side-indicator {
+    position: absolute; top: 0; left: 50%; width: 40px; height: 40px;
+    border-radius: 50%; background: var(--c-accent);
+    box-shadow: 0 6px 16px rgba(245,149,0,.35);
+    transform: translate(-50%, 0); opacity: 0;
+    transition: top .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
+    z-index: 0; pointer-events: none;
+  }
   .comy-side-link {
-    position: relative;
-    width: 40px; height: 40px; border-radius: 12px;
+    position: relative; z-index: 1;
+    width: 40px; height: 40px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     color: var(--c-muted); text-decoration: none;
-    transition: all .18s;
+    transition: color .18s;
   }
-  .comy-side-link:hover { background: var(--c-accent-soft); color: var(--c-accent); }
-  .comy-side-link.active { background: var(--c-accent); color: #fff; box-shadow: 0 6px 16px rgba(245,149,0,.35); }
+  .comy-side-link:hover { color: #fff; }
+  .comy-side-link.active { color: #fff; }
   .comy-side-link-muted { color: #c7c1ba; }
-  .comy-side-link-muted:hover { background: #f4f1ee; color: var(--c-muted); }
-  .comy-side-link-muted.active { background: var(--c-ink); color: #fff; box-shadow: none; }
+  .comy-side-link-muted:hover { color: #fff; }
+  .comy-side-link-muted.active { color: #fff; }
 
   .comy-side-tooltip {
     position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
@@ -226,6 +235,28 @@
     const match = a.dataset.match.replace(/\/+$/, '') || '/';
     if (match === path) a.classList.add('active');
   });
+
+  // Círculo deslizante del menú lateral
+  const sideNav = document.getElementById('comySidebarLinks');
+  const sideIndicator = document.getElementById('comySideIndicator');
+  if (sideNav && sideIndicator) {
+    const sideLinks = Array.from(sideNav.querySelectorAll('.comy-side-link'));
+    const moveIndicatorTo = link => {
+      sideIndicator.style.top = link.offsetTop + 'px';
+      sideIndicator.style.opacity = '1';
+    };
+    const activeSideLink = sideLinks.find(a => a.classList.contains('active'));
+    if (activeSideLink) moveIndicatorTo(activeSideLink);
+
+    sideLinks.forEach(link => {
+      link.addEventListener('mouseenter', () => moveIndicatorTo(link));
+    });
+    sideNav.addEventListener('mouseleave', () => {
+      const current = sideLinks.find(a => a.classList.contains('active'));
+      if (current) moveIndicatorTo(current);
+      else sideIndicator.style.opacity = '0';
+    });
+  }
 
   const wrap = document.getElementById('comyAvatarWrap');
   if (wrap) {

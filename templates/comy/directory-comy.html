@@ -5,7 +5,7 @@
 
 {{template "comy/sidebar-comy.html" .}}
 
-<div class="comy-content">
+<div class="comy-content" style="background:#fff">
   <div class="comy-page">
 
     <!-- Barra superior -->
@@ -13,8 +13,8 @@
       <h1 class="comy-title">Buen provecho{{if .UserName}}, {{.UserName}}{{end}} 😋</h1>
 
       <div class="comy-search">
-        <svg width="16" height="16" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"><path d="m21 21l-4.34-4.34"/><circle cx="11" cy="11" r="8"/></g></svg>
         <input type="text" id="comySearchInput" placeholder="Busca por nombre de platillo o empresa">
+        <svg width="16" height="16" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"><path d="m21 21l-4.34-4.34"/><circle cx="11" cy="11" r="8"/></g></svg>
       </div>
 
       <div class="comy-topbar-right">
@@ -231,7 +231,7 @@
 </div>
 
 <style>
-  .comy-page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+  .comy-page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; background: #fff; }
 
   /* Topbar */
   .comy-topbar { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
@@ -239,8 +239,8 @@
   .comy-search {
     flex: 1; min-width: 220px; max-width: 360px;
     display: flex; align-items: center; gap: .6rem;
-    background: var(--c-panel); border: 1px solid var(--c-border);
-    border-radius: 12px; padding: .6rem 1rem; color: var(--c-muted);
+    background: #F2F2F4; border: none;
+    border-radius: 999px; padding: .75rem 1.25rem; color: var(--c-muted);
   }
   .comy-search input { border: none; background: none; outline: none; font-size: .85rem; width: 100%; color: var(--c-ink); font-family: var(--c-font); }
   .comy-topbar-right { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
@@ -283,7 +283,8 @@
   .comy-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.25rem; }
   .comy-side {
     width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1.25rem;
-    background: var(--c-panel); border-radius: 24px; padding: 1.25rem;
+    background: #fff; border-radius: 24px; padding: 1.25rem;
+    border: 1px solid var(--c-border);
   }
 
   /* Hero */
@@ -386,7 +387,7 @@
   .comy-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
 
   /* Panel de pedido */
-  .comy-order-box { background: var(--c-panel); border-radius: 20px; padding: 1.25rem; }
+  .comy-order-box { background: transparent; border-radius: 20px; padding: 1.25rem 0 0; }
   .comy-order-list { display: flex; flex-direction: column; }
   .comy-order-item { display: flex; align-items: center; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--c-border); }
   .comy-order-item:last-child { border-bottom: none; }
