@@ -19,30 +19,30 @@ import (
 
 // ─── Public store listing ────────────────────────────────────────────────────
 
-// GetNindaDirectory - GET /ninda
+// GetNindaDirectory - GET /comy
 // Página pública del directorio de negocios
 func GetNindaDirectory(c *gin.Context) {
-	c.HTML(http.StatusOK, "ninda-directory.html", gin.H{})
+	c.HTML(http.StatusOK, "comy/directory-comy.html", gin.H{})
 }
 
-// GetNindaStore - GET /ninda/:branch_id
+// GetNindaStore - GET /comy/:branch_id
 // Página pública del negocio con sus productos
 func GetNindaStore(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda-store.html", gin.H{})
 }
 
-// GetNindaMap - GET /ninda/map
+// GetNindaMap - GET /comy/map
 // Demo de rastreo de pedido en tiempo real
 func GetNindaMap(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda-map.html", gin.H{})
 }
 
-// GetNindaLogin - GET /ninda/login
+// GetNindaLogin - GET /comy/login
 func GetNindaLogin(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda/login-ninda.html", gin.H{})
 }
 
-// GetNindaRegister - GET /ninda/register
+// GetNindaRegister - GET /comy/register
 func GetNindaRegister(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda/register-ninda.html", gin.H{})
 }
@@ -229,7 +229,7 @@ type NindaCheckoutRequest struct {
 	CustomerPhone string          `json:"customerPhone" binding:"required"`
 	CustomerEmail string          `json:"customerEmail"`
 	Notes         string          `json:"notes"`
-	// Source: "ninda" = directo, "bot" = viene desde WhatsApp via ?item=
+	// Source: "comy" = directo, "bot" = viene desde WhatsApp via ?item=
 	Source  string `json:"source"`
 	BotItem string `json:"botItem"`
 }
@@ -306,7 +306,7 @@ func APICreateCheckout(c *gin.Context) {
 	// Determinar source: bot (viene de WhatsApp via ?item=) o ninda (directo)
 	source := req.Source
 	if source == "" {
-		source = "ninda"
+		source = "comy"
 	}
 
 	metadata := map[string]string{
@@ -331,8 +331,8 @@ func APICreateCheckout(c *gin.Context) {
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		LineItems:          lineItems,
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:         stripe.String(fmt.Sprintf("%s/ninda/%d?payment=success&session_id={CHECKOUT_SESSION_ID}", baseURL, req.BranchID)),
-		CancelURL:          stripe.String(fmt.Sprintf("%s/ninda/%d?payment=cancelled", baseURL, req.BranchID)),
+		SuccessURL:         stripe.String(fmt.Sprintf("%s/comy/%d?payment=success&session_id={CHECKOUT_SESSION_ID}", baseURL, req.BranchID)),
+		CancelURL:          stripe.String(fmt.Sprintf("%s/comy/%d?payment=cancelled", baseURL, req.BranchID)),
 		Metadata:           metadata,
 	}
 
@@ -346,12 +346,12 @@ func APICreateCheckout(c *gin.Context) {
 
 	sess, err := session.New(params)
 	if err != nil {
-		log.Printf("❌ [Ninda] Error creando Checkout Session: %v", err)
+		log.Printf("❌ [Comy] Error creando Checkout Session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al iniciar el pago: " + err.Error()})
 		return
 	}
 
-	log.Printf("✅ [Ninda] Checkout Session creado: %s | Negocio: %s | Total: $%.2f MXN",
+	log.Printf("✅ [Comy] Checkout Session creado: %s | Negocio: %s | Total: $%.2f MXN",
 		sess.ID, branch.BusinessName, float64(totalAmount)/100)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -387,7 +387,7 @@ func APIConfirmOrder(c *gin.Context) {
 	params.SetStripeAccount(cfg.StripeAccountID)
 	sess, err := session.Get(req.SessionID, params)
 	if err != nil {
-		log.Printf("❌ [Ninda] Error obteniendo sesión: %v", err)
+		log.Printf("❌ [Comy] Error obteniendo sesión: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sesión no encontrada"})
 		return
 	}
@@ -446,7 +446,7 @@ func buildItemsSummary(items []NindaCartItem) string {
 }
 
 // buildWhatsAppMessage construye el mensaje pre-llenado para WhatsApp.
-// source: "bot" = viene del agente de WhatsApp, "ninda" = pedido directo
+// source: "bot" = viene del agente de WhatsApp, "comy" = pedido directo
 func buildWhatsAppMessage(branchName, customerName, items string, total float64, notes, sessionID, source string) string {
 	now := time.Now().Format("02/01/2006 15:04")
 
@@ -468,9 +468,9 @@ func buildWhatsAppMessage(branchName, customerName, items string, total float64,
 		msg += fmt.Sprintf("%%0A📝 *Notas:* %s", notes)
 	}
 	if source == "bot" {
-		msg += "%%0A%%0A_Pago procesado vía Ninda · Originado desde el agente WhatsApp_"
+		msg += "%%0A%%0A_Pago procesado vía Comy · Originado desde el agente WhatsApp_"
 	} else {
-		msg += "%%0A%%0A_Pago procesado a través de Ninda_"
+		msg += "%%0A%%0A_Pago procesado a través de Comy_"
 	}
 	return msg
 }

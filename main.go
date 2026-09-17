@@ -135,6 +135,7 @@ func main() {
 		"templates/legal/*.html",
 		"templates/admin/*.html",
 		"templates/ninda/*.html",
+		"templates/comy/*.html",
 		"templates/agency/*.html",
 		"templates/flows/*.html",
 	}
@@ -188,20 +189,20 @@ func main() {
 	}
 
 	// ============================================
-	// 🛒 NINDA — Marketplace público (sin auth)
+	// 🛒 COMY — Marketplace público (sin auth)
 	// ============================================
 	// Páginas HTML
-	router.GET("/ninda", handlers.GetNindaDirectory)
-	router.GET("/ninda/map", handlers.GetNindaMap)
-	router.GET("/ninda/login", handlers.GetNindaLogin)
-	router.GET("/ninda/register", handlers.GetNindaRegister)
-	router.GET("/ninda/:branch_id", handlers.GetNindaStore)
+	router.GET("/comy", handlers.GetNindaDirectory)
+	router.GET("/comy/map", handlers.GetNindaMap)
+	router.GET("/comy/login", handlers.GetNindaLogin)
+	router.GET("/comy/register", handlers.GetNindaRegister)
+	router.GET("/comy/:branch_id", handlers.GetNindaStore)
 	// API pública
-	router.GET("/api/ninda/stores", handlers.APIGetStores)
-	router.GET("/api/ninda/stores/:branch_id", handlers.APIGetStore)
-	router.POST("/api/ninda/checkout", handlers.APICreateCheckout)
-	router.POST("/api/ninda/confirm", handlers.APIConfirmOrder)
-	log.Println("✅ Ninda Marketplace configurado en: /ninda")
+	router.GET("/api/comy/stores", handlers.APIGetStores)
+	router.GET("/api/comy/stores/:branch_id", handlers.APIGetStore)
+	router.POST("/api/comy/checkout", handlers.APICreateCheckout)
+	router.POST("/api/comy/confirm", handlers.APIConfirmOrder)
+	log.Println("✅ Comy Marketplace configurado en: /comy")
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)
@@ -651,7 +652,7 @@ func main() {
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
 	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
-	log.Println("║    • 🛒 Ninda Marketplace en: /ninda                    ║")
+	log.Println("║    • 🛒 Comy Marketplace en: /comy                      ║")
 	log.Println("║    • 🍕 Orders en: /orders (giros de comida)            ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
