@@ -1,12 +1,12 @@
 {{define "ninda/navbar-ninda.html"}}
 <link rel="stylesheet" href="/static/css/ninda/navbar-ninda.css">
 
-<nav class="ninda-nav" id="nindaNav">
-  <div class="ninda-nav-container">
+<div class="ninda-nav-shell">
+  <nav class="ninda-nav" id="nindaNav">
 
     <!-- Logo -->
     <a href="/ninda" class="ninda-logo">
-      <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="26" height="26" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="40" height="40" rx="10" fill="#C62828"/>
         <path d="M10 28V14l6 9 6-9v14M28 14v14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="28" cy="28" r="3" fill="#fff"/>
@@ -15,11 +15,11 @@
       <span class="ninda-beta">Beta</span>
     </a>
 
-    <!-- Links centro -->
+    <!-- Links centro, estilo pills (mismo lenguaje visual que el sidebar de referencia) -->
     <ul class="ninda-nav-links" id="nindaNavLinks">
-      <li><a href="/ninda" class="ninda-link">Directorio</a></li>
-      <li><a href="/ninda/map" class="ninda-link">Rastreo</a></li>
-      <li><a href="/" class="ninda-link ninda-link-muted">Attomos</a></li>
+      <li><a href="/ninda" class="ninda-link" data-match="/ninda"><i class="lni lni-shop"></i><span>Directorio</span></a></li>
+      <li><a href="/ninda/map" class="ninda-link" data-match="/ninda/map"><i class="lni lni-map-marker"></i><span>Rastreo</span></a></li>
+      <li><a href="/" class="ninda-link ninda-link-muted" data-match="/"><i class="lni lni-home"></i><span>Attomos</span></a></li>
     </ul>
 
     <!-- Auth -->
@@ -57,22 +57,37 @@
       <span></span><span></span><span></span>
     </button>
 
-  </div>
-</nav>
+  </nav>
+</div>
 
 <!-- CSS inline para no depender de archivo externo en dev -->
 <style>
-  .ninda-nav {
-    position: sticky; top: 0; z-index: 500;
-    background: rgba(255,255,255,.97);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #e5e7eb;
-    height: 58px;
+  :root {
+    --n-accent: #C62828;
+    --n-accent2: #7B1E2B;
+    --n-accent-soft: #FCEBE7;
+    --n-ink: #17110f;
+    --n-muted: #8a8078;
+    --n-border: #f0e3dc;
+    --n-panel: #ffffff;
+    --n-shadow: 0 14px 34px rgba(120,40,30,.10);
   }
-  .ninda-nav-container {
+
+  .ninda-nav-shell {
+    position: sticky; top: 0; z-index: 500;
+    padding: 14px 18px 0;
+  }
+  .ninda-nav {
     max-width: 1280px; margin: 0 auto;
-    padding: 0 1.5rem; height: 100%;
-    display: flex; align-items: center; gap: 2rem;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--n-border);
+    border-radius: 999px;
+    box-shadow: var(--n-shadow);
+    padding: .5rem .6rem .5rem 1.1rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    height: 60px;
+    transition: box-shadow .2s;
   }
 
   /* Logo */
@@ -81,76 +96,85 @@
     text-decoration: none; flex-shrink: 0;
   }
   .ninda-logo-text {
-    font-size: 1.2rem; font-weight: 800; color: #0f0f0f;
+    font-size: 1.15rem; font-weight: 800; color: var(--n-ink);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   .ninda-beta {
-    background: #C62828; color: #fff; font-size: .58rem; font-weight: 700;
+    background: var(--n-accent); color: #fff; font-size: .58rem; font-weight: 700;
     padding: 1px 5px; border-radius: 4px; text-transform: uppercase;
     letter-spacing: .05em; align-self: flex-start; margin-top: 2px;
   }
 
-  /* Links */
+  /* Links — pills, mismo lenguaje que los items del sidebar de referencia */
   .ninda-nav-links {
-    display: flex; gap: .25rem; list-style: none; flex: 1; justify-content: center;
+    display: flex; gap: .3rem; list-style: none; flex: 1;
   }
   .ninda-link {
-    padding: .4rem .85rem; border-radius: 8px; text-decoration: none;
-    font-size: .875rem; font-weight: 500; color: #374151;
-    transition: all .15s;
+    display: flex; align-items: center; gap: .45rem;
+    padding: .5rem 1rem; border-radius: 999px; text-decoration: none;
+    font-size: .85rem; font-weight: 600; color: var(--n-muted);
+    transition: all .18s; white-space: nowrap;
   }
-  .ninda-link:hover { background: #f3f4f6; color: #0f0f0f; }
-  .ninda-link-muted { color: #9ca3af; font-size: .82rem; }
-  .ninda-link-muted:hover { color: #6b7280; }
+  .ninda-link i { font-size: 1rem; }
+  .ninda-link:hover { background: var(--n-accent-soft); color: var(--n-accent); }
+  .ninda-link.active {
+    background: var(--n-accent); color: #fff;
+    box-shadow: 0 6px 16px rgba(198,40,40,.3);
+  }
+  .ninda-link-muted { color: #b9b2ac; font-size: .8rem; }
+  .ninda-link-muted:hover { background: #f4f1ee; color: var(--n-muted); }
+  .ninda-link-muted.active { background: var(--n-ink); color: #fff; box-shadow: none; }
 
   /* Auth */
-  .ninda-nav-auth { flex-shrink: 0; }
-  .ninda-guest-btns { display: flex; align-items: center; gap: .6rem; }
+  .ninda-nav-auth { flex-shrink: 0; display: flex; align-items: center; }
+  .ninda-guest-btns { display: flex; align-items: center; gap: .5rem; }
   .ninda-btn-ghost {
-    padding: .42rem 1rem; border-radius: 8px; text-decoration: none;
-    font-size: .85rem; font-weight: 600; color: #374151;
-    border: 1.5px solid #e5e7eb; transition: all .2s;
+    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
+    font-size: .82rem; font-weight: 600; color: var(--n-ink);
+    border: 1.5px solid var(--n-border); transition: all .2s;
   }
-  .ninda-btn-ghost:hover { border-color: #C62828; color: #C62828; }
+  .ninda-btn-ghost:hover { border-color: var(--n-accent); color: var(--n-accent); }
   .ninda-btn-primary {
-    padding: .42rem 1rem; border-radius: 8px; text-decoration: none;
-    font-size: .85rem; font-weight: 700; color: #fff;
-    background: #C62828; transition: background .2s;
+    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
+    font-size: .82rem; font-weight: 700; color: #fff;
+    background: var(--n-accent); box-shadow: 0 6px 16px rgba(198,40,40,.28);
+    transition: background .2s, box-shadow .2s;
   }
-  .ninda-btn-primary:hover { background: #7B1E2B; }
+  .ninda-btn-primary:hover { background: var(--n-accent2); }
 
   /* Avatar dropdown */
   .ninda-user-area { position: relative; }
   .ninda-avatar-wrap { position: relative; }
   .ninda-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #C62828; color: #fff; font-weight: 700; font-size: .85rem;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--n-accent); color: #fff; font-weight: 700; font-size: .9rem;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
+    border: 2.5px solid #fff; box-shadow: 0 3px 10px rgba(198,40,40,.35);
     transition: box-shadow .2s;
   }
-  .ninda-avatar:hover { box-shadow: 0 0 0 3px rgba(198,40,40,.2); }
+  .ninda-avatar:hover { box-shadow: 0 0 0 4px rgba(198,40,40,.18); }
   .ninda-user-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0;
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.1); min-width: 200px;
+    position: absolute; top: calc(100% + 14px); right: 0;
+    background: var(--n-panel); border: 1px solid var(--n-border); border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(0,0,0,.12); min-width: 210px;
     display: none; z-index: 1000; overflow: hidden;
   }
   .ninda-avatar-wrap:hover .ninda-user-dropdown,
   .ninda-avatar-wrap.open .ninda-user-dropdown { display: block; }
-  .nd-header { padding: .85rem 1rem; }
-  .nd-name  { font-size: .9rem; font-weight: 700; color: #0f0f0f; }
-  .nd-role  { font-size: .75rem; color: #9ca3af; }
-  .nd-divider { height: 1px; background: #f3f4f6; }
+  .nd-header { padding: .9rem 1.1rem; }
+  .nd-name  { font-size: .9rem; font-weight: 700; color: var(--n-ink); }
+  .nd-role  { font-size: .75rem; color: var(--n-muted); }
+  .nd-divider { height: 1px; background: var(--n-border); }
   .nd-item {
     display: flex; align-items: center; gap: .6rem;
-    padding: .65rem 1rem; font-size: .85rem; color: #374151;
+    padding: .7rem 1.1rem; font-size: .85rem; color: #374151;
     text-decoration: none; transition: background .12s; width: 100%;
     background: none; border: none; cursor: pointer; font-family: inherit;
     text-align: left;
   }
-  .nd-item:hover { background: #f9fafb; }
-  .nd-logout { color: #C62828; }
-  .nd-logout:hover { background: #fef2f2; }
+  .nd-item:hover { background: var(--n-accent-soft); }
+  .nd-logout { color: var(--n-accent); }
+  .nd-logout:hover { background: var(--n-accent-soft); }
 
   /* Hamburger */
   .ninda-hamburger {
@@ -158,7 +182,7 @@
     background: none; border: none; cursor: pointer; padding: 4px; margin-left: auto;
   }
   .ninda-hamburger span {
-    display: block; width: 22px; height: 2px; background: #374151;
+    display: block; width: 20px; height: 2px; background: var(--n-ink);
     border-radius: 2px; transition: all .25s;
   }
   .ninda-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -166,8 +190,15 @@
   .ninda-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
   @media (max-width: 700px) {
-    .ninda-nav-links { display: none; position: absolute; top: 58px; left: 0; right: 0; flex-direction: column; background: #fff; border-bottom: 1px solid #e5e7eb; padding: .75rem; gap: .25rem; }
+    .ninda-nav-shell { padding: 10px 12px 0; }
+    .ninda-nav { border-radius: 24px; padding: .5rem .75rem; }
+    .ninda-nav-links {
+      display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+      flex-direction: column; background: var(--n-panel); border: 1px solid var(--n-border);
+      border-radius: 20px; box-shadow: var(--n-shadow); padding: .6rem; gap: .2rem;
+    }
     .ninda-nav-links.open { display: flex; }
+    .ninda-link { padding: .65rem 1rem; }
     .ninda-hamburger { display: flex; }
     .ninda-guest-btns .ninda-btn-ghost { display: none; }
   }
@@ -181,6 +212,13 @@
   if (ham) ham.addEventListener('click', () => {
     ham.classList.toggle('open');
     links.classList.toggle('open');
+  });
+
+  // Marca el link activo según la ruta actual (estilo "pill" del sidebar de referencia)
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  document.querySelectorAll('.ninda-link[data-match]').forEach(a => {
+    const match = a.dataset.match.replace(/\/+$/, '') || '/';
+    if (match === path) a.classList.add('active');
   });
 
   // Avatar dropdown toggle

@@ -5,63 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ninda — Descubre negocios locales</title>
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink: #0f0f0f;
+      --ink: #17110f;
       --paper: #ffffff;
-      --cream: #f5f5f5;
+      --bg-page: #FBEEEA;
+      --bg-page-2: #F6E4DD;
+      --panel: #ffffff;
+      --panel-radius: 32px;
+      --cream: #F8ECE6;
       --accent: #C62828;
       --accent2: #7B1E2B;
-      --muted: #888;
-      --border: #e0dbd2;
+      --accent-soft: #FCEBE7;
+      --muted: #8a8078;
+      --border: #f0e3dc;
       --card-bg: #ffffff;
-      --radius: 16px;
+      --radius: 18px;
+      --shadow-soft: 0 20px 50px rgba(120,40,30,.08);
+      --shadow-pill: 0 14px 34px rgba(120,40,30,.10);
     }
 
     html { scroll-behavior: smooth; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: var(--paper);
+      background: linear-gradient(160deg, var(--bg-page) 0%, var(--bg-page-2) 100%);
       color: var(--ink);
       min-height: 100vh;
+      padding: 0 0 28px;
     }
 
-    /* ── NAVBAR ── */
-    .nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      display: flex; align-items: center; justify-content: space-between;
-      height: 64px;
+    /* ── APP SHELL — panel blanco flotando sobre el fondo pastel ── */
+    .app-shell {
+      max-width: 1360px;
+      margin: 0 auto;
+      background: var(--panel);
+      border-radius: var(--panel-radius);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
     }
-    .nav-logo {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-weight: 800;
-      font-size: 1.4rem;
-      color: var(--ink);
-      text-decoration: none;
-      display: flex; align-items: center; gap: 6px;
+    @media (max-width: 760px) {
+      body { padding: 0 0 14px; }
+      .app-shell { border-radius: 22px; }
     }
-    .nav-logo span { color: var(--accent); }
-    .nav-badge {
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    .nav-right { display: flex; gap: 1rem; align-items: center; }
-    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
-    .nav-link:hover { color: var(--ink); }
 
     /* ── HERO ── */
     .hero {
@@ -158,53 +146,85 @@
     }
     #searchInput::placeholder { color: var(--muted); }
 
-    /* ── FILTERS ── */
+    /* ── FILTERS — burbujas circulares, estilo selector de categorías ── */
     .filters {
       max-width: 1200px;
-      margin: 2.5rem auto 0;
+      margin: 3rem auto 0;
       padding: 0 2rem;
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
+      display: flex;
+      gap: 1.4rem;
+      overflow-x: auto;
+      scrollbar-width: none;
       animation: fadeUp .5s .3s ease both;
     }
+    .filters::-webkit-scrollbar { display: none; }
     .filter-btn {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 14px 8px;
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      background: var(--card-bg);
+      gap: .55rem;
+      background: none;
+      border: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       font-size: 0.78rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--muted);
       cursor: pointer;
+      flex-shrink: 0;
+    }
+    .filter-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 1.5rem;
       transition: all .2s;
+      box-shadow: 0 6px 16px rgba(198,40,40,.06);
     }
-    .filter-btn i {
-      font-size: 1.4rem;
-      line-height: 1;
-      transition: color .2s;
-    }
-    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-btn.active {
-      background: var(--ink);
-      border-color: var(--ink);
+    .filter-btn:hover .filter-icon { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(198,40,40,.16); }
+    .filter-btn.active .filter-icon {
+      background: var(--accent);
       color: #fff;
+      box-shadow: 0 10px 24px rgba(198,40,40,.32);
     }
+    .filter-btn.active { color: var(--ink); }
     @media (max-width: 700px) {
-      .filters {
-        grid-template-columns: repeat(4, 1fr);
-      }
+      .filters { gap: 1.1rem; padding: 0 1.25rem; }
+      .filter-icon { width: 50px; height: 50px; font-size: 1.3rem; }
     }
-    @media (max-width: 420px) {
-      .filters {
-        grid-template-columns: repeat(3, 1fr);
-      }
+
+    /* ── PROMO BANNER ── */
+    .promo-banner {
+      max-width: 1200px;
+      margin: 2.5rem auto 0;
+      padding: 0 2rem;
+      animation: fadeUp .5s .34s ease both;
+    }
+    .promo-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 26px;
+      background: linear-gradient(120deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #fff;
+      padding: 1.9rem 2.2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .promo-copy h3 {
+      font-size: 1.3rem; font-weight: 800; margin-bottom: .35rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .promo-copy p { font-size: .88rem; color: rgba(255,255,255,.85); max-width: 380px; }
+    .promo-emojis {
+      display: flex; gap: .3rem; font-size: 1.9rem; flex-shrink: 0;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,.18));
+    }
+    .promo-emojis span:nth-child(2) { transform: translateY(-8px); }
+    .promo-emojis span:nth-child(3) { transform: translateY(4px); }
+    @media (max-width: 640px) {
+      .promo-card { flex-direction: column; text-align: center; padding: 1.6rem; }
+      .promo-copy p { max-width: none; }
     }
 
     /* ── GRID ── */
@@ -214,15 +234,23 @@
       padding: 0 2rem;
     }
     .section-header {
-      display: flex; align-items: baseline; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1.5rem;
     }
+    .section-header-left { display: flex; align-items: baseline; gap: .6rem; }
     .section-title {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 1.2rem;
+      font-weight: 800;
     }
     .section-count { font-size: 0.875rem; color: var(--muted); }
+    .section-sort {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: var(--panel);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .section-sort:hover { border-color: var(--accent); color: var(--accent); }
 
     .stores-grid {
       display: grid;
@@ -242,11 +270,11 @@
       background: var(--cream);
       transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s;
       animation: cardIn .5s ease both;
-      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      box-shadow: 0 4px 16px rgba(120,40,30,.09);
     }
     .store-card:hover {
       transform: translateY(-6px) scale(1.01);
-      box-shadow: 0 16px 40px rgba(0,0,0,.13);
+      box-shadow: 0 18px 40px rgba(120,40,30,.16);
     }
 
     /* Imagen de fondo que llena toda la card */
@@ -389,6 +417,8 @@
 </head>
 <body>
 
+<div class="app-shell">
+
 {{template "ninda/navbar-ninda.html" .}}
 
 <!-- HERO -->
@@ -399,7 +429,7 @@
     </svg>
     Negocios locales · Pago seguro · Confirmación por WhatsApp
   </div>
-  <h1>Compra en tus <em>negocios</em><br>favoritos</h1>
+  <h1>Compra en tus <em>negocios</em><br>favoritos 🛍️</h1>
   <p>Descubre productos y servicios de negocios locales.<br>Paga con tarjeta y recibe confirmación directo en WhatsApp.</p>
 
   <!-- Pill de ubicación -->
@@ -434,40 +464,59 @@
 <!-- FILTERS -->
 <div class="filters" id="filters">
   <button class="filter-btn active" data-type="">
-    <i class="lni lni-grid-alt"></i>
+    <span class="filter-icon"><i class="lni lni-grid-alt"></i></span>
     Todos
   </button>
   <button class="filter-btn" data-type="salon">
-    <i class="lni lni-cut"></i>
+    <span class="filter-icon"><i class="lni lni-cut"></i></span>
     Salones
   </button>
   <button class="filter-btn" data-type="pizzeria">
-    <i class="lni lni-pizza"></i>
+    <span class="filter-icon"><i class="lni lni-pizza"></i></span>
     Pizzerías
   </button>
   <button class="filter-btn" data-type="clinica">
-    <i class="lni lni-hospital"></i>
+    <span class="filter-icon"><i class="lni lni-hospital"></i></span>
     Clínicas
   </button>
   <button class="filter-btn" data-type="restaurante">
-    <i class="lni lni-restaurant"></i>
+    <span class="filter-icon"><i class="lni lni-restaurant"></i></span>
     Restaurantes
   </button>
   <button class="filter-btn" data-type="tienda">
-    <i class="lni lni-shop"></i>
+    <span class="filter-icon"><i class="lni lni-shop"></i></span>
     Tiendas
   </button>
   <button class="filter-btn" data-type="spa">
-    <i class="lni lni-leaf"></i>
+    <span class="filter-icon"><i class="lni lni-leaf"></i></span>
     Spa & Bienestar
   </button>
+</div>
+
+<!-- PROMO BANNER -->
+<div class="promo-banner">
+  <div class="promo-card">
+    <div class="promo-copy">
+      <h3>Confirmación al instante por WhatsApp</h3>
+      <p>Paga con tarjeta y recibe la confirmación de tu pedido directo en WhatsApp, sin esperas ni llamadas.</p>
+    </div>
+    <div class="promo-emojis"><span>💬</span><span>✅</span><span>📦</span></div>
+  </div>
 </div>
 
 <!-- GRID -->
 <section class="stores-section">
   <div class="section-header">
-    <span class="section-title">Negocios disponibles</span>
-    <span class="section-count" id="storeCount">Cargando...</span>
+    <div class="section-header-left">
+      <span class="section-title">Negocios disponibles</span>
+      <span class="section-count" id="storeCount">Cargando...</span>
+    </div>
+    <button class="section-sort" title="Filtros">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/>
+        <line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
   </div>
   <div class="stores-grid" id="storesGrid">
     <!-- Skeleton loaders -->
@@ -734,5 +783,7 @@
     return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 </script>
+
+</div><!-- /.app-shell -->
 </body>
 </html>

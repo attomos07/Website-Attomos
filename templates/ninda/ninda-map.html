@@ -4,7 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ninda — Demo Rastreo</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script>
+    (function () {
+      const saved = localStorage.getItem('ninda-theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,15 +20,33 @@
       --ink: #0f0f0f; --paper: #ffffff;
       --muted: #6b7280; --border: #e5e7eb;
       --green: #16a34a; --blue: #1d4ed8;
+      --surface: #ffffff; --surface-2: #fafafa; --surface-3: #f9fafb;
+      --hover-red: #fef2f2; --hover-red-2: #fee2e2;
+      --hover-blue: #eff6ff; --border-blue: #bfdbfe;
+      --hover-green: #f0fdf4; --border-green: #bbf7d0;
+      --badge-blue-bg: #dbeafe; --badge-green-bg: #dcfce7;
+      --disabled-bg: #e5e7eb; --disabled-fg: #aaa; --placeholder: #bbb;
+      --shadow-color: rgba(0,0,0,.1);
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    html.dark {
+      --ink: #f2f2f2; --paper: #0b0b0d;
+      --muted: #9aa1ad; --border: #2a2a30;
+      --surface: #17171b; --surface-2: #131316; --surface-3: #1c1c21;
+      --hover-red: #2a1416; --hover-red-2: #3a1a1d;
+      --hover-blue: #0f1f33; --border-blue: #1e3a5f;
+      --hover-green: #0d2318; --border-green: #17402a;
+      --badge-blue-bg: #142943; --badge-green-bg: #0f2c1c;
+      --disabled-bg: #2a2a30; --disabled-fg: #6b6b73; --placeholder: #55555c;
+      --shadow-color: rgba(0,0,0,.5);
     }
     html, body { height: 100%; font-family: var(--font); background: var(--paper); overflow: hidden; }
 
     .topbar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-      height: 52px; background: #fff; border-bottom: 1px solid var(--border);
+      height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 1.25rem;
+      padding: 0 1.25rem; transition: background .2s, border-color .2s;
     }
     .logo { font-size: 1.15rem; font-weight: 800; color: var(--ink); text-decoration: none; }
     .logo span { color: var(--red); }
@@ -30,6 +55,13 @@
       font-weight: 700; padding: 2px 6px; border-radius: 4px;
       text-transform: uppercase; letter-spacing: .05em; margin-left: 6px;
     }
+    .topbar-right { display:flex; align-items:center; gap:.85rem; }
+    .theme-toggle {
+      width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border);
+      background:var(--surface); cursor:pointer; display:flex; align-items:center;
+      justify-content:center; font-size:.95rem; transition:all .2s; flex-shrink:0;
+    }
+    .theme-toggle:hover { border-color: var(--red); }
 
     .app {
       display: grid; grid-template-columns: 360px 1fr;
@@ -37,17 +69,18 @@
     }
     .sidebar {
       border-right: 1px solid var(--border); overflow-y: auto;
-      background: #fff; display: flex; flex-direction: column;
+      background: var(--surface); display: flex; flex-direction: column;
+      transition: background .2s, border-color .2s;
     }
 
     /* Search */
-    .search-panel { padding: 1rem; border-bottom: 1px solid var(--border); background: #fafafa; }
+    .search-panel { padding: 1rem; border-bottom: 1px solid var(--border); background: var(--surface-2); }
     .panel-label { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .75rem; }
     .search-field { position: relative; margin-bottom: .55rem; }
     .search-row {
       display: flex; align-items: center; gap: .55rem;
-      background: #fff; border: 1.5px solid var(--border);
-      border-radius: 10px; padding: .5rem .75rem; transition: border-color .2s, box-shadow .2s;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: .5rem .75rem; transition: border-color .2s, box-shadow .2s, background .2s;
     }
     .search-row:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px rgba(198,40,40,.08); }
     .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -57,29 +90,29 @@
       flex: 1; border: none; outline: none; font-size: .85rem;
       color: var(--ink); background: transparent; font-family: var(--font);
     }
-    .search-input::placeholder { color: #bbb; }
+    .search-input::placeholder { color: var(--placeholder); }
     .clr-btn {
       background: none; border: none; cursor: pointer; color: #ccc; font-size: .75rem;
       padding: 2px; border-radius: 50%; width: 18px; height: 18px;
       display: flex; align-items: center; justify-content: center;
       transition: all .15s; flex-shrink: 0;
     }
-    .clr-btn:hover { background: #fee2e2; color: var(--red); }
+    .clr-btn:hover { background: var(--hover-red-2); color: var(--red); }
     .clr-btn.hidden { visibility: hidden; pointer-events: none; }
 
     .dropdown {
       position: absolute; top: calc(100% + 3px); left: 0; right: 0;
-      background: #fff; border: 1px solid var(--border);
-      border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.1);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; box-shadow: 0 10px 30px var(--shadow-color);
       z-index: 3000; max-height: 200px; overflow-y: auto; display: none;
     }
     .dropdown.open { display: block; }
     .dd-item {
       display: flex; align-items: flex-start; gap: .6rem;
-      padding: .6rem .85rem; cursor: pointer; border-bottom: 1px solid #f9fafb; transition: background .12s;
+      padding: .6rem .85rem; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .12s;
     }
     .dd-item:last-child { border-bottom: none; }
-    .dd-item:hover { background: #fef2f2; }
+    .dd-item:hover { background: var(--hover-red); }
     .dd-item i { color: var(--muted); font-size: .85rem; margin-top: 2px; flex-shrink: 0; }
     .dd-name { font-size: .83rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
     .dd-sub  { font-size: .73rem; color: var(--muted); line-height: 1.3; margin-top: 1px; }
@@ -90,14 +123,14 @@
     .loc-btn {
       display: flex; align-items: center; gap: .45rem;
       width: 100%; padding: .5rem .75rem; margin-bottom: .55rem;
-      background: #fff; border: 1.5px solid var(--border);
+      background: var(--surface); border: 1.5px solid var(--border);
       border-radius: 10px; cursor: pointer; font-family: var(--font);
       font-size: .83rem; font-weight: 500; color: var(--ink);
       transition: all .2s; text-align: left;
     }
-    .loc-btn:hover { border-color: var(--blue); color: var(--blue); background: #eff6ff; }
+    .loc-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--hover-blue); }
     .loc-btn.loading { color: var(--muted); pointer-events: none; }
-    .loc-btn.active  { border-color: var(--green); color: var(--green); background: #f0fdf4; }
+    .loc-btn.active  { border-color: var(--green); color: var(--green); background: var(--hover-green); }
     .loc-btn i { font-size: 1rem; flex-shrink: 0; }
     .loc-btn .loc-spin {
       width: 14px; height: 14px; border-radius: 50%;
@@ -119,7 +152,7 @@
     /* Pill de ubicación detectada */
     .loc-pill {
       display: flex; align-items: center; gap: .4rem;
-      background: #eff6ff; border: 1px solid #bfdbfe;
+      background: var(--hover-blue); border: 1px solid var(--border-blue);
       border-radius: 8px; padding: .35rem .65rem;
       font-size: .75rem; color: var(--blue); margin-bottom: .35rem;
     }
@@ -139,11 +172,11 @@
       gap: .4rem; transition: background .2s; font-family: var(--font);
     }
     .btn-start:hover:not(:disabled) { background: var(--red2); }
-    .btn-start:disabled { background: #e5e7eb; color: #aaa; cursor: not-allowed; }
+    .btn-start:disabled { background: var(--disabled-bg); color: var(--disabled-fg); cursor: not-allowed; }
 
     .status-bar {
       display: flex; align-items: center; gap: .5rem;
-      padding: .65rem 1rem; background: #f0fdf4; border-bottom: 1px solid #bbf7d0;
+      padding: .65rem 1rem; background: var(--hover-green); border-bottom: 1px solid var(--border-green);
     }
     .s-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: sdot 1.5s ease infinite; flex-shrink: 0; }
     @keyframes sdot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
@@ -156,8 +189,8 @@
     .order-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .65rem; }
     .order-id { font-size: .73rem; color: var(--muted); }
     .badge-st { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-    .badge-st.camino { background: #dbeafe; color: var(--blue); }
-    .badge-st.done   { background: #dcfce7; color: var(--green); }
+    .badge-st.camino { background: var(--badge-blue-bg); color: var(--blue); }
+    .badge-st.done   { background: var(--badge-green-bg); color: var(--green); }
     .o-item { display: flex; align-items: center; gap: .45rem; font-size: .83rem; padding: .22rem 0; }
     .o-dot  { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
     .o-total { border-top: 1px solid var(--border); margin-top: .55rem; padding-top: .55rem; display: flex; justify-content: space-between; font-size: .83rem; }
@@ -169,7 +202,7 @@
     .step.active::after { background: linear-gradient(to bottom, var(--green), var(--border)); }
     .step-ic {
       width:22px; height:22px; border-radius:50%; border:2px solid var(--border);
-      background:#fff; display:flex; align-items:center; justify-content:center;
+      background:var(--surface); display:flex; align-items:center; justify-content:center;
       font-size:.6rem; color:var(--muted); flex-shrink:0; z-index:1;
     }
     .step.done   .step-ic { border-color:var(--green); background:var(--green); color:#fff; }
@@ -189,12 +222,12 @@
     .eta-right { text-align:right; }
     .eta-right .eta-val { font-size:1rem; }
 
-    .driver-row { display:flex; align-items:center; gap:.7rem; background:#f9fafb; border-radius:11px; padding:.75rem; }
+    .driver-row { display:flex; align-items:center; gap:.7rem; background:var(--surface-3); border-radius:11px; padding:.75rem; }
     .d-av { width:40px; height:40px; border-radius:50%; background:var(--red); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.95rem; flex-shrink:0; }
     .d-name { font-size:.87rem; font-weight:700; }
     .d-meta { font-size:.72rem; color:var(--muted); }
     .d-btns { margin-left:auto; display:flex; gap:.35rem; }
-    .d-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border); background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.85rem; transition:all .2s; }
+    .d-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.85rem; transition:all .2s; }
     .d-btn:hover { border-color:var(--red); color:var(--red); }
 
     .sim-bar { padding:.85rem 1rem; border-top:1px solid var(--border); margin-top:auto; }
@@ -204,17 +237,38 @@
 
     #map { width:100%; height:100%; }
 
-    .mk-store, .mk-client, .mk-driver {
+    .mk-store {
       display:flex; align-items:center; justify-content:center;
       border-radius:50%; border:3px solid #fff; box-shadow:0 3px 10px rgba(0,0,0,.25); font-size:1rem;
+      background:var(--red); width:36px; height:36px;
     }
-    .mk-store  { background:var(--red);  width:36px; height:36px; }
-    .mk-client { background:var(--blue); width:36px; height:36px; }
-    .mk-driver { background:#fff; width:40px; height:40px; border:3px solid var(--red); animation:drvpulse 1.2s ease infinite alternate; }
-    @keyframes drvpulse { from{box-shadow:0 0 0 0 rgba(198,40,40,.5)} to{box-shadow:0 0 0 10px rgba(198,40,40,0)} }
-    .leaflet-popup-content-wrapper { border-radius:12px !important; font-family:var(--font) !important; box-shadow:0 8px 24px rgba(0,0,0,.1) !important; }
-    .leaflet-popup-content { margin:10px 14px !important; }
-    .pp-t { font-weight:700; font-size:.88rem; }
+    .mk-home { display:flex; flex-direction:column; align-items:center; gap:.3rem; }
+    .mk-home-label {
+      background:var(--surface); color:var(--ink); font-size:.68rem; font-weight:700;
+      padding:3px 10px; border-radius:999px; box-shadow:0 2px 8px var(--shadow-color); white-space:nowrap;
+    }
+    .mk-home-pin {
+      width:16px; height:16px; border-radius:50% 50% 50% 0;
+      background:var(--red); transform:rotate(-45deg);
+      border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.3);
+    }
+    .mk-driver-badge {
+      display:flex; align-items:center; justify-content:center;
+      width:34px; height:34px; border-radius:50%;
+      background:var(--blue); color:#fff; font-size:1rem;
+      border:3px solid #fff; box-shadow:0 3px 10px rgba(0,0,0,.3);
+      animation: drvpulse 1.2s ease infinite alternate;
+    }
+    @keyframes drvpulse { from{box-shadow:0 0 0 0 rgba(29,78,216,.5)} to{box-shadow:0 0 0 10px rgba(29,78,216,0)} }
+    .maplibregl-popup-content { background:var(--surface) !important; border-radius:12px !important; font-family:var(--font) !important; box-shadow:0 8px 24px var(--shadow-color) !important; padding:10px 14px !important; }
+    .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--surface) !important; }
+    .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--surface) !important; }
+    .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--surface) !important; }
+    .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--surface) !important; }
+    .maplibregl-popup-close-button { color: var(--muted) !important; }
+    .maplibregl-ctrl-bottom-right { bottom:12px !important; right:12px !important; }
+    .maplibregl-ctrl-group { border-radius:10px !important; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.15) !important; }
+    .pp-t { font-weight:700; font-size:.88rem; color:var(--ink); }
     .pp-s { font-size:.76rem; color:var(--muted); }
 
     .overlay {
@@ -225,10 +279,10 @@
     }
     .overlay.show { opacity:1; pointer-events:all; }
     .modal {
-      background:#fff; border-radius:22px; padding:2.25rem 1.75rem;
+      background:var(--surface); color:var(--ink); border-radius:22px; padding:2.25rem 1.75rem;
       width:90%; max-width:360px; text-align:center;
       transform:scale(.88) translateY(20px);
-      transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+      transition:transform .35s cubic-bezier(.34,1.56,.64,1), background .2s;
       box-shadow:0 24px 60px rgba(0,0,0,.18);
     }
     .overlay.show .modal { transform:scale(1) translateY(0); }
@@ -253,7 +307,10 @@
 
 <div class="topbar">
   <a href="#" class="logo">Nin<span>da</span><span class="badge-top">Demo</span></a>
-  <span style="font-size:.78rem;color:var(--muted)">Rastreo en tiempo real</span>
+  <div class="topbar-right">
+    <span style="font-size:.78rem;color:var(--muted)">Rastreo en tiempo real</span>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+  </div>
 </div>
 
 <div class="app">
@@ -391,66 +448,136 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
-// ── Mapa ──────────────────────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl: false }).setView([29.082, -110.955], 13);
-L.control.zoom({ position: 'bottomright' }).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CartoDB', subdomains: 'abcd', maxZoom: 20,
-}).addTo(map);
+// ── Mapa (MapLibre GL + tiles vectoriales CARTO, mismo estilo que mapcn) ───────
+// NOTA: MapLibre usa coordenadas [lng, lat] (al revés que Leaflet [lat, lng]).
+const MAP_STYLES = {
+  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  dark:  'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+};
+let theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
-function mkIcon(cls) {
-  return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize:[40,40], iconAnchor:[20,20], popupAnchor:[0,-22] });
+const map = new maplibregl.Map({
+  container: 'map',
+  style: MAP_STYLES[theme],
+  center: [-110.955, 29.082],
+  zoom: 13,
+  attributionControl: { compact: true },
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+function elFromHTML(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html.trim();
+  return div.firstElementChild;
 }
-function mkDot(color) {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`,
-    iconSize:[13,13], iconAnchor:[6,6],
-  });
+function mkEl(cls) { return elFromHTML(`<div class="${cls}"></div>`); }
+function dotEl(color) {
+  return elFromHTML(`<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`);
 }
+function homeMarkerEl(label) {
+  return elFromHTML(`<div class="mk-home"><div class="mk-home-label">${label}</div><div class="mk-home-pin"></div></div>`);
+}
+function driverMarkerEl() {
+  return elFromHTML(`<div class="mk-driver-badge"><i class="lni lni-car"></i></div>`);
+}
+function emptyLine() { return { type:'Feature', geometry:{ type:'LineString', coordinates:[] } }; }
 
 let originCoords = null, destCoords = null;
 let WAYPOINTS = [], baseDur = 0, baseDist = 0;
+let lastRouteCoords = [], lastDoneCoords = [];
+let storeMk, clientMk, driverMk;
 
-const storeMk  = L.marker([29.0892,-110.9611], { icon: mkIcon('mk-store')  }).addTo(map).bindPopup('<div class="pp-t">📍 Origen</div>');
-const clientMk = L.marker([29.0729,-110.9501], { icon: mkIcon('mk-client') }).addTo(map).bindPopup('<div class="pp-t">🏠 Destino</div>');
-const driverMk = L.marker([29.0892,-110.9611], { icon: mkIcon('mk-driver') }).addTo(map);
-const routeLine = L.polyline([], { color:'#C62828', weight:4, opacity:.6  }).addTo(map);
-const doneLine  = L.polyline([], { color:'#16a34a', weight:4, opacity:.9  }).addTo(map);
+function addMarkers() {
+  storeMk  = new maplibregl.Marker({ element: mkEl('mk-store') })
+    .setLngLat([-110.9611, 29.0892])
+    .setPopup(new maplibregl.Popup({ offset: 22 }).setHTML('<div class="pp-t">📍 Origen</div>'))
+    .addTo(map);
+  clientMk = new maplibregl.Marker({ element: homeMarkerEl('Casa'), anchor: 'bottom' })
+    .setLngLat([-110.9501, 29.0729])
+    .setPopup(new maplibregl.Popup({ offset: 30 }).setHTML('<div class="pp-t">🏠 Destino</div>'))
+    .addTo(map);
+  driverMk = new maplibregl.Marker({ element: driverMarkerEl() })
+    .setLngLat([-110.9611, 29.0892])
+    .addTo(map);
+}
+
+// Vuelve a agregar las capas de ruta (fuentes GeoJSON) tras un setStyle — MapLibre
+// borra las capas personalizadas al cambiar de estilo (light/dark), pero los
+// marcadores (DOM) y popups sobreviven solos.
+function setupRouteLayers() {
+  if (!map.getSource('route')) {
+    map.addSource('route', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates: lastRouteCoords } } });
+    map.addLayer({ id:'route', type:'line', source:'route',
+      layout:{ 'line-cap':'round', 'line-join':'round' },
+      paint:{ 'line-color':'#C62828', 'line-width':4, 'line-opacity':.6 } });
+  }
+  if (!map.getSource('done')) {
+    map.addSource('done', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates: lastDoneCoords } } });
+    map.addLayer({ id:'done', type:'line', source:'done',
+      layout:{ 'line-cap':'round', 'line-join':'round' },
+      paint:{ 'line-color':'#16a34a', 'line-width':4, 'line-opacity':.9 } });
+  }
+  if (myCoords && lastAccuracy) setAccCircle(myCoords, lastAccuracy);
+}
+
+map.on('load', () => {
+  addMarkers();
+  setupRouteLayers();
+  initDemoRoute();
+});
+
+// ── Toggle de tema (claro/oscuro) ──────────────────────────────────────────────
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+  document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('ninda-theme', theme);
+  map.setStyle(MAP_STYLES[theme]);
+  map.once('style.load', setupRouteLayers);
+}
+document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+
+function setRouteLine(coords)  { lastRouteCoords = coords; map.getSource('route') && map.getSource('route').setData({ type:'Feature', geometry:{ type:'LineString', coordinates: coords } }); }
+function setDoneLine(coords)   { lastDoneCoords = coords; map.getSource('done')  && map.getSource('done').setData({ type:'Feature', geometry:{ type:'LineString', coordinates: coords } }); }
+function fitToCoords(coords) {
+  const bounds = coords.reduce((b,c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+  map.fitBounds(bounds, { padding: 60, duration: 600 });
+}
 
 // ── OSRM ──────────────────────────────────────────────────────────────────────
 async function getRoute(from, to) {
+  // from/to en [lng, lat]
   const r = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`
+    `https://router.project-osrm.org/route/v1/driving/${from[0]},${from[1]};${to[0]},${to[1]}?overview=full&geometries=geojson`
   );
   const d = await r.json();
   if (d.code !== 'Ok') throw new Error('OSRM');
   return {
-    wps:  d.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]),
+    wps:  d.routes[0].geometry.coordinates, // ya viene en [lng, lat]
     dist: (d.routes[0].distance/1000).toFixed(1),
     dur:  Math.round(d.routes[0].duration/60),
   };
 }
 
 // Cargar ruta demo inicial
-(async () => {
+async function initDemoRoute() {
   try {
-    originCoords = [29.0892,-110.9611];
-    destCoords   = [29.0729,-110.9501];
-    storeMk.setLatLng(originCoords);
-    clientMk.setLatLng(destCoords);
+    originCoords = [-110.9611, 29.0892];
+    destCoords   = [-110.9501, 29.0729];
+    storeMk.setLngLat(originCoords);
+    clientMk.setLngLat(destCoords);
     const { wps, dist, dur } = await getRoute(originCoords, destCoords);
     WAYPOINTS = wps; baseDist = +dist; baseDur = dur;
-    routeLine.setLatLngs(wps);
-    driverMk.setLatLng(wps[0]);
+    setRouteLine(wps);
+    driverMk.setLngLat(wps[0]);
     document.getElementById('etaMin').textContent  = dur;
     document.getElementById('etaDist').textContent = dist;
-    map.fitBounds(L.latLngBounds(wps).pad(0.15));
+    fitToCoords(wps);
     setTimeout(startSim, 900);
   } catch(e) { console.warn('Ruta demo no disponible'); }
-})();
+}
 
 // ── Simulación (requestAnimationFrame + lerp) ─────────────────────────────────
 const SEG = 2000;
@@ -469,16 +596,16 @@ function animStep(ts) {
   if (segProg >= 1) {
     segProg = 0; curSeg++;
     if (curSeg >= total) {
-      driverMk.setLatLng(WAYPOINTS[total]);
-      doneLine.setLatLngs(WAYPOINTS);
+      driverMk.setLngLat(WAYPOINTS[total]);
+      setDoneLine(WAYPOINTS);
       setETA(1); simRunning = false; onDelivered(); return;
     }
   }
   const t   = ease(Math.min(segProg, 1));
   const pos = [lerp(WAYPOINTS[curSeg][0], WAYPOINTS[curSeg+1][0], t),
                lerp(WAYPOINTS[curSeg][1], WAYPOINTS[curSeg+1][1], t)];
-  driverMk.setLatLng(pos);
-  doneLine.setLatLngs(WAYPOINTS.slice(0, curSeg+1).concat([pos]));
+  driverMk.setLngLat(pos);
+  setDoneLine(WAYPOINTS.slice(0, curSeg+1).concat([pos]));
   setETA((curSeg + segProg) / total);
   rafId = requestAnimationFrame(animStep);
 }
@@ -516,8 +643,8 @@ function toggleSim() {
 function resetSim() {
   cancelAnimationFrame(rafId);
   curSeg=0; segProg=0; simRunning=false; paused=false; lastTs=null;
-  if (WAYPOINTS.length) driverMk.setLatLng(WAYPOINTS[0]);
-  doneLine.setLatLngs([]);
+  if (WAYPOINTS.length) driverMk.setLngLat(WAYPOINTS[0]);
+  setDoneLine([]);
   setETA(0);
   document.getElementById('simIc').className   = 'lni lni-play';
   document.getElementById('simLbl').textContent = 'Iniciar simulación';
@@ -604,15 +731,15 @@ function initSearch(type) {
         ddEl.querySelectorAll('.dd-item').forEach(el => {
           el.addEventListener('click', () => {
             const r = res[+el.dataset.i];
-            const coords = [parseFloat(r.lat), parseFloat(r.lon)];
+            const coords = [parseFloat(r.lon), parseFloat(r.lat)]; // [lng, lat] para MapLibre
             inEl.value = r.display_name.split(',')[0].trim();
             clrEl.classList.remove('hidden');
             ddEl.classList.remove('open');
             sel[type] = coords;
             const color = type==='origen' ? '#C62828' : '#1d4ed8';
-            if (prevMk[type]) map.removeLayer(prevMk[type]);
-            prevMk[type] = L.marker(coords, { icon: mkDot(color) }).addTo(map);
-            map.panTo(coords, { animate:true, duration:.6 });
+            if (prevMk[type]) prevMk[type].remove();
+            prevMk[type] = new maplibregl.Marker({ element: dotEl(color) }).setLngLat(coords).addTo(map);
+            map.panTo(coords, { animate:true, duration:600 });
             document.getElementById('btnStart').disabled = !(sel.origen && sel.destino);
           });
         });
@@ -631,17 +758,17 @@ function clearField(type) {
   const clrEl = document.getElementById(type==='origen' ? 'clrOrigen' : 'clrDestino');
   inEl.value = ''; clrEl.classList.add('hidden'); ddEl.classList.remove('open');
   sel[type] = null;
-  if (prevMk[type]) { map.removeLayer(prevMk[type]); prevMk[type] = null; }
+  if (prevMk[type]) { prevMk[type].remove(); prevMk[type] = null; }
   document.getElementById('btnStart').disabled = !(sel.origen && sel.destino);
 }
 
 async function startRoute() {
   if (!sel.origen || !sel.destino) return;
   cancelAnimationFrame(rafId); simRunning=false; resetSim();
-  ['origen','destino'].forEach(t => { if (prevMk[t]) { map.removeLayer(prevMk[t]); prevMk[t]=null; } });
+  ['origen','destino'].forEach(t => { if (prevMk[t]) { prevMk[t].remove(); prevMk[t]=null; } });
 
   originCoords = sel.origen; destCoords = sel.destino;
-  storeMk.setLatLng(originCoords); clientMk.setLatLng(destCoords); driverMk.setLatLng(originCoords);
+  storeMk.setLngLat(originCoords); clientMk.setLngLat(destCoords); driverMk.setLngLat(originCoords);
 
   const btn = document.getElementById('btnStart');
   btn.disabled=true; btn.innerHTML='<i class="lni lni-reload"></i> Calculando...';
@@ -649,9 +776,9 @@ async function startRoute() {
   try {
     const { wps, dist, dur } = await getRoute(originCoords, destCoords);
     WAYPOINTS=wps; baseDist=+dist; baseDur=dur;
-    routeLine.setLatLngs(wps); doneLine.setLatLngs([]);
-    driverMk.setLatLng(wps[0]);
-    map.fitBounds(L.latLngBounds(wps).pad(0.15));
+    setRouteLine(wps); setDoneLine([]);
+    driverMk.setLngLat(wps[0]);
+    fitToCoords(wps);
     document.getElementById('etaMin').textContent  = dur;
     document.getElementById('etaDist').textContent = dist;
     setTimeout(startSim, 400);
@@ -664,9 +791,32 @@ initSearch('origen');
 initSearch('destino');
 
 // ── DETECCIÓN DE UBICACIÓN ────────────────────────────────────────────────────
-let myCoords   = null;   // coordenadas del usuario detectadas
+let myCoords   = null;   // coordenadas del usuario detectadas [lng, lat]
 let myMarker   = null;   // marcador azul "Tú estás aquí"
-let myAccCircle = null;  // círculo de precisión
+let myAccCircle = null;  // flag: círculo de precisión ya agregado al mapa
+let lastAccuracy = null; // último radio de precisión (m), para reconstruir el círculo tras cambiar de tema
+
+// Genera un polígono circular real (en metros) para representar precisión de GPS
+function circleGeoJSON(center, radiusMeters, points = 64) {
+  const [lng, lat] = center;
+  const R = 6371000;
+  const coords = [];
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dLat = (radiusMeters * Math.sin(angle) / R) * (180 / Math.PI);
+    const dLng = (radiusMeters * Math.cos(angle) / (R * Math.cos(lat * Math.PI / 180))) * (180 / Math.PI);
+    coords.push([lng + dLng, lat + dLat]);
+  }
+  return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
+}
+function setAccCircle(coords, accuracy) {
+  const data = circleGeoJSON(coords, accuracy);
+  const src = map.getSource('acc-circle');
+  if (src) { src.setData(data); return; }
+  map.addSource('acc-circle', { type: 'geojson', data });
+  map.addLayer({ id:'acc-circle', type:'fill', source:'acc-circle', paint:{ 'fill-color':'#1d4ed8', 'fill-opacity':.08 } });
+  map.addLayer({ id:'acc-circle-line', type:'line', source:'acc-circle', paint:{ 'line-color':'#1d4ed8', 'line-width':1 } });
+}
 
 function detectLocation() {
   if (!navigator.geolocation) {
@@ -685,38 +835,33 @@ function detectLocation() {
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      myCoords = [pos.coords.latitude, pos.coords.longitude];
+      myCoords = [pos.coords.longitude, pos.coords.latitude]; // [lng, lat] para MapLibre
       const accuracy = pos.coords.accuracy; // metros
+      lastAccuracy = accuracy;
 
       // Marcador "Tú estás aquí"
-      if (myMarker)    map.removeLayer(myMarker);
-      if (myAccCircle) map.removeLayer(myAccCircle);
+      if (myMarker) myMarker.remove();
 
-      myMarker = L.marker(myCoords, {
-        icon: L.divIcon({
-          className: '',
-          html: `<div style="
+      myMarker = new maplibregl.Marker({
+        element: elFromHTML(`<div style="
             width:18px;height:18px;border-radius:50%;
             background:#1d4ed8;border:3px solid #fff;
             box-shadow:0 0 0 4px rgba(29,78,216,.25), 0 3px 10px rgba(0,0,0,.3);
-          "></div>`,
-          iconSize:[18,18], iconAnchor:[9,9],
-        }),
-        zIndexOffset: 1000,
-      }).addTo(map).bindPopup('<div class="pp-t">📍 Tu ubicación</div>');
+          "></div>`),
+      }).setLngLat(myCoords)
+        .setPopup(new maplibregl.Popup({ offset: 14 }).setHTML('<div class="pp-t">📍 Tu ubicación</div>'))
+        .addTo(map);
 
-      myAccCircle = L.circle(myCoords, {
-        radius: accuracy, color: '#1d4ed8', weight: 1,
-        fillColor: '#1d4ed8', fillOpacity: .08,
-      }).addTo(map);
+      setAccCircle(myCoords, accuracy);
+      myAccCircle = true;
 
-      map.panTo(myCoords, { animate: true, duration: .8 });
+      map.panTo(myCoords, { animate: true, duration: 800 });
 
       // Reverse geocoding con Nominatim
-      let addrText = `${myCoords[0].toFixed(5)}, ${myCoords[1].toFixed(5)}`;
+      let addrText = `${myCoords[1].toFixed(5)}, ${myCoords[0].toFixed(5)}`;
       try {
         const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${myCoords[0]}&lon=${myCoords[1]}&format=json&accept-language=es`,
+          `https://nominatim.openstreetmap.org/reverse?lat=${myCoords[1]}&lon=${myCoords[0]}&format=json&accept-language=es`,
           { headers: {'Accept-Language':'es'} }
         );
         const d = await r.json();
@@ -768,14 +913,8 @@ function useLocAs(type) {
   sel[type] = myCoords;
 
   // Marcador de preview en el campo correspondiente
-  if (prevMk[type]) map.removeLayer(prevMk[type]);
-  prevMk[type] = L.marker(myCoords, {
-    icon: L.divIcon({
-      className: '',
-      html: `<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`,
-      iconSize:[13,13], iconAnchor:[6,6],
-    }),
-  }).addTo(map);
+  if (prevMk[type]) prevMk[type].remove();
+  prevMk[type] = new maplibregl.Marker({ element: dotEl(color) }).setLngLat(myCoords).addTo(map);
 
   document.getElementById('btnStart').disabled = !(sel.origen && sel.destino);
   map.panTo(myCoords, { animate: true });
