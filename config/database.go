@@ -38,6 +38,8 @@ func ConnectDatabase() {
 		// Construir DSN en el formato correcto
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			username, password, host, port, database)
+
+		log.Printf("🔍 [DB] Usando MYSQL_PUBLIC_URL → host=%s db=%q", host, database)
 	} else {
 		// Construcción manual (desarrollo local)
 		host := os.Getenv("MYSQL_HOST")
@@ -48,6 +50,8 @@ func ConnectDatabase() {
 
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			user, password, host, port, database)
+
+		log.Printf("🔍 [DB] Usando variables manuales → host=%s db=%q", host, database)
 	}
 
 	// Logger: solo imprime queries lentas (> 50ms) y errores
@@ -69,6 +73,12 @@ func ConnectDatabase() {
 	if err != nil {
 		log.Fatal("Error al conectar con la base de datos:", err)
 	}
+
+	// Verificación definitiva: qué base quedó activa de verdad en la sesión,
+	// más allá de lo que el DSN pretendía mandar.
+	var activeDB string
+	db.Raw("SELECT DATABASE()").Row().Scan(&activeDB)
+	log.Printf("🔍 [DB] Base de datos activa según MySQL: %q", activeDB)
 
 	// ── Connection Pool ──────────────────────────────────────────────────────
 	// Sin esto GORM abre una conexión nueva por cada query (~200ms en Railway)

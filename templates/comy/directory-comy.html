@@ -71,8 +71,8 @@
           </div>
 
           <div class="comy-categories" id="comyCategories">
-            <button class="comy-cat active" data-cat="pizza"><span class="comy-cat-icon">🍕</span><span>Pizza</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
-            <button class="comy-cat" data-cat="burger"><span class="comy-cat-icon">🍔</span><span>Burger</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat active" data-cat="pizza"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/pizza.png" alt="Pizza"></span><span>Pizza</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="burger"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/burger.png" alt="Burger"></span><span>Burger</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
             <button class="comy-cat" data-cat="hotdog"><span class="comy-cat-icon">🌭</span><span>Hotdog</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
             <button class="comy-cat" data-cat="taco"><span class="comy-cat-icon">🌮</span><span>Taco</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
             <button class="comy-cat" data-cat="snack"><span class="comy-cat-icon">🍿</span><span>Snack</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
@@ -89,36 +89,8 @@
 
         <!-- Panel: Empresas -->
         <section class="comy-panel" id="comyPanelEmpresas">
-          <div class="comy-grid">
-            <!-- {{range .Empresas}} -->
-            <a href="/comy/empresa/1" class="comy-food-card comy-empresa-card">
-              <div class="comy-food-badge">🔥</div>
-              <div class="comy-food-photo">🏪</div>
-              <div class="comy-food-name">Pizzería Don Mario</div>
-              <div class="comy-food-stars">★★★★★</div>
-              <div class="comy-food-row comy-food-row-meta">
-                <span>Pizza · 20-30 min</span>
-              </div>
-            </a>
-            <a href="/comy/empresa/2" class="comy-food-card comy-empresa-card">
-              <div class="comy-food-badge">🔥</div>
-              <div class="comy-food-photo">🏪</div>
-              <div class="comy-food-name">Burger Station</div>
-              <div class="comy-food-stars">★★★★☆</div>
-              <div class="comy-food-row comy-food-row-meta">
-                <span>Burger · 15-25 min</span>
-              </div>
-            </a>
-            <a href="/comy/empresa/3" class="comy-food-card comy-empresa-card">
-              <div class="comy-food-badge">❤️</div>
-              <div class="comy-food-photo">🏪</div>
-              <div class="comy-food-name">Taquería La Central</div>
-              <div class="comy-food-stars">★★★★★</div>
-              <div class="comy-food-row comy-food-row-meta">
-                <span>Taco · 10-20 min</span>
-              </div>
-            </a>
-            <!-- {{end}} -->
+          <div class="comy-grid" id="comyEmpresasGrid">
+            <div class="comy-panel-loading">Cargando negocios…</div>
           </div>
         </section>
 
@@ -231,6 +203,13 @@
 </div>
 
 <style>
+  /* Amarillo puro brillante — sobreescribe --c-accent solo en esta página
+     (la variable original viene del sidebar/stylesheet global de Comy) */
+  :root {
+    --c-accent: #FFD400;
+    --c-accent-dark: #E6BF00;
+  }
+
   .comy-page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; background: #fff; }
 
   /* Topbar */
@@ -251,7 +230,7 @@
   }
   .comy-bell-dot {
     position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 3px;
-    background: var(--c-accent); color: #fff; font-size: .6rem; font-weight: 700;
+    background: var(--c-accent); color: #2A2200; font-size: .6rem; font-weight: 700;
     border-radius: 999px; display: flex; align-items: center; justify-content: center;
   }
   .comy-guest-btns { display: flex; align-items: center; gap: .5rem; }
@@ -262,13 +241,13 @@
   .comy-btn-ghost:hover { border-color: var(--c-accent); color: var(--c-accent); }
   .comy-btn-primary {
     padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
-    font-size: .82rem; font-weight: 700; color: #fff; background: var(--c-accent);
-    box-shadow: 0 6px 16px rgba(245,149,0,.28);
+    font-size: .82rem; font-weight: 700; color: #2A2200; background: var(--c-accent);
+    box-shadow: 0 6px 16px rgba(255,212,0,.35);
   }
   .comy-btn-primary:hover { background: var(--c-accent-dark); }
   .comy-top-user { display: flex; align-items: center; gap: .6rem; }
   .comy-top-avatar {
-    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #fff;
+    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #2A2200;
     display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem;
     overflow: hidden; flex-shrink: 0;
   }
@@ -300,7 +279,7 @@
   .comy-hero-text p { font-size: .85rem; color: var(--c-ink); margin-top: .25rem; }
   .comy-hero-text strong { color: var(--c-accent); }
   .comy-hero-btn {
-    margin-top: .8rem; background: var(--c-accent); color: #fff; border: none; cursor: pointer;
+    margin-top: .8rem; background: var(--c-accent); color: #2A2200; border: none; cursor: pointer;
     border-radius: 12px; padding: .55rem 1.2rem; font-size: .82rem; font-weight: 700; font-family: var(--c-font);
   }
   .comy-hero-btn:hover { background: var(--c-accent-dark); }
@@ -319,13 +298,15 @@
   .comy-cat-icon {
     width: 44px; height: 44px; border-radius: 12px; background: #F0F0F0;
     display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+    overflow: hidden;
   }
+  .comy-cat-icon img { width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
   .comy-cat.active .comy-cat-icon { background: rgba(255,255,255,.25); }
   .comy-cat-chev {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--c-accent); color: #fff;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--c-accent); color: #2A2200;
     display: flex; align-items: center; justify-content: center;
   }
-  .comy-cat.active { background: var(--c-accent); color: #fff; }
+  .comy-cat.active { background: var(--c-accent); color: #2A2200; }
   .comy-cat.active .comy-cat-chev { background: rgba(255,255,255,.3); color: #fff; }
   .comy-cat:not(.active) .comy-cat-chev { color: #fff; }
 
@@ -339,14 +320,15 @@
     padding: .55rem 1.4rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
     color: var(--c-muted); transition: color .2s; min-width: 130px; font-family: var(--c-font);
   }
-  .comy-toggle-opt.active { color: #fff; }
+  .comy-toggle-opt.active { color: #2A2200; }
   .comy-toggle-thumb {
     position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px);
     background: var(--c-accent); border-radius: 999px; transition: transform .22s ease;
-    box-shadow: 0 6px 16px rgba(245,149,0,.3);
+    box-shadow: 0 6px 16px rgba(255,212,0,.35);
   }
 
   .comy-panel { margin-top: .25rem; }
+  .comy-panel-loading, .comy-panel-empty { grid-column: 1 / -1; text-align: center; color: var(--c-muted); font-size: .85rem; padding: 2rem 0; }
   .comy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
   @media (max-width: 1000px) { .comy-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .comy-grid { grid-template-columns: 1fr; } }
@@ -371,14 +353,14 @@
   .comy-food-price small { color: var(--c-muted); font-weight: 600; font-size: .7rem; }
   .comy-food-add {
     width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
-    background: var(--c-accent); color: #fff; display: flex; align-items: center; justify-content: center;
+    background: var(--c-accent); color: #2A2200; display: flex; align-items: center; justify-content: center;
   }
   .comy-food-add:hover { background: var(--c-accent-dark); }
 
   /* Tarjeta de débito */
   .comy-card-balance {
     position: relative; overflow: hidden; border-radius: 24px; padding: 1.5rem; min-height: 150px;
-    background: linear-gradient(135deg, #F59500 0%, #FFB740 100%); color: #fff;
+    background: linear-gradient(135deg, #FFD400 0%, #FFE55C 100%); color: #2A2200;
   }
   .comy-card-circle { position: absolute; border-radius: 50%; }
   .comy-card-top { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
@@ -398,7 +380,7 @@
   .comy-order-price { font-weight: 800; color: var(--c-ink); font-size: .85rem; }
   .comy-order-price small { color: var(--c-muted); font-weight: 600; font-size: .68rem; }
   .comy-checkout-btn {
-    width: 100%; margin-top: 1.1rem; background: var(--c-accent); color: #fff; border: none;
+    width: 100%; margin-top: 1.1rem; background: var(--c-accent); color: #2A2200; border: none;
     border-radius: 14px; padding: .85rem; font-size: .95rem; font-weight: 800; cursor: pointer; font-family: var(--c-font);
   }
   .comy-checkout-btn:hover { background: var(--c-accent-dark); }
@@ -461,6 +443,51 @@
       panelPlatillos.style.display = view === 'platillos' ? '' : 'none';
     });
   });
+
+  // Empresas — se pinta por JS porque el handler GetNindaDirectory no manda
+  // datos al template (c.HTML(200, "...", gin.H{})), así que .Empresas
+  // siempre viene vacío del lado del servidor. Usamos el endpoint que ya
+  // existe para esto: GET /api/comy/stores
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function renderEmpresaCard(store) {
+    const photoStyle = store.coverImage
+      ? ` style="background-image:url('${escapeHtml(store.coverImage)}');background-size:cover;background-position:center;font-size:0"`
+      : '';
+    const photoContent = store.coverImage ? '' : '🏪';
+    const meta = [store.businessType, store.city].filter(Boolean).join(' · ');
+
+    return `
+      <a href="/comy/${store.id}" class="comy-food-card comy-empresa-card">
+        <div class="comy-food-photo"${photoStyle}>${photoContent}</div>
+        <div class="comy-food-name">${escapeHtml(store.name)}</div>
+        ${meta ? `<div class="comy-food-row comy-food-row-meta"><span>${escapeHtml(meta)}</span></div>` : ''}
+      </a>`;
+  }
+
+  function loadEmpresas() {
+    const grid = document.getElementById('comyEmpresasGrid');
+    fetch('/api/comy/stores')
+      .then(r => r.json())
+      .then(data => {
+        const stores = data.stores || [];
+        if (stores.length === 0) {
+          grid.innerHTML = '<div class="comy-panel-empty">Aún no hay negocios disponibles.</div>';
+          return;
+        }
+        grid.innerHTML = stores.map(renderEmpresaCard).join('');
+      })
+      .catch(err => {
+        console.error('Error cargando empresas:', err);
+        grid.innerHTML = '<div class="comy-panel-empty">No se pudieron cargar los negocios.</div>';
+      });
+  }
+
+  loadEmpresas();
 })();
 </script>
 {{end}}

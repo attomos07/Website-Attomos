@@ -28,7 +28,7 @@ func GetNindaDirectory(c *gin.Context) {
 // GetNindaStore - GET /comy/:branch_id
 // Página pública del negocio con sus productos
 func GetNindaStore(c *gin.Context) {
-	c.HTML(http.StatusOK, "ninda-store.html", gin.H{})
+	c.HTML(http.StatusOK, "comy-store.html", gin.H{})
 }
 
 // GetNindaMap - GET /comy/map
