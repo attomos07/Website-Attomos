@@ -4,22 +4,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Iniciar sesión — Ninda</title>
+  <title>Iniciar sesión — Comy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --red: #C62828; --red2: #7B1E2B;
+      --accent: #FFD400; --accent2: #E6BF00; --accent-text: #8A6D00;
       --ink: #0f0f0f; --muted: #6b7280;
       --border: #e5e7eb; --bg: #f9fafb;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
     body { font-family: var(--font); background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
 
     .top { height: 52px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; gap: .5rem; }
     .top-logo { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-decoration: none; }
-    .top-logo span { color: var(--red); }
-    .top-beta { background: var(--red); color: #fff; font-size: .58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
+    .top-logo span { color: var(--accent-text); }
+    .top-beta { background: var(--accent); color: #2A2200; font-size: .58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
 
     .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
     .card {
@@ -50,23 +53,23 @@
       border-radius: 10px; font-size: .875rem; font-family: var(--font);
       color: var(--ink); outline: none; transition: border-color .2s;
     }
-    .field input:focus { border-color: var(--red); }
+    .field input:focus { border-color: var(--accent); }
     .toggle-pass {
       position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
       background: none; border: none; cursor: pointer; color: var(--muted); font-size: .9rem;
     }
 
     .forgot { text-align: right; margin-top: -.4rem; margin-bottom: .85rem; }
-    .forgot a { font-size: .78rem; color: var(--red); text-decoration: none; }
+    .forgot a { font-size: .78rem; color: var(--accent-text); text-decoration: none; }
     .forgot a:hover { text-decoration: underline; }
 
     .btn-login {
-      width: 100%; padding: .75rem; background: var(--red); color: #fff;
+      width: 100%; padding: .75rem; background: var(--accent); color: #2A2200;
       border: none; border-radius: 10px; font-size: .92rem; font-weight: 700;
       cursor: pointer; font-family: var(--font); transition: background .2s;
       display: flex; align-items: center; justify-content: center; gap: .4rem;
     }
-    .btn-login:hover { background: var(--red2); }
+    .btn-login:hover { background: var(--accent2); }
 
     .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--muted); font-size: .8rem; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -81,7 +84,7 @@
     .btn-attomos:hover { border-color: #1d4ed8; color: #1d4ed8; background: #eff6ff; }
 
     .register-link { text-align: center; margin-top: 1.25rem; font-size: .83rem; color: var(--muted); }
-    .register-link a { color: var(--red); font-weight: 600; text-decoration: none; }
+    .register-link a { color: var(--accent-text); font-weight: 600; text-decoration: none; }
     .register-link a:hover { text-decoration: underline; }
 
     .error-msg {
@@ -95,14 +98,14 @@
 <body>
 
 <div class="top">
-  <a href="/ninda" class="top-logo">Nin<span>da</span></a>
+  <a href="/comy" class="top-logo">Co<span>my</span></a>
   <span class="top-beta">Beta</span>
 </div>
 
 <div class="page">
   <div class="card">
     <div class="card-title">Bienvenido de nuevo</div>
-    <div class="card-sub">Inicia sesión en tu cuenta de Ninda.</div>
+    <div class="card-sub">Inicia sesión en tu cuenta de Comy.</div>
 
     <!-- Tabs comprador / repartidor -->
     <div class="role-tabs">
@@ -129,7 +132,7 @@
       </div>
     </div>
 
-    <div class="forgot"><a href="/ninda/forgot">¿Olvidaste tu contraseña?</a></div>
+    <div class="forgot"><a href="/comy/forgot">¿Olvidaste tu contraseña?</a></div>
 
     <button class="btn-login" onclick="doLogin()">
       <i class="lni lni-enter"></i> Iniciar sesión
@@ -145,7 +148,7 @@
       Iniciar sesión con Attomos
     </button>
 
-    <div class="register-link">¿No tienes cuenta? <a href="/ninda/register">Regístrate gratis</a></div>
+    <div class="register-link">¿No tienes cuenta? <a href="/comy/register">Regístrate gratis</a></div>
   </div>
 </div>
 
@@ -185,19 +188,19 @@ function doLogin() {
   if (!email.includes('@')) { showError('Ingresa un correo válido.'); return; }
 
   // Demo: guardar sesión en localStorage y redirigir
-  // En producción aquí va el fetch a /api/ninda/login
-  localStorage.setItem('nindaUser', JSON.stringify({
+  // En producción aquí va el fetch a /api/comy/login
+  localStorage.setItem('comyUser', JSON.stringify({
     name: email.split('@')[0],
     email,
     role: currentRole,
   }));
-  window.location.href = '/ninda';
+  window.location.href = '/comy';
 }
 
 function loginWithAttomos() {
   // En producción: OAuth flow con Attomos
   // Por ahora redirige al login de Attomos con return_url
-  window.location.href = '/login?return_url=/ninda&source=ninda';
+  window.location.href = '/login?return_url=/comy&source=comy';
 }
 
 // Enter en password

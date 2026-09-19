@@ -200,6 +200,7 @@ func main() {
 	// API pública
 	router.GET("/api/comy/stores", handlers.APIGetStores)
 	router.GET("/api/comy/stores/:branch_id", handlers.APIGetStore)
+	router.GET("/api/comy/dishes", handlers.APIGetDishes)
 	router.POST("/api/comy/checkout", handlers.APICreateCheckout)
 	router.POST("/api/comy/confirm", handlers.APIConfirmOrder)
 	log.Println("✅ Comy Marketplace configurado en: /comy")

@@ -129,6 +129,74 @@ func APIGetStores(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"stores": stores})
 }
 
+// APIGetDishes - GET /api/comy/dishes
+// Lista los platillos/productos de TODAS las empresas con pagos activos,
+// aplanados en un solo arreglo — usado por la vista "Platillos" del
+// directorio (comy-store.html ya trae los suyos propios vía APIGetStore,
+// pero el directorio necesita verlos mezclados de todos los negocios).
+func APIGetDishes(c *gin.Context) {
+	search := strings.ToLower(c.Query("q"))
+
+	// Mismo filtro de pagos activos que APIGetStores
+	var configs []models.PaymentConfig
+	if err := config.DB.Where("stripe_charges_enabled = ? OR spei_enabled = ?", true, true).Find(&configs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error obteniendo negocios"})
+		return
+	}
+
+	branchIDs := make([]uint, 0, len(configs))
+	for _, cfg := range configs {
+		branchIDs = append(branchIDs, cfg.BranchID)
+	}
+
+	if len(branchIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"dishes": []gin.H{}})
+		return
+	}
+
+	var branches []models.MyBusinessInfo
+	if err := config.DB.Where("id IN ?", branchIDs).Find(&branches).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error obteniendo negocios"})
+		return
+	}
+
+	dishes := make([]gin.H, 0)
+	for _, b := range branches {
+		for i, svc := range b.Services {
+			if search != "" {
+				haystack := strings.ToLower(svc.Title + " " + svc.Description + " " + b.BusinessName)
+				if !strings.Contains(haystack, search) {
+					continue
+				}
+			}
+
+			imgs := svc.ImageUrls
+			if len(imgs) == 0 && svc.ImageURL != "" {
+				imgs = []string{svc.ImageURL}
+			}
+			isPromo := svc.PriceType == "promotion" && svc.PromoPrice > 0
+			price := svc.Price
+			if isPromo {
+				price = svc.PromoPrice
+			}
+
+			dishes = append(dishes, gin.H{
+				"branchId":      b.ID,
+				"branchName":    b.BusinessName,
+				"serviceIndex":  i,
+				"title":         svc.Title,
+				"description":   svc.Description,
+				"price":         price,
+				"originalPrice": svc.OriginalPrice,
+				"isPromo":       isPromo,
+				"images":        imgs,
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"dishes": dishes})
+}
+
 // APIGetStore - GET /api/ninda/stores/:branch_id
 // Detalle público de un negocio con sus productos y métodos de pago
 func APIGetStore(c *gin.Context) {

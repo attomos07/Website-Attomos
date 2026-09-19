@@ -4,23 +4,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registro — Ninda</title>
+  <title>Registro — Comy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --red: #C62828; --red2: #7B1E2B;
+      --accent: #FFD400; --accent2: #E6BF00; --accent-text: #8A6D00;
       --ink: #0f0f0f; --muted: #6b7280;
       --border: #e5e7eb; --bg: #f9fafb;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
     body { font-family: var(--font); background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
 
     /* Topbar mínimo */
     .top { height: 52px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; gap: .5rem; }
     .top-logo { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-decoration: none; }
-    .top-logo span { color: var(--red); }
-    .top-beta { background: var(--red); color: #fff; font-size: .58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
+    .top-logo span { color: var(--accent-text); }
+    .top-beta { background: var(--accent); color: #2A2200; font-size: .58rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
 
     .page { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 2.5rem 1rem 4rem; }
     .card {
@@ -39,10 +42,10 @@
       font-size: .72rem; font-weight: 700; color: var(--muted);
       flex-shrink: 0; transition: all .25s; position: relative; z-index: 1;
     }
-    .step-node.done   { border-color: var(--red); background: var(--red); color: #fff; }
-    .step-node.active { border-color: var(--red); color: var(--red); }
+    .step-node.done   { border-color: var(--accent); background: var(--accent); color: #2A2200; }
+    .step-node.active { border-color: var(--accent); color: var(--accent-text); }
     .step-line { flex: 1; height: 2px; background: var(--border); transition: background .25s; }
-    .step-line.done { background: var(--red); }
+    .step-line.done { background: var(--accent); }
 
     /* Steps content */
     .step-panel { display: none; }
@@ -59,8 +62,8 @@
       padding: 1.1rem 1.25rem; cursor: pointer; transition: all .2s;
       position: relative;
     }
-    .account-opt:hover { border-color: var(--red); }
-    .account-opt.selected { border-color: var(--red); background: #fef2f2; }
+    .account-opt:hover { border-color: var(--accent); }
+    .account-opt.selected { border-color: var(--accent); background: #FFF8E1; }
     .account-opt input[type=radio] { position: absolute; opacity: 0; }
     .opt-icon {
       width: 44px; height: 44px; border-radius: 12px;
@@ -80,8 +83,8 @@
       border: 2px solid var(--border); flex-shrink: 0; transition: all .2s;
       display: flex; align-items: center; justify-content: center;
     }
-    .account-opt.selected .opt-check { border-color: var(--red); background: var(--red); }
-    .account-opt.selected .opt-check::after { content: '✓'; color: #fff; font-size: .7rem; font-weight: 900; }
+    .account-opt.selected .opt-check { border-color: var(--accent); background: var(--accent); }
+    .account-opt.selected .opt-check::after { content: '✓'; color: #2A2200; font-size: .7rem; font-weight: 900; }
 
     /* Formulario genérico */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
@@ -94,7 +97,7 @@
       color: var(--ink); outline: none; transition: border-color .2s;
       background: #fff;
     }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--red); }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
     .field textarea { resize: vertical; min-height: 70px; }
     .field .hint { font-size: .72rem; color: var(--muted); }
 
@@ -104,7 +107,7 @@
       padding: 1rem; text-align: center; cursor: pointer;
       transition: border-color .2s; position: relative;
     }
-    .doc-upload:hover { border-color: var(--red); }
+    .doc-upload:hover { border-color: var(--accent); }
     .doc-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .doc-upload i { font-size: 1.5rem; color: var(--muted); margin-bottom: .3rem; }
     .doc-upload .doc-label { font-size: .82rem; color: var(--muted); }
@@ -128,8 +131,8 @@
       cursor: pointer; transition: all .15s; background: #fff;
       display: inline-flex; align-items: center; gap: .35rem;
     }
-    .v-pill:hover { border-color: var(--red); color: var(--red); }
-    .v-pill.selected { border-color: var(--red); background: var(--red); color: #fff; }
+    .v-pill:hover { border-color: var(--accent); color: var(--accent-text); }
+    .v-pill.selected { border-color: var(--accent); background: var(--accent); color: #2A2200; }
 
     /* Botones */
     .btn-row { display: flex; gap: .75rem; margin-top: 1.5rem; }
@@ -142,16 +145,16 @@
     .btn-back:hover { border-color: var(--ink); color: var(--ink); }
     .btn-next {
       flex: 1; padding: .7rem 1.25rem;
-      background: var(--red); color: #fff; border: none;
+      background: var(--accent); color: #2A2200; border: none;
       border-radius: 10px; font-size: .9rem; font-weight: 700;
       cursor: pointer; font-family: var(--font); transition: background .2s;
       display: flex; align-items: center; justify-content: center; gap: .4rem;
     }
-    .btn-next:hover { background: var(--red2); }
+    .btn-next:hover { background: var(--accent2); }
     .btn-next:disabled { background: #e5e7eb; color: #aaa; cursor: not-allowed; }
 
     .login-link { text-align: center; margin-top: 1.25rem; font-size: .83rem; color: var(--muted); }
-    .login-link a { color: var(--red); font-weight: 600; text-decoration: none; }
+    .login-link a { color: var(--accent-text); font-weight: 600; text-decoration: none; }
     .login-link a:hover { text-decoration: underline; }
 
     /* Attomos connect */
@@ -170,14 +173,14 @@
     @keyframes bounceS { from{transform:translateY(0)} to{transform:translateY(-8px)} }
     .success-title { font-size: 1.4rem; font-weight: 800; margin-bottom: .5rem; }
     .success-sub   { font-size: .88rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem; }
-    .btn-go { display: inline-block; padding: .75rem 2rem; background: var(--red); color: #fff; border-radius: 11px; text-decoration: none; font-weight: 700; font-size: .92rem; transition: background .2s; }
-    .btn-go:hover { background: var(--red2); }
+    .btn-go { display: inline-block; padding: .75rem 2rem; background: var(--accent); color: #2A2200; border-radius: 11px; text-decoration: none; font-weight: 700; font-size: .92rem; transition: background .2s; }
+    .btn-go:hover { background: var(--accent2); }
   </style>
 </head>
 <body>
 
 <div class="top">
-  <a href="/ninda" class="top-logo">Nin<span>da</span></a>
+  <a href="/comy" class="top-logo">Co<span>my</span></a>
   <span class="top-beta">Beta</span>
 </div>
 
@@ -196,7 +199,7 @@
     <!-- ── STEP 1: Tipo de cuenta ──────────────────────────────── -->
     <div class="step-panel active" id="step1">
       <div class="step-title">Crea tu cuenta</div>
-      <div class="step-sub">Elige cómo quieres registrarte en Ninda.</div>
+      <div class="step-sub">Elige cómo quieres registrarte en Comy.</div>
 
       <div class="account-opts">
 
@@ -236,7 +239,7 @@
         Continuar <i class="lni lni-arrow-right"></i>
       </button>
 
-      <div class="login-link">¿Ya tienes cuenta? <a href="/ninda/login">Inicia sesión</a></div>
+      <div class="login-link">¿Ya tienes cuenta? <a href="/comy/login">Inicia sesión</a></div>
     </div>
 
     <!-- ── STEP 2: Datos personales ───────────────────────────── -->
@@ -413,11 +416,11 @@
       <div id="blkTerms">
         <div class="section-sep">Términos y condiciones</div>
         <label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-size:.83rem;color:#374151;line-height:1.5">
-          <input type="checkbox" id="chkTerms" style="margin-top:2px;accent-color:var(--red)" onchange="checkTerms()" />
-          Acepto los <a href="#" style="color:var(--red)">Términos de servicio</a> y la <a href="#" style="color:var(--red)">Política de privacidad</a> de Ninda.
+          <input type="checkbox" id="chkTerms" style="margin-top:2px;accent-color:var(--accent)" onchange="checkTerms()" />
+          Acepto los <a href="#" style="color:var(--accent-text)">Términos de servicio</a> y la <a href="#" style="color:var(--accent-text)">Política de privacidad</a> de Comy.
         </label>
         <label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-size:.83rem;color:#374151;line-height:1.5;margin-top:.65rem" id="labelDriver18" >
-          <input type="checkbox" id="chk18" style="margin-top:2px;accent-color:var(--red)" onchange="checkTerms()" />
+          <input type="checkbox" id="chk18" style="margin-top:2px;accent-color:var(--accent)" onchange="checkTerms()" />
           Confirmo que soy mayor de 18 años y que los documentos subidos son auténticos.
         </label>
       </div>
@@ -435,8 +438,8 @@
       <div class="success-screen">
         <div class="success-emoji" id="successEmoji"><i class="lni lni-checkmark-circle" style="color:#16a34a"></i></div>
         <div class="success-title" id="successTitle">¡Cuenta creada!</div>
-        <div class="success-sub"  id="successSub">Tu cuenta en Ninda está lista. Ya puedes empezar a explorar negocios locales.</div>
-        <a href="/ninda" class="btn-go" id="successBtn">Ir a Ninda</a>
+        <div class="success-sub"  id="successSub">Tu cuenta en Comy está lista. Ya puedes empezar a explorar negocios locales.</div>
+        <a href="/comy" class="btn-go" id="successBtn">Ir a Comy</a>
       </div>
     </div>
 
@@ -539,7 +542,7 @@ function submitRegister() {
   // Guardar sesión demo en localStorage
   const name = document.getElementById('firstName')?.value ||
                document.getElementById('attEmail')?.value || 'Usuario';
-  localStorage.setItem('nindaUser', JSON.stringify({
+  localStorage.setItem('comyUser', JSON.stringify({
     name, email: document.getElementById('email')?.value || '',
     role: accountType === 'repartidor' ? 'driver' : 'buyer',
   }));
@@ -550,7 +553,7 @@ function submitRegister() {
   updateStepper(3, 'done');
 
   if (accountType === 'repartidor') {
-    document.getElementById('successEmoji').innerHTML = '<i class="lni lni-delivery" style="color:#C62828"></i>';
+    document.getElementById('successEmoji').innerHTML = '<i class="lni lni-delivery" style="color:var(--accent-text)"></i>';
     document.getElementById('successTitle').textContent = '¡Solicitud enviada!';
     document.getElementById('successSub').textContent   = 'Revisaremos tus documentos en 24-48 horas. Te notificaremos por correo cuando tu cuenta esté activa.';
     document.getElementById('successBtn').textContent   = 'Entendido';
