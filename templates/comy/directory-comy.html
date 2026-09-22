@@ -626,7 +626,7 @@
 
   // Platillos — igual que Empresas, se pinta por JS contra un endpoint real
   // (GET /api/comy/dishes) que junta los productos de todas las empresas,
-  // ya que el {{range .Platillos}} del template nunca tuvo datos reales.
+  // ya que el range de .Platillos del template nunca tuvo datos reales.
   function renderPlatilloCard(dish) {
     const img = (dish.images && dish.images[0]) || '';
     const photoStyle = img
