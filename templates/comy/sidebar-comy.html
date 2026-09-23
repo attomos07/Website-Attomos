@@ -73,16 +73,30 @@
   </div>
 </aside>
 
-<!-- Hamburguesa / barra inferior móvil -->
-<button class="comy-hamburger" id="comyHamburger" aria-label="Menú">
-  <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M4 6h16M4 12h16M4 18h16"/></svg>
-</button>
-<div class="comy-mobile-nav" id="comyMobileNav">
-  <a href="/comy" data-match="/comy">Directorio</a>
-  <a href="/comy/map" data-match="/comy/map">Rastreo</a>
-  <a href="/comy/orders" data-match="/comy/orders">Pedidos</a>
-  <a href="/comy/favoritos" data-match="/comy/favoritos">Favoritos</a>
-</div>
+<!-- Barra de navegación inferior (solo mobile) -->
+<nav class="comy-mobile-nav" id="comyMobileNav">
+  <div class="cmn-indicator" id="comyMobileIndicator"></div>
+  <a href="/comy" class="cmn-link" data-match="/comy">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+    <span class="cmn-label">Inicio</span>
+  </a>
+  <a href="/comy/map" class="cmn-link" data-match="/comy/map">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2.3"/></svg></span>
+    <span class="cmn-label">Rastreo</span>
+  </a>
+  <a href="/comy/orders" class="cmn-link" data-match="/comy/orders">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="2.3"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2m4 7h4m-4 5h4m-8-5h.01M8 16h.01"/></svg></span>
+    <span class="cmn-label">Pedidos</span>
+  </a>
+  <a href="/comy/favoritos" class="cmn-link" data-match="/comy/favoritos">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676a.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg></span>
+    <span class="cmn-label">Favoritos</span>
+  </a>
+  <a href="/comy/settings" class="cmn-link" data-match="/comy/settings">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.3"/></svg></span>
+    <span class="cmn-label">Ajustes</span>
+  </a>
+</nav>
 
 <style>
   :root {
@@ -97,6 +111,9 @@
     --c-bg: #F5F5F8;
     --c-shadow: 0 14px 34px rgba(180,110,0,.12);
     --c-sidebar-w: 76px;
+    /* Alto de la barra inferior en mobile (sin contar el safe-area del iPhone).
+       Las páginas la usan para no quedar tapadas: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom)) */
+    --c-mobile-nav-h: 64px;
     --c-font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
@@ -201,28 +218,44 @@
   .cd-logout { color: var(--c-accent); }
   .cd-logout:hover { background: var(--c-accent-soft); }
 
-  .comy-hamburger {
-    display: none; position: fixed; top: 14px; left: 14px; z-index: 600;
-    width: 42px; height: 42px; border-radius: 12px; background: var(--c-panel);
-    border: 1px solid var(--c-border); box-shadow: var(--c-shadow);
-    align-items: center; justify-content: center; color: var(--c-ink); cursor: pointer;
-  }
+  /* ===== Barra inferior mobile ===== */
   .comy-mobile-nav {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-    background: var(--c-panel); border-top: 1px solid var(--c-border);
-    padding: .6rem .5rem calc(.6rem + env(safe-area-inset-bottom));
-    justify-content: space-around;
+    height: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom));
+    padding: 0 .35rem env(safe-area-inset-bottom);
+    background: rgba(255,255,255,.96);
+    -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
+    border-top: 1px solid var(--c-border);
+    font-family: var(--c-font);
   }
-  .comy-mobile-nav a {
-    font-size: .7rem; font-weight: 700; color: var(--c-muted); text-decoration: none;
-    padding: .4rem .6rem; border-radius: 10px;
+  .cmn-link {
+    position: relative; z-index: 1; flex: 1; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
+    color: var(--c-muted); text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .2s;
   }
-  .comy-mobile-nav a.active { color: var(--c-accent); background: var(--c-accent-soft); }
+  .cmn-icon {
+    width: 52px; height: 30px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cmn-label { font-size: .66rem; font-weight: 700; white-space: nowrap; }
+  .cmn-link:active .cmn-icon { transform: scale(.9); }
+  .cmn-link.active { color: var(--c-ink); }
+  .cmn-link.active .cmn-icon { color: #2A2200; }
+
+  /* Píldora deslizante detrás del ícono activo (mismo mecanismo que el círculo del sidebar) */
+  .cmn-indicator {
+    position: absolute; top: calc((var(--c-mobile-nav-h) - 30px) / 2 - 9px); left: 0;
+    width: 52px; height: 30px; border-radius: 999px;
+    background: var(--c-accent); box-shadow: 0 4px 12px rgba(245,149,0,.3);
+    opacity: 0; pointer-events: none; z-index: 0;
+    transition: left .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
+  }
 
   @media (max-width: 700px) {
-    body { margin-left: 0; }
+    body { margin-left: 0; padding-bottom: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom)); }
     .comy-sidebar { display: none; }
-    .comy-hamburger { display: flex; }
     .comy-mobile-nav { display: flex; }
   }
 </style>
@@ -257,6 +290,38 @@
     });
   }
 
+  // Píldora deslizante de la barra inferior mobile
+  const mobileNav = document.getElementById('comyMobileNav');
+  const mobileIndicator = document.getElementById('comyMobileIndicator');
+  if (mobileNav && mobileIndicator) {
+    const mobileLinks = Array.from(mobileNav.querySelectorAll('.cmn-link'));
+    const moveMobileIndicator = (link, animate) => {
+      const icon = link.querySelector('.cmn-icon');
+      if (!icon || !link.offsetWidth) return; // barra oculta (desktop)
+      if (!animate) mobileIndicator.style.transition = 'none';
+      mobileIndicator.style.left = (link.offsetLeft + icon.offsetLeft) + 'px';
+      mobileIndicator.style.top  = (link.offsetTop + icon.offsetTop) + 'px';
+      mobileIndicator.style.opacity = '1';
+      if (!animate) requestAnimationFrame(() => { mobileIndicator.style.transition = ''; });
+    };
+    const activeMobile = () => mobileLinks.find(a => a.classList.contains('active'));
+
+    if (activeMobile()) moveMobileIndicator(activeMobile(), false);
+
+    // Al tocar, la píldora se desliza antes de navegar
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        moveMobileIndicator(link, true);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (activeMobile()) moveMobileIndicator(activeMobile(), false);
+    });
+  }
+
   const wrap = document.getElementById('comyAvatarWrap');
   if (wrap) {
     wrap.addEventListener('click', () => wrap.classList.toggle('open'));
@@ -285,12 +350,6 @@
   if (logoutBtn) logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('comyUser');
     window.location.href = '/comy';
-  });
-
-  const ham = document.getElementById('comyHamburger');
-  const mobileNav = document.getElementById('comyMobileNav');
-  if (ham) ham.addEventListener('click', () => {
-    mobileNav.style.display = mobileNav.style.display === 'flex' ? 'none' : 'flex';
   });
 })();
 </script>

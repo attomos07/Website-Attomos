@@ -1,4 +1,7 @@
 {{define "comy/directory-comy.html"}}
+<!-- Sin esto el navegador del celular renderiza a ~980px y escala todo hacia abajo,
+     así que ningún @media de mobile se activa. Idealmente va en el <head> del layout. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -108,7 +111,8 @@
       </div>
 
       <!-- Columna derecha -->
-      <div class="comy-side">
+      <div class="comy-side" id="comySide">
+        <div class="comy-m-sheet-handle" id="comyMSheetHandle"></div>
         <div class="comy-card-balance">
           <div class="comy-card-circle" style="width:9rem;height:9rem;top:-2.5rem;right:-2.5rem;background:rgba(255,255,255,.15)"></div>
           <div class="comy-card-circle" style="width:5rem;height:5rem;bottom:1rem;right:-1rem;background:rgba(255,255,255,.1)"></div>
@@ -165,6 +169,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Solo mobile: barra flotante de pedido + fondo del bottom sheet -->
+  <div class="comy-m-backdrop" id="comyMBackdrop"></div>
+  <button class="comy-m-cartbar" id="comyMCartBar" type="button">
+    <span class="comy-m-cartbar-count" id="comyMCartCount">0</span>
+    <span>Ver mi pedido</span>
+    <span class="comy-m-cartbar-total" id="comyMCartTotal">$0</span>
+  </button>
 </div>
 
 <style>
@@ -278,7 +290,9 @@
   .comy-viewall { color: var(--c-accent); font-size: .8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: .2rem; }
 
   /* Categorías — slider arrastrable */
-  .comy-categories-wrap { position: relative; }
+  /* contain: inline-size → el ancho del slider lo pone el contenedor, nunca sus chips.
+     Sin esto, los 9 chips empujaban el ancho de toda la página en mobile. */
+  .comy-categories-wrap { position: relative; contain: inline-size; min-width: 0; }
   .comy-categories-wrap::after {
     content: ''; position: absolute; top: 0; right: 0; bottom: .3rem; width: 40px;
     background: linear-gradient(to right, rgba(255,255,255,0), #fff);
@@ -401,8 +415,19 @@
     .comy-side { width: 100%; }
   }
 
+  /* Elementos exclusivos de mobile — ocultos en PC */
+  .comy-m-backdrop, .comy-m-cartbar, .comy-m-sheet-handle { display: none; }
+
   /* ================= Mobile ================= */
-  @media (max-width: 640px) {
+  @media (max-width: 700px) {
+    /* Nada puede ser más ancho que la pantalla */
+    html, body { overflow-x: hidden; max-width: 100%; }
+    body { background: #fff; }
+    .comy-content, .comy-page, .comy-page *, .comy-page *::before, .comy-page *::after { box-sizing: border-box; }
+    .comy-content { width: 100%; max-width: 100vw; min-width: 0; overflow-x: hidden; }
+    .comy-page, .comy-body, .comy-main, .comy-section, .comy-panel, .comy-hero { width: 100%; max-width: 100%; min-width: 0; }
+    .comy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
     .comy-page { padding: 1rem 1rem 3rem; }
 
     /* Topbar: título + acciones arriba, buscador en su propia fila */
@@ -411,7 +436,9 @@
       flex: 1 1 auto; min-width: 0; font-size: 1.1rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .comy-topbar-right { margin-left: 0; gap: .5rem; }
+    /* Campana + login/registro en su propia fila, arriba del título */
+    .comy-topbar-right { order: -1; flex: 1 1 100%; margin-left: 0; gap: .5rem; justify-content: space-between; }
+    .comy-title { flex-basis: 100%; }
     .comy-search { order: 3; flex: 1 1 100%; min-width: 0; max-width: none; }
     .comy-search input { font-size: 16px; } /* evita el zoom automático de iOS al enfocar */
     .comy-bell { width: 36px; height: 36px; border-radius: 10px; }
@@ -430,7 +457,7 @@
 
     /* Categorías: el slider llega de orilla a orilla */
     .comy-section-head { margin-bottom: .75rem; }
-    .comy-categories-wrap { margin: 0 -1rem; }
+    .comy-categories-wrap { margin: 0 -1rem; width: calc(100% + 2rem); max-width: none; }
     .comy-categories { padding: 0 1rem .3rem; scroll-padding-left: 1rem; gap: .5rem; }
     .comy-cat { min-width: 72px; padding: .7rem .55rem; gap: .35rem; border-radius: 16px; font-size: .74rem; }
     .comy-cat-indicator { border-radius: 16px; }
@@ -442,7 +469,7 @@
     .comy-toggle-opt { flex: 1; min-width: 0; padding: .6rem .5rem; }
 
     /* Grid 2 columnas con tarjetas compactas */
-    .comy-grid { grid-template-columns: repeat(2, 1fr); gap: .7rem; }
+    .comy-grid { gap: .7rem; }
     .comy-food-card { padding: .8rem .65rem; border-radius: 16px; }
     .comy-food-badge { top: .6rem; right: .6rem; font-size: .85rem; }
     .comy-food-photo { width: 100%; max-width: 7.5rem; height: auto; aspect-ratio: 1; font-size: 2.4rem; }
@@ -452,12 +479,47 @@
     .comy-food-row-meta { font-size: .72rem; }
     .comy-food-price { font-size: .88rem; }
 
-    /* Columna derecha debajo, sin padding extra */
-    .comy-body { gap: 1.25rem; }
-    .comy-side { padding: 0; gap: 1rem; border-radius: 0; }
-    .comy-card-balance { padding: 1.25rem; min-height: 130px; border-radius: 20px; }
-    .comy-card-amount { font-size: 1.4rem; margin-top: 1rem; }
-    .comy-order-box { padding-top: .5rem; }
+    /* Espacio para que la barra flotante no tape la última fila */
+    /* El body ya reserva el alto de la barra inferior (sidebar-comy); aquí solo el de la barra de pedido */
+    .comy-page { padding-bottom: 5rem; }
+
+    /* La columna derecha se vuelve un bottom sheet */
+    .comy-card-balance { display: none; }
+    .comy-side {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+      width: 100%; max-height: 80vh; overflow-y: auto; gap: 0;
+      background: #fff; border-radius: 24px 24px 0 0;
+      padding: .6rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -12px 40px rgba(0,0,0,.18);
+      transform: translateY(105%); transition: transform .32s cubic-bezier(.2,.8,.2,1);
+    }
+    .comy-side.open { transform: translateY(0); }
+    .comy-m-sheet-handle {
+      display: block; width: 42px; height: 5px; border-radius: 999px;
+      background: var(--c-border); margin: 0 auto .9rem; cursor: pointer;
+    }
+    .comy-order-box { padding-top: 0; }
+
+    .comy-m-backdrop {
+      display: block; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .comy-m-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    /* Barra flotante "Ver mi pedido" */
+    .comy-m-cartbar {
+      display: flex; align-items: center; gap: .75rem;
+      position: fixed; left: 1rem; right: 1rem; bottom: calc(var(--c-mobile-nav-h, 64px) + .75rem + env(safe-area-inset-bottom)); z-index: 999;
+      padding: .85rem 1rem; border: none; border-radius: 16px; cursor: pointer;
+      background: var(--c-accent); color: #2A2200; font-family: var(--c-font);
+      font-size: .92rem; font-weight: 800; box-shadow: 0 10px 28px rgba(255,212,0,.45);
+    }
+    .comy-m-cartbar:active { transform: scale(.98); }
+    .comy-m-cartbar-count {
+      min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px;
+      background: rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; font-size: .8rem;
+    }
+    .comy-m-cartbar-total { margin-left: auto; }
   }
 
   @media (max-width: 360px) {
@@ -668,6 +730,45 @@
 
   loadEmpresas();
   loadPlatillos();
+
+  // Mobile: barra flotante + bottom sheet de "Mi pedido"
+  const side     = document.getElementById('comySide');
+  const backdrop = document.getElementById('comyMBackdrop');
+  const cartBar  = document.getElementById('comyMCartBar');
+  const handle   = document.getElementById('comyMSheetHandle');
+  const mobileMQ = window.matchMedia('(max-width: 700px)');
+
+  function updateCartBar() {
+    let count = 0, total = 0;
+    document.querySelectorAll('.comy-order-item').forEach(item => {
+      const qty = parseInt((item.querySelector('.comy-order-qty')?.textContent || '').replace(/\D/g, ''), 10) || 1;
+      const price = parseFloat((item.querySelector('.comy-order-price')?.textContent || '').replace(/[^\d.]/g, '')) || 0;
+      count += qty;
+      total += price;
+    });
+    document.getElementById('comyMCartCount').textContent = count;
+    document.getElementById('comyMCartTotal').textContent = '$' + total.toLocaleString('es-MX');
+    cartBar.style.display = count ? '' : 'none';
+  }
+
+  function openSheet() {
+    side.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSheet() {
+    side.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  cartBar.addEventListener('click', openSheet);
+  backdrop.addEventListener('click', closeSheet);
+  handle.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+  mobileMQ.addEventListener('change', e => { if (!e.matches) closeSheet(); });
+
+  updateCartBar();
 })();
 </script>
 {{end}}
