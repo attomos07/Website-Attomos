@@ -1,5 +1,5 @@
 <!-- Floating Userbar Styles -->
-<link rel="stylesheet" href="/static/css/userbar.css">
+<link rel="stylesheet" href="/static/css/userbar.css?v=2">
 <style>
 /* ── Selector de idioma en userbar ── */
 .lang-dropdown-userbar {
@@ -266,7 +266,7 @@
 </div>
 
 <!-- Userbar JavaScript -->
-<script src="/static/js/userbar.js"></script>
+<script src="/static/js/userbar.js?v=2"></script>
 
 <script>
 // ── Selector de idioma en userbar ─────────────────────────────────────────
@@ -323,19 +323,26 @@
             btn.classList.toggle('active', btn.dataset.lang === saved);
         });
 
-        var wrapper = document.getElementById('langSelectorUserbar');
-        var trigger = document.getElementById('langTriggerUserbar');
+        var wrapper  = document.getElementById('langSelectorUserbar');
+        var trigger  = document.getElementById('langTriggerUserbar');
+        var dropdown = document.getElementById('langDropdownUserbar');
+        var bar      = document.querySelector('.control-bar');
 
-        // Toggle
-        trigger.addEventListener('click', function(e) {
-            e.stopPropagation();
-            wrapper.classList.toggle('open');
-        });
-        document.addEventListener('click', function() {
-            wrapper.classList.remove('open');
-        });
+        // Menú estilo iOS (definido en userbar.js): crece desde el botón,
+        // indicador de resorte y selección arrastrando sin soltar
+        if (window.IOSMenu) {
+            window.IOSMenu.create({
+                trigger: trigger,
+                menu: dropdown,
+                itemSelector: '.lang-option',
+                onOpenChange: function (open) {
+                    wrapper.classList.toggle('open', open);
+                    if (bar) bar.classList.toggle('menu-open', open);
+                }
+            });
+        }
 
-        // Cambiar idioma
+        // Cambiar idioma (el menú se cierra solo al elegir)
         document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -346,7 +353,6 @@
                 document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.lang === lang);
                 });
-                wrapper.classList.remove('open');
             });
         });
 

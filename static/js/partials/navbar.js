@@ -1,5 +1,8 @@
 // ============================================
 // NAVBAR MOBILE MENU - iOS Style & Active Logic
+// En mobile la barra es una píldora flotante que crece hasta
+// convertirse en el panel del menú, con un indicador de resorte
+// que marca la página actual y se puede arrastrar entre opciones.
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -8,69 +11,338 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navMenu = document.getElementById('navMenu');
     const navbar = document.getElementById('navbar');
-    const body = document.body;
 
     if (!mobileMenuBtn || !navMenu) {
         console.error('❌ Error: No se encontraron los elementos del DOM');
         return;
     }
 
-    // --- 1. GESTIÓN DEL MENÚ MÓVIL (iOS Style) ---
+    // --- 1. ESTADO ACTIVO (antes del menú, para que el indicador sepa dónde empezar) ---
+    setActiveNavLink();
 
-    function openMobileMenu() {
-        mobileMenuBtn.classList.add('active');
-        navMenu.classList.add('active');
-        body.classList.add('menu-open');
-        mobileMenuBtn.setAttribute('aria-expanded', 'true');
-    }
+    // --- 2. MENÚ MÓVIL CON RESORTE ---
+    initMobileMenu(navbar, navMenu, mobileMenuBtn);
 
-    function closeMobileMenu() {
-        mobileMenuBtn.classList.remove('active');
-        navMenu.classList.remove('active');
-        body.classList.remove('menu-open');
-        mobileMenuBtn.setAttribute('aria-expanded', 'false');
-    }
-
-    // Toggle con click
-    mobileMenuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isActive = navMenu.classList.contains('active');
-        isActive ? closeMobileMenu() : openMobileMenu();
-    });
-
-    // Cerrar al hacer click en un link
-    const allLinks = document.querySelectorAll('.nav-link');
-    allLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            // Cerramos con un pequeño delay para dejar que la animación de iOS se aprecie
-            setTimeout(closeMobileMenu, 150);
-        });
-    });
-
-    // Cerrar con tecla ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeMobileMenu();
-    });
-
-    // Cerrar al redimensionar (si pasa a desktop)
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) closeMobileMenu();
-    });
-
-    // --- 2. EFECTO SCROLL ---
+    // --- 3. EFECTO SCROLL (sombra) ---
     window.addEventListener('scroll', () => {
         if (navbar) {
             window.scrollY > 10
                 ? navbar.classList.add('scrolled')
                 : navbar.classList.remove('scrolled');
         }
-    });
-
-    // --- 3. LÓGICA DE ESTADO ACTIVO (FIX: Agentes vs Blog) ---
-    setActiveNavLink();
+    }, { passive: true });
 
     console.log('✅ Navbar: Inicializado correctamente');
 });
+
+function initMobileMenu(navbar, navMenu, mobileMenuBtn) {
+    const body = document.body;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // Indicador (li decorativo para que el <ul> siga siendo válido) y fondo oscuro
+    const indicator = document.createElement('li');
+    indicator.className = 'nav-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    navMenu.prepend(indicator);
+
+    const scrim = document.createElement('div');
+    scrim.className = 'nav-scrim';
+    body.appendChild(scrim);
+
+    // Orden de la entrada escalonada
+    navMenu.querySelectorAll('.nav-item').forEach((li, i) => li.style.setProperty('--i', i));
+
+    // Solo los links de sección (sin los botones de sesión)
+    const links = () => [...navMenu.querySelectorAll('.nav-link:not(.nav-login):not(.nav-cta)')];
+
+    // ---------- Motor de resortes ----------
+    const springs = [];
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps, free: false };
+        springs.push(s);
+        return s;
+    };
+    const P = spring(0, 300, 25, 0.001);          // apertura: 0 = píldora, 1 = panel
+    const HIDE = spring(0, 320, 30, 0.5);         // barra oculta al bajar
+    const X = spring(), Y = spring(), W = spring(), H = spring();
+    const V = spring(0, 500, 38, 0.001);          // visibilidad del indicador
+    const L = spring(0, 450, 26, 0.001);          // lente al arrastrar
+
+    function step(s, dt) {
+        if (s.free) return;
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => !s.free && Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => step(s, dt));
+        render();
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            render();
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    function clearInline() {
+        navbar.style.transform = '';
+        navMenu.style.visibility = '';
+        navMenu.style.clipPath = '';
+        scrim.style.opacity = '';
+    }
+
+    function render() {
+        if (!mq.matches) { clearInline(); return; }
+
+        // Un transform en .navbar volvería relativo el panel fixed, así que solo se aplica al ocultarla
+        navbar.style.transform = HIDE.v > 0.5 ? `translateY(${-HIDE.v}px)` : '';
+
+        const p = P.v, pc = clamp(p);
+        if (p < 0.002 && P.t === 0) {
+            navMenu.style.visibility = 'hidden';
+            navMenu.style.clipPath = '';
+            scrim.style.opacity = 0;
+        } else {
+            // La píldora crece hasta el tamaño del panel
+            const a = navbar.getBoundingClientRect(), c = navMenu.getBoundingClientRect();
+            const t = lerp(a.top - c.top, 0, p);
+            const l = lerp(a.left - c.left, 0, p);
+            const r = lerp(c.right - a.right, 0, p);
+            const b = lerp(c.bottom - a.bottom, 0, p);
+            navMenu.style.visibility = 'visible';
+            navMenu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 28, pc)}px)`;
+            scrim.style.opacity = pc;
+        }
+
+        const st = Math.min(Math.abs(Y.vel) / 1600, 0.25);
+        const lift = 1 + L.v * 0.05;
+        indicator.style.width = `${W.v}px`;
+        indicator.style.height = `${H.v}px`;
+        indicator.style.opacity = clamp(V.v);
+        indicator.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${(1 - st * 0.15) * lift}, ${(1 + st) * lift})`;
+    }
+
+    // ---------- Indicador ----------
+    // offsetLeft/Top no se ven afectados por la animación de entrada de los items
+    function rectOf(link) {
+        const li = link.closest('.nav-item');
+        return { x: li.offsetLeft + link.offsetLeft, y: li.offsetTop + link.offsetTop, w: link.offsetWidth, h: link.offsetHeight };
+    }
+    function retarget(snap = false) {
+        const el = links().find((a) => a.classList.contains('active'));
+        if (!el) { V.t = 0; kick(); return; }
+        const r = rectOf(el);
+        X.t = r.x; Y.t = r.y; W.t = r.w; H.t = r.h; V.t = 1;
+        if (snap || V.v < 0.05) { X.v = r.x; Y.v = r.y; W.v = r.w; H.v = r.h; }
+        kick();
+    }
+
+    // ---------- Abrir / cerrar ----------
+    const isOpen = () => navMenu.classList.contains('active');
+
+    function openMobileMenu() {
+        if (!mq.matches) return;
+        if (window.IOSMenu) window.IOSMenu.closeAll();
+        HIDE.v = HIDE.t = 0; HIDE.vel = 0;
+        navbar.style.transform = '';
+        P.t = 1;
+        mobileMenuBtn.classList.add('active');
+        navMenu.classList.add('active');
+        navbar.classList.add('menu-is-open');
+        body.classList.add('menu-open');
+        scrim.classList.add('on');
+        mobileMenuBtn.setAttribute('aria-expanded', 'true');
+        requestAnimationFrame(() => retarget(true));
+        kick();
+    }
+
+    function closeMobileMenu() {
+        if (window.IOSMenu) window.IOSMenu.closeAll();
+        P.t = 0;
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+        navbar.classList.remove('menu-is-open');
+        body.classList.remove('menu-open');
+        scrim.classList.remove('on');
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        kick();
+    }
+
+    mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isOpen() ? closeMobileMenu() : openMobileMenu();
+    });
+    scrim.addEventListener('click', closeMobileMenu);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen()) {
+            closeMobileMenu();
+            mobileMenuBtn.focus();
+        }
+    });
+
+    // Al pasar a desktop se cierra y se limpian los estilos en línea
+    mq.addEventListener('change', () => {
+        if (!mq.matches) {
+            closeMobileMenu();
+            P.v = P.t = 0; HIDE.v = HIDE.t = 0;
+            clearInline();
+        }
+    });
+
+    // ---------- Ir a una página: el indicador llega primero y luego se navega ----------
+    function navigateTo(link) {
+        links().forEach((a) => a.classList.toggle('active', a === link));
+        retarget();
+        link.classList.remove('bounce');
+        void link.offsetWidth;
+        link.classList.add('bounce');
+        if (navigator.vibrate) navigator.vibrate(8);
+        const href = link.href;
+        setTimeout(() => {
+            closeMobileMenu();
+            window.location.href = href;
+        }, reduce.matches ? 0 : 220);
+    }
+
+    // ---------- Gestos: tocar, o mantener y arrastrar para recorrer ----------
+    let g = null, suppressClick = false;
+
+    navMenu.addEventListener('pointerdown', (e) => {
+        if (!mq.matches || e.button > 0) return;
+        const link = e.target.closest('.nav-link');
+        if (link && link.matches('.nav-login, .nav-cta')) return;
+        if (e.target.closest('.nav-lang-row')) return;
+        g = { id: e.pointerId, type: e.pointerType, x0: e.clientX, y0: e.clientY, t: performance.now(), mode: null, hover: null };
+        // En pantallas táctiles hay que mantener presionado; así el scroll normal sigue funcionando
+        if (g.type === 'touch') g.timer = setTimeout(() => { if (g && !g.mode) startScrub(); }, 280);
+    });
+
+    function nearest(clientY) {
+        let best = null, dist = Infinity;
+        links().forEach((a) => {
+            const r = a.getBoundingClientRect();
+            const d = Math.abs(clientY - (r.top + r.height / 2));
+            if (d < dist) { dist = d; best = a; }
+        });
+        return best;
+    }
+
+    function startScrub() {
+        g.mode = 'scrub';
+        clearTimeout(g.timer);
+        Y.free = true;
+        L.t = 1;
+        V.t = 1;
+        indicator.classList.add('lifted');
+        if (navigator.vibrate) navigator.vibrate(8);
+    }
+
+    window.addEventListener('pointermove', (e) => {
+        if (!g || e.pointerId !== g.id) return;
+        const dist = Math.hypot(e.clientX - g.x0, e.clientY - g.y0);
+        if (!g.mode) {
+            if (g.type !== 'touch' && dist > 6) startScrub();
+            else if (dist > 8) { clearTimeout(g.timer); g = null; return; }
+            else return;
+        }
+        const now = performance.now(), dt = Math.max((now - g.t) / 1000, 0.001);
+        g.t = now;
+
+        const ls = links();
+        const c = navMenu.getBoundingClientRect();
+        const first = rectOf(ls[0]), lastR = rectOf(ls[ls.length - 1]);
+        let y = e.clientY - c.top + navMenu.scrollTop - H.v / 2;
+        if (y < first.y) y = first.y - Math.sqrt(first.y - y) * 2;       // resistencia elástica
+        if (y > lastR.y) y = lastR.y + Math.sqrt(y - lastR.y) * 2;
+        Y.vel = (y - Y.v) / dt;
+        Y.v = y;
+
+        const h = nearest(e.clientY);
+        if (h && h !== g.hover) {
+            g.hover = h;
+            ls.forEach((a) => a.classList.toggle('is-hover', a === h));
+            const r = rectOf(h);
+            X.t = r.x; W.t = r.w; H.t = r.h;
+            if (navigator.vibrate) navigator.vibrate(4);
+        }
+        kick();
+    });
+
+    function endGesture(e) {
+        if (!g || e.pointerId !== g.id) return;
+        clearTimeout(g.timer);
+        if (g.mode === 'scrub') {
+            Y.free = false;
+            L.t = 0;
+            indicator.classList.remove('lifted');
+            links().forEach((a) => a.classList.remove('is-hover'));
+            suppressClick = true;
+            setTimeout(() => { suppressClick = false; }, 60);
+            const h = g.hover || nearest(e.clientY);
+            if (e.type === 'pointerup' && h) navigateTo(h);
+            else retarget();
+        }
+        g = null;
+        kick();
+    }
+    window.addEventListener('pointerup', endGesture);
+    window.addEventListener('pointercancel', endGesture);
+
+    document.addEventListener('touchmove', (e) => { if (g && g.mode) e.preventDefault(); }, { passive: false });
+    navMenu.addEventListener('contextmenu', (e) => { if (g && g.mode) e.preventDefault(); });
+    // Evita que el navegador arrastre el link (cancelaría el gesto con el ratón)
+    navMenu.addEventListener('dragstart', (e) => { if (mq.matches) e.preventDefault(); });
+
+    // Clic normal (y teclado). Los botones de sesión navegan sin interceptar.
+    navMenu.addEventListener('click', (e) => {
+        const link = e.target.closest('.nav-link');
+        if (!link || !mq.matches || !isOpen()) return;
+        if (suppressClick) { e.preventDefault(); return; }
+        if (link.matches('.nav-login, .nav-cta')) { setTimeout(closeMobileMenu, 150); return; }
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        navigateTo(link);
+    });
+
+    // ---------- La barra se oculta al bajar y reaparece al subir ----------
+    let lastY = window.scrollY, ticking = false;
+    window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            const y = window.scrollY, dy = y - lastY;
+            if (mq.matches && !isOpen()) {
+                if (dy > 6 && y > 80) HIDE.t = 90;
+                else if (dy < -6 || y < 80) HIDE.t = 0;
+                kick();
+            }
+            lastY = y;
+            ticking = false;
+        });
+    }, { passive: true });
+    navbar.addEventListener('focusin', () => { HIDE.t = 0; kick(); });
+
+    // Si el panel cambia de tamaño (p. ej. aparecen los botones de sesión), el indicador lo sigue
+    if ('ResizeObserver' in window) new ResizeObserver(() => { if (isOpen()) retarget(); }).observe(navMenu);
+
+    render();
+}
 
 function setActiveNavLink() {
     // Obtenemos el pathname y lo normalizamos
@@ -122,6 +394,350 @@ function setActiveNavLink() {
     }
 }
 
+
+// ============================================
+// IOS MENU — dropdowns estilo iOS 27
+// El menú nace del botón (clip-path con resorte), un indicador de
+// resorte sigue al cursor o al dedo, y se puede mantener presionado
+// el botón y deslizar hasta una opción para elegirla al soltar.
+// Lo usan: selector de idioma, menú del avatar y notificaciones.
+// ============================================
+
+(function initIOSMenus() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const instances = [];
+
+    // ---------- Motor de resortes compartido ----------
+    const springs = [];
+    const spring = (v = 0, k = 420, d = 32, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps, free: false };
+        springs.push(s);
+        return s;
+    };
+    function step(s, dt) {
+        if (s.free) return;
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => !s.free && Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => step(s, dt));
+        instances.forEach((i) => i.render());
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            instances.forEach((i) => i.render());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    let scrubbing = false;
+    document.addEventListener('touchmove', (e) => { if (scrubbing) e.preventDefault(); }, { passive: false });
+
+    function create({ trigger, menu, itemSelector = null, hover = false, portal = false, onOpenChange = () => {} }) {
+        if (!trigger || !menu) return null;
+        menu.classList.add('ios-menu');
+
+        // portal: el menú vive en <body> con posición fija (para abrirlo desde dentro
+        // de un contenedor con scroll, como el panel del menú móvil)
+        if (portal) {
+            document.body.appendChild(menu);
+            menu.style.position = 'fixed';
+            menu.style.right = 'auto';
+            menu.style.zIndex = '10002';
+        }
+        function place() {
+            if (!portal) return;
+            const a = trigger.getBoundingClientRect();
+            const w = menu.offsetWidth, h = menu.offsetHeight;
+            let top = a.bottom + 8;
+            if (top + h > window.innerHeight - 12 && a.top - 8 - h > 12) top = a.top - 8 - h;
+            const left = clamp(a.right - w, 12, window.innerWidth - w - 12);
+            menu.style.top = `${Math.max(12, top)}px`;
+            menu.style.left = `${left}px`;
+        }
+        // Cerrado: además de visibility se recorta por completo, porque un hijo
+        // con visibility: visible en línea (p. ej. el nombre del usuario) se seguiría viendo
+        const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+
+        let ind = null;
+        if (itemSelector) {
+            ind = document.createElement('div');
+            ind.className = 'ios-menu-ind';
+            ind.setAttribute('aria-hidden', 'true');
+            menu.prepend(ind);
+        }
+
+        const P = spring(0, 380, 28, 0.001);
+        const X = spring(), Y = spring(), W = spring(), H = spring();
+        const V = spring(0, 600, 44, 0.001);
+        const L = spring(0, 450, 26, 0.001);
+
+        // pinned: se abrió con clic/toque, así que salir con el cursor no lo cierra
+        let isOpen = false, pinned = false, hl = -1, g = null, suppressClick = false, menuRadius = 16, leaveTimer = null;
+
+        const items = () => itemSelector
+            ? [...menu.querySelectorAll(itemSelector)].filter((el) => el.offsetParent !== null)
+            : [];
+
+        // Posición relativa al menú (el menú no se escala, solo se recorta)
+        function rectOf(el) {
+            const m = menu.getBoundingClientRect(), r = el.getBoundingClientRect();
+            return {
+                x: r.left - m.left - menu.clientLeft,
+                y: r.top - m.top - menu.clientTop + menu.scrollTop,
+                w: r.width, h: r.height,
+            };
+        }
+        function hitTest(x, y) {
+            return items().findIndex((el) => {
+                const r = el.getBoundingClientRect();
+                return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            });
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+                trigger.style.opacity = '';
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (isOpen && atRest(P)) {
+                    // Abierto y quieto: sin recorte para que se vea la sombra del menú
+                    menu.style.clipPath = 'none';
+                } else {
+                    const a = trigger.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, menuRadius, pc)}px)`;
+                }
+            }
+            if (ind) {
+                const st = Math.min(Math.abs(Y.vel) / 1600, 0.25);
+                const lift = 1 + L.v * 0.05;
+                ind.style.width = `${W.v}px`;
+                ind.style.height = `${H.v}px`;
+                ind.style.opacity = clamp(V.v);
+                ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${(1 - st * 0.15) * lift}, ${(1 + st) * lift})`;
+            }
+        }
+
+        function highlight(i, { focus = false } = {}) {
+            hl = i;
+            const list = items();
+            list.forEach((el, j) => el.classList.toggle('is-hover', j === i));
+            if (!ind) return;
+            if (i < 0) { V.t = 0; kick(); return; }
+            const r = rectOf(list[i]);
+            X.t = r.x; Y.t = r.y; W.t = r.w; H.t = r.h; V.t = 1;
+            if (V.v < 0.05) { X.v = r.x; Y.v = r.y; W.v = r.w; H.v = r.h; }
+            if (focus) list[i].focus({ preventScroll: true });
+            kick();
+        }
+
+        function open({ keyboard = false, pin = false } = {}) {
+            clearTimeout(leaveTimer);
+            if (pin) pinned = true;
+            if (isOpen) return;
+            instances.forEach((o) => { if (o !== api && o.isOpen()) o.close(); });
+            isOpen = true;
+            menuRadius = parseFloat(getComputedStyle(menu).borderTopLeftRadius) || 16;
+            place();
+            onOpenChange(true);
+            trigger.setAttribute('aria-expanded', 'true');
+            V.v = V.t = 0; hl = -1;
+            P.t = 1;
+            render();
+            if (keyboard) requestAnimationFrame(() => highlight(0, { focus: true }));
+            kick();
+        }
+
+        function close({ returnFocus = false } = {}) {
+            clearTimeout(leaveTimer);
+            if (!isOpen) return;
+            isOpen = false;
+            pinned = false;
+            P.t = 0; V.t = 0; L.t = 0;
+            X.free = Y.free = false;
+            if (ind) ind.classList.remove('lifted');
+            items().forEach((el) => el.classList.remove('is-hover'));
+            onOpenChange(false);
+            trigger.setAttribute('aria-expanded', 'false');
+            if (returnFocus) trigger.focus({ preventScroll: true });
+            kick();
+        }
+
+        // Elegir una opción: rebote, se dispara su clic real y se cierra
+        function activate(i, { viaScrub = false } = {}) {
+            const el = items()[i];
+            if (!el) return;
+            el.classList.remove('ios-bounce'); void el.offsetWidth; el.classList.add('ios-bounce');
+            if (navigator.vibrate) navigator.vibrate(8);
+            if (viaScrub) {
+                suppressClick = true;
+                setTimeout(() => { el.click(); suppressClick = false; }, 120);
+            }
+            setTimeout(() => close(), 160);
+        }
+
+        // ---------- Gestos ----------
+        trigger.setAttribute('aria-haspopup', 'menu');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        trigger.addEventListener('pointerdown', (e) => {
+            if (e.button > 0) return;
+            const wasOpen = isOpen && pinned;
+            if (!isOpen) open();
+            pinned = true;
+            g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), mode: null, from: 'trigger', wasOpen };
+        });
+        // Clic de teclado (Enter/Espacio)
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.detail === 0) { if (isOpen) close({ returnFocus: true }); else { open({ keyboard: true }); pinned = true; } }
+        });
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); open({ keyboard: true }); pinned = true; }
+        });
+
+        menu.addEventListener('pointerdown', (e) => {
+            if (e.button > 0) return;
+            const item = hitTest(e.clientX, e.clientY);
+            g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), mode: null, from: 'menu', item };
+            if (item >= 0) highlight(item);
+        });
+        menu.addEventListener('dragstart', (e) => e.preventDefault());
+        menu.addEventListener('contextmenu', (e) => { if (g && g.mode) e.preventDefault(); });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isOpen) return;
+            if (!g) {
+                if (e.pointerType === 'mouse' && itemSelector) {
+                    const i = hitTest(e.clientX, e.clientY);
+                    if (i !== hl) highlight(i);
+                }
+                return;
+            }
+            if (e.pointerId !== g.id || !itemSelector) return;
+            if (!g.mode) {
+                if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < 8) return;
+                g.mode = 'scrub';
+                scrubbing = true;
+                X.free = Y.free = true;
+                L.t = 1;
+                ind.classList.add('lifted');
+            }
+            const now = performance.now(), dt = Math.max((now - g.t) / 1000, 0.001);
+            g.t = now;
+            const i = hitTest(e.clientX, e.clientY);
+            if (i !== hl) {
+                hl = i;
+                const list = items();
+                list.forEach((el, j) => el.classList.toggle('is-hover', j === i));
+                if (i >= 0) {
+                    const r = rectOf(list[i]);
+                    W.t = r.w; H.t = r.h; V.t = 1;
+                    if (V.v < 0.05) { W.v = r.w; H.v = r.h; }
+                    if (navigator.vibrate) navigator.vibrate(4);
+                } else V.t = 0;
+            }
+            // La lente sigue al dedo con resistencia en los bordes
+            const m = menu.getBoundingClientRect();
+            const rub = (v, lo, hi) => v < lo ? lo - Math.sqrt(lo - v) * 2 : v > hi ? hi + Math.sqrt(v - hi) * 2 : v;
+            const x = rub(e.clientX - m.left - W.v / 2, 4, m.width - W.v - 4);
+            const y = rub(e.clientY - m.top - H.v / 2 + menu.scrollTop, 4, menu.scrollHeight - H.v - 4);
+            if (V.v < 0.05) { X.v = x; Y.v = y; }
+            Y.vel = (y - Y.v) / dt;
+            X.v = x; Y.v = y;
+            kick();
+        });
+
+        function endGesture(e) {
+            if (!g || e.pointerId !== g.id) return;
+            const i = hitTest(e.clientX, e.clientY);
+            const wasScrub = g.mode === 'scrub';
+            scrubbing = false;
+            X.free = Y.free = false;
+            L.t = 0;
+            if (ind) ind.classList.remove('lifted');
+            if (e.type === 'pointerup') {
+                if (wasScrub) {
+                    if (i >= 0) { highlight(i); activate(i, { viaScrub: true }); }
+                    else close();
+                } else if (g.from === 'trigger' && g.wasOpen) {
+                    close();
+                } else if (g.from === 'menu' && i >= 0 && i === g.item) {
+                    activate(i);   // el clic real del navegador hace la acción
+                }
+            }
+            if (isOpen && hl >= 0 && !wasScrub) highlight(hl);
+            g = null;
+            kick();
+        }
+        window.addEventListener('pointerup', endGesture);
+        window.addEventListener('pointercancel', endGesture);
+
+        // Evita el doble clic cuando la opción ya se activó al arrastrar
+        menu.addEventListener('click', (e) => {
+            if (suppressClick && e.isTrusted) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+
+        // Escritorio: abrir al pasar el cursor (avatar y notificaciones)
+        if (hover) {
+            const enter = (e) => { if (e.pointerType === 'mouse') { clearTimeout(leaveTimer); open(); } };
+            const leave = (e) => {
+                if (e.pointerType !== 'mouse' || g || pinned) return;
+                clearTimeout(leaveTimer);
+                leaveTimer = setTimeout(() => close(), 160);
+            };
+            trigger.addEventListener('pointerenter', enter);
+            trigger.addEventListener('pointerleave', leave);
+            menu.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') clearTimeout(leaveTimer); });
+            menu.addEventListener('pointerleave', leave);
+        }
+
+        // Tocar fuera cierra
+        document.addEventListener('pointerdown', (e) => {
+            if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) close();
+        }, true);
+
+        // Teclado dentro del menú
+        menu.addEventListener('keydown', (e) => {
+            const list = items();
+            if (!list.length) { if (e.key === 'Escape') close({ returnFocus: true }); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); highlight(hl < 0 ? 0 : (hl + 1) % list.length, { focus: true }); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); highlight(hl <= 0 ? list.length - 1 : hl - 1, { focus: true }); }
+            if (e.key === 'Escape') { e.preventDefault(); close({ returnFocus: true }); }
+            if (e.key === 'Tab') close();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) close({ returnFocus: true }); });
+        window.addEventListener('scroll', () => { if (isOpen && !g) close(); }, { passive: true });
+        window.addEventListener('resize', () => { if (isOpen) close(); });
+
+        const api = { open, close, isOpen: () => isOpen, render };
+        instances.push(api);
+        return api;
+    }
+
+    window.IOSMenu = { create, closeAll: () => instances.forEach((i) => i.close()) };
+})();
 
 // ============================================
 // NAVBAR USERBAR — Sesión activa
@@ -239,35 +855,25 @@ function setActiveNavLink() {
         }
     }
 
-    // ── Dropdown (hover desktop + tap mobile) ──────────────────────
+    // ── Dropdown del avatar (estilo iOS: hover en escritorio, tocar o arrastrar en mobile) ──
     function _initDropdown() {
         const avatar   = document.getElementById('userAvatar');
         const dropdown = document.getElementById('userDropdown');
-        if (!avatar || !dropdown) return;
+        if (!avatar || !dropdown || !window.IOSMenu) return;
 
-        let hA = false, hD = false;
-        const open  = () => dropdown.classList.add('is-open');
-        const close = () => setTimeout(() => { if (!hA && !hD) dropdown.classList.remove('is-open'); }, 120);
-
-        // Desktop: hover
-        avatar.addEventListener('mouseenter',   () => { hA = true;  open(); });
-        avatar.addEventListener('mouseleave',   () => { hA = false; close(); });
-        dropdown.addEventListener('mouseenter', () => { hD = true;  open(); });
-        dropdown.addEventListener('mouseleave', () => { hD = false; close(); });
-
-        // Mobile: tap toggle
-        avatar.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdown.classList.contains('is-open');
-            // Cerrar el panel de notificaciones si está abierto
-            const panel = document.getElementById('notificationPanel');
-            if (panel) panel.classList.remove('is-open');
-            isOpen ? dropdown.classList.remove('is-open') : open();
+        avatar.setAttribute('tabindex', '0');
+        avatar.setAttribute('role', 'button');
+        avatar.setAttribute('aria-label', 'Menú de la cuenta');
+        const menu = window.IOSMenu.create({
+            trigger: avatar,
+            menu: dropdown,
+            itemSelector: '.dropdown-menu-button',
+            hover: true,
+            onOpenChange: (open) => dropdown.classList.toggle('is-open', open),
         });
-
-        // Cerrar al hacer click fuera
-        document.addEventListener('click', () => dropdown.classList.remove('is-open'));
-        dropdown.addEventListener('click', (e) => e.stopPropagation());
+        avatar.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); menu.isOpen() ? menu.close() : menu.open({ keyboard: true, pin: true }); }
+        });
     }
 
     // ── Notificaciones (hover desktop + tap mobile) ─────────────────
@@ -276,29 +882,16 @@ function setActiveNavLink() {
         const panel = document.getElementById('notificationPanel');
         if (!btn || !panel) return;
 
-        let hB = false, hP = false;
-        const openP  = () => panel.classList.add('is-open');
-        const closeP = () => setTimeout(() => { if (!hB && !hP) panel.classList.remove('is-open'); }, 120);
-
-        // Desktop: hover
-        btn.addEventListener('mouseenter',   () => { hB = true;  openP(); });
-        btn.addEventListener('mouseleave',   () => { hB = false; closeP(); });
-        panel.addEventListener('mouseenter', () => { hP = true;  openP(); });
-        panel.addEventListener('mouseleave', () => { hP = false; closeP(); });
-
-        // Mobile: tap toggle
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = panel.classList.contains('is-open');
-            // Cerrar el dropdown del avatar si está abierto
-            const dropdown = document.getElementById('userDropdown');
-            if (dropdown) dropdown.classList.remove('is-open');
-            isOpen ? panel.classList.remove('is-open') : openP();
-        });
-
-        // Cerrar al hacer click fuera
-        document.addEventListener('click', () => panel.classList.remove('is-open'));
-        panel.addEventListener('click', (e) => e.stopPropagation());
+        // Panel con la misma animación iOS (sin indicador: son avisos, no opciones)
+        if (window.IOSMenu) {
+            window.IOSMenu.create({
+                trigger: btn,
+                menu: panel,
+                hover: true,
+                onOpenChange: (open) => panel.classList.toggle('is-open', open),
+            });
+        }
+        btn.setAttribute('aria-label', 'Notificaciones');
 
         // Marcar todas como leídas
         const markAll = document.getElementById('markAllBtn');
@@ -446,11 +1039,18 @@ function setActiveNavLink() {
         const selector = document.getElementById(selectorId);
         const trigger  = document.getElementById(triggerId);
         const dropdown = document.getElementById(dropdownId);
-        if (!selector || !trigger || !dropdown) return;
+        if (!selector || !trigger || !dropdown || !window.IOSMenu) return;
 
-        trigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selector.classList.toggle('open');
+        // Menú estilo iOS: tocar para abrir, o mantener y deslizar hasta el idioma
+        window.IOSMenu.create({
+            trigger,
+            menu: dropdown,
+            itemSelector: '.lang-option',
+            portal: selectorId === 'langSelectorMobile',
+            onOpenChange: (open) => {
+                selector.classList.toggle('open', open);
+                dropdown.classList.toggle('is-open', open);
+            },
         });
 
         dropdown.querySelectorAll('.lang-option').forEach(btn => {
@@ -460,16 +1060,9 @@ function setActiveNavLink() {
                 if (window.Translations) {
                     window.Translations.apply(lang);
                 }
-                selector.classList.remove('open');
                 // Sincronizar ambos selectores
                 syncActiveOption(lang);
             });
-        });
-
-        document.addEventListener('click', () => selector.classList.remove('open'));
-        selector.addEventListener('click', (e) => e.stopPropagation());
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') selector.classList.remove('open');
         });
     }
 
@@ -481,10 +1074,12 @@ function setActiveNavLink() {
         const labelHtml = (FLAG_SVG[lang] || '') + ' ' + (meta.code || lang.toUpperCase());
 
         // Labels — innerHTML para poder meter el SVG
-        ['langTriggerLabel', 'langTriggerLabelMobile'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = labelHtml;
-        });
+        const desk = document.getElementById('langTriggerLabel');
+        if (desk) desk.innerHTML = labelHtml;
+        // En el menú móvil hay espacio: se muestra el nombre completo del idioma
+        const mob = document.getElementById('langTriggerLabelMobile');
+        const opt = document.querySelector(`#langDropdownMobile .lang-option[data-lang="${lang}"]`);
+        if (mob) mob.innerHTML = opt ? opt.innerHTML : labelHtml;
 
         // Active class en todas las opciones de ambos dropdowns
         document.querySelectorAll('#langDropdown .lang-option, #langDropdownMobile .lang-option')

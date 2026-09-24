@@ -340,283 +340,368 @@
 }
 
 /* ============================================
-   RESPONSIVE - iOS MOBILE STYLE
+   RESPONSIVE - iOS MOBILE STYLE (barra flotante + panel con resorte)
+   La barra es una píldora flotante. Al abrir el menú, la píldora
+   crece hasta convertirse en el panel (clip-path animado desde navbar.js).
    ============================================ */
 
+/* Elementos que solo existen en el menú móvil */
+.nav-link-icon,
+.nav-indicator {
+  display: none;
+}
+
+@keyframes navIconPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.8); }
+  65% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
 @media (max-width: 768px) {
-  /* --- CORRECCIÓN CRÍTICA --- */
-  /* Forzamos fondo blanco sólido y desactivamos el filtro blur */
-  /* Esto evita que se vea transparente sobre los fondos complejos de Login/Register */
+  /* --- Barra flotante tipo píldora --- */
+  /* Fondo blanco sólido y sin blur: además de verse sólido sobre Login/Register,
+     backdrop-filter crearía un contenedor para el panel fixed y lo descuadraría */
   .navbar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
     background: #ffffff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(6, 182, 212, 0.14);
+    border-radius: 999px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
   }
-  /* -------------------------- */
 
-  /* Container en mobile */
+  .navbar::after {
+    display: none;
+  }
+
+  .navbar.scrolled {
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+    border-color: rgba(6, 182, 212, 0.2);
+  }
+
+  /* Con el menú abierto la píldora se funde con el panel */
+  .navbar.menu-is-open {
+    box-shadow: none;
+    border-color: transparent;
+  }
+
   .nav-container {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0.9rem 1rem;
+    padding: 0 8px;
     height: 60px;
   }
 
-  /* Ocultar divider en mobile */
   .navbar-lang-divider {
     display: none;
   }
 
-  /* Selector de idioma: se muestra en la esquina derecha también en mobile
-     (nav-auth y el divider siguen ocultos por sus propias reglas, así que
-     solo queda visible el lang-selector dentro de este grupo) */
   .nav-right-group {
     display: flex !important;
   }
 
-  /* Botón hamburguesa a la IZQUIERDA - Estilo iOS */
+  /* Lo que va sobre el panel abierto: logo, idioma, userbar y botón */
+  .nav-right-end {
+    position: relative;
+    z-index: 1002;
+    gap: 6px;
+  }
+
+  /* Botón hamburguesa a la IZQUIERDA */
   .mobile-menu-btn {
     display: flex;
     position: absolute;
-    left: 1rem;
+    left: 8px;
     top: 50%;
+    width: 44px;
+    height: 44px;
     transform: translateY(-50%);
     background: rgba(6, 182, 212, 0.08);
-    z-index: 1001;
+    z-index: 1003;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+  }
+
+  .mobile-menu-btn:active {
+    transform: translateY(-50%) scale(0.9);
   }
 
   .mobile-menu-btn.active {
-    background: rgba(6, 182, 212, 0.12);
+    background: rgba(6, 182, 212, 0.14);
   }
 
   .menu-icon span {
     background: #06b6d4;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, top 0.3s ease, bottom 0.3s ease;
   }
 
-  /* Logo CENTRADO en mobile (centrado real respecto a la pantalla, no al espacio libre) */
+  /* Logo centrado (se conserva el centrado también en hover) */
   .nav-logo {
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1;
+    z-index: 1002;
+  }
+
+  .nav-logo:hover {
+    transform: translate(-50%, -50%) scale(1.05);
   }
 
   .nav-logo img {
-    height: 70px;
+    height: 56px;
   }
 
-  /* Ocultar nav-auth (botones desktop) en mobile */
   .nav-auth {
     display: none;
   }
 
-  /* Mostrar botones de auth dentro del nav-menu en MOBILE */
-  .nav-menu .nav-item.mobile-only {
-    display: block;
-    width: 100%;
-    max-width: none;
-  }
-
-  /* MENU MOBILE - iOS Style */
+  /* --- Panel del menú --- */
   .nav-menu {
     position: fixed;
-    top: 0;
-    left: 50%;
-    right: auto;
-    width: 100vw;
-    margin-left: -50vw;
-
-    height: 100vh !important; /* Cubre toda la pantalla, incluyendo el logo */
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    width: auto;
+    justify-self: stretch; /* en desktop es center; en un fixed lo encogería */
+    height: auto !important;
+    max-height: calc(100vh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    padding: 72px 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    gap: 4px 0;
     overflow-y: auto;
     overflow-x: hidden;
-    box-sizing: border-box;
-
-    /* CAMBIO IMPORTANTE: Fondo blanco forzado */
-    background-color: #ffffff !important;
-
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 0;
-    padding: 90px 20px 40px;
-
-    /* Estado inicial - OCULTO */
-    opacity: 0;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    background: #ffffff;
+    border: 1px solid rgba(6, 182, 212, 0.14);
+    border-radius: 28px;
     visibility: hidden;
-    transform: translate3d(0, 0, 0);
     pointer-events: none;
-    transition:
-      opacity 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
-      visibility 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: none;
     z-index: 1000;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
-  /* Estado activo - VISIBLE */
+  .nav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Sin JS el panel igual se muestra; con JS la visibilidad la maneja navbar.js */
   .nav-menu.active {
-    opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translate3d(0, 0, 0);
   }
 
-  /* Items del menú mobile - iOS Style */
+  /* Items: entrada escalonada (el orden --i lo asigna navbar.js) */
   .nav-item {
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
     width: 100%;
     max-width: none;
-
-    /* Animación inicial */
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
-    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(-8px);
+    transition: opacity 0.3s ease, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    transition-delay: calc(var(--i, 0) * 30ms);
   }
 
   .nav-menu.active .nav-item {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
   }
 
-  .nav-menu.active .nav-item:nth-child(1) {
-    transition-delay: 0.05s;
-  }
-  .nav-menu.active .nav-item:nth-child(2) {
-    transition-delay: 0.1s;
-  }
-  .nav-menu.active .nav-item:nth-child(3) {
-    transition-delay: 0.15s;
-  }
-  .nav-menu.active .nav-item:nth-child(4) {
-    transition-delay: 0.2s;
-  }
-  .nav-menu.active .nav-item:nth-child(5) {
-    transition-delay: 0.25s;
-  }
-  .nav-menu.active .nav-item:nth-child(6) {
-    transition-delay: 0.3s;
-  }
-  .nav-menu.active .nav-item:nth-child(7) {
-    transition-delay: 0.35s;
-  }
-
-  /* Links en mobile - iOS Style */
-  .nav-link {
+  /* Filas del menú */
+  .nav-menu .nav-link {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    font-size: 1.1rem;
-    font-weight: 400;
+    gap: 14px;
     width: 100%;
-    text-align: left;
+    min-height: 54px;
+    margin: 0;
+    padding: 0 14px 0 10px;
+    border: 0;
+    border-radius: 18px;
+    background: none;
     color: #374151;
-    background: rgba(6, 182, 212, 0.04);
-    border-radius: 14px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(6, 182, 212, 0.12);
-    position: relative;
-    -webkit-tap-highlight-color: transparent;
+    font-size: 17px;
+    font-weight: 500;
+    text-align: left;
+    overflow: visible;
+    -webkit-user-drag: none;
   }
 
-  .nav-link::before {
+  .nav-menu .nav-link::before {
     display: none;
   }
 
-  .nav-link::after {
+  .nav-menu .nav-link::after {
     content: "›";
-    font-size: 1.5rem;
-    color: rgba(6, 182, 212, 0.4);
     position: static;
     width: auto;
     height: auto;
+    margin-left: auto;
     background: none;
     transform: none;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    font-size: 1.5rem;
+    line-height: 1;
+    color: rgba(6, 182, 212, 0.4);
+    transition: color 0.2s ease;
   }
 
-  .nav-link:active {
-    transform: scale(0.97);
+  .nav-menu .nav-link:hover:not(.active),
+  .nav-menu .nav-link:active {
+    transform: none;
+    background: none;
+  }
+
+  /* Anula el subrayado de hover/activo de desktop sobre la flecha › */
+  .nav-menu .nav-link:hover:not(.active)::after,
+  .nav-menu .nav-link.active::after {
+    width: auto;
+  }
+
+  .nav-menu .nav-link.active {
+    color: #06b6d4;
+    background: none;
+    border: 0;
+  }
+
+  .nav-menu .nav-link.active::after {
+    color: #06b6d4;
+  }
+
+  .nav-link-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     background: rgba(6, 182, 212, 0.08);
-  }
-
-  .nav-link.active {
-    background: rgba(6, 182, 212, 0.15);
     color: #06b6d4;
-    border-color: rgba(6, 182, 212, 0.3);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, color 0.2s ease;
   }
 
-  .nav-link.active::after {
-    color: #06b6d4;
+  .nav-link-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
-  /* Separador visual - iOS Style */
-  .nav-menu::before {
-    content: "";
-    width: 100%;
-    max-width: none;
-    height: 1px;
-    background: rgba(6, 182, 212, 0.15);
-    margin: 12px 0;
+  .nav-menu .nav-link.active .nav-link-icon {
+    background: #06b6d4;
+    color: #ffffff;
+  }
+
+  .nav-menu .nav-link.is-hover .nav-link-icon {
+    transform: scale(1.12);
+  }
+
+  .nav-menu .nav-link.bounce .nav-link-icon {
+    animation: navIconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Indicador de resorte: marca la página actual; al arrastrar se vuelve lente */
+  .nav-indicator {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 18px;
+    background: rgba(6, 182, 212, 0.1);
     opacity: 0;
-    transform: scaleX(0);
-    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    order: 5;
+    pointer-events: none;
+    will-change: transform, width, height, opacity;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .nav-menu.active::before {
-    opacity: 1;
-    transform: scaleX(1);
-    transition-delay: 0.25s;
+  .nav-indicator.lifted {
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(6, 182, 212, 0.22), inset 0 0 0 1px rgba(6, 182, 212, 0.2);
   }
 
-  /* Botón login en mobile - iOS Style */
-  .nav-login {
-    background: #06b6d4 !important;
-    color: white !important;
-    border: none !important;
-    font-weight: 600;
-    box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+  /* Botones de sesión (solo sin sesión): dos columnas al fondo */
+  .nav-menu .nav-item.mobile-only {
+    display: block;
+    grid-column: auto;
+    margin-top: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(6, 182, 212, 0.15);
   }
 
   #mobileNavLogin {
-    order: 6;
+    padding-right: 5px;
   }
 
-  /* Ocultar login/register en mobile cuando hay sesión activa (evita duplicar con el userbar) */
+  #mobileNavRegister {
+    padding-left: 5px;
+  }
+
   .navbar.is-logged-in .nav-menu .nav-item.mobile-only {
     display: none;
   }
 
-  .nav-login:active {
-    transform: scale(0.97);
-    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
-  }
-
-  .nav-login::after {
-    display: none;
-  }
-
-  /* CTA en mobile - iOS Style */
-  .nav-cta {
-    background: #06b6d4 !important;
-    color: white !important;
-    border: none !important;
+  .nav-menu .nav-login,
+  .nav-menu .nav-cta {
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 12px !important;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 999px;
+    font-size: 16px;
     font-weight: 600;
-    box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
-    margin-top: 8px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  #mobileNavRegister {
-    order: 7;
+  .nav-menu .nav-login {
+    background: rgba(6, 182, 212, 0.08) !important;
+    color: #06b6d4 !important;
+    box-shadow: none;
   }
 
-  .nav-cta::after {
+  .nav-menu .nav-cta {
+    background: #06b6d4 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
+  }
+
+  .nav-menu .nav-login::after,
+  .nav-menu .nav-cta::after,
+  .nav-menu .nav-cta::before {
     display: none;
   }
 
-  .nav-cta:active {
-    transform: scale(0.97);
-    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+  .nav-menu .nav-login:active,
+  .nav-menu .nav-cta:active {
+    transform: scale(0.96);
+  }
+
+  /* Fondo oscurecido detrás del panel (lo crea navbar.js) */
+  .nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nav-scrim.on {
+    pointer-events: auto;
   }
 }
 
@@ -1234,63 +1319,92 @@ html {
     font-weight: 700;
 }
 
-/* Mobile: el selector va dentro del menú */
+/* Mobile con sesión: el idioma pasa de la barra al menú para que no se amontone */
+.mobile-lang-item {
+    display: none;
+}
+
 @media (max-width: 768px) {
-    /* En mobile el lang-selector del grid se oculta */
-    .nav-container > .lang-selector {
-        display: none;
+    .navbar.is-logged-in .nav-right-group {
+        display: none !important;
     }
 
-    /* Mostramos el lang dentro del nav-menu */
-    .nav-menu .nav-item.mobile-lang-item {
+    .navbar.is-logged-in .nav-menu .nav-item.mobile-lang-item {
         display: block;
-        width: 100%;
-        max-width: none;
-        order: -1;
-        margin-bottom: 12px;
-    }
-
-    .lang-selector-mobile {
+        order: 0;
         margin: 0;
-        width: 100%;
     }
 
-    .lang-selector-mobile .lang-trigger {
+    .nav-lang-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
         width: 100%;
-        justify-content: space-between;
-        background: rgba(6, 182, 212, 0.04);
-        border: 1px solid rgba(6, 182, 212, 0.12);
-        border-radius: 14px;
-        padding: 1rem 1.5rem;
-        font-size: 1.1rem;
-        font-weight: 500;
+        min-height: 54px;
+        padding: 0 14px 0 10px;
+        border: 0;
+        border-radius: 18px;
+        background: none;
         color: #374151;
-        margin-bottom: 0;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
     }
 
-    .lang-selector-mobile.open .lang-trigger {
-        border-radius: 14px 14px 0 0;
-        margin-bottom: 0;
+    .nav-lang-row .nav-lang-value {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #6b7280;
+        font-size: 15px;
     }
 
-    .lang-selector-mobile .lang-dropdown {
-        position: static;
-        box-shadow: none;
-        border: 1px solid rgba(6, 182, 212, 0.12);
-        border-top: none;
-        border-radius: 0 0 14px 14px;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        pointer-events: auto;
+    .nav-lang-row .nav-lang-value svg {
+        color: rgba(6, 182, 212, 0.6);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .lang-selector-mobile.open .nav-lang-row .nav-lang-value svg {
+        transform: rotate(180deg);
+    }
+
+    .nav-lang-row:focus-visible {
+        outline: 2px solid rgba(6, 182, 212, 0.6);
+        outline-offset: 2px;
+    }
+
+    /* Userbar más compacto dentro de la píldora */
+    .navbar.is-logged-in .navbar-ub-divider {
         display: none;
-        margin-top: 0;
-        padding: 4px 6px 6px;
     }
 
-    .lang-selector-mobile.open .lang-dropdown {
-        display: block;
+    .navbar.is-logged-in .nav-auth-user {
+        gap: 6px !important;
     }
+}
+
+/* Pantallas muy angostas con sesión: el logo se alinea junto al botón */
+@media (max-width: 360px) {
+    .navbar.is-logged-in .nav-logo {
+        left: 60px;
+        transform: translateY(-50%);
+    }
+
+    .navbar.is-logged-in .nav-logo:hover {
+        transform: translateY(-50%) scale(1.05);
+    }
+
+    .navbar.is-logged-in .nav-logo img {
+        height: 48px;
+    }
+}
+
+/* La lista de idiomas del menú se muestra fuera del panel (ver IOSMenu portal) */
+.lang-dropdown.is-open {
+    pointer-events: auto;
 }
 
 /* ============================================
@@ -1303,4 +1417,278 @@ html {
     height: 0.9em;
     border-radius: 2px;
     flex-shrink: 0;
+}
+/* ============================================
+   DROPDOWNS ESTILO iOS 27 (idioma, avatar, notificaciones)
+   navbar.js (IOSMenu) controla la visibilidad y el recorte con resorte;
+   aquí se anulan las transiciones anteriores para que no compitan.
+   ============================================ */
+
+.ios-menu {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+}
+
+/* El contenido aparece cuando el menú ya creció lo suficiente */
+.ios-menu > :not(.ios-menu-ind) {
+    opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+/* Los botones que abren menús no deben hacer scroll al arrastrar desde ellos */
+.lang-trigger,
+.navbar-avatar,
+.navbar-icon-btn {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.navbar-avatar:focus-visible,
+.lang-trigger:focus-visible,
+.navbar-icon-btn:focus-visible {
+    outline: 2px solid rgba(6, 182, 212, 0.6);
+    outline-offset: 3px;
+}
+
+/* Indicador de resorte; al arrastrar se vuelve lente */
+.ios-menu-ind {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 10px;
+    background: rgba(6, 182, 212, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width, height, opacity;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ios-menu-ind.lifted {
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(6, 182, 212, 0.25), inset 0 0 0 1px rgba(6, 182, 212, 0.2);
+}
+
+/* Las opciones dejan el fondo al indicador */
+.ios-menu .lang-option,
+.ios-menu .dropdown-menu-button {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+    border-radius: 10px;
+    -webkit-user-drag: none;
+}
+
+.ios-menu .lang-option.is-hover,
+.ios-menu .dropdown-menu-button.is-hover {
+    color: #06b6d4;
+}
+
+.ios-menu .logout-button.is-hover {
+    color: #ef4444 !important;
+}
+
+.ios-menu .dropdown-menu-button.is-hover .dropdown-icon {
+    background: rgba(6, 182, 212, 0.18);
+}
+
+.ios-menu .logout-button.is-hover .dropdown-icon {
+    background: rgba(239, 68, 68, 0.14);
+}
+
+.ios-menu .dropdown-menu-list,
+.ios-menu .logout-section {
+    padding: 6px;
+}
+
+/* Idioma activo: palomita a la derecha, como en iOS */
+.ios-menu .lang-option.active {
+    color: #06b6d4;
+}
+
+.ios-menu .lang-option.active::after {
+    content: "✓";
+    margin-left: auto;
+    padding-left: 12px;
+    font-weight: 700;
+    color: #06b6d4;
+}
+
+/* Rebote al elegir */
+.ios-menu .ios-bounce .dropdown-icon,
+.ios-menu .lang-option.ios-bounce {
+    animation: navIconPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================
+   PÍLDORA FLOTANTE TRANSLÚCIDA (desktop y mobile)
+   El fondo es una capa ::before con blur: deja ver con color lo que pasa
+   detrás al hacer scroll. Va en un pseudo-elemento y no en .navbar porque
+   un backdrop-filter en .navbar descuadraría el panel fixed del menú móvil.
+   ============================================ */
+
+.navbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.navbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    pointer-events: none;
+    transition: background 0.3s ease;
+}
+
+.navbar.scrolled::before {
+    background: rgba(255, 255, 255, 0.66);
+}
+
+/* Navegadores sin blur: fondo casi sólido para que el texto se siga leyendo */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .navbar::before,
+    .navbar.scrolled::before {
+        background: rgba(255, 255, 255, 0.96);
+    }
+}
+
+/* --- Desktop: píldora flotante (mismo esquema que el navbar de Avante) ---
+   .navbar queda como envoltura transparente de ancho completo y la píldora
+   es .nav-container. Los !important evitan que estilos de otras páginas
+   sobre .navbar la vuelvan a poner de lado a lado. */
+@media (min-width: 769px) {
+    .navbar {
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 18px 24px 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        pointer-events: none;
+    }
+
+    .navbar::before,
+    .navbar::after {
+        display: none !important;
+    }
+
+    .nav-container {
+        pointer-events: auto;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 10px 12px 10px 24px;
+        background: rgba(255, 255, 255, 0.72);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(6, 182, 212, 0.16);
+        border-radius: 999px;
+        box-shadow: 0 10px 30px -18px rgba(6, 182, 212, 0.45), 0 2px 10px rgba(15, 23, 42, 0.04);
+        transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .navbar.scrolled .nav-container {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(6, 182, 212, 0.22);
+        box-shadow: 0 14px 34px -16px rgba(6, 182, 212, 0.5), 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .nav-logo img {
+        height: 52px;
+    }
+
+    /* Links, botones e idioma en forma de cápsula */
+    .nav-link,
+    .nav-cta,
+    .lang-trigger {
+        border-radius: 999px;
+    }
+
+    .nav-link {
+        padding: 0.6rem 1.05rem;
+    }
+
+    .nav-cta {
+        padding: 0.65rem 1.4rem !important;
+    }
+
+    .lang-trigger {
+        background: rgba(255, 255, 255, 0.7);
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    @media (min-width: 769px) {
+        .nav-container,
+        .navbar.scrolled .nav-container {
+            background: rgba(255, 255, 255, 0.96);
+        }
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .navbar {
+        padding: 14px 16px 0 !important;
+    }
+
+    .nav-container {
+        padding: 8px 10px 8px 18px;
+    }
+
+    .nav-logo img {
+        height: 46px;
+    }
+
+    .nav-link {
+        padding: 0.55rem 0.75rem;
+    }
+}
+
+/* --- Mobile: la píldora también es translúcida --- */
+@media (max-width: 768px) {
+    .navbar {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 0 0 1px rgba(6, 182, 212, 0.08);
+    }
+
+    .navbar.scrolled {
+        box-shadow: 0 10px 34px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.06), inset 0 0 0 1px rgba(6, 182, 212, 0.12);
+    }
+
+    /* Con el menú abierto el panel sólido cubre la píldora */
+    .navbar.menu-is-open {
+        box-shadow: none;
+        border-color: transparent;
+    }
+
+    .navbar.menu-is-open::before {
+        background: #ffffff;
+    }
+}
+
+/* ============================================
+   Dropdowns: íconos en círculo y resaltado en cápsula
+   ============================================ */
+.dropdown-icon,
+.notification-icon {
+    border-radius: 50%;
+}
+
+.ios-menu-ind,
+.ios-menu .dropdown-menu-button,
+.ios-menu .lang-option {
+    border-radius: 999px;
 }

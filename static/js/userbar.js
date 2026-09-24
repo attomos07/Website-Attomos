@@ -2,6 +2,355 @@
 // USERBAR JAVASCRIPT - FLOATING DESIGN
 // ============================================
 
+// ============================================
+// IOS MENU — dropdowns estilo iOS 27
+// El menú nace del botón (clip-path con resorte), un indicador de
+// resorte sigue al cursor o al dedo, y se puede mantener presionado
+// el botón y deslizar hasta una opción para elegirla al soltar.
+// Lo usan: selector de idioma, menú del avatar y notificaciones.
+// (Mismo módulo que navbar.js; si ya existe en la página no se redefine.)
+// ============================================
+
+(function initIOSMenus() {
+    if (window.IOSMenu) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const instances = [];
+
+    // ---------- Motor de resortes compartido ----------
+    const springs = [];
+    const spring = (v = 0, k = 420, d = 32, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps, free: false };
+        springs.push(s);
+        return s;
+    };
+    function step(s, dt) {
+        if (s.free) return;
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => !s.free && Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => step(s, dt));
+        instances.forEach((i) => i.render());
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            instances.forEach((i) => i.render());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    let scrubbing = false;
+    document.addEventListener('touchmove', (e) => { if (scrubbing) e.preventDefault(); }, { passive: false });
+
+    // origin: elemento desde donde crece el menú (por defecto el botón).
+    // En el userbar el menú de la cuenta crece desde toda la píldora.
+    function create({ trigger, menu, itemSelector = null, hover = false, portal = false, origin = null, onOpenChange = () => {} }) {
+        if (!trigger || !menu) return null;
+        menu.classList.add('ios-menu');
+
+        // portal: el menú vive en <body> con posición fija (para abrirlo desde dentro
+        // de un contenedor con scroll, como el panel del menú móvil)
+        if (portal) {
+            document.body.appendChild(menu);
+            menu.style.position = 'fixed';
+            menu.style.right = 'auto';
+            menu.style.zIndex = '10002';
+        }
+        function place() {
+            if (!portal) return;
+            const a = trigger.getBoundingClientRect();
+            const w = menu.offsetWidth, h = menu.offsetHeight;
+            let top = a.bottom + 8;
+            if (top + h > window.innerHeight - 12 && a.top - 8 - h > 12) top = a.top - 8 - h;
+            const left = clamp(a.right - w, 12, window.innerWidth - w - 12);
+            menu.style.top = `${Math.max(12, top)}px`;
+            menu.style.left = `${left}px`;
+        }
+        // Cerrado: además de visibility se recorta por completo, porque un hijo
+        // con visibility: visible en línea (p. ej. el nombre del usuario) se seguiría viendo
+        const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+
+        let ind = null;
+        if (itemSelector) {
+            ind = document.createElement('div');
+            ind.className = 'ios-menu-ind';
+            ind.setAttribute('aria-hidden', 'true');
+            menu.prepend(ind);
+        }
+
+        const P = spring(0, 380, 28, 0.001);
+        const X = spring(), Y = spring(), W = spring(), H = spring();
+        const V = spring(0, 600, 44, 0.001);
+        const L = spring(0, 450, 26, 0.001);
+
+        // pinned: se abrió con clic/toque, así que salir con el cursor no lo cierra
+        let isOpen = false, pinned = false, hl = -1, g = null, suppressClick = false, menuRadius = 16, leaveTimer = null;
+
+        const items = () => itemSelector
+            ? [...menu.querySelectorAll(itemSelector)].filter((el) => el.offsetParent !== null)
+            : [];
+
+        // Posición relativa al menú (el menú no se escala, solo se recorta)
+        function rectOf(el) {
+            const m = menu.getBoundingClientRect(), r = el.getBoundingClientRect();
+            return {
+                x: r.left - m.left - menu.clientLeft,
+                y: r.top - m.top - menu.clientTop + menu.scrollTop,
+                w: r.width, h: r.height,
+            };
+        }
+        function hitTest(x, y) {
+            return items().findIndex((el) => {
+                const r = el.getBoundingClientRect();
+                return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            });
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+                trigger.style.opacity = '';
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (isOpen && atRest(P)) {
+                    // Abierto y quieto: sin recorte para que se vea la sombra del menú
+                    menu.style.clipPath = 'none';
+                } else {
+                    const a = (origin || trigger).getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, menuRadius, pc)}px)`;
+                }
+            }
+            if (ind) {
+                const st = Math.min(Math.abs(Y.vel) / 1600, 0.25);
+                const lift = 1 + L.v * 0.05;
+                ind.style.width = `${W.v}px`;
+                ind.style.height = `${H.v}px`;
+                ind.style.opacity = clamp(V.v);
+                ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${(1 - st * 0.15) * lift}, ${(1 + st) * lift})`;
+            }
+        }
+
+        function highlight(i, { focus = false } = {}) {
+            hl = i;
+            const list = items();
+            list.forEach((el, j) => el.classList.toggle('is-hover', j === i));
+            if (!ind) return;
+            if (i < 0) { V.t = 0; kick(); return; }
+            const r = rectOf(list[i]);
+            X.t = r.x; Y.t = r.y; W.t = r.w; H.t = r.h; V.t = 1;
+            if (V.v < 0.05) { X.v = r.x; Y.v = r.y; W.v = r.w; H.v = r.h; }
+            if (focus) list[i].focus({ preventScroll: true });
+            kick();
+        }
+
+        function open({ keyboard = false, pin = false } = {}) {
+            clearTimeout(leaveTimer);
+            if (pin) pinned = true;
+            if (isOpen) return;
+            instances.forEach((o) => { if (o !== api && o.isOpen()) o.close(); });
+            isOpen = true;
+            menuRadius = parseFloat(getComputedStyle(menu).borderTopLeftRadius) || 16;
+            place();
+            onOpenChange(true);
+            trigger.setAttribute('aria-expanded', 'true');
+            V.v = V.t = 0; hl = -1;
+            P.t = 1;
+            render();
+            if (keyboard) requestAnimationFrame(() => highlight(0, { focus: true }));
+            kick();
+        }
+
+        function close({ returnFocus = false } = {}) {
+            clearTimeout(leaveTimer);
+            if (!isOpen) return;
+            isOpen = false;
+            pinned = false;
+            P.t = 0; V.t = 0; L.t = 0;
+            X.free = Y.free = false;
+            if (ind) ind.classList.remove('lifted');
+            items().forEach((el) => el.classList.remove('is-hover'));
+            onOpenChange(false);
+            trigger.setAttribute('aria-expanded', 'false');
+            if (returnFocus) trigger.focus({ preventScroll: true });
+            kick();
+        }
+
+        // Elegir una opción: rebote, se dispara su clic real y se cierra
+        function activate(i, { viaScrub = false } = {}) {
+            const el = items()[i];
+            if (!el) return;
+            el.classList.remove('ios-bounce'); void el.offsetWidth; el.classList.add('ios-bounce');
+            if (navigator.vibrate) navigator.vibrate(8);
+            if (viaScrub) {
+                suppressClick = true;
+                setTimeout(() => { el.click(); suppressClick = false; }, 120);
+            }
+            setTimeout(() => close(), 160);
+        }
+
+        // ---------- Gestos ----------
+        trigger.setAttribute('aria-haspopup', 'menu');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        trigger.addEventListener('pointerdown', (e) => {
+            if (e.button > 0) return;
+            const wasOpen = isOpen && pinned;
+            if (!isOpen) open();
+            pinned = true;
+            g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), mode: null, from: 'trigger', wasOpen };
+        });
+        // Clic de teclado (Enter/Espacio)
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.detail === 0) { if (isOpen) close({ returnFocus: true }); else { open({ keyboard: true }); pinned = true; } }
+        });
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); open({ keyboard: true }); pinned = true; }
+        });
+
+        menu.addEventListener('pointerdown', (e) => {
+            if (e.button > 0) return;
+            const item = hitTest(e.clientX, e.clientY);
+            g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), mode: null, from: 'menu', item };
+            if (item >= 0) highlight(item);
+        });
+        menu.addEventListener('dragstart', (e) => e.preventDefault());
+        menu.addEventListener('contextmenu', (e) => { if (g && g.mode) e.preventDefault(); });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isOpen) return;
+            if (!g) {
+                if (e.pointerType === 'mouse' && itemSelector) {
+                    const i = hitTest(e.clientX, e.clientY);
+                    if (i !== hl) highlight(i);
+                }
+                return;
+            }
+            if (e.pointerId !== g.id || !itemSelector) return;
+            if (!g.mode) {
+                if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < 8) return;
+                g.mode = 'scrub';
+                scrubbing = true;
+                X.free = Y.free = true;
+                L.t = 1;
+                ind.classList.add('lifted');
+            }
+            const now = performance.now(), dt = Math.max((now - g.t) / 1000, 0.001);
+            g.t = now;
+            const i = hitTest(e.clientX, e.clientY);
+            if (i !== hl) {
+                hl = i;
+                const list = items();
+                list.forEach((el, j) => el.classList.toggle('is-hover', j === i));
+                if (i >= 0) {
+                    const r = rectOf(list[i]);
+                    W.t = r.w; H.t = r.h; V.t = 1;
+                    if (V.v < 0.05) { W.v = r.w; H.v = r.h; }
+                    if (navigator.vibrate) navigator.vibrate(4);
+                } else V.t = 0;
+            }
+            // La lente sigue al dedo con resistencia en los bordes
+            const m = menu.getBoundingClientRect();
+            const rub = (v, lo, hi) => v < lo ? lo - Math.sqrt(lo - v) * 2 : v > hi ? hi + Math.sqrt(v - hi) * 2 : v;
+            const x = rub(e.clientX - m.left - W.v / 2, 4, m.width - W.v - 4);
+            const y = rub(e.clientY - m.top - H.v / 2 + menu.scrollTop, 4, menu.scrollHeight - H.v - 4);
+            if (V.v < 0.05) { X.v = x; Y.v = y; }
+            Y.vel = (y - Y.v) / dt;
+            X.v = x; Y.v = y;
+            kick();
+        });
+
+        function endGesture(e) {
+            if (!g || e.pointerId !== g.id) return;
+            const i = hitTest(e.clientX, e.clientY);
+            const wasScrub = g.mode === 'scrub';
+            scrubbing = false;
+            X.free = Y.free = false;
+            L.t = 0;
+            if (ind) ind.classList.remove('lifted');
+            if (e.type === 'pointerup') {
+                if (wasScrub) {
+                    if (i >= 0) { highlight(i); activate(i, { viaScrub: true }); }
+                    else close();
+                } else if (g.from === 'trigger' && g.wasOpen) {
+                    close();
+                } else if (g.from === 'menu' && i >= 0 && i === g.item) {
+                    activate(i);   // el clic real del navegador hace la acción
+                }
+            }
+            if (isOpen && hl >= 0 && !wasScrub) highlight(hl);
+            g = null;
+            kick();
+        }
+        window.addEventListener('pointerup', endGesture);
+        window.addEventListener('pointercancel', endGesture);
+
+        // Evita el doble clic cuando la opción ya se activó al arrastrar
+        menu.addEventListener('click', (e) => {
+            if (suppressClick && e.isTrusted) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+
+        // Escritorio: abrir al pasar el cursor (avatar y notificaciones)
+        if (hover) {
+            const enter = (e) => { if (e.pointerType === 'mouse') { clearTimeout(leaveTimer); open(); } };
+            const leave = (e) => {
+                if (e.pointerType !== 'mouse' || g || pinned) return;
+                clearTimeout(leaveTimer);
+                leaveTimer = setTimeout(() => close(), 160);
+            };
+            trigger.addEventListener('pointerenter', enter);
+            trigger.addEventListener('pointerleave', leave);
+            menu.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') clearTimeout(leaveTimer); });
+            menu.addEventListener('pointerleave', leave);
+        }
+
+        // Tocar fuera cierra
+        document.addEventListener('pointerdown', (e) => {
+            if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) close();
+        }, true);
+
+        // Teclado dentro del menú
+        menu.addEventListener('keydown', (e) => {
+            const list = items();
+            if (!list.length) { if (e.key === 'Escape') close({ returnFocus: true }); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); highlight(hl < 0 ? 0 : (hl + 1) % list.length, { focus: true }); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); highlight(hl <= 0 ? list.length - 1 : hl - 1, { focus: true }); }
+            if (e.key === 'Escape') { e.preventDefault(); close({ returnFocus: true }); }
+            if (e.key === 'Tab') close();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) close({ returnFocus: true }); });
+        window.addEventListener('scroll', () => { if (isOpen && !g) close(); }, { passive: true });
+        window.addEventListener('resize', () => { if (isOpen) close(); });
+
+        const api = { open, close, isOpen: () => isOpen, render };
+        instances.push(api);
+        return api;
+    }
+
+    window.IOSMenu = { create, closeAll: () => instances.forEach((i) => i.close()) };
+})();
+
+
 // Re-traduce el giro de negocio mostrado (solo en frontend) cuando cambia
 // el idioma. El dato crudo (lastRawBusinessType) nunca se toca ni se
 // vuelve a pedir al backend, solo se recalcula su etiqueta traducida.
@@ -410,24 +759,18 @@ function initNotifications() {
         });
     }, 5 * 60 * 1000);
 
-    // FIX: mismo problema que en initUserDropdown — window.innerWidth <= 768
-    // se congelaba al cargar. Usamos la capacidad real del dispositivo.
-    const isMobile = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-    if (isMobile) {
-        notificationBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const userDropdown = document.getElementById('userDropdown');
-            if (userDropdown) userDropdown.classList.remove('mobile-active');
-            notificationPanel.classList.toggle('mobile-active');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
-                notificationPanel.classList.remove('mobile-active');
-            }
-        });
-    }
+    // Panel estilo iOS: crece desde la campana con resorte.
+    // Hover en escritorio; tocar en pantallas táctiles.
+    const controlBar = document.querySelector('.control-bar');
+    window.IOSMenu.create({
+        trigger: notificationBtn,
+        menu: notificationPanel,
+        hover: true,
+        onOpenChange: (open) => {
+            notificationPanel.classList.toggle('is-open', open);
+            if (controlBar) controlBar.classList.toggle('menu-open', open);
+        },
+    });
 
     if (markAllBtn) {
         markAllBtn.addEventListener('click', () => {
@@ -468,71 +811,39 @@ function initUserDropdown() {
     const userAvatar    = document.getElementById('userAvatar');
     const userDropdown  = document.getElementById('userDropdown');
     const logoContainer = document.getElementById('logoContainer');
+    const controlBar    = document.querySelector('.control-bar');
 
     if (!userAvatar || !userDropdown) return;
 
-    // FIX: antes se decidía "modo mobile" vs "modo desktop" una sola vez al
-    // cargar, comparando window.innerWidth <= 768. Ese valor queda congelado
-    // para siempre: si el viewport cambiaba después (resize, rotación,
-    // DevTools sin recargar) el avatar se quedaba enganchado a los listeners
-    // de hover (mouseenter/mouseleave) en vez de click — en pantalla táctil
-    // eso solo se "activa" si mantienes el dedo presionado, simulando hover.
-    // Ahora se detecta la capacidad real del dispositivo (¿tiene mouse con
-    // hover de verdad?), que no cambia con el tamaño de ventana.
-    const isMobile = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-    if (isMobile) {
-        userAvatar.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const notificationPanel = document.getElementById('notificationPanel');
-            if (notificationPanel) notificationPanel.classList.remove('mobile-active');
-            userDropdown.classList.toggle('mobile-active');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!userDropdown.contains(e.target) && !userAvatar.contains(e.target)) {
-                userDropdown.classList.remove('mobile-active');
-            }
-        });
-
-        userDropdown.querySelectorAll('.dropdown-menu-button').forEach(link => {
-            link.addEventListener('click', () => userDropdown.classList.remove('mobile-active'));
-        });
-
-    } else {
-        let isHoveringAvatar   = false;
-        let isHoveringDropdown = false;
-
-        const openDropdown  = () => userDropdown.classList.add('is-open');
-        const closeDropdown = () => {
-            setTimeout(() => {
-                if (!isHoveringAvatar && !isHoveringDropdown) {
-                    userDropdown.classList.remove('is-open');
-                }
-            }, 100);
-        };
-
-        userAvatar.addEventListener('mouseenter', () => { isHoveringAvatar = true;  openDropdown(); });
-        userAvatar.addEventListener('mouseleave', () => { isHoveringAvatar = false; closeDropdown(); });
-        userDropdown.addEventListener('mouseenter', () => { isHoveringDropdown = true;  openDropdown(); });
-        userDropdown.addEventListener('mouseleave', () => { isHoveringDropdown = false; closeDropdown(); });
-    }
+    // Estilo iOS: la tarjeta de la cuenta crece desde la píldora del userbar.
+    // Hover en escritorio; en táctil se toca, o se mantiene y se desliza
+    // hasta una opción para elegirla al soltar.
+    userAvatar.setAttribute('tabindex', '0');
+    userAvatar.setAttribute('role', 'button');
+    userAvatar.setAttribute('aria-label', 'Menú de la cuenta');
+    const menu = window.IOSMenu.create({
+        trigger: userAvatar,
+        menu: userDropdown,
+        origin: controlBar,
+        itemSelector: '.dropdown-menu-button',
+        hover: true,
+        onOpenChange: (open) => {
+            userDropdown.classList.toggle('is-open', open);
+            if (controlBar) controlBar.classList.toggle('menu-open', open);
+        },
+    });
+    userAvatar.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            menu.isOpen() ? menu.close() : menu.open({ keyboard: true, pin: true });
+        }
+    });
 
     if (logoContainer) {
         logoContainer.addEventListener('click', () => {
             window.location.href = '/';
         });
     }
-
-    // Ya no se compara "modo" contra un ancho (ver FIX arriba) — al cambiar
-    // de tamaño solo limpiamos estados de menú abiertos para que no queden
-    // dropdowns "fantasma" a medio abrir tras rotar o redimensionar.
-    window.addEventListener('resize', () => {
-        const notificationPanel = document.getElementById('notificationPanel');
-        if (notificationPanel) notificationPanel.classList.remove('mobile-active');
-        userDropdown.classList.remove('mobile-active');
-        userDropdown.classList.remove('is-open');
-    });
 }
 
 // ============================================
