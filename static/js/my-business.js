@@ -2639,3 +2639,471 @@ function setText(id, val) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
 }
+
+// ============================================
+// MI NEGOCIO — capa de estilo iOS 27
+// Se carga después de my-business.js y NO cambia su lógica: observa el DOM
+// (las clases .active/.show que ya pone my-business.js y los elementos que
+// agrega) y encima pone las animaciones:
+//   1. Entrada escalonada del contenido de la página.
+//   2. Dropdowns que nacen del campo con resorte + resaltado que sigue al
+//      cursor (giro, país/estado/ciudad, días festivos, sucursales).
+//   3. Selector de hora con ruedas iOS (horario y trabajadores).
+//   4. Animación al agregar/quitar producto, día festivo, trabajador e imagen.
+// Los toggles iOS son solo CSS (my-business-ios.css).
+// ============================================
+
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // Curvas de resorte para Web Animations (mismas que en el CSS)
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+    const SMOOTH = SUPPORTS_LINEAR
+        ? 'linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+    // ====================================================================
+    // Motor de resortes (compartido por todos los dropdowns)
+    // ====================================================================
+    const springs = [];
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.push(s);
+        return s;
+    };
+    function step(s, dt) {
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => step(s, dt));
+        renderers.forEach((r) => r());
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA DE LA PÁGINA
+    // ====================================================================
+    function pageEntrance() {
+        const layout = document.querySelector('.profile-layout');
+        if (!layout) return;
+        let i = 0;
+        // Encabezado, selector de sucursal, pestañas… (lo que no es un panel)
+        [...layout.children].forEach((el) => {
+            if (el.classList.contains('page-tab-panel') || el.tagName === 'SCRIPT') return;
+            if (el.querySelector('.profile-card') && !el.classList.contains('profile-card')) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        // Tarjetas: cada panel cuenta desde después del encabezado. Al cambiar
+        // de pestaña la animación se repite sola (el panel pasa de oculto a visible).
+        const base = i;
+        const groups = new Map();
+        document.querySelectorAll('.profile-card, .acct-period-bar, .acct-kpi-card').forEach((card) => {
+            const key = card.closest('.page-tab-panel') || layout;
+            const n = groups.get(key) || 0;
+            groups.set(key, n + 1);
+            card.style.setProperty('--i', base + n);
+            card.classList.add('ios-in');
+        });
+    }
+
+    // ====================================================================
+    // 2 y 3. DROPDOWNS Y SELECTOR DE HORA
+    // ====================================================================
+    const controllers = new WeakMap();
+    const ITEM_H = 36;   // alto de cada fila de las ruedas
+
+    function describe(wrapper) {
+        if (wrapper.classList.contains('custom-select-wrapper')) {
+            return {
+                menu: wrapper.querySelector(':scope > .select-dropdown'),
+                anchor: wrapper.querySelector(':scope > .form-select') || wrapper,
+                isOpen: () => wrapper.classList.contains('active'),
+                container: wrapper.querySelector('.select-options-container'),
+                itemSel: '.select-option',
+            };
+        }
+        if (wrapper.classList.contains('branch-dropdown-wrapper')) {
+            return {
+                menu: wrapper.querySelector('.branch-dropdown-menu'),
+                anchor: wrapper.querySelector('.branch-dropdown-btn') || wrapper,
+                isOpen: () => wrapper.classList.contains('active'),
+                container: wrapper.querySelector('.branch-list'),
+                itemSel: '.branch-item',
+            };
+        }
+        if (wrapper.classList.contains('time-picker-wrapper')) {
+            const menu = wrapper.querySelector('.time-dropdown');
+            return {
+                menu,
+                anchor: wrapper.querySelector('.time-input-display') || wrapper,
+                isOpen: () => menu.classList.contains('show'),
+                container: null,
+                itemSel: null,
+                wheels: true,
+            };
+        }
+        return null;
+    }
+
+    function controllerFor(wrapper) {
+        if (controllers.has(wrapper)) return controllers.get(wrapper);
+        const d = describe(wrapper);
+        if (!d || !d.menu) return null;
+        const { menu, anchor, container, itemSel } = d;
+
+        const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+        menu.classList.add('ios-dd');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+
+        const P = spring(0, 380, 28, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, radius = 18, hovered = null;
+
+        let ind = null;
+        if (container) {
+            ind = document.createElement('div');
+            ind.className = 'ios-dd-ind';
+            ind.setAttribute('aria-hidden', 'true');
+            container.prepend(ind);
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) {
+                    menu.style.clipPath = 'none';   // quieto y abierto: sin recorte para ver la sombra
+                } else {
+                    const a = anchor.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, radius, pc)}px)`;
+                }
+            }
+            if (ind) {
+                const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+                ind.style.width = `${W.v}px`;
+                ind.style.height = `${H.v}px`;
+                ind.style.opacity = clamp(V.v);
+                ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+            }
+        }
+        renderers.add(render);
+
+        function hoverTo(el) {
+            if (el === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = el;
+            if (!el || !ind) { V.t = 0; kick(); return; }
+            // renderBranchList() vacía la lista: si el indicador se fue, se vuelve a poner
+            if (!container.contains(ind)) container.prepend(ind);
+            el.classList.add('ios-hover');
+            const r = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
+            X.t = r.x; Y.t = r.y; W.t = r.w; H.t = r.h; V.t = 1;
+            if (V.v < 0.05) { X.v = r.x; Y.v = r.y; W.v = r.w; H.v = r.h; }   // aparece en su lugar
+            kick();
+        }
+
+        if (container && itemSel) {
+            container.addEventListener('pointermove', (e) => {
+                const el = e.target.closest(itemSel);
+                if (el && container.contains(el)) hoverTo(el);
+            });
+            container.addEventListener('pointerleave', () => hoverTo(null));
+            menu.addEventListener('input', () => hoverTo(null));   // al filtrar con el buscador
+        }
+
+        // --- Ruedas del selector de hora ---
+        const wheels = [];
+        function setupWheels() {
+            menu.querySelectorAll('.time-scroll').forEach((scroll) => {
+                if (scroll.classList.contains('ios-wheel')) return;
+                scroll.classList.add('ios-wheel');
+                const opts = () => [...scroll.querySelectorAll('.time-option')];
+                let timer = null, syncing = false;
+
+                function paint() {
+                    const st = scroll.scrollTop;
+                    opts().forEach((o, i) => {
+                        const dd = (i * ITEM_H - st) / ITEM_H;
+                        if (Math.abs(dd) > 4) { o.style.opacity = 0; return; }
+                        o.style.transform = `perspective(320px) rotateX(${-dd * 22}deg)`;
+                        o.style.opacity = Math.max(0.28, 1 - Math.abs(dd) * 0.3);
+                    });
+                }
+                function settle() {
+                    if (syncing) return;
+                    const list = opts();
+                    const i = clamp(Math.round(scroll.scrollTop / ITEM_H), 0, list.length - 1);
+                    const o = list[i];
+                    // Reutiliza el clic de my-business.js: marca seleccionado y actualiza la hora
+                    if (o && !o.classList.contains('selected')) {
+                        o.click();
+                        if (navigator.vibrate) navigator.vibrate(4);
+                    }
+                }
+                scroll.addEventListener('scroll', () => {
+                    paint();
+                    clearTimeout(timer);
+                    timer = setTimeout(settle, 110);
+                }, { passive: true });
+                // Tocar un valor lo centra en la rueda
+                scroll.addEventListener('click', (e) => {
+                    if (!e.isTrusted) return;
+                    const o = e.target.closest('.time-option');
+                    if (!o) return;
+                    const i = opts().indexOf(o);
+                    scroll.scrollTo({ top: i * ITEM_H, behavior: reduce.matches ? 'auto' : 'smooth' });
+                });
+                wheels.push({
+                    sync() {
+                        syncing = true;
+                        const list = opts();
+                        const i = Math.max(0, list.findIndex((o) => o.classList.contains('selected')));
+                        scroll.scrollTop = i * ITEM_H;
+                        paint();
+                        requestAnimationFrame(() => { syncing = false; });
+                    },
+                });
+            });
+        }
+
+        function sync() {
+            const nowOpen = d.isOpen();
+            if (nowOpen === open) return;
+            open = nowOpen;
+            if (open) {
+                closeOthers(wrapper);
+                radius = 18;
+                anchor.classList.add('ios-dd-anchor-open');
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                if (d.wheels) {
+                    setupWheels();
+                    requestAnimationFrame(() => wheels.forEach((w) => w.sync()));
+                }
+            } else {
+                anchor.classList.remove('ios-dd-anchor-open');
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        const ctrl = { sync };
+        controllers.set(wrapper, ctrl);
+        return ctrl;
+    }
+
+    // Abrir un dropdown cierra los demás (algunos clics de my-business.js
+    // detienen la propagación y el otro menú se quedaba abierto)
+    function closeOthers(current) {
+        document.querySelectorAll('.custom-select-wrapper.active, .branch-dropdown-wrapper.active').forEach((w) => {
+            if (w === current) return;
+            w.classList.remove('active');
+            const chev = w.querySelector('#branchChevron');
+            if (chev) chev.style.transform = 'rotate(0deg)';
+        });
+        document.querySelectorAll('.time-dropdown.show').forEach((m) => {
+            const w = m.closest('.time-picker-wrapper');
+            if (w === current) return;
+            m.classList.remove('show');
+            w?.querySelector('.time-input-display')?.classList.remove('active');
+        });
+    }
+
+    function wrapperOf(el) {
+        if (el.matches('.custom-select-wrapper, .branch-dropdown-wrapper')) return el;
+        if (el.matches('.time-dropdown')) return el.closest('.time-picker-wrapper');
+        return null;
+    }
+
+    // Prepara los dropdowns que ya existen para que el primer cierre también se anime
+    function enhanceExisting(root = document) {
+        root.querySelectorAll('.custom-select-wrapper, .branch-dropdown-wrapper, .time-picker-wrapper')
+            .forEach((w) => controllerFor(w));
+    }
+
+    // ====================================================================
+    // 4. ELEMENTOS QUE SE AGREGAN / QUITAN
+    // ====================================================================
+    let userAddAt = 0;
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#btnAddService, #btnAddWorker, #btnAddHoliday')) userAddAt = Date.now();
+    }, true);
+
+    function animateIn(el) {
+        if (reduce.matches) return;
+        const cs = getComputedStyle(el);
+        const h = el.offsetHeight;
+        el.style.overflow = 'hidden';
+        const grow = el.animate([
+            { height: '0px', paddingTop: '0px', paddingBottom: '0px', transform: 'translateY(-10px) scale(0.96)' },
+            { height: `${h}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, transform: 'none' },
+        ], { duration: 700, easing: SPRING });
+        el.animate([
+            { opacity: 0, filter: 'blur(6px)' },
+            { opacity: 1, filter: 'blur(0px)' },
+        ], { duration: 420, easing: 'cubic-bezier(0.2, 0, 0, 1)' });
+        grow.onfinish = grow.oncancel = () => { el.style.overflow = ''; };
+        el.classList.add('ios-added');
+        setTimeout(() => el.classList.remove('ios-added'), 1600);
+        // Si quedó fuera de la vista, se desplaza suavemente hasta él
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+    }
+
+    function animateOut(el) {
+        return new Promise((resolve) => {
+            if (!el || reduce.matches) { resolve(); return; }
+            const cs = getComputedStyle(el);
+            el.style.overflow = 'hidden';
+            el.style.pointerEvents = 'none';
+            const a = el.animate([
+                { height: `${el.offsetHeight}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1, transform: 'none', filter: 'blur(0px)' },
+                { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0, transform: 'scale(0.95)', filter: 'blur(4px)' },
+            ], { duration: 320, easing: SMOOTH, fill: 'forwards' });
+            a.onfinish = () => resolve();
+        });
+    }
+
+    function popThumb(el) {
+        if (reduce.matches) return;
+        el.animate([
+            { transform: 'scale(0.4)', opacity: 0 },
+            { transform: 'scale(1)', opacity: 1 },
+        ], { duration: 650, easing: SPRING });
+    }
+
+    // Los horarios de trabajadores usan el mismo selector de hora iOS
+    function enhanceWorker(item) {
+        if (typeof window.createTimePicker !== 'function') return;
+        item.querySelectorAll('input.worker-start, input.worker-end').forEach((inp) => {
+            if (inp.dataset.iosPicker) return;
+            inp.dataset.iosPicker = '1';
+            window.createTimePicker(inp, inp.value || (inp.classList.contains('worker-start') ? '09:00' : '18:00'));
+        });
+        enhanceExisting(item);
+    }
+
+    // Quitar producto / trabajador (onclick="removeItem(...)") con animación
+    // Nota: la versión original buscaba closest('[class$="-item"]'), que encuentra
+    // primero al propio botón (.btn-remove-item) y solo quitaba el botón.
+    if (typeof window.removeItem === 'function') {
+        window.removeItem = function (btn, listId, hintId) {
+            const item = btn.closest('.service-item, .worker-item');
+            if (!item) return;
+            animateOut(item).then(() => {
+                item.remove();
+                const list = document.getElementById(listId);
+                const hint = document.getElementById(hintId);
+                if (hint && list && list.children.length === 0) hint.style.display = 'flex';
+                if (typeof window.refreshInventoryTable === 'function') window.refreshInventoryTable();
+            });
+        };
+    }
+
+    // Quitar día festivo con animación
+    if (typeof window.removeHoliday === 'function') {
+        window.removeHoliday = function (id) {
+            const el = document.querySelector(`[data-id="${id}"]`);
+            if (!el) return;
+            animateOut(el).then(() => el.remove());
+        };
+    }
+
+    // Quitar imagen: primero se encoge y luego sigue el flujo normal de my-business.js
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-remove-thumb');
+        if (!btn || btn.dataset.iosGo || reduce.matches) return;
+        e.stopPropagation();
+        e.preventDefault();
+        const thumb = btn.closest('.service-img-thumb');
+        const a = thumb.animate([
+            { transform: 'scale(1)', opacity: 1 },
+            { transform: 'scale(0.5)', opacity: 0 },
+        ], { duration: 220, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' });
+        a.onfinish = () => { btn.dataset.iosGo = '1'; btn.click(); };
+    }, true);
+
+    // ====================================================================
+    // Observadores
+    // ====================================================================
+    const ITEM_CLASSES = ['service-item', 'worker-item', 'holiday-item'];
+
+    const classObserver = new MutationObserver((records) => {
+        const seen = new Set();
+        records.forEach((r) => {
+            const w = wrapperOf(r.target);
+            if (w && !seen.has(w)) { seen.add(w); controllerFor(w)?.sync(); }
+        });
+    });
+
+    const domObserver = new MutationObserver((records) => {
+        const now = Date.now();
+        records.forEach((r) => {
+            r.addedNodes.forEach((node) => {
+                if (node.nodeType !== 1) return;
+                const isItem = ITEM_CLASSES.some((c) => node.classList.contains(c));
+                if (isItem) {
+                    if (node.classList.contains('worker-item')) enhanceWorker(node);
+                    else enhanceExisting(node);
+                    // Solo se anima lo que agregó el usuario (no las recargas automáticas)
+                    if (now - userAddAt < 1000) animateIn(node);
+                    return;
+                }
+                if (node.classList.contains('service-img-thumb')) {
+                    const item = node.closest('.service-item');
+                    if (item && item.dataset.iosSeen) popThumb(node);
+                    return;
+                }
+                if (node.matches('.custom-select-wrapper, .time-picker-wrapper')) controllerFor(node);
+                else if (node.querySelector) enhanceExisting(node);
+            });
+        });
+        document.querySelectorAll('.service-item:not([data-ios-seen])').forEach((el) => { el.dataset.iosSeen = '1'; });
+    });
+
+    function init() {
+        pageEntrance();
+        enhanceExisting();
+        document.querySelectorAll('.worker-item').forEach(enhanceWorker);
+        document.querySelectorAll('.service-item').forEach((el) => { el.dataset.iosSeen = '1'; });
+        classObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        domObserver.observe(document.body, { subtree: true, childList: true });
+        window.addEventListener('resize', () => renderers.forEach((r) => r()));
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
