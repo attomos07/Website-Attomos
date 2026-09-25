@@ -2793,11 +2793,32 @@ function setText(id, val) {
             container.prepend(ind);
         }
 
+        // Tarjeta que contiene el menú: se sube de capa mientras está abierto.
+        // .profile-card:hover usa transform y eso crea un contexto de apilamiento;
+        // sin esto el menú quedaba debajo de la tarjeta vecina (p. ej. "Estado").
+        const hosts = [wrapper.closest('.profile-card'), wrapper.closest('.schedule-day, .worker-item, .service-item')].filter(Boolean);
+        const setHosts = (on) => hosts.forEach((h) => h.classList.toggle('ios-dd-host', on));
+
+        // Si el menú se sale de la tarjeta por la derecha, se alinea al borde derecho del campo
+        function fitMenu() {
+            if (!d.wheels) return;
+            menu.style.left = ''; menu.style.right = '';
+            if (getComputedStyle(menu).transform !== 'none') return;   // móvil: ya va centrado
+            const card = wrapper.closest('.profile-card') || document.documentElement;
+            const m = menu.getBoundingClientRect(), k = card.getBoundingClientRect();
+            const limit = Math.min(k.right, window.innerWidth) - 8;
+            if (m.right > limit) {
+                menu.style.left = 'auto'; menu.style.right = '0';
+                if (menu.getBoundingClientRect().left < k.left + 8) { menu.style.left = ''; menu.style.right = ''; }
+            }
+        }
+
         function render() {
             const p = P.v, pc = clamp(p);
             if (p < 0.002 && P.t === 0) {
                 menu.style.visibility = 'hidden';
                 menu.style.clipPath = CLOSED_CLIP;
+                setHosts(false);
             } else {
                 menu.style.visibility = 'visible';
                 menu.style.setProperty('--ios-p', pc.toFixed(3));
@@ -2906,6 +2927,8 @@ function setText(id, val) {
                 closeOthers(wrapper);
                 radius = 18;
                 anchor.classList.add('ios-dd-anchor-open');
+                setHosts(true);
+                fitMenu();
                 V.v = V.t = 0; hovered = null;
                 P.t = 1;
                 if (d.wheels) {
@@ -2953,6 +2976,325 @@ function setText(id, val) {
     function enhanceExisting(root = document) {
         root.querySelectorAll('.custom-select-wrapper, .branch-dropdown-wrapper, .time-picker-wrapper')
             .forEach((w) => controllerFor(w));
+        enhanceSegments(root);
+        enhanceDates(root);
+    }
+
+
+    // ====================================================================
+    // 5. BOTONES DE SELECCIÓN
+    // ====================================================================
+    const segments = new WeakSet();
+    function segmentFor(toggle) {
+        if (segments.has(toggle)) return;
+        segments.add(toggle);
+        toggle.classList.add('ios-seg');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        toggle.prepend(thumb);
+
+        const X = spring(0, 420, 30), W = spring(0, 420, 30), S = spring(1, 600, 30, 0.001);
+        let ready = false;
+
+        function place(snap) {
+            const a = toggle.querySelector(':scope > button.active');
+            if (!a || !toggle.offsetWidth) { ready = false; return; }
+            X.t = a.offsetLeft; W.t = a.offsetWidth;
+            if (snap || !ready) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+            ready = true;
+            render();
+            kick();
+        }
+        function render() {
+            if (!ready) { thumb.style.opacity = 0; return; }
+            // Se estira un poco mientras viaja, como en iOS
+            const st = Math.min(Math.abs(X.vel) / 3000, 0.1);
+            thumb.style.opacity = 1;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${S.v}, ${S.v * (1 - st)})`;
+        }
+        renderers.add(render);
+
+        // Los clics de my-business.js ya marcaron .active cuando llega aquí
+        toggle.addEventListener('click', () => place(false));
+        toggle.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('button.active')) { S.t = 0.94; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => toggle.addEventListener(ev, release));
+        // Se muestra cuando el bloque deja de estar oculto o cambia de tamaño
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(toggle);
+        place(true);
+    }
+
+    // Horario: modo compacto cuando la lista es angosta (tarjeta en dos columnas)
+    function watchSchedule() {
+        const list = document.getElementById('scheduleList');
+        if (!list || !window.ResizeObserver) return;
+        new ResizeObserver(() => {
+            list.classList.toggle('is-compact', list.clientWidth < 640);
+        }).observe(list);
+    }
+
+    function enhanceSegments(root = document) {
+        root.querySelectorAll('.price-type-toggle, .promo-period-type-toggle').forEach(segmentFor);
+    }
+
+    // Chips de días: rebote al activar o desactivar
+    document.addEventListener('click', (e) => {
+        const chip = e.target.closest('.day-chip');
+        if (!chip || reduce.matches || !chip.animate) return;
+        const on = chip.classList.contains('active');
+        chip.animate(
+            [{ transform: `scale(${on ? 0.82 : 0.88})` }, { transform: 'scale(1)' }],
+            { duration: 550, easing: SPRING }
+        );
+    });
+
+
+    // ====================================================================
+    // 6. SELECTOR DE FECHA (promoción: Desde / Hasta)
+    // El <input type="date"> original se queda oculto dentro y guarda el
+    // valor AAAA-MM-DD, así que la lógica de guardado no cambia.
+    // ====================================================================
+    const LOCALE = document.documentElement.lang || 'es';
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const toISO = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const fromISO = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+        return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    };
+    const fmtValue = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
+    const fmtTitle = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' });
+    const WEEK = Array.from({ length: 7 }, (_, i) =>
+        new Intl.DateTimeFormat(LOCALE, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)));   // 1 ene 2024 = lunes
+    const CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    const CHEV = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+    const datePickers = new Set();
+
+    function datePickerFor(input) {
+        if (input.dataset.iosDate) return;
+        input.dataset.iosDate = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'ios-date';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.innerHTML = `
+            <button type="button" class="ios-date-trigger" aria-haspopup="dialog">
+                ${CAL_ICON}<span class="ios-date-value"></span>
+            </button>
+            <div class="ios-date-pop" role="dialog">
+                <div class="ios-date-head">
+                    <span class="ios-date-title"></span>
+                    <button type="button" class="ios-date-nav" data-step="-1" aria-label="Mes anterior">${CHEV('M15 18l-6-6 6-6')}</button>
+                    <button type="button" class="ios-date-nav" data-step="1" aria-label="Mes siguiente">${CHEV('M9 18l6-6-6-6')}</button>
+                </div>
+                <div class="ios-date-week">${WEEK.map((w) => `<span>${w}</span>`).join('')}</div>
+                <div class="ios-date-grid"><span class="ios-date-sel" aria-hidden="true"></span></div>
+                <div class="ios-date-foot">
+                    <button type="button" class="ios-date-clear">Borrar</button>
+                    <button type="button" class="ios-date-today">Hoy</button>
+                </div>
+            </div>`;
+        wrap.appendChild(input);
+        input.classList.add('ios-date-native');
+        input.tabIndex = -1;
+
+        const trigger = wrap.querySelector('.ios-date-trigger');
+        const valueEl = wrap.querySelector('.ios-date-value');
+        const pop = wrap.querySelector('.ios-date-pop');
+        const title = wrap.querySelector('.ios-date-title');
+        const grid = wrap.querySelector('.ios-date-grid');
+        const sel = wrap.querySelector('.ios-date-sel');
+        const placeholder = input.classList.contains('promo-date-end') ? 'Fecha final' : 'Fecha inicial';
+
+        // Pareja Desde/Hasta del mismo bloque, para marcar el rango y el mínimo
+        const scope = input.closest('.promo-range-panel') || wrap.parentNode;
+        const partner = () => scope.querySelector(input.classList.contains('promo-date-start') ? '.promo-date-end' : '.promo-date-start');
+        const isEnd = input.classList.contains('promo-date-end');
+
+        const P = spring(0, 380, 28, 0.001);
+        const SX = spring(0, 520, 34), SY = spring(0, 520, 34), SS = spring(0, 600, 30, 0.001);
+        let open = false, view = new Date(), hostEls = [];
+
+        function paintValue() {
+            const d = fromISO(input.value);
+            valueEl.textContent = d ? fmtValue.format(d) : placeholder;
+            trigger.classList.toggle('is-empty', !d);
+        }
+
+        function buildMonth(dir) {
+            const tt = fmtTitle.format(view);
+            title.textContent = tt.charAt(0).toUpperCase() + tt.slice(1);
+            grid.querySelectorAll('.ios-date-day').forEach((b) => b.remove());
+            const first = new Date(view.getFullYear(), view.getMonth(), 1);
+            const lead = (first.getDay() + 6) % 7;   // semana inicia en lunes
+            const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+            const todayISO = toISO(new Date());
+            const selISO = input.value;
+            const other = partner()?.value || '';
+            const lo = isEnd ? other : selISO, hi = isEnd ? selISO : other;
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < lead; i++) {
+                const s = document.createElement('span');
+                s.className = 'ios-date-day is-pad';
+                frag.appendChild(s);
+            }
+            for (let d = 1; d <= days; d++) {
+                const iso = toISO(new Date(view.getFullYear(), view.getMonth(), d));
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'ios-date-day';
+                b.textContent = d;
+                b.dataset.iso = iso;
+                if (iso === todayISO) b.classList.add('is-today');
+                if (iso === selISO) b.classList.add('is-selected');
+                if (lo && hi && iso > lo && iso < hi) b.classList.add('in-range');
+                if (other && iso === other) b.classList.add('is-edge');
+                if (isEnd && other && iso < other) b.disabled = true;
+                frag.appendChild(b);
+            }
+            grid.appendChild(frag);
+            placeSel(true);
+            if (dir && !reduce.matches && grid.animate) {
+                grid.animate(
+                    [{ transform: `translateX(${dir * 28}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+                    { duration: 480, easing: SPRING }
+                );
+            }
+        }
+
+        function placeSel(snap) {
+            const b = grid.querySelector('.ios-date-day.is-selected');
+            if (!b) { SS.t = 0; if (snap) SS.v = 0; kick(); return; }
+            SX.t = b.offsetLeft; SY.t = b.offsetTop; SS.t = 1;
+            if (snap || SS.v < 0.05) { SX.v = SX.t; SY.v = SY.t; SX.vel = SY.vel = 0; }
+            if (snap && SS.v < 0.05) SS.v = 0.4;   // pequeño "pop" al aparecer
+            kick();
+        }
+
+        function render() {
+            if (!wrap.isConnected) { renderers.delete(render); datePickers.delete(api); return; }
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                pop.style.visibility = 'hidden';
+                pop.style.clipPath = 'inset(50% 50% 50% 50%)';
+                hostEls.forEach((h) => h.classList.remove('ios-dd-host'));
+            } else {
+                pop.style.visibility = 'visible';
+                pop.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) pop.style.clipPath = 'none';
+                else {
+                    const a = trigger.getBoundingClientRect(), m = pop.getBoundingClientRect();
+                    pop.style.clipPath = `inset(${lerp(a.top - m.top, 0, p)}px ${lerp(m.right - a.right, 0, p)}px ${lerp(m.bottom - a.bottom, 0, p)}px ${lerp(a.left - m.left, 0, p)}px round ${lerp(a.height / 2, 22, pc)}px)`;
+                }
+            }
+            sel.style.opacity = clamp(SS.v);
+            sel.style.transform = `translate(${SX.v}px, ${SY.v}px) scale(${Math.max(0, SS.v)})`;
+        }
+        renderers.add(render);
+
+        function fitPop() {
+            pop.style.left = ''; pop.style.right = '';
+            const card = wrap.closest('.service-item, .profile-card') || document.documentElement;
+            const m = pop.getBoundingClientRect(), k = card.getBoundingClientRect();
+            if (m.right > Math.min(k.right, window.innerWidth) - 8) { pop.style.left = 'auto'; pop.style.right = '0'; }
+            if (pop.getBoundingClientRect().left < 8) { pop.style.left = ''; pop.style.right = ''; }
+        }
+
+        function setOpen(v) {
+            if (v === open) return;
+            open = v;
+            wrap.classList.toggle('is-open', v);
+            trigger.setAttribute('aria-expanded', v);
+            if (v) {
+                datePickers.forEach((o) => o !== api && o.close());
+                closeOthers(null);
+                hostEls = [wrap.closest('.profile-card'), wrap.closest('.service-item')].filter(Boolean);
+                hostEls.forEach((h) => h.classList.add('ios-dd-host'));
+                const d = fromISO(input.value) || fromISO(partner()?.value) || new Date();
+                view = new Date(d.getFullYear(), d.getMonth(), 1);
+                buildMonth(0);
+                fitPop();
+                P.t = 1;
+            } else {
+                P.t = 0;
+            }
+            render();
+            kick();
+        }
+
+        function setValue(iso) {
+            input.value = iso;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            paintValue();
+            // Si "Desde" queda después de "Hasta", "Hasta" se mueve a la misma fecha
+            const o = partner();
+            if (o && iso && o.value) {
+                if ((!isEnd && o.value < iso) || (isEnd && o.value > iso)) {
+                    o.value = iso;
+                    o.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            datePickers.forEach((x) => x.refresh());
+        }
+
+        function step(dir) {
+            view = new Date(view.getFullYear(), view.getMonth() + dir, 1);
+            buildMonth(dir);
+        }
+
+        trigger.addEventListener('click', () => setOpen(!open));
+        wrap.querySelectorAll('.ios-date-nav').forEach((b) => b.addEventListener('click', () => step(+b.dataset.step)));
+        grid.addEventListener('click', (e) => {
+            const b = e.target.closest('.ios-date-day[data-iso]');
+            if (!b || b.disabled) return;
+            grid.querySelectorAll('.is-selected').forEach((x) => x.classList.remove('is-selected'));
+            b.classList.add('is-selected');
+            placeSel(false);
+            setValue(b.dataset.iso);
+            setTimeout(() => setOpen(false), 260);   // deja ver el cambio antes de cerrar
+        });
+        wrap.querySelector('.ios-date-today').addEventListener('click', () => {
+            const t = new Date();
+            if (isEnd && partner()?.value && toISO(t) < partner().value) return;
+            view = new Date(t.getFullYear(), t.getMonth(), 1);
+            setValue(toISO(t));
+            buildMonth(0);
+            setTimeout(() => setOpen(false), 260);
+        });
+        wrap.querySelector('.ios-date-clear').addEventListener('click', () => { setValue(''); setOpen(false); });
+
+        // Deslizar a los lados cambia de mes
+        let sx = null;
+        grid.addEventListener('pointerdown', (e) => { sx = e.clientX; });
+        grid.addEventListener('pointerup', (e) => {
+            if (sx === null) return;
+            const dx = e.clientX - sx; sx = null;
+            if (Math.abs(dx) > 45) step(dx < 0 ? 1 : -1);
+        });
+
+        const api = {
+            close: () => setOpen(false),
+            refresh: () => { paintValue(); if (open) buildMonth(0); },
+            contains: (n) => wrap.contains(n),
+        };
+        datePickers.add(api);
+        paintValue();
+        render();
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        datePickers.forEach((p) => { if (!p.contains(e.target)) p.close(); });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') datePickers.forEach((p) => p.close());
+    });
+
+    function enhanceDates(root = document) {
+        root.querySelectorAll('input.promo-date-start, input.promo-date-end').forEach(datePickerFor);
     }
 
     // ====================================================================
@@ -3097,6 +3439,7 @@ function setText(id, val) {
     function init() {
         pageEntrance();
         enhanceExisting();
+        watchSchedule();
         document.querySelectorAll('.worker-item').forEach(enhanceWorker);
         document.querySelectorAll('.service-item').forEach((el) => { el.dataset.iosSeen = '1'; });
         classObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });

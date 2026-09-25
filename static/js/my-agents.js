@@ -1484,3 +1484,324 @@ function _obAddWorkerRow(data) {
     list.appendChild(item);
     _obRenumberWorkers();
 }
+
+// ============================================================================
+// CAPA iOS 27 — dropdown de acciones y modales
+// No cambia la lógica de arriba: observa la clase .show del dropdown y
+// envuelve closeConfirmModal / closeOnboardingModal para animar la salida.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. DROPDOWN DE ACCIONES
+    // Nace del botón de 3 puntos, resaltado que sigue al cursor con el color
+    // de cada acción, y se abre hacia arriba si no cabe abajo.
+    // ====================================================================
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    const menus = new WeakMap();
+
+    function menuFor(dd) {
+        if (menus.has(dd)) return menus.get(dd);
+        const trigger = dd.parentElement.querySelector('.actions-trigger');
+        if (!trigger) return null;
+        dd.classList.add('ios-menu');
+        dd.style.visibility = 'hidden';
+        dd.style.clipPath = CLOSED_CLIP;
+
+        const ind = document.createElement('span');
+        ind.className = 'ios-menu-ind';
+        ind.setAttribute('aria-hidden', 'true');
+        dd.prepend(ind);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        function render() {
+            if (!dd.isConnected) {
+                renderers.delete(render);
+                [P, X, Y, W, H, V].forEach((s) => springs.delete(s));
+                return;
+            }
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                dd.style.visibility = 'hidden';
+                dd.style.clipPath = CLOSED_CLIP;
+                if (trigger.classList.contains('ios-open')) trigger.classList.remove('ios-open');
+            } else {
+                dd.style.visibility = 'visible';
+                dd.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) dd.style.clipPath = 'none';
+                else {
+                    const a = trigger.getBoundingClientRect(), c = dd.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    dd.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 20, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        const TONES = ['view', 'edit', 'qr', 'redeploy', 'pause', 'delete'];
+        function hoverTo(el) {
+            if (el === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = el;
+            if (!el) { V.t = 0; kick(); return; }
+            el.classList.add('ios-hover');
+            ind.dataset.tone = TONES.find((c) => el.classList.contains(c)) || '';
+            X.t = el.offsetLeft; Y.t = el.offsetTop; W.t = el.offsetWidth; H.t = el.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+        dd.addEventListener('pointermove', (e) => {
+            const el = e.target.closest('.dropdown-item');
+            if (el && dd.contains(el)) hoverTo(el);
+        });
+        dd.addEventListener('pointerleave', () => hoverTo(null));
+        // Al elegir una acción el menú se cierra (su onclick ya se ejecutó)
+        dd.addEventListener('click', (e) => {
+            if (e.target.closest('.dropdown-item')) dd.classList.remove('show');
+        });
+
+        // Si abajo no cabe, se abre hacia arriba
+        function placeMenu() {
+            if (dd.classList.contains('ios-up')) dd.classList.remove('ios-up');
+            const scroller = dd.closest('.content-wrapper');
+            const bottomLimit = Math.min(window.innerHeight, scroller ? scroller.getBoundingClientRect().bottom : Infinity) - 12;
+            const r = dd.getBoundingClientRect(), a = trigger.getBoundingClientRect();
+            if (r.bottom > bottomLimit && a.top - r.height - 10 > 8) dd.classList.add('ios-up');
+        }
+
+        function sync() {
+            const nowOpen = dd.classList.contains('show');
+            if (nowOpen === open) return;
+            open = nowOpen;
+            if (open) {
+                placeMenu();
+                trigger.classList.add('ios-open');
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                if (!reduce.matches && dd.animate) {
+                    dd.querySelectorAll('.dropdown-item, .dropdown-divider').forEach((it, i) => {
+                        it.animate(
+                            [{ opacity: 0, transform: `translateY(${dd.classList.contains('ios-up') ? 8 : -8}px)` }, { opacity: 1, transform: 'none' }],
+                            { duration: 420, delay: 40 + i * 22, easing: SPRING, fill: 'backwards' }
+                        );
+                    });
+                }
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        const api = { sync };
+        menus.set(dd, api);
+        return api;
+    }
+
+    // Al renderizar la tabla se preparan los menús nuevos (cerrados)
+    function prepareMenus(root = document) {
+        root.querySelectorAll('.actions-dropdown').forEach(menuFor);
+    }
+
+    new MutationObserver((records) => {
+        records.forEach((r) => {
+            if (r.type === 'attributes') {
+                const el = r.target;
+                if (el.classList && el.classList.contains('actions-dropdown')) menuFor(el)?.sync();
+            } else {
+                r.addedNodes.forEach((n) => {
+                    if (n.nodeType !== 1) return;
+                    if (n.querySelector) prepareMenus(n);
+                });
+            }
+        });
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+
+    window.addEventListener('resize', () => renderers.forEach((r) => r()));
+    document.addEventListener('scroll', () => renderers.forEach((r) => r()), { passive: true, capture: true });
+
+    // ====================================================================
+    // 2. MODALES
+    // Entrada: el fondo se difumina y la tarjeta sube con resorte.
+    // Salida: se anima antes de que la lógica original lo oculte.
+    // ====================================================================
+    function animateClose(modal, done) {
+        if (!modal || !modal.classList.contains('active') || modal.classList.contains('ios-closing') || reduce.matches) {
+            done();
+            return;
+        }
+        modal.classList.add('ios-closing');
+        setTimeout(() => {
+            done();
+            modal.classList.remove('ios-closing');
+        }, 230);
+    }
+
+    const origCloseConfirm = window.closeConfirmModal;
+    if (typeof origCloseConfirm === 'function') {
+        window.closeConfirmModal = function () {
+            animateClose(document.getElementById('confirmModal'), () => origCloseConfirm.apply(this, arguments));
+        };
+    }
+
+    const origCloseOnboarding = window.closeOnboardingModal;
+    if (typeof origCloseOnboarding === 'function') {
+        window.closeOnboardingModal = function () {
+            animateClose(document.getElementById('onboardingModal'), () => origCloseOnboarding.apply(this, arguments));
+        };
+    }
+
+    // Esc cierra el modal de confirmación
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const c = document.querySelector('.confirm-modal.active');
+        if (c) { window.closeConfirmModal(); return; }
+        document.querySelectorAll('.actions-dropdown.show').forEach((d) => d.classList.remove('show'));
+    });
+
+
+    // ====================================================================
+    // 3. ENTRADA DE LOS ELEMENTOS
+    // Encabezado, tarjetas y tabla suben escalonados con desenfoque; las
+    // filas de agentes entran una tras otra y los números cuentan hacia arriba.
+    // ====================================================================
+    function pageEntrance() {
+        const parts = [
+            '.page-header .header-left', '.page-header .header-right',
+            '.agents-stats > .stat-card', '#agentsTableContainer', '#emptyState',
+        ];
+        let i = 0;
+        parts.forEach((sel) => document.querySelectorAll(sel).forEach((el) => {
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        }));
+        // Al terminar se quita la clase para que el hover de las tarjetas vuelva a usar transform
+        document.addEventListener('animationend', (e) => {
+            if (e.target.classList && e.target.classList.contains('ios-in') && e.animationName === 'iosRiseMove') {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // Filas: en la primera carga entran todas; en las recargas automáticas
+    // (cada 30 s) solo se animan los agentes nuevos.
+    const seenAgents = new Set();
+    let firstRows = true;
+    function animateRows() {
+        const rows = [...document.querySelectorAll('#agentsTableBody tr[data-agent-id]')];
+        if (!rows.length) return;
+        let n = 0;
+        rows.forEach((tr) => {
+            const id = tr.dataset.agentId;
+            if (!seenAgents.has(id)) {
+                if (firstRows || seenAgents.size) {
+                    tr.style.setProperty('--r', n++);
+                    tr.classList.add('ios-row');
+                }
+                seenAgents.add(id);
+            }
+        });
+        firstRows = false;
+    }
+
+    // Números de las tarjetas: cuentan del valor anterior al nuevo
+    const countingNow = new WeakSet();
+    function countTo(el, from, to) {
+        if (from === to || reduce.matches) return;
+        countingNow.add(el);
+        const start = performance.now(), dur = 700;
+        (function frame(now) {
+            const t = clamp((now - start) / dur);
+            const e = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.round(from + (to - from) * e);
+            if (t < 1) requestAnimationFrame(frame);
+            else {
+                el.textContent = to;
+                // El observer recibe el último cambio después; se suelta en el siguiente frame
+                requestAnimationFrame(() => countingNow.delete(el));
+            }
+        })(start);
+    }
+    function watchStats() {
+        document.querySelectorAll('.stat-value').forEach((el) => {
+            let shown = parseInt(el.textContent, 10) || 0;
+            new MutationObserver(() => {
+                if (countingNow.has(el)) return;
+                const next = parseInt(el.textContent, 10);
+                if (isNaN(next) || next === shown) return;
+                const prev = shown;
+                shown = next;
+                el.textContent = prev;
+                countTo(el, prev, next);
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    const tbody = document.getElementById('agentsTableBody');
+    if (tbody) new MutationObserver(animateRows).observe(tbody, { childList: true });
+
+    function initEntrance() {
+        pageEntrance();
+        watchStats();
+        animateRows();
+    }
+
+    function initIOS() {
+        prepareMenus();
+        initEntrance();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIOS);
+    else initIOS();
+})();

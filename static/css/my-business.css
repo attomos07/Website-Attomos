@@ -2407,6 +2407,13 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12) !important;
 }
 
+/* La tarjeta con un menú abierto va encima de las demás */
+.profile-card.ios-dd-host,
+.ios-dd-host {
+  position: relative;
+  z-index: 30;
+}
+
 /* ============================================
    3. SELECTOR DE HORA — ruedas estilo iOS
    ============================================ */
@@ -2484,6 +2491,53 @@ textarea:focus {
 .time-display-value {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+/* Fila de horario en una sola línea (día | toggle | horas).
+   Con espacio de sobra se ve igual que el diseño original. Cuando la
+   tarjeta es angosta, my-business.js pone .is-compact en la lista y la
+   fila se aprieta (sin flecha en las horas) para que nada se salga. */
+.schedule-day .day-times {
+  min-width: 0;
+}
+
+.schedule-day .day-times .time-picker-wrapper {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.schedule-day .time-display-value {
+  overflow: hidden;
+  min-width: 0;
+}
+
+@media (min-width: 641px) {
+  .schedule-list.is-compact .schedule-day {
+    grid-template-columns: 78px max-content minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .schedule-list.is-compact .day-name {
+    font-size: 14px;
+  }
+
+  .schedule-list.is-compact .day-times {
+    gap: 6px;
+  }
+
+  .schedule-list.is-compact .time-input-display {
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .schedule-list.is-compact .time-input-display > i {
+    display: none;
+  }
+
+  .schedule-list.is-compact .time-display-value {
+    font-size: 0.85rem;
+  }
 }
 
 /* Horario de trabajadores: el selector ocupa el lugar del input nativo */
@@ -2625,6 +2679,360 @@ input:checked + .toggle-slider:before {
 
   .toggle-switch:active input:checked + .toggle-slider:before {
     transform: translateX(13px);
+  }
+}
+
+/* ============================================
+   6. BOTONES DE SELECCIÓN
+   Segmentados (Normal/Promoción, Días/Rango) con cápsula que se desliza
+   con resorte, y chips de días que rebotan al tocarlos.
+   ============================================ */
+
+.ios-seg {
+  position: relative;
+  isolation: isolate;
+  gap: 0;
+  padding: 2px;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(118, 118, 128, 0.12);
+  overflow: visible !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.promo-period-type-toggle.ios-seg {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: #06b6d4;
+  box-shadow: 0 3px 8px rgba(6, 182, 212, 0.3), 0 1px 1px rgba(15, 23, 42, 0.04);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.promo-period-type-toggle .ios-seg-thumb {
+  background: #f59e0b;
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+.ios-seg > button {
+  position: relative;
+  z-index: 1;
+  border-radius: 999px;
+  background: transparent !important;
+  transition: color 0.25s ease, opacity 0.2s ease;
+}
+
+.ios-seg > button.active {
+  color: #ffffff;
+}
+
+.ios-seg > button:not(.active):active {
+  opacity: 0.55;
+}
+
+/* Chips de días */
+.day-chip {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.4s var(--ios-spring);
+}
+
+.day-chip:active {
+  transform: scale(0.9);
+  transition-duration: 0.12s;
+}
+
+.day-chip.active {
+  box-shadow: 0 3px 10px rgba(6, 182, 212, 0.28);
+}
+
+.promo-days-panel .day-chip.active {
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.28);
+}
+
+/* ============================================
+   7. SELECTOR DE FECHA (Desde / Hasta de la promoción)
+   ============================================ */
+
+.ios-date {
+  --dp-accent: #06b6d4;
+  --dp-accent-soft: rgba(6, 182, 212, 0.14);
+  --dp-border: #e5e7eb;
+  --dp-text: #0f172a;
+  position: relative;
+  display: inline-block;
+}
+
+.promo-range-panel .ios-date {
+  --dp-accent: #f59e0b;
+  --dp-accent-soft: rgba(245, 158, 11, 0.16);
+  --dp-border: #fde68a;
+  --dp-text: #78350f;
+}
+
+.ios-date-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.ios-date-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+  padding: 0.5rem 0.95rem 0.5rem 0.8rem;
+  border: 1.5px solid var(--dp-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--dp-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-date-trigger svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--dp-accent);
+}
+
+.ios-date-trigger.is-empty {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.ios-date-trigger:hover {
+  border-color: var(--dp-accent);
+}
+
+.ios-date-trigger:active {
+  transform: scale(0.96);
+}
+
+.ios-date.is-open .ios-date-trigger {
+  border-color: var(--dp-accent);
+  box-shadow: 0 0 0 4px var(--dp-accent-soft);
+}
+
+.ios-date-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  width: 292px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  visibility: hidden;
+  clip-path: inset(50% 50% 50% 50%);
+}
+
+.ios-date-pop > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-date-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 2px 8px 8px;
+}
+
+.ios-date-title {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ios-date-nav {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dp-accent);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-date-nav svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ios-date-nav:hover {
+  background: var(--dp-accent-soft);
+}
+
+.ios-date-nav:active {
+  transform: scale(0.88);
+}
+
+.ios-date-week,
+.ios-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.ios-date-week span {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.ios-date-grid {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.ios-date-sel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--dp-accent);
+  box-shadow: 0 4px 12px var(--dp-accent-soft);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+
+.ios-date-day {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-date-day.is-pad {
+  cursor: default;
+}
+
+.ios-date-day:not(.is-pad):not(:disabled):hover {
+  background: var(--dp-accent-soft);
+}
+
+.ios-date-day:not(.is-pad):not(:disabled):active {
+  transform: scale(0.86);
+}
+
+.ios-date-day.is-today {
+  color: var(--dp-accent);
+  font-weight: 700;
+}
+
+.ios-date-day.in-range {
+  background: var(--dp-accent-soft);
+}
+
+.ios-date-day.is-edge {
+  box-shadow: inset 0 0 0 1.5px var(--dp-accent);
+}
+
+.ios-date-day.is-selected {
+  color: #ffffff;
+  font-weight: 700;
+  background: transparent !important;
+}
+
+.ios-date-day:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.ios-date-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ios-date-foot button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-date-clear {
+  color: #94a3b8;
+}
+
+.ios-date-today {
+  color: var(--dp-accent);
+}
+
+.ios-date-foot button:hover {
+  background: var(--dp-accent-soft);
+}
+
+.ios-date-foot button:active {
+  transform: scale(0.92);
+}
+
+@media (max-width: 640px) {
+  .promo-range-panel .ios-date {
+    flex: 1 1 140px;
+  }
+
+  .promo-range-panel .ios-date-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ios-date-pop {
+    width: min(292px, calc(100vw - 48px));
   }
 }
 
