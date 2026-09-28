@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sileo — Exact Replica</title>
+
+  <!-- Motion 12 via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+
+  <link rel="stylesheet" href="sileo.css"/>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn s" data-demo="success">✓ Success</button>
+  <button class="btn e" data-demo="error">✕ Error</button>
+  <button class="btn w" data-demo="warning">⚠ Warning</button>
+  <button class="btn i" data-demo="info">ℹ Info</button>
+  <button class="btn a" data-demo="action">↑ Action</button>
+  <button class="btn l" data-demo="loading">⟳ Loading → Success</button>
+  <button class="btn p" data-demo="promise">⚡ Promise Report</button>
+  <button class="btn s" data-demo="booking">📅 Booking Confirmed</button>
+  <button class="btn i" data-demo="upload">📤 Upload w/ Progress</button>
+</div>
+
+<div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+<script src="sileo.js"></script>
+</body>
+</html>

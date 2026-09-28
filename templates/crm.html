@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bandeja de entrada - Attomos CRM</title>
+<link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="../static/css/crm.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ COLUMNA 1 ============ -->
+  <div class="nav-rail" id="navRail">
+    <div class="rail-content">
+      <div class="rail-topbar">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div class="brand-name">Attomos</div>
+        </div>
+        <button class="circle-btn" onclick="toggleLeft()" title="Ocultar navegación">
+          <i class="lni lni-chevron-left"></i>
+        </button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item active" data-scope="all" onclick="selectScope('all', this)">
+          <i class="lni lni-comments"></i> Conversaciones
+          <span class="count" id="countAll">0</span>
+        </div>
+        <div class="nav-item" data-scope="contacts" onclick="selectContacts(this)">
+          <i class="lni lni-users"></i> Contactos
+          <span class="count" id="countContacts">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Canales</div>
+        <div class="nav-item" data-channel="whatsapp" onclick="selectChannel('whatsapp', this)">
+          <i class="lni lni-whatsapp" style="color:#25D366"></i> WhatsApp
+          <span class="count" id="countWhatsapp">0</span>
+        </div>
+        <div class="nav-item" data-channel="instagram" onclick="selectChannel('instagram', this)">
+          <i class="lni lni-instagram" style="color:#E4405F"></i> Instagram
+          <span class="count" id="countInstagram">0</span>
+        </div>
+        <div class="nav-item" data-channel="messenger" onclick="selectChannel('messenger', this)">
+          <i class="lni lni-facebook-messenger" style="color:#0084FF"></i> Messenger
+          <span class="count" id="countMessenger">0</span>
+        </div>
+        <div class="nav-item" data-channel="telegram" onclick="selectChannel('telegram', this)">
+          <i class="lni lni-telegram" style="color:#229ED9"></i> Telegram
+          <span class="count" id="countTelegram">0</span>
+        </div>
+        <div class="nav-item" data-channel="wechat" onclick="selectChannel('wechat', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.3 3.4C4.9 3.4 1.4 6.3 1.4 9.8c0 2 1.1 3.8 2.9 5l-.7 2.2 2.5-1.2c.8.2 1.7.3 2.6.3h.4a5.9 5.9 0 0 1-.2-1.5c0-3.6 3.5-6.5 7.9-6.5h.3C16.6 5.2 13.2 3.4 9.3 3.4z" fill="#07C160"/><circle cx="6.4" cy="8.5" r="1" fill="#fff"/><circle cx="11.3" cy="8.5" r="1" fill="#fff"/><path d="M16.9 10c-3.8 0-6.9 2.6-6.9 5.7 0 3.2 3.1 5.7 6.9 5.7.7 0 1.5-.1 2.1-.3l2.2 1.1-.6-1.9c1.4-1 2.4-2.5 2.4-4.1 0-3.2-3.1-6.2-6.9-6.2z" fill="#07C160"/><circle cx="15" cy="15.1" r="0.9" fill="#fff"/><circle cx="18.9" cy="15.1" r="0.9" fill="#fff"/></svg></span> WeChat
+          <span class="count" id="countWechat">0</span>
+        </div>
+        <div class="nav-item" data-channel="kakaotalk" onclick="selectChannel('kakaotalk', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#FEE500"/><path d="M12 5.6c-4.4 0-8 2.8-8 6.3 0 2.2 1.5 4.2 3.7 5.3l-.9 3.1 3.5-2c.5.1 1.1.1 1.7.1 4.4 0 8-2.8 8-6.5s-3.6-6.3-8-6.3z" fill="#3C1E1E"/></svg></span> KakaoTalk
+          <span class="count" id="countKakaotalk">0</span>
+        </div>
+        <div class="nav-item" data-channel="line" onclick="selectChannel('line', this)">
+          <span class="chan-icon"><svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="22" rx="6" fill="#00C300"/><path d="M12 5.2c-4.4 0-8 2.9-8 6.4 0 3.1 2.8 5.7 6.6 6.3-.3.9-.6 2.3-.6 2.5 0 .2.1.2.3.1.2-.1 2.6-1.7 3.6-2.4.6.1 1.3.1 2 .1h.1c4.4 0 8-2.9 8-6.6s-3.6-6.4-8-6.4z" fill="#fff"/></svg></span> Line
+          <span class="count" id="countLine">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Etiquetas</div>
+        <div class="nav-item" data-tag="coaching" onclick="selectTag('coaching', this)">
+          <span class="tag-dot dot-coaching"></span> coaching
+        </div>
+        <div class="nav-item" data-tag="descremado" onclick="selectTag('descremado', this)">
+          <span class="tag-dot dot-descremado"></span> descremado
+        </div>
+        <div class="nav-item" data-tag="empresa" onclick="selectTag('empresa', this)">
+          <span class="tag-dot dot-empresa"></span> empresa
+        </div>
+        <div class="nav-item" data-tag="humano" onclick="selectTag('humano', this)">
+          <span class="tag-dot dot-humano"></span> humano
+        </div>
+        <div class="nav-item" data-tag="no_cualificado" onclick="selectTag('no_cualificado', this)">
+          <span class="tag-dot dot-no_cualificado"></span> no_cualificado
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Ajustes</div>
+        <div class="nav-item has-submenu" id="configNavItem" onclick="toggleConfigMenu(this)">
+          <i class="lni lni-cog"></i> Configuración
+          <i class="lni lni-chevron-right chevron"></i>
+        </div>
+        <div class="nav-submenu" id="configSubmenu">
+          <div class="nav-subitem" onclick="event.stopPropagation(); openExportModal();">
+            <i class="lni lni-download"></i> Exportar
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail-collapsed-btn">
+      <button class="circle-btn accent" onclick="toggleLeft()" title="Mostrar navegación">
+        <i class="lni lni-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ COLUMNA 2 ============ -->
+  <div class="list-col">
+    <div class="list-header">
+      <h2><span class="filter-dot" id="scopeDot" style="background:var(--accent)"></span><span id="scopeTitle">Todos los canales</span></h2>
+      <div class="search-box">
+        <i class="lni lni-search-alt"></i>
+        <input type="text" placeholder="Buscar conversación..." oninput="renderList()" id="searchInput">
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-filter="mias" onclick="selectFilter('mias', this)">Mías <span class="badge" id="badgeMias">0</span></div>
+      <div class="tab" data-filter="sin" onclick="selectFilter('sin', this)">Sin asignar <span class="badge" id="badgeSin">0</span></div>
+      <div class="tab" data-filter="todos" onclick="selectFilter('todos', this)">Todos <span class="badge" id="badgeTodos">0</span></div>
+    </div>
+    <div class="conv-list" id="convList"></div>
+  </div>
+
+  <!-- ============ COLUMNA 3 ============ -->
+  <div class="chat-col">
+    <div class="chat-header">
+      <div class="avatar" id="chatAvatar"></div>
+      <div>
+        <div class="chat-header-name" id="chatName">Selecciona una conversación</div>
+        <div class="chat-header-sub"><span id="chatChannel"></span></div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="btn-resolve"><i class="lni lni-checkmark-circle"></i> Resolver</button>
+        <div class="dropdown-wrap">
+          <button class="icon-btn" onclick="toggleHeaderMenu(event)" title="Más opciones"><i class="lni lni-more-alt"></i></button>
+          <div class="dropdown-menu" id="headerMenu">
+            <div class="dropdown-item" onclick="toggleRight(); closeHeaderMenu();"><i class="lni lni-user"></i> Info de contacto</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window-banner" id="windowBanner">
+      <i class="lni lni-warning"></i>
+      <div>Sólo puede responder a esta conversación usando una plantilla de mensaje debido a la <a href="#">restricción de la ventana de 24 horas</a>.</div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="ai-control-bar" id="aiControlBar">
+        <div class="ai-status">
+          <span class="ai-status-dot" id="aiStatusDot"></span>
+          <span id="aiStatusText">La IA está respondiendo esta conversación</span>
+        </div>
+        <button class="ai-control-btn" id="aiControlBtn" onclick="toggleAIControl()">
+          <i class="lni lni-user" id="aiControlIcon"></i>
+          <span id="aiControlLabel">Tomar control</span>
+        </button>
+      </div>
+      <div class="composer-tabs">
+        <div class="composer-tab active" data-ctab="responder" onclick="selectComposerTab('responder', this)">Responder</div>
+        <div class="composer-tab" data-ctab="nota" onclick="selectComposerTab('nota', this)">Nota privada</div>
+      </div>
+      <div class="composer-box">
+        <div class="attachment-preview" id="attachmentPreview"></div>
+        <textarea id="composerText" placeholder="Escribe un mensaje... (Shift + Enter para nueva línea)" onkeydown="handleComposerKeydown(event)"></textarea>
+        <input type="file" id="fileImage" accept="image/*" style="display:none" onchange="handleFileSelect(event,'image')">
+        <input type="file" id="fileVideo" accept="video/*" style="display:none" onchange="handleFileSelect(event,'video')">
+        <input type="file" id="fileDoc" style="display:none" onchange="handleFileSelect(event,'file')">
+        <div class="composer-toolbar">
+          <button class="icon-btn" title="Adjuntar imagen" onclick="document.getElementById('fileImage').click()"><i class="lni lni-image"></i></button>
+          <div class="dropdown-wrap">
+            <button class="icon-btn" title="Adjuntar video" onclick="toggleVideoAttachMenu(event)"><i class="lni lni-video"></i></button>
+            <div class="dropdown-menu" id="videoAttachMenu">
+              <div class="dropdown-item" onclick="closeVideoAttachMenu(); openVideoRecordModal();"><i class="lni lni-camera"></i> Grabar video</div>
+              <div class="dropdown-item" onclick="closeVideoAttachMenu(); document.getElementById('fileVideo').click();"><i class="lni lni-upload"></i> Subir archivo</div>
+            </div>
+          </div>
+          <button class="icon-btn" id="micBtn" title="Grabar nota de voz" onclick="toggleVoiceRecording()"><i class="lni lni-microphone"></i></button>
+          <span class="mic-timer" id="micTimer"></span>
+          <button class="icon-btn" title="Adjuntar archivo" onclick="document.getElementById('fileDoc').click()"><i class="lni lni-paperclip"></i></button>
+          <button class="icon-btn" title="Emoji"><i class="lni lni-emoji-smile"></i></button>
+          <button class="send-btn" onclick="sendMessage()">Enviar <i class="lni lni-telegram-original"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drop-overlay" id="dropOverlay">
+      <i class="lni lni-cloud-upload"></i>
+      <span>Suelta el archivo aquí para adjuntarlo</span>
+    </div>
+  </div>
+
+  <!-- ============ COLUMNA 4 ============ -->
+  <div class="detail-col" id="detailCol">
+    <div class="detail-content">
+      <div class="detail-topbar">
+        <button class="circle-btn" onclick="toggleRight()" title="Ocultar detalles">
+          <i class="lni lni-close"></i>
+        </button>
+      </div>
+
+      <div class="detail-profile">
+        <div class="detail-avatar" id="detailAvatar"></div>
+        <div class="detail-name" id="detailName">—</div>
+        <div class="detail-status" id="detailStatus"></div>
+        <div class="detail-quick-actions">
+          <button class="icon-btn"><i class="lni lni-envelope"></i></button>
+          <button class="icon-btn"><i class="lni lni-pencil-alt"></i></button>
+          <button class="icon-btn"><i class="lni lni-trash"></i></button>
+        </div>
+      </div>
+
+      <div class="detail-row"><i class="lni lni-phone"></i> <span id="detailPhone"></span></div>
+      <div class="detail-row"><i class="lni lni-map-marker"></i> <span id="detailAvail"></span></div>
+
+      <div class="section">
+        <div class="section-title">Acciones de conversación</div>
+        <div class="field">
+          <label>Agente asignado</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+        <div class="field">
+          <label>Equipo asignado</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+        <div class="field">
+          <label>Prioridad</label>
+          <div class="select-like">Ninguna <i class="lni lni-chevron-down"></i></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Etiquetas de conversación</div>
+        <div id="detailTags">
+          <span class="tag-chip bg-coaching"><span class="dot dot-coaching"></span>coaching</span>
+        </div>
+        <div class="add-tag-box"><i class="lni lni-plus"></i> Añadir etiquetas</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Notas de contacto <i class="lni lni-plus" style="font-size:11px;color:var(--gray-400)"></i></div>
+        <div class="note-box">Sin notas todavía</div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ============ VISTA CONTACTOS (pantalla completa) ============ -->
+  <div class="contacts-view" id="contactsView">
+    <div class="contacts-header">
+      <h2>Contactos</h2>
+      <div class="search-box contacts-search">
+        <i class="lni lni-search-alt"></i>
+        <input type="text" placeholder="Buscar contacto..." oninput="renderContactsGrid()" id="contactsSearchInput">
+      </div>
+    </div>
+    <div class="contacts-grid" id="contactsGrid"></div>
+  </div>
+
+</div>
+
+<!-- ============ MODAL: EXPORTAR ============ -->
+<div class="modal-overlay" id="exportModal" onclick="if(event.target===this) closeExportModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="lni lni-download" style="margin-right:8px;color:var(--accent-dark)"></i>Exportar</h3>
+      <button class="circle-btn" onclick="closeExportModal()"><i class="lni lni-close"></i></button>
+    </div>
+
+    <div class="export-section">
+      <h4><i class="lni lni-comments" style="color:var(--gray-400)"></i> Exportar chats</h4>
+      <p>Descarga el historial completo de todas las conversaciones.</p>
+      <div class="export-format-row">
+        <button class="format-btn" onclick="exportChatsPdf()"><i class="lni lni-file-empty"></i> PDF</button>
+        <button class="format-btn" onclick="exportChatsTxt()"><i class="lni lni-write"></i> TXT</button>
+      </div>
+      <div class="export-status" id="chatsStatus"><i class="lni lni-checkmark-circle"></i> Exportación completada</div>
+    </div>
+
+    <div class="export-section">
+      <h4><i class="lni lni-users" style="color:var(--gray-400)"></i> Exportar contactos</h4>
+      <p>Descarga la lista de contactos con su información.</p>
+      <div class="export-format-row">
+        <button class="format-btn" onclick="exportContactsExcel()"><i class="lni lni-file-empty"></i> Excel</button>
+        <button class="format-btn" onclick="exportContactsPdf()"><i class="lni lni-file-empty"></i> PDF</button>
+      </div>
+      <div class="export-status" id="contactsStatus"><i class="lni lni-checkmark-circle"></i> Exportación completada</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: GRABAR VIDEO ============ -->
+<div class="modal-overlay" id="videoRecordModal" onclick="if(event.target===this) closeVideoRecordModal()">
+  <div class="modal-box video-record-box">
+    <div class="modal-header">
+      <h3><i class="lni lni-video" style="margin-right:8px;color:var(--accent-dark)"></i>Grabar video</h3>
+      <button class="circle-btn" onclick="closeVideoRecordModal()"><i class="lni lni-close"></i></button>
+    </div>
+    <div class="video-record-stage">
+      <video id="videoRecordPreview" autoplay muted playsinline></video>
+      <div class="video-record-timer" id="videoRecordTimer">00:00</div>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsIdle">
+      <button class="ai-control-btn" style="width:100%;justify-content:center;" onclick="startVideoRecording()"><i class="lni lni-video"></i> Iniciar grabación</button>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsRecording" style="display:none">
+      <button class="ai-control-btn" style="width:100%;justify-content:center;background:var(--danger)" onclick="stopVideoRecording()"><i class="lni lni-stop"></i> Detener</button>
+    </div>
+    <div class="video-record-actions" id="videoRecordActionsReview" style="display:none">
+      <button class="format-btn" onclick="retakeVideoRecording()"><i class="lni lni-reload"></i> Grabar de nuevo</button>
+      <button class="format-btn" style="border-color:var(--accent-soft-border);background:var(--accent-soft);color:var(--accent-dark)" onclick="useRecordedVideo()"><i class="lni lni-checkmark-circle"></i> Usar video</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../static/js/crm.js"></script>
+</body>
+</html>

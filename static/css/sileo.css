@@ -1,0 +1,314 @@
+/* ═══════════════════════════════════════════════════════
+   SILEO TOAST — SCOPED (sin afectar estilos globales)
+═══════════════════════════════════════════════════════ */
+:root {
+  --spring-easing: linear(
+    0,0.002 0.6%,0.007 1.2%,0.015 1.8%,0.026 2.4%,0.041 3.1%,
+    0.06 3.8%,0.108 5.3%,0.157 6.6%,0.214 8%,0.467 13.7%,
+    0.577 16.3%,0.631 17.7%,0.682 19.1%,0.73 20.5%,0.771 21.8%,
+    0.808 23.1%,0.844 24.5%,0.874 25.8%,0.903 27.2%,0.928 28.6%,
+    0.952 30.1%,0.972 31.6%,0.988 33.1%,1.01 35.7%,1.025 38.5%,
+    1.034 41.6%,1.038 45%,1.035 50.1%,1.012 64.2%,1.003 73%,
+    0.999 83.7%,1
+  );
+  --dur: 600ms;
+  --h:   40px;
+  --w:   350px;
+
+  --c-success: oklch(0.723 0.219 142.136);
+  --c-error:   oklch(0.637 0.237 25.331);
+  --c-warning: oklch(0.795 0.184 86.047);
+  --c-info:    oklch(0.685 0.169 237.323);
+  --c-action:  oklch(0.623 0.214 259.815);
+  --c-loading: oklch(0.556 0 0);
+
+  /* Toast shell colors — light frosted glass */
+  --toast-bg:      #ffffff;
+  --toast-surface: #f4f4f5;
+  --toast-border:  rgba(0,0,0,0.08);
+  --toast-shadow:  0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIEWPORT  (top-center)
+═══════════════════════════════════════════════════════ */
+#sileo-vp {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: .75rem;
+  padding: .75rem;
+  pointer-events: none;
+  max-width: calc(100vw - 1.5rem);
+  contain: layout style;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET SCOPED
+═══════════════════════════════════════════════════════ */
+#sileo-vp *,
+#sileo-vp *::before,
+#sileo-vp *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST SHELL
+═══════════════════════════════════════════════════════ */
+.sileo-toast {
+  position: relative;
+  pointer-events: auto;
+  touch-action: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  width: var(--w);
+  height: var(--_h, var(--h));
+  opacity: 0;
+  transform: translateZ(0) translateY(-6px) scale(.95);
+  transform-origin: center;
+  contain: layout style;
+  overflow: visible;
+  cursor: pointer;
+  filter: drop-shadow(var(--toast-shadow));
+}
+.sileo-toast[data-state="loading"] { cursor: default; }
+
+.sileo-toast.ready {
+  opacity: 1;
+  transform: translateZ(0) scale(1) translateY(0);
+  transition:
+    transform  calc(var(--dur)*.66) var(--spring-easing),
+    opacity    calc(var(--dur)*.66) var(--spring-easing),
+    height     var(--dur)           var(--spring-easing),
+    margin-bottom calc(var(--dur)*.66) var(--spring-easing),
+    margin-top    calc(var(--dur)*.66) var(--spring-easing);
+}
+
+#sileo-vp .sileo-toast:not(.ready) {
+  margin-bottom: calc(-1 * (var(--h) + .75rem));
+}
+
+.sileo-toast.exiting {
+  opacity: 0 !important;
+  pointer-events: none;
+  transform: translateZ(0) translateY(-6px) scale(.95) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SVG CANVAS  (gooey layer)
+═══════════════════════════════════════════════════════ */
+.sileo-canvas {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  pointer-events: none;
+  transform: translateZ(0);
+  contain: layout style;
+  overflow: visible;
+}
+.sileo-canvas svg { overflow: visible; display: block; }
+
+/* Dark pill background overlay */
+.sileo-toast .sileo-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; 
+  transform: translateX(-50%);
+  width: var(--_pw, var(--w));
+  height: var(--_h, var(--h));
+  background: var(--toast-bg);
+  border-radius: 20px;
+  border: none;
+  transition:
+    width  var(--dur) var(--spring-easing),
+    height var(--dur) var(--spring-easing),
+    left   var(--dur) var(--spring-easing);
+  z-index: -1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+.sileo-header {
+  position: absolute;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding: .5rem .9rem;
+  height: var(--h);
+  overflow: hidden;
+  left: var(--_px, 0px);
+  max-width: var(--_pw, var(--w));
+  transform: var(--_ht, none);
+}
+.sileo-toast.ready .sileo-header {
+  transition:
+    transform  var(--dur) var(--spring-easing),
+    left       var(--dur) var(--spring-easing),
+    max-width  var(--dur) var(--spring-easing);
+}
+
+.sileo-header-stack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+.sileo-header-inner {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  white-space: nowrap;
+}
+.sileo-header-inner.current {
+  position: relative; z-index: 1;
+  animation: hdr-enter var(--dur) var(--spring-easing) both;
+}
+.sileo-header-inner.prev {
+  position: absolute; left: 0; top: 0;
+  z-index: 0; pointer-events: none;
+  animation: hdr-exit calc(var(--dur)*.7) ease forwards;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BADGE + TITLE
+═══════════════════════════════════════════════════════ */
+.sileo-badge {
+  display: flex;
+  height: 24px; width: 24px;
+  flex-shrink: 0;
+  align-items: center; justify-content: center;
+  padding: 2px;
+  border-radius: 9999px;
+  color: var(--tone);
+  background: var(--tone-bg);
+}
+.sileo-title {
+  font-size: .825rem;
+  line-height: 1rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #18181b;
+  letter-spacing: 0.01em;
+}
+
+.c-success { --_c: var(--c-success); }
+.c-error   { --_c: var(--c-error);   }
+.c-warning { --_c: var(--c-warning); }
+.c-info    { --_c: var(--c-info);    }
+.c-action  { --_c: var(--c-action);  }
+.c-loading { --_c: var(--c-loading); }
+
+
+
+.sileo-badge, .sileo-title {
+  --tone:    var(--_c);
+  --tone-bg: color-mix(in oklch, var(--_c) 20%, rgba(0,0,0,0.04));
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONTENT / DESCRIPTION
+═══════════════════════════════════════════════════════ */
+.sileo-content {
+  position: absolute;
+  top: var(--h);
+  left: 0;
+  z-index: 10;
+  width: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity calc(var(--dur)*.08) ease calc(var(--dur)*.04);
+}
+.sileo-content.visible {
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity calc(var(--dur)*.6) ease calc(var(--dur)*.3);
+}
+.sileo-description {
+  padding: 2.2rem 1rem 1.2rem !important;
+  font-size: .875rem;
+  line-height: 1.4rem;
+  color: #52525b;
+  text-align: center;
+}
+
+/* Action button inside toast */
+.sileo-action-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 .625rem !important;
+  margin-top: .75rem !important;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklch, var(--_c) 40%, transparent);
+  font-size: .75rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--_c);
+  background: color-mix(in oklch, var(--_c) 12%, rgba(0,0,0,0.05));
+  transition: background 150ms ease;
+  text-decoration: none;
+}
+.sileo-action-btn:hover {
+  background: color-mix(in oklch, var(--_c) 22%, rgba(0,0,0,0.05));
+}
+
+/* Progress bar */
+.sileo-progress {
+  margin-top: .75rem !important;
+  height: 6px;
+  width: 100%;
+  background: rgba(0,0,0,0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+.sileo-progress-bar {
+  height: 100%;
+  background: var(--_c);
+  border-radius: 9999px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+.sileo-progress-text {
+  font-size: .7rem;
+  margin-top: .4rem !important;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════════════════ */
+@keyframes hdr-enter {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0px); }
+}
+@keyframes hdr-exit {
+  from { opacity: 1; filter: blur(0px); }
+  to   { opacity: 0; filter: blur(6px); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  #sileo-vp *,
+  #sileo-vp *::before,
+  #sileo-vp *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

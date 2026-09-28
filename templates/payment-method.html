@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#06b6d4">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Método de Pago - Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/payment-method.css">
+    <style>.methods-empty { color: #9ca3af; font-size: 0.9rem; margin: 0.5rem 0; }</style>
+</head>
+<body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="pm-layout">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <a href="/billing" class="back-btn">
+                                <i class="lni lni-chevron-left"></i>
+                                <span data-translate="pm_back">Facturación</span>
+                            </a>
+                            <h1 class="page-title">
+                                <i class="lni lni-credit-cards"></i>
+                                <span data-translate="pm_title">Método de Pago</span>
+                            </h1>
+                            <p class="page-subtitle" data-translate="pm_subtitle">Administra las tarjetas usadas para tus pagos automáticos</p>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="pm-loading" id="pmLoading">
+                        <div class="loading-spinner-large"></div>
+                        <p data-translate="pm_loading">Cargando métodos de pago...</p>
+                    </div>
+
+                    <!-- Main Grid -->
+                    <div class="pm-grid" id="pmGrid" style="display:none;">
+
+                        <!-- Left: Card Display + Methods List -->
+                        <div class="pm-left">
+
+                            <!-- Active Card Visual -->
+                            <div class="card-visual-section">
+                                <h2 class="section-title">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    <span data-translate="pm_main_card">Tarjeta Principal</span>
+                                </h2>
+
+                                <!-- Credit Card 3D -->
+                                <div class="credit-card-wrapper" id="cardWrapper">
+                                    <div class="credit-card" id="creditCard">
+                                        <!-- Front -->
+                                        <div class="card-face card-front">
+                                            <div class="card-shine"></div>
+                                            <div class="card-top-row">
+                                                <div class="card-brand-logo" id="cardBrandLogo">
+                                                    <svg class="brand-visa" viewBox="0 0 780 500" style="display:none;">
+                                                        <path fill="#1A1F71" d="M293.2,348.7l33.4-195.7h53.4l-33.4,195.7H293.2z"/>
+                                                        <path fill="#1A1F71" d="M539.8,157.3c-10.6-3.9-27.2-8.2-47.9-8.2c-52.8,0-90,26.5-90.3,64.4c-0.3,28,26.5,43.6,46.7,52.9 c20.7,9.5,27.7,15.6,27.6,24.1c-0.1,13-16.6,19-31.9,19c-21.3,0-32.6-3-50.2-10.3l-6.9-3.1l-7.5,43.5 c12.5,5.4,35.5,10.2,59.4,10.4c56.1,0,92.4-26.2,92.8-66.8c0.2-22.2-14-39.1-44.6-53.1c-18.6-9-30-15-29.9-24.2 c0-8.1,9.6-16.8,30.5-16.8c17.4-0.3,30,3.5,39.8,7.4l4.8,2.2L539.8,157.3z"/>
+                                                        <path fill="#1A1F71" d="M661.3,152.9h-41.3c-12.8,0-22.3,3.5-27.9,16.2L513.6,348.7h56l11.2-29.3h68.4l6.5,29.3H704 L661.3,152.9z M595.2,279.4c4.4-11.3,21.3-54.8,21.3-54.8c-0.3,0.5,4.4-11.4,7.1-18.7l3.6,16.9c0,0,10.2,46.4,12.3,56.7 H595.2z"/>
+                                                        <path fill="#1A1F71" d="M240.4,152.9l-52.3,133.5l-5.6-27.2c-9.7-31.2-40-65-73.8-81.9l47.9,171.4h56.4l83.8-195.7H240.4z"/>
+                                                        <path fill="#F2AE14" d="M140.4,152.9H56.7l-0.7,3.9c65.1,15.7,108.2,53.6,126.1,99.1l-18.2-87.1 C161.1,156.6,151.9,153.3,140.4,152.9z"/>
+                                                    </svg>
+                                                    <svg class="brand-mastercard" viewBox="0 0 131.39 86.9" style="display:none;">
+                                                        <circle cx="43.45" cy="43.45" r="43.45" fill="#EB001B"/>
+                                                        <circle cx="87.94" cy="43.45" r="43.45" fill="#F79E1B"/>
+                                                        <path d="M65.7,20.07a43.42,43.42,0,0,1,0,46.76A43.42,43.42,0,0,1,65.7,20.07Z" fill="#FF5F00"/>
+                                                    </svg>
+                                                    <svg class="brand-amex" viewBox="0 0 750 471" style="display:none;">
+                                                        <rect width="750" height="471" rx="40" fill="#007BC1"/>
+                                                        <text x="375" y="300" text-anchor="middle" fill="white" font-size="180" font-weight="bold" font-family="Arial">AMEX</text>
+                                                    </svg>
+                                                    <div class="brand-generic" style="display:none;">
+                                                        <i class="lni lni-credit-cards"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="card-chip">
+                                                    <div class="chip-line"></div>
+                                                    <div class="chip-line"></div>
+                                                    <div class="chip-line"></div>
+                                                </div>
+                                            </div>
+                                            <div class="card-number" id="cardDisplayNumber">•••• •••• •••• ••••</div>
+                                            <div class="card-bottom-row">
+                                                <div class="card-holder-section">
+                                                    <div class="card-label" data-translate="pm_label_titular">Titular</div>
+                                                    <div class="card-holder-name" id="cardDisplayHolder">NOMBRE TITULAR</div>
+                                                </div>
+                                                <div class="card-expiry-section">
+                                                    <div class="card-label" data-translate="pm_label_expira">Expira</div>
+                                                    <div class="card-expiry" id="cardDisplayExpiry">MM/AA</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Back -->
+                                        <div class="card-face card-back">
+                                            <div class="card-stripe"></div>
+                                            <div class="card-cvc-section">
+                                                <div class="card-cvc-label">CVC</div>
+                                                <div class="card-cvc-box" id="cardDisplayCvc">•••</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- No card state -->
+                                <div class="no-card-state" id="noCardState" style="display:none;">
+                                    <div class="no-card-icon">
+                                        <i class="lni lni-credit-cards"></i>
+                                    </div>
+                                    <h3 data-translate="pm_no_card_title">Sin método de pago</h3>
+                                    <p data-translate="pm_no_card_desc">Agrega una tarjeta para activar el cobro automático de tu suscripción</p>
+                                </div>
+                            </div>
+
+                            <!-- Saved Methods List -->
+                            <div class="saved-methods-section" id="savedMethodsSection">
+                                <h2 class="section-title">
+                                    <i class="lni lni-list"></i>
+                                    <span data-translate="pm_saved_cards">Tarjetas Guardadas</span>
+                                </h2>
+                                <div class="methods-list" id="methodsList">
+                                    <!-- Rendered by JS -->
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right: Form -->
+                        <div class="pm-right">
+                            <div class="form-card" id="formCard">
+                                <div class="form-header">
+                                    <div class="form-header-icon">
+                                        <i class="lni lni-lock" id="formHeaderIcon"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="form-title" id="formTitle" data-translate="pm_add_card">Agregar Tarjeta</h2>
+                                        <p class="form-subtitle" id="formSubtitle" data-translate="pm_form_subtitle">Tus datos están cifrados y seguros</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-body">
+                                    <input type="hidden" id="editingMethodId" value="">
+
+                                    <!-- Card Number -->
+                                    <div class="field-group">
+                                        <label class="field-label" data-translate="pm_field_number">Número de Tarjeta</label>
+                                        <div class="field-input-wrapper">
+                                            <i class="lni lni-credit-cards field-icon"></i>
+                                            <input type="text" id="fieldCardNumber" class="field-input" 
+                                                   placeholder="1234 5678 9012 3456" maxlength="19" 
+                                                   autocomplete="cc-number" inputmode="numeric">
+                                            <div class="field-brand-badge" id="fieldBrandBadge" style="display:none;">
+                                                <span id="fieldBrandText"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Holder -->
+                                    <div class="field-group">
+                                        <label class="field-label" data-translate="pm_field_holder">Nombre del Titular</label>
+                                        <div class="field-input-wrapper">
+                                            <i class="lni lni-user field-icon"></i>
+                                            <input type="text" id="fieldCardHolder" class="field-input" 
+                                                   placeholder="Como aparece en la tarjeta" 
+                                                   autocomplete="cc-name">
+                                        </div>
+                                    </div>
+
+                                    <!-- Expiry + CVC Row -->
+                                    <div class="field-row">
+                                        <div class="field-group">
+                                            <label class="field-label" data-translate="pm_field_exp_month">Mes de Expiración</label>
+                                            <div class="field-input-wrapper">
+                                                <i class="lni lni-calendar field-icon"></i>
+                                                <select id="fieldExpMonth" class="field-input field-select"><option value="">MM</option></select>
+                                            </div>
+                                        </div>
+                                        <div class="field-group">
+                                            <label class="field-label" data-translate="pm_field_exp_year">Año de Expiración</label>
+                                            <div class="field-input-wrapper">
+                                                <i class="lni lni-calendar field-icon"></i>
+                                                <select id="fieldExpYear" class="field-input field-select">
+                                                    <option value="">AAAA</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- CVC -->
+                                    <div class="field-group">
+                                        <label class="field-label">
+                                            CVC / CVV
+                                            <button class="cvc-hint-btn" type="button" onclick="toggleCvcHint()" title="¿Dónde está el CVC?">
+                                                <i class="lni lni-question-circle"></i>
+                                            </button>
+                                        </label>
+                                        <div class="cvc-hint" id="cvcHint" style="display:none;">
+                                            <i class="lni lni-information"></i>
+                                            <span data-translate="pm_cvc_hint">Son los 3 dígitos en la parte trasera de tu tarjeta (Visa/MC) o 4 dígitos al frente (Amex).</span>
+                                        </div>
+                                        <div class="field-input-wrapper">
+                                            <i class="lni lni-lock field-icon"></i>
+                                            <input type="password" id="fieldCvc" class="field-input" 
+                                                   placeholder="•••" maxlength="4" 
+                                                   autocomplete="cc-csc" inputmode="numeric">
+                                            <button class="toggle-cvc-visibility" type="button" onclick="toggleCvcVisibility()">
+                                                <i class="lni lni-eye" id="cvcEyeIcon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Default checkbox -->
+                                    <div class="default-toggle" id="defaultToggleWrapper">
+                                        <label class="toggle-label">
+                                            <div class="toggle-switch">
+                                                <input type="checkbox" id="fieldSetDefault" checked>
+                                                <span class="toggle-slider"></span>
+                                            </div>
+                                            <div class="toggle-text">
+                                                <span class="toggle-title" data-translate="pm_default_toggle_title">Usar como tarjeta principal</span>
+                                                <span class="toggle-desc" data-translate="pm_default_toggle_desc">Se usará para los cobros automáticos</span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="form-actions">
+                                        <button class="btn-cancel-form" type="button" id="btnCancelForm" onclick="cancelForm()" style="display:none;">
+                                            <i class="lni lni-close"></i>
+                                            <span data-translate="pm_cancel">Cancelar</span>
+                                        </button>
+                                        <button class="btn-save-card" type="button" id="btnSaveCard" onclick="saveCard()">
+                                            <i class="lni lni-lock"></i>
+                                            <span id="btnSaveText" data-translate="pm_save_card">Guardar Tarjeta</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Security note -->
+                                    <div class="security-note">
+                                        <i class="lni lni-shield"></i>
+                                        <span data-translate="pm_security_note">Conexión segura SSL · Cifrado AES-256 · PCI DSS compliant</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal (reused from my-agents style) -->
+    <div id="confirmModal" class="confirm-modal"></div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/payment-method.js"></script>
+</body>
+</html>

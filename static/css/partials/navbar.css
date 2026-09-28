@@ -1,0 +1,1721 @@
+/* ============================================
+   NAVBAR CSS - DESKTOP PREMIUM + iOS MOBILE
+   (Versión Corregida: Solidez en Móvil)
+   ============================================ */
+
+/* Reset y base */
+* {
+  box-sizing: border-box;
+}
+
+/* Navbar principal */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 10000;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.03);
+}
+
+.navbar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(6, 182, 212, 0.3),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.navbar.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+  border-bottom-color: rgba(6, 182, 212, 0.2);
+}
+
+.navbar.scrolled::after {
+  opacity: 1;
+}
+
+/* Container del navbar */
+.nav-container {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 1.25rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Logo — columna izquierda */
+.nav-logo {
+  z-index: 1001;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  justify-self: start;
+}
+
+.nav-logo:hover {
+  transform: scale(1.05);
+}
+
+.nav-logo img {
+  height: 82px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(6, 182, 212, 0.1));
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.nav-logo:hover img {
+  filter: drop-shadow(0 4px 8px rgba(6, 182, 212, 0.2));
+}
+
+/* Menu principal - DESKTOP — columna central, siempre centrada */
+.nav-menu {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.25rem;
+  align-items: center;
+  position: static;
+  transform: none;
+  justify-self: center;
+}
+
+/* Envoltura del extremo derecho del grid: agrupa nav-right-group (idioma)
+   y #navAuthUser (campana + avatar) como una sola pieza en la 3ra columna,
+   para que el grid de 3 columnas no mande el userbar a una fila nueva. */
+.nav-right-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+  flex-shrink: 0;
+}
+
+/* Right group (auth + lang) — ya no necesita justify-self, lo hereda de .nav-right-end */
+.nav-right-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Wrapper para los botones de auth */
+.nav-auth {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+/* Ocultar los botones de auth que están dentro del nav-menu en DESKTOP */
+.nav-menu .nav-item.mobile-only {
+  display: none;
+}
+
+/* Ocultar el selector de idioma mobile en desktop (ya existe el del grid) */
+.nav-menu .nav-item.mobile-lang-item {
+  display: none;
+}
+
+.nav-link {
+  color: #374151;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1),
+  );
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  z-index: -1;
+}
+
+.nav-link.active::before {
+  transform: translateY(0);
+}
+
+.nav-link:hover:not(.active)::before {
+  transform: translateY(0);
+}
+
+.nav-link:hover:not(.active) {
+  color: #06b6d4;
+  transform: translateY(-2px);
+}
+.nav-link.active {
+  color: #06b6d4;
+}
+
+/* Indicador de página activa */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: #06b6d4;
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.nav-link.active::after {
+  width: 60%;
+}
+
+.nav-link:hover:not(.active)::after {
+  width: 60%;
+}
+
+/* Botón de iniciar sesión */
+.nav-login {
+  color: #06b6d4 !important;
+  background: transparent;
+  border: 2px solid rgba(6, 182, 212, 0.3);
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+}
+
+.nav-login::before {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1),
+  );
+}
+
+.nav-login:hover {
+  color: #06b6d4 !important;
+  border-color: rgba(6, 182, 212, 0.6);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2);
+}
+
+/* Botón CTA (Registrarse) */
+.nav-cta {
+  background: #06b6d4 !important;
+  color: white !important;
+  padding: 0.75rem 1.75rem !important;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-cta::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.4s ease,
+    height 0.4s ease;
+}
+
+.nav-cta:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.nav-cta::after {
+  display: none;
+}
+
+.nav-cta:hover {
+  background: #0891b2 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
+}
+
+/* Botón hamburguesa - OCULTO por defecto */
+.mobile-menu-btn {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menu-icon {
+  width: 20px;
+  height: 14px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.menu-icon span {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #06b6d4;
+  border-radius: 2px;
+  left: 0;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.menu-icon span:nth-child(1) {
+  top: 0;
+}
+
+.menu-icon span:nth-child(2) {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.menu-icon span:nth-child(3) {
+  bottom: 0;
+}
+
+.mobile-menu-btn.active .menu-icon span:nth-child(1) {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.mobile-menu-btn.active .menu-icon span:nth-child(2) {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.mobile-menu-btn.active .menu-icon span:nth-child(3) {
+  bottom: 50%;
+  transform: translateY(50%) rotate(-45deg);
+}
+
+/* ============================================
+   RESPONSIVE - iOS MOBILE STYLE (barra flotante + panel con resorte)
+   La barra es una píldora flotante. Al abrir el menú, la píldora
+   crece hasta convertirse en el panel (clip-path animado desde navbar.js).
+   ============================================ */
+
+/* Elementos que solo existen en el menú móvil */
+.nav-link-icon,
+.nav-indicator {
+  display: none;
+}
+
+@keyframes navIconPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.8); }
+  65% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+  /* --- Barra flotante tipo píldora --- */
+  /* Fondo blanco sólido y sin blur: además de verse sólido sobre Login/Register,
+     backdrop-filter crearía un contenedor para el panel fixed y lo descuadraría */
+  .navbar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(6, 182, 212, 0.14);
+    border-radius: 999px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+
+  .navbar::after {
+    display: none;
+  }
+
+  .navbar.scrolled {
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+    border-color: rgba(6, 182, 212, 0.2);
+  }
+
+  /* Con el menú abierto la píldora se funde con el panel */
+  .navbar.menu-is-open {
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 8px;
+    height: 60px;
+  }
+
+  .navbar-lang-divider {
+    display: none;
+  }
+
+  .nav-right-group {
+    display: flex !important;
+  }
+
+  /* Lo que va sobre el panel abierto: logo, idioma, userbar y botón */
+  .nav-right-end {
+    position: relative;
+    z-index: 1002;
+    gap: 6px;
+  }
+
+  /* Botón hamburguesa a la IZQUIERDA */
+  .mobile-menu-btn {
+    display: flex;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+    background: rgba(6, 182, 212, 0.08);
+    z-index: 1003;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+  }
+
+  .mobile-menu-btn:active {
+    transform: translateY(-50%) scale(0.9);
+  }
+
+  .mobile-menu-btn.active {
+    background: rgba(6, 182, 212, 0.14);
+  }
+
+  .menu-icon span {
+    background: #06b6d4;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, top 0.3s ease, bottom 0.3s ease;
+  }
+
+  /* Logo centrado (se conserva el centrado también en hover) */
+  .nav-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1002;
+  }
+
+  .nav-logo:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+
+  .nav-logo img {
+    height: 56px;
+  }
+
+  .nav-auth {
+    display: none;
+  }
+
+  /* --- Panel del menú --- */
+  .nav-menu {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    width: auto;
+    justify-self: stretch; /* en desktop es center; en un fixed lo encogería */
+    height: auto !important;
+    max-height: calc(100vh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    padding: 72px 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    gap: 4px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    background: #ffffff;
+    border: 1px solid rgba(6, 182, 212, 0.14);
+    border-radius: 28px;
+    visibility: hidden;
+    pointer-events: none;
+    transform: none;
+    z-index: 1000;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .nav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Sin JS el panel igual se muestra; con JS la visibilidad la maneja navbar.js */
+  .nav-menu.active {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Items: entrada escalonada (el orden --i lo asigna navbar.js) */
+  .nav-item {
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s ease, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    transition-delay: calc(var(--i, 0) * 30ms);
+  }
+
+  .nav-menu.active .nav-item {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Filas del menú */
+  .nav-menu .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 54px;
+    margin: 0;
+    padding: 0 14px 0 10px;
+    border: 0;
+    border-radius: 18px;
+    background: none;
+    color: #374151;
+    font-size: 17px;
+    font-weight: 500;
+    text-align: left;
+    overflow: visible;
+    -webkit-user-drag: none;
+  }
+
+  .nav-menu .nav-link::before {
+    display: none;
+  }
+
+  .nav-menu .nav-link::after {
+    content: "›";
+    position: static;
+    width: auto;
+    height: auto;
+    margin-left: auto;
+    background: none;
+    transform: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: rgba(6, 182, 212, 0.4);
+    transition: color 0.2s ease;
+  }
+
+  .nav-menu .nav-link:hover:not(.active),
+  .nav-menu .nav-link:active {
+    transform: none;
+    background: none;
+  }
+
+  /* Anula el subrayado de hover/activo de desktop sobre la flecha › */
+  .nav-menu .nav-link:hover:not(.active)::after,
+  .nav-menu .nav-link.active::after {
+    width: auto;
+  }
+
+  .nav-menu .nav-link.active {
+    color: #06b6d4;
+    background: none;
+    border: 0;
+  }
+
+  .nav-menu .nav-link.active::after {
+    color: #06b6d4;
+  }
+
+  .nav-link-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(6, 182, 212, 0.08);
+    color: #06b6d4;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, color 0.2s ease;
+  }
+
+  .nav-link-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-menu .nav-link.active .nav-link-icon {
+    background: #06b6d4;
+    color: #ffffff;
+  }
+
+  .nav-menu .nav-link.is-hover .nav-link-icon {
+    transform: scale(1.12);
+  }
+
+  .nav-menu .nav-link.bounce .nav-link-icon {
+    animation: navIconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Indicador de resorte: marca la página actual; al arrastrar se vuelve lente */
+  .nav-indicator {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 18px;
+    background: rgba(6, 182, 212, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width, height, opacity;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .nav-indicator.lifted {
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(6, 182, 212, 0.22), inset 0 0 0 1px rgba(6, 182, 212, 0.2);
+  }
+
+  /* Botones de sesión (solo sin sesión): dos columnas al fondo */
+  .nav-menu .nav-item.mobile-only {
+    display: block;
+    grid-column: auto;
+    margin-top: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(6, 182, 212, 0.15);
+  }
+
+  #mobileNavLogin {
+    padding-right: 5px;
+  }
+
+  #mobileNavRegister {
+    padding-left: 5px;
+  }
+
+  .navbar.is-logged-in .nav-menu .nav-item.mobile-only {
+    display: none;
+  }
+
+  .nav-menu .nav-login,
+  .nav-menu .nav-cta {
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 12px !important;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .nav-menu .nav-login {
+    background: rgba(6, 182, 212, 0.08) !important;
+    color: #06b6d4 !important;
+    box-shadow: none;
+  }
+
+  .nav-menu .nav-cta {
+    background: #06b6d4 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
+  }
+
+  .nav-menu .nav-login::after,
+  .nav-menu .nav-cta::after,
+  .nav-menu .nav-cta::before {
+    display: none;
+  }
+
+  .nav-menu .nav-login:active,
+  .nav-menu .nav-cta:active {
+    transform: scale(0.96);
+  }
+
+  /* Fondo oscurecido detrás del panel (lo crea navbar.js) */
+  .nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nav-scrim.on {
+    pointer-events: auto;
+  }
+}
+
+/* Prevenir scroll cuando menú móvil está abierto */
+body.menu-open {
+  overflow: hidden;
+}
+
+/* ============================================
+   TABLETS (769px - 1024px)
+   ============================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .nav-container {
+    padding: 1rem 2rem;
+  }
+
+  .nav-menu {
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.7rem 1rem;
+    font-size: 14px;
+  }
+
+  .nav-cta {
+    padding: 0.7rem 1.4rem !important;
+    font-size: 14px;
+  }
+}
+
+/* ============================================
+   ACCESIBILIDAD
+   ============================================ */
+
+.mobile-menu-btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.6);
+  outline-offset: 4px;
+}
+
+/* ============================================
+   REDUCCIÓN DE MOVIMIENTO
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+/* ============================================
+   NAVBAR USERBAR — Auth User State
+   ============================================ */
+
+.nav-auth-guest {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-lang-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(6, 182, 212, 0.2);
+    margin: 0 4px;
+}
+
+/* nav-right-group: auth | divider | lang */
+.nav-right-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nav-auth-user {
+    align-items: center;
+    gap: 6px;
+}
+
+/* Divider */
+.navbar-ub-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(6, 182, 212, 0.2);
+    margin: 0 2px;
+}
+
+/* Botón de notificaciones */
+.navbar-icon-btn {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(6, 182, 212, 0.08);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    color: #06b6d4;
+    flex-shrink: 0;
+}
+
+.navbar-icon-btn svg {
+    width: 17px;
+    height: 17px;
+    stroke: #06b6d4;
+}
+
+.navbar-icon-btn:hover {
+    background: rgba(6, 182, 212, 0.16);
+    transform: translateY(-1px);
+}
+
+/* Badge */
+.navbar-notif-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #ef4444;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 2px solid white;
+    line-height: 1;
+}
+
+.navbar-notif-badge.hidden { display: none; }
+
+/* Contenedor notificaciones */
+.navbar-notif-container {
+    position: relative;
+}
+
+/* Panel de notificaciones */
+.navbar-notif-panel {
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    width: 320px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.13), 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid rgba(6,182,212,0.1);
+    z-index: 10001;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.navbar-notif-container:hover .navbar-notif-panel,
+.navbar-notif-panel.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.notification-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.mark-all-btn {
+    font-size: 11px;
+    color: #06b6d4;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+}
+
+.mark-all-btn:hover { text-decoration: underline; }
+
+.notification-list {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 10px 18px;
+    border-bottom: 1px solid #f9fafb;
+    transition: background 0.15s ease;
+    cursor: pointer;
+}
+
+.notification-item:last-child { border-bottom: none; }
+.notification-item:hover { background: #f9fafb; }
+
+.notification-item.unread {
+    background: rgba(6,182,212,0.04);
+    border-left: 3px solid #06b6d4;
+    padding-left: 15px;
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.notification-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: rgba(6,182,212,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-icon svg {
+    width: 13px;
+    height: 13px;
+    stroke: #06b6d4;
+    stroke-width: 2;
+    fill: none;
+}
+
+.notification-body { flex: 1; min-width: 0; }
+
+.notification-text {
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.notification-time {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
+.notif-dismiss-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #d1d5db;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.notif-dismiss-btn:hover { color: #ef4444; }
+.notif-dismiss-btn svg { width: 12px; height: 12px; }
+
+.notification-footer {
+    padding: 10px 18px;
+    border-top: 1px solid #f3f4f6;
+    text-align: center;
+}
+
+.view-all-btn {
+    font-size: 12px;
+    color: #06b6d4;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.view-all-btn:hover { text-decoration: underline; }
+
+/* Avatar wrap (para posicionar dropdown) */
+.navbar-avatar-wrap {
+    position: relative;
+}
+
+/* Avatar */
+.navbar-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(6,182,212,0.3);
+    transition: all 0.25s ease;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.navbar-avatar:hover {
+    border-color: #06b6d4;
+    box-shadow: 0 4px 14px rgba(6,182,212,0.35);
+    transform: translateY(-1px);
+}
+
+/* Dropdown del usuario */
+.navbar-user-dropdown {
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    width: 230px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.13), 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid rgba(6,182,212,0.1);
+    z-index: 10001;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.navbar-user-dropdown.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* User info header */
+.user-info-header {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(6,182,212,0.05), rgba(6,182,212,0.02));
+}
+
+.user-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.user-plan {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    background: rgba(6,182,212,0.1);
+    color: #06b6d4;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.menu-divider {
+    height: 1px;
+    background: #f3f4f6;
+}
+
+.dropdown-menu-list {
+    list-style: none;
+    padding: 6px 0;
+    margin: 0;
+}
+
+.dropdown-menu-item { margin: 0; }
+
+.dropdown-menu-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.dropdown-menu-button:hover {
+    background: rgba(6,182,212,0.06);
+    color: #06b6d4;
+}
+
+.dropdown-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: rgba(6,182,212,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.dropdown-menu-button:hover .dropdown-icon {
+    background: rgba(6,182,212,0.15);
+}
+
+.dropdown-icon svg {
+    width: 13px;
+    height: 13px;
+    stroke: #06b6d4;
+    stroke-width: 2;
+    fill: none;
+}
+
+.dropdown-text { flex: 1; text-align: left; }
+
+.logout-section {
+    border-top: 1px solid #f3f4f6;
+    padding: 6px 0;
+}
+
+.logout-button { color: #ef4444 !important; }
+.logout-button:hover { background: rgba(239,68,68,0.05) !important; color: #ef4444 !important; }
+.logout-button .dropdown-icon { background: rgba(239,68,68,0.08); }
+.logout-button:hover .dropdown-icon { background: rgba(239,68,68,0.14); }
+.logout-button .dropdown-icon svg { stroke: #ef4444; }
+
+/* Userbar en mobile: visible a la derecha junto al botón hamburguesa */
+@media (max-width: 768px) {
+    .nav-auth-user:not([style*="display: none"]):not([style*="display:none"]) {
+        display: flex;
+        gap: 4px;
+    }
+
+    /* Mostrar nav-auth en mobile solo para el userbar */
+    .nav-auth {
+        display: flex !important;
+        position: absolute;
+        right: 1rem;
+    }
+
+    /* Ocultar botones guest en mobile (están dentro del menú hamburguesa) */
+    .nav-auth-guest {
+        display: none !important;
+    }
+
+    /* Tamaño compacto del avatar y notif en mobile */
+    .navbar-icon-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .navbar-icon-btn svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .navbar-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
+    }
+
+    .navbar-ub-divider {
+        height: 18px;
+    }
+
+    /* Dropdowns: alineados a la derecha sin salirse de pantalla */
+    .navbar-user-dropdown {
+        right: 0;
+        left: auto;
+        width: 210px;
+    }
+
+    .navbar-notif-panel {
+        right: 0;
+        left: auto;
+        width: min(290px, calc(100vw - 16px));
+    }
+}
+
+/* Avatar placeholder mientras carga */
+.navbar-avatar:empty,
+.navbar-avatar span:empty {
+    background: linear-gradient(135deg, #b2e8f0, #7dd3de);
+}
+/* ============================================
+   LANGUAGE SELECTOR
+   ============================================ */
+
+.lang-selector {
+    position: relative;
+}
+
+.lang-trigger {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.lang-trigger:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+    box-shadow: 0 2px 10px rgba(6, 182, 212, 0.15);
+}
+
+.lang-trigger svg {
+    flex-shrink: 0;
+    color: #9ca3af;
+    transition: transform 0.2s ease;
+}
+
+.lang-selector.open .lang-trigger svg {
+    transform: rotate(180deg);
+}
+
+.lang-selector.open .lang-trigger {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 160px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    border: 1px solid rgba(6,182,212,0.12);
+    padding: 6px;
+    z-index: 10002;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.lang-selector.open .lang-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: left;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.lang-option:hover {
+    background: rgba(6, 182, 212, 0.08);
+    color: #06b6d4;
+}
+
+.lang-option.active {
+    background: rgba(6, 182, 212, 0.1);
+    color: #06b6d4;
+    font-weight: 700;
+}
+
+/* Mobile con sesión: el idioma pasa de la barra al menú para que no se amontone */
+.mobile-lang-item {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .navbar.is-logged-in .nav-right-group {
+        display: none !important;
+    }
+
+    .navbar.is-logged-in .nav-menu .nav-item.mobile-lang-item {
+        display: block;
+        order: 0;
+        margin: 0;
+    }
+
+    .nav-lang-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        min-height: 54px;
+        padding: 0 14px 0 10px;
+        border: 0;
+        border-radius: 18px;
+        background: none;
+        color: #374151;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .nav-lang-row .nav-lang-value {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .nav-lang-row .nav-lang-value svg {
+        color: rgba(6, 182, 212, 0.6);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .lang-selector-mobile.open .nav-lang-row .nav-lang-value svg {
+        transform: rotate(180deg);
+    }
+
+    .nav-lang-row:focus-visible {
+        outline: 2px solid rgba(6, 182, 212, 0.6);
+        outline-offset: 2px;
+    }
+
+    /* Userbar más compacto dentro de la píldora */
+    .navbar.is-logged-in .navbar-ub-divider {
+        display: none;
+    }
+
+    .navbar.is-logged-in .nav-auth-user {
+        gap: 6px !important;
+    }
+}
+
+/* Pantallas muy angostas con sesión: el logo se alinea junto al botón */
+@media (max-width: 360px) {
+    .navbar.is-logged-in .nav-logo {
+        left: 60px;
+        transform: translateY(-50%);
+    }
+
+    .navbar.is-logged-in .nav-logo:hover {
+        transform: translateY(-50%) scale(1.05);
+    }
+
+    .navbar.is-logged-in .nav-logo img {
+        height: 48px;
+    }
+}
+
+/* La lista de idiomas del menú se muestra fuera del panel (ver IOSMenu portal) */
+.lang-dropdown.is-open {
+    pointer-events: auto;
+}
+
+/* ============================================
+   FLAG ICONS — ajuste de tamaño
+   ============================================ */
+
+.lang-trigger .fi,
+.lang-option .fi {
+    width: 1.2em;
+    height: 0.9em;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+/* ============================================
+   DROPDOWNS ESTILO iOS 27 (idioma, avatar, notificaciones)
+   navbar.js (IOSMenu) controla la visibilidad y el recorte con resorte;
+   aquí se anulan las transiciones anteriores para que no compitan.
+   ============================================ */
+
+.ios-menu {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+}
+
+/* El contenido aparece cuando el menú ya creció lo suficiente */
+.ios-menu > :not(.ios-menu-ind) {
+    opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+/* Los botones que abren menús no deben hacer scroll al arrastrar desde ellos */
+.lang-trigger,
+.navbar-avatar,
+.navbar-icon-btn {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.navbar-avatar:focus-visible,
+.lang-trigger:focus-visible,
+.navbar-icon-btn:focus-visible {
+    outline: 2px solid rgba(6, 182, 212, 0.6);
+    outline-offset: 3px;
+}
+
+/* Indicador de resorte; al arrastrar se vuelve lente */
+.ios-menu-ind {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 10px;
+    background: rgba(6, 182, 212, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width, height, opacity;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ios-menu-ind.lifted {
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(6, 182, 212, 0.25), inset 0 0 0 1px rgba(6, 182, 212, 0.2);
+}
+
+/* Las opciones dejan el fondo al indicador */
+.ios-menu .lang-option,
+.ios-menu .dropdown-menu-button {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+    border-radius: 10px;
+    -webkit-user-drag: none;
+}
+
+.ios-menu .lang-option.is-hover,
+.ios-menu .dropdown-menu-button.is-hover {
+    color: #06b6d4;
+}
+
+.ios-menu .logout-button.is-hover {
+    color: #ef4444 !important;
+}
+
+.ios-menu .dropdown-menu-button.is-hover .dropdown-icon {
+    background: rgba(6, 182, 212, 0.18);
+}
+
+.ios-menu .logout-button.is-hover .dropdown-icon {
+    background: rgba(239, 68, 68, 0.14);
+}
+
+.ios-menu .dropdown-menu-list,
+.ios-menu .logout-section {
+    padding: 6px;
+}
+
+/* Idioma activo: palomita a la derecha, como en iOS */
+.ios-menu .lang-option.active {
+    color: #06b6d4;
+}
+
+.ios-menu .lang-option.active::after {
+    content: "✓";
+    margin-left: auto;
+    padding-left: 12px;
+    font-weight: 700;
+    color: #06b6d4;
+}
+
+/* Rebote al elegir */
+.ios-menu .ios-bounce .dropdown-icon,
+.ios-menu .lang-option.ios-bounce {
+    animation: navIconPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================
+   PÍLDORA FLOTANTE TRANSLÚCIDA (desktop y mobile)
+   El fondo es una capa ::before con blur: deja ver con color lo que pasa
+   detrás al hacer scroll. Va en un pseudo-elemento y no en .navbar porque
+   un backdrop-filter en .navbar descuadraría el panel fixed del menú móvil.
+   ============================================ */
+
+.navbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.navbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    pointer-events: none;
+    transition: background 0.3s ease;
+}
+
+.navbar.scrolled::before {
+    background: rgba(255, 255, 255, 0.66);
+}
+
+/* Navegadores sin blur: fondo casi sólido para que el texto se siga leyendo */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .navbar::before,
+    .navbar.scrolled::before {
+        background: rgba(255, 255, 255, 0.96);
+    }
+}
+
+/* --- Desktop: píldora flotante (mismo esquema que el navbar de Avante) ---
+   .navbar queda como envoltura transparente de ancho completo y la píldora
+   es .nav-container. Los !important evitan que estilos de otras páginas
+   sobre .navbar la vuelvan a poner de lado a lado. */
+@media (min-width: 769px) {
+    .navbar {
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 18px 24px 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        pointer-events: none;
+    }
+
+    .navbar::before,
+    .navbar::after {
+        display: none !important;
+    }
+
+    .nav-container {
+        pointer-events: auto;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 10px 12px 10px 24px;
+        background: rgba(255, 255, 255, 0.72);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(6, 182, 212, 0.16);
+        border-radius: 999px;
+        box-shadow: 0 10px 30px -18px rgba(6, 182, 212, 0.45), 0 2px 10px rgba(15, 23, 42, 0.04);
+        transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .navbar.scrolled .nav-container {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(6, 182, 212, 0.22);
+        box-shadow: 0 14px 34px -16px rgba(6, 182, 212, 0.5), 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    /* Logo y extremo derecho a su ancho real; el menú se centra en el espacio
+       que sobra. Con "1fr auto 1fr" ambas columnas laterales tomaban el ancho
+       del lado derecho y el selector de idioma se salía de la píldora. */
+    .nav-container {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        column-gap: 12px;
+    }
+
+    .nav-logo img {
+        height: 52px;
+    }
+
+    /* Links, botones e idioma en forma de cápsula */
+    .nav-link,
+    .nav-cta,
+    .lang-trigger {
+        border-radius: 999px;
+    }
+
+    .nav-link {
+        padding: 0.6rem 1.05rem;
+    }
+
+    .nav-cta {
+        padding: 0.65rem 1.4rem !important;
+    }
+
+    .lang-trigger {
+        background: rgba(255, 255, 255, 0.7);
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    @media (min-width: 769px) {
+        .nav-container,
+        .navbar.scrolled .nav-container {
+            background: rgba(255, 255, 255, 0.96);
+        }
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .navbar {
+        padding: 14px 16px 0 !important;
+    }
+
+    .nav-container {
+        padding: 8px 10px 8px 18px;
+    }
+
+    .nav-logo img {
+        height: 46px;
+    }
+
+    .nav-link {
+        padding: 0.55rem 0.75rem;
+    }
+}
+
+/* Laptops angostas: se compactan links y botones para que todo quepa */
+@media (min-width: 1025px) and (max-width: 1280px) {
+    .nav-menu {
+        gap: 0;
+    }
+
+    .nav-link {
+        padding: 0.55rem 0.8rem;
+    }
+
+    .nav-cta {
+        padding: 0.6rem 1.1rem !important;
+    }
+
+    .nav-right-group {
+        gap: 6px;
+    }
+}
+
+/* --- Mobile: la píldora también es translúcida --- */
+@media (max-width: 768px) {
+    .navbar {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05), inset 0 0 0 1px rgba(6, 182, 212, 0.08);
+    }
+
+    .navbar.scrolled {
+        box-shadow: 0 10px 34px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.06), inset 0 0 0 1px rgba(6, 182, 212, 0.12);
+    }
+
+    /* Con el menú abierto el panel sólido cubre la píldora */
+    .navbar.menu-is-open {
+        box-shadow: none;
+        border-color: transparent;
+    }
+
+    .navbar.menu-is-open::before {
+        background: #ffffff;
+    }
+}
+
+/* ============================================
+   Dropdowns: íconos en círculo y resaltado en cápsula
+   ============================================ */
+.dropdown-icon,
+.notification-icon {
+    border-radius: 50%;
+}
+
+.ios-menu-ind,
+.ios-menu .dropdown-menu-button,
+.ios-menu .lang-option {
+    border-radius: 999px;
+}

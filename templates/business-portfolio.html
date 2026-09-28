@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Portfolio - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/business-portfolio.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="portfolio-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-briefcase"></i>
+                                Business Portfolio
+                            </h1>
+                            <p class="page-subtitle">Configura tu integración de WhatsApp Business API</p>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Card -->
+                    <div class="config-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="lni lni-whatsapp"></i>
+                                <h2>Credenciales de Meta WhatsApp Business API</h2>
+                            </div>
+                            <div class="connection-status" id="connectionStatus">
+                                <i class="lni lni-close-circle"></i>
+                                <span>No configurado</span>
+                            </div>
+                        </div>
+
+                        <div class="card-content">
+                            <!-- Configuration Form -->
+                            <div class="config-form">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="lni lni-key"></i>
+                                        Token de Acceso Permanente
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="password" 
+                                               class="form-input" 
+                                               id="metaJwtToken" 
+                                               placeholder="Ingresa tu token de acceso permanente de Meta">
+                                        <button class="toggle-visibility" data-target="metaJwtToken">
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
+                                    <p class="form-hint">Token de acceso del System User (long-lived token de 60 días)</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="lni lni-phone"></i>
+                                        Identificador de Número de Teléfono
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="text" 
+                                               class="form-input" 
+                                               id="metaNumberId" 
+                                               placeholder="Ingresa el Phone Number ID">
+                                        <button class="copy-btn" data-copy="metaNumberId">
+                                            <i class="lni lni-copy"></i>
+                                        </button>
+                                    </div>
+                                    <p class="form-hint">ID único de tu número de WhatsApp Business</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="lni lni-lock"></i>
+                                        Token de Verificación Personalizado
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="password" 
+                                               class="form-input" 
+                                               id="metaVerifyToken" 
+                                               placeholder="Ejemplo: NombreDeTuMascota123">
+                                        <button class="toggle-visibility" data-target="metaVerifyToken">
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                        <button class="generate-btn" data-generate="metaVerifyToken">
+                                            <i class="lni lni-reload"></i>
+                                        </button>
+                                    </div>
+                                    <p class="form-hint">Puedes usar cualquier palabra o frase que desees (ejemplo: el nombre de tu mascota, tu color favorito, etc.)</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="lni lni-code-alt"></i>
+                                        Versión de la API
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="text" 
+                                               class="form-input" 
+                                               id="metaVersion" 
+                                               value="v22.0"
+                                               placeholder="Ejemplo: v22.0">
+                                    </div>
+                                    <p class="form-hint">Versión de la API de WhatsApp Business (recomendada: v22.0)</p>
+                                </div>
+
+                                <!-- Action Button -->
+                                <div class="form-actions">
+                                    <button class="btn-save" id="btnSave">
+                                        <i class="lni lni-save"></i>
+                                        <span>Guardar Configuración</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Status Panel (mostrar después de guardar) -->
+                            <div class="status-panel" id="statusPanel" style="display: none;">
+                                <div class="status-header">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    <h3>Configuración Guardada</h3>
+                                </div>
+                                <div class="status-details">
+                                    <div class="status-item">
+                                        <span class="status-label">Estado:</span>
+                                        <span class="status-value connected">Conectado</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">Phone Number ID:</span>
+                                        <span class="status-value" id="savedNumberId">-</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">API Version:</span>
+                                        <span class="status-value" id="savedVersion">-</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">Última actualización:</span>
+                                        <span class="status-value" id="savedTimestamp">-</span>
+                                    </div>
+                                </div>
+                                <button class="btn-disconnect" id="btnDisconnect">
+                                    <i class="lni lni-unlink"></i>
+                                    <span>Desconectar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/business-portfolio.js"></script>
+</body>
+</html>

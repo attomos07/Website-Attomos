@@ -1,0 +1,378 @@
+<!-- Floating Userbar Styles -->
+<link rel="stylesheet" href="/static/css/userbar.css?v=2">
+<style>
+/* ── Selector de idioma en userbar ── */
+.lang-dropdown-userbar {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 160px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    border: 1px solid rgba(6,182,212,0.12);
+    padding: 6px;
+    z-index: 10002;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+#langSelectorUserbar.open .lang-dropdown-userbar {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.lang-dropdown-userbar .lang-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+    text-align: left;
+    transition: background 0.15s;
+}
+.lang-dropdown-userbar .lang-option:hover {
+    background: rgba(6,182,212,0.08);
+    color: #06b6d4;
+}
+.lang-dropdown-userbar .lang-option.active {
+    background: rgba(6,182,212,0.1);
+    color: #06b6d4;
+    font-weight: 600;
+}
+</style>
+
+<!-- Logo Container (Left Side) -->
+<div class="logo-container" id="logoContainer">
+    <div class="logo-icon">
+        <img src="/static/images/attomos-favicon.png" alt="Attomos Logo">
+    </div>
+    <span class="company-name">Attomos</span>
+</div>
+
+<!-- Control Bar (Right Side) -->
+<div class="control-bar">
+    <!-- Notification Button -->
+    <div class="notification-container">
+        <button class="icon-button" id="notificationBtn">
+            <svg viewBox="0 0 24 24">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="notification-badge hidden" id="notificationBadge">0</span>
+            <span class="tooltip" data-translate="dash_nav_notifications">Notificaciones</span>
+        </button>
+
+        <!-- Notification Panel -->
+        <div class="notification-panel" id="notificationPanel">
+            <div class="notification-header">
+                <span class="notification-title" data-translate="dash_nav_notifications">Notificaciones</span>
+                <button class="mark-all-btn" id="markAllBtn" data-translate="dash_mark_read">Marcar como leídas</button>
+            </div>
+            <div class="notification-list" id="notificationList">
+                <div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">
+                    <span data-translate="dash_loading_notifs">Cargando notificaciones...</span>
+                </div>
+            </div>
+            <div class="notification-footer">
+                <button class="view-all-btn" onclick="window.location.href='/notifications'" data-translate="dash_view_all">Ver todas</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Selector de idioma -->
+    <div class="notification-container" id="langSelectorUserbar" style="position:relative;">
+        <button class="icon-button" id="langTriggerUserbar" aria-label="Idioma" style="gap:4px;min-width:52px;background:transparent;">
+            <span id="langTriggerLabelUserbar" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;white-space:nowrap;">
+                <!-- se rellena con JS síncrono abajo -->
+            </span>
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;color:#9ca3af;">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="tooltip" data-translate="dash_profile">Idioma</span>
+        </button>
+        <div class="lang-dropdown lang-dropdown-userbar" id="langDropdownUserbar">
+            <button class="lang-option" data-lang="es"></button>
+            <button class="lang-option" data-lang="en"></button>
+            <button class="lang-option" data-lang="ru"></button>
+            <button class="lang-option" data-lang="uz"></button>
+            <button class="lang-option" data-lang="ja"></button>
+            <button class="lang-option" data-lang="zh"></button>
+            <button class="lang-option" data-lang="fr"></button>
+            <button class="lang-option" data-lang="pt"></button>
+            <button class="lang-option" data-lang="de"></button>
+            <button class="lang-option" data-lang="ko"></button>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- User Avatar & Dropdown -->
+    <div class="user-avatar" id="userAvatar">
+        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop" alt="Perfil" id="userAvatarImg" style="display: none;">
+        <span class="user-initials" id="userInitials" style="visibility:hidden"></span>
+        <span class="tooltip" data-translate="dash_profile">Perfil</span>
+    </div>
+
+    <!-- User Dropdown Menu -->
+    <div class="user-dropdown" id="userDropdown">
+        <div class="user-info-header">
+            <div class="user-name" id="userName" style="visibility:hidden"></div>
+            <div class="user-role" id="userRole" style="visibility:hidden"></div>
+            {{/* Plan inyectado desde el servidor - evita parpadeo con valor incorrecto */}}
+            <div class="user-plan" id="userPlan" data-server-plan="{{.currentPlan}}">
+                {{if .currentPlan}}
+                    {{if eq .currentPlan "gratuito"}}Free Plan
+                    {{else if eq .currentPlan "proton"}}Proton
+                    {{else if eq .currentPlan "neutron"}}Neutron
+                    {{else if eq .currentPlan "electron"}}Electron
+                    {{else if eq .currentPlan "pending"}}Payment Pending
+                    {{else}}Free Plan
+                    {{end}}
+                {{else}}Free Plan{{end}}
+            </div>
+        </div>
+
+        <div class="menu-divider"></div>
+
+        <ul class="dropdown-menu-list">
+            <li class="dropdown-menu-item">
+                <a href="/dashboard" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_dashboard">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="dropdown-menu-item">
+                <a href="/my-business" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M2 7h20v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"></path>
+                            <path d="M2 7l2-4h16l2 4"></path>
+                            <path d="M10 12h4"></path>
+                            <path d="M12 10v4"></path>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_business">Mi Negocio</span>
+                </a>
+            </li>
+
+            <li class="dropdown-menu-item">
+                <a href="/my-agents" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                            <path d="M12 18h.01"></path>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_agents">Mis Agentes</span>
+                </a>
+            </li>
+
+            <!-- Mis Citas: visible para giros NO de comida -->
+            <li class="dropdown-menu-item" id="dropdownCitasItem">
+                <a href="/appointments" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                            <line x1="16" x2="16" y1="2" y2="6"></line>
+                            <line x1="8" x2="8" y1="2" y2="6"></line>
+                            <line x1="3" x2="21" y1="10" y2="10"></line>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_appointments">Mis Citas</span>
+                </a>
+            </li>
+
+            <!-- Mis Pedidos: visible para giros de comida (oculto por defecto) -->
+            <li class="dropdown-menu-item" id="dropdownPedidosItem" style="display:none">
+                <a href="/orders" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                            <line x1="3" x2="21" y1="6" y2="6"/>
+                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_orders">Mis Pedidos</span>
+                </a>
+            </li>
+
+            <li class="dropdown-menu-item">
+                <a href="/plans" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_plans">Planes</span>
+                </a>
+            </li>
+
+            <li class="dropdown-menu-item">
+                <a href="/billing" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                            <line x1="2" x2="22" y1="10" y2="10"></line>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_billing">Facturación</span>
+                </a>
+            </li>
+
+            <li class="dropdown-menu-item">
+                <a href="/settings" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text" data-translate="dash_nav_settings">Configuración</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-section">
+            <button class="dropdown-menu-button logout-button" id="userbarLogoutBtn">
+                <div class="dropdown-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" x2="9" y1="12" y2="12"></line>
+                    </svg>
+                </div>
+                <span class="dropdown-text" data-translate="dash_logout">Cerrar Sesión</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Userbar JavaScript -->
+<script src="/static/js/userbar.js?v=2"></script>
+
+<script>
+// ── Selector de idioma en userbar ─────────────────────────────────────────
+(function() {
+    // Banderas SVG inline — fallback si Translations aún no cargó
+    var FLAGS = {
+        es:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#006847"/><rect x="13.33" width="6.67" height="14" fill="#CE1126"/><circle cx="10" cy="7" r="1.8" fill="#8B4513" opacity="0.6"/></svg>',
+        en:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#012169"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" stroke-width="2.8"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#C8102E" stroke-width="1.6"/><path d="M10,0 V14 M0,7 H20" stroke="#fff" stroke-width="4"/><path d="M10,0 V14 M0,7 H20" stroke="#C8102E" stroke-width="2.4"/></svg>',
+        ru:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#fff"/><rect y="4.67" width="20" height="4.66" fill="#0035A9"/><rect y="9.33" width="20" height="4.67" fill="#D52B1E"/></svg>',
+        uz:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#1EB53A"/><rect width="20" height="4.67" fill="#009FCA"/><rect y="9.33" width="20" height="4.67" fill="#009FCA"/><rect y="4.67" width="20" height="4.66" fill="#fff"/></svg>',
+        ja:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="4" fill="#BC002D"/></svg>',
+        zh:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#DE2910"/><polygon points="3,1 3.6,2.9 5.6,2.9 4,4 4.6,5.9 3,4.8 1.4,5.9 2,4 0.4,2.9 2.4,2.9" transform="translate(0.5,0.5) scale(0.95)" fill="#FFDE00"/></svg>',
+        fr:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#ED2939"/><rect width="13.33" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#002395"/></svg>',
+        pt:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#009C3B"/><polygon points="10,2 19,7 10,12 1,7" fill="#FEDD00"/><circle cx="10" cy="7" r="3" fill="#003087"/><path d="M7,7.8 Q10,6 13,7.8" stroke="#fff" stroke-width="0.9" fill="none"/></svg>',
+        de:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#FFCE00"/><rect width="20" height="9.33" fill="#DD0000"/><rect width="20" height="4.67" fill="#000"/></svg>',
+        ko:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15" style="border-radius:2px;flex-shrink:0;display:block"><rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="3.5" fill="#C60C30"/><path d="M10,3.5 A3.5,3.5 0 0,1 10,10.5" fill="#003478"/></svg>',
+    };
+    var CODES = {es:'ES',en:'EN',ru:'RU',uz:'UZ',ja:'JA',zh:'ZH',fr:'FR',pt:'PT',de:'DE',ko:'KO'};
+    var LABELS = {es:'Español',en:'English',ru:'Русский',uz:"O'zbekcha",ja:'日本語',zh:'中文',fr:'Français',pt:'Português',de:'Deutsch',ko:'한국어'};
+
+    function getFlag(lang) {
+        if (window.Translations && window.Translations.FLAG_SVG) return window.Translations.FLAG_SVG[lang] || FLAGS[lang] || '';
+        return FLAGS[lang] || '';
+    }
+    function getLabel(lang) {
+        if (window.Translations && window.Translations.LANG_META) return window.Translations.LANG_META[lang] || {};
+        return { label: LABELS[lang], code: CODES[lang] };
+    }
+
+    function syncTrigger(lang) {
+        var el = document.getElementById('langTriggerLabelUserbar');
+        if (!el) return;
+        var meta = getLabel(lang);
+        el.innerHTML = getFlag(lang) + ' ' + (meta.code || CODES[lang] || lang.toUpperCase());
+    }
+
+    function renderOptions() {
+        document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(btn) {
+            var lang = btn.dataset.lang;
+            var meta = getLabel(lang);
+            btn.innerHTML = getFlag(lang) + ' ' + (meta.label || LABELS[lang] || lang);
+        });
+    }
+
+    function init() {
+        var STORAGE_KEY = 'attomos_lang';
+        var saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('lang') || 'es';
+
+        renderOptions();
+        syncTrigger(saved);
+
+        // Marcar activo
+        document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.lang === saved);
+        });
+
+        var wrapper  = document.getElementById('langSelectorUserbar');
+        var trigger  = document.getElementById('langTriggerUserbar');
+        var dropdown = document.getElementById('langDropdownUserbar');
+        var bar      = document.querySelector('.control-bar');
+
+        // Menú estilo iOS (definido en userbar.js): crece desde el botón,
+        // indicador de resorte y selección arrastrando sin soltar
+        if (window.IOSMenu) {
+            window.IOSMenu.create({
+                trigger: trigger,
+                menu: dropdown,
+                itemSelector: '.lang-option',
+                onOpenChange: function (open) {
+                    wrapper.classList.toggle('open', open);
+                    if (bar) bar.classList.toggle('menu-open', open);
+                }
+            });
+        }
+
+        // Cambiar idioma (el menú se cierra solo al elegir)
+        document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var lang = btn.dataset.lang;
+                if (window.Translations) window.Translations.apply(lang);
+                else localStorage.setItem(STORAGE_KEY, lang);
+                syncTrigger(lang);
+                document.querySelectorAll('#langDropdownUserbar .lang-option').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.lang === lang);
+                });
+            });
+        });
+
+        // Re-renderizar cuando Translations cargue (mejora las banderas)
+        if (!window.Translations) {
+            var interval = setInterval(function() {
+                if (window.Translations && window.Translations.FLAG_SVG) {
+                    clearInterval(interval);
+                    renderOptions();
+                    var cur = localStorage.getItem(STORAGE_KEY) || 'es';
+                    syncTrigger(cur);
+                }
+            }, 100);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

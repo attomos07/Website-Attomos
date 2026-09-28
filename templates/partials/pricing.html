@@ -1,0 +1,346 @@
+{{define "pricing.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precios - {{.title}}</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/partials/pricing.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="pricing-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="hero-title">
+                <span data-translate="pricing_hero_pre">Planes</span> <span class="highlight" data-translate="pricing_hero_hi">transparentes</span> <span data-translate="pricing_hero_post">y flexibles</span>
+            </h1>
+            <p class="hero-subtitle">
+                <span data-translate="pricing_hero_subtitle">Sin sorpresas, sin costos ocultos. Elige el plan que mejor se adapte a tu negocio y escala cuando lo necesites.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Comparison Toggle -->
+    <section class="comparison-section">
+        <div class="container">
+            <div class="billing-toggle">
+                <span class="toggle-label billing-label monthly" style="color: #06b6d4;" data-translate="billing_monthly">Mensual</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="billingToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label billing-label annual" data-translate="billing_annual">Anual</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="pricing-cards-section">
+        <div class="container">
+            <div class="pricing-grid">
+                {{range .plans}}
+                <div class="pricing-card {{if .popular}}featured{{end}}" data-plan="{{.id}}">
+                    {{if .popular}}
+                    <div class="popular-badge">Más Popular</div>
+                    {{end}}
+                    
+                    <h3 class="plan-name">{{.name}}</h3>
+                    <div class="plan-price">
+                        <span class="price-amount" data-monthly="{{.monthly.amount}}" data-annual="{{.annual.amount}}">${{.monthly.amount}}</span>
+                        <span class="price-period">por mes</span>
+                    </div>
+                    <p class="plan-description">{{.description}}</p>
+                    
+                    <ul class="plan-features">
+                        {{range .features}}
+                        <li>
+                            <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                            <span>{{.}}</span>
+                        </li>
+                        {{end}}
+                    </ul>
+                    
+                    {{if eq .id "electron"}}
+                    <button class="plan-button secondary" onclick="openWhatsApp()" data-translate="plan_btn_secondary">Contactar Ventas</button>
+                    {{else}}
+                    <button class="plan-button primary" data-translate="plan_btn_primary">Elegir Plan</button>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="comparison-table-section">
+        <div class="container">
+            <h2 class="section-title" data-translate="pricing_compare_title">Comparación Detallada de Planes</h2>
+            <div class="comparison-table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th class="feature-column" data-translate="pricing_col_features">Características</th>
+                            <th>Protón</th>
+                            <th>Neutrón</th>
+                            <th class="highlight-column">Attomos</th>
+                            <th>Electrón</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-chat"></i> <span data-translate="pricing_feat_msgs">Mensajes mensuales</span></td>
+                            <td>1,000</td>
+                            <td>5,000</td>
+                            <td class="highlight-cell" data-translate="pricing_unlimited">Ilimitados</td>
+                            <td data-translate="pricing_custom">Personalizados</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-users"></i> <span data-translate="pricing_feat_agents">Agentes IA</span></td>
+                            <td>1</td>
+                            <td>3</td>
+                            <td class="highlight-cell">10</td>
+                            <td data-translate="pricing_unlimited">Ilimitados</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-link"></i> <span data-translate="pricing_feat_integrations">Integraciones</span></td>
+                            <td>2</td>
+                            <td>5</td>
+                            <td class="highlight-cell" data-translate="pricing_all">Todas</td>
+                            <td data-translate="pricing_custom_f">Personalizadas</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-support"></i> <span data-translate="pricing_feat_support">Soporte</span></td>
+                            <td>Email</td>
+                            <td data-translate="pricing_support_email_chat">Email + Chat</td>
+                            <td class="highlight-cell" data-translate="pricing_support_247">24/7 Prioritario</td>
+                            <td data-translate="pricing_support_dedicated">Dedicado</td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-code"></i> <span data-translate="pricing_feat_api">API Access</span></td>
+                            <td><i class="lni lni-close"></i></td>
+                            <td><i class="lni lni-checkmark-circle check"></i></td>
+                            <td class="highlight-cell"><i class="lni lni-checkmark-circle check"></i></td>
+                            <td><i class="lni lni-checkmark-circle check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-stats-up"></i> <span data-translate="pricing_feat_analytics">Analytics Avanzado</span></td>
+                            <td><i class="lni lni-close"></i></td>
+                            <td><i class="lni lni-close"></i></td>
+                            <td class="highlight-cell"><i class="lni lni-checkmark-circle check"></i></td>
+                            <td><i class="lni lni-checkmark-circle check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature-name"><i class="lni lni-whatsapp"></i> <span data-translate="pricing_feat_wa">WhatsApp Business API</span></td>
+                            <td><i class="lni lni-close"></i></td>
+                            <td><i class="lni lni-checkmark-circle check"></i></td>
+                            <td class="highlight-cell"><i class="lni lni-checkmark-circle check"></i></td>
+                            <td><i class="lni lni-checkmark-circle check"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Cost Calculator Section -->
+    <section class="calculator-section">
+        <div class="container">
+            <h2 class="section-title" data-translate="calc_title">Calculadora de Costos de IA</h2>
+            <p class="section-subtitle" data-translate="calc_subtitle">Estima cuánto gastarás en Gemini 2.5 Flash-Lite según el volumen de tu negocio</p>
+
+            <div class="calculator-card">
+                <!-- ── INPUTS ── -->
+                <div class="calculator-inputs">
+
+                    <!-- Conversaciones -->
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-comments"></i>
+                            <span data-translate="calc_conversations">Conversaciones por mes</span>
+                        </label>
+                        <div class="calc-slider-wrap">
+                            <input type="range" id="convSlider" min="100" max="50000" step="100" value="1000" class="calc-slider">
+                            <input type="number" id="convInput" value="1000" min="1" class="calc-number-input">
+                        </div>
+                        <div class="calc-scale">
+                            <span>100</span><span>10k</span><span>25k</span><span>50k</span>
+                        </div>
+                    </div>
+
+                    <!-- Tokens por mensaje (separado entrada / salida) -->
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-arrow-right"></i>
+                            <span data-translate="calc_tokens_in">Tokens por mensaje de</span> <strong style="color:#06b6d4" data-translate="calc_in">entrada</strong>
+                            <span class="calc-hint" data-translate="calc_hint_in">(cliente + contexto)</span>
+                        </label>
+                        <div class="calc-token-row">
+                            <input type="range" id="tokInSlider" min="50" max="5000" step="50" value="580" class="calc-slider">
+                            <input type="number" id="tokInInput" value="580" min="1" class="calc-number-input">
+                        </div>
+                    </div>
+
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-arrow-left"></i>
+                            <span data-translate="calc_tokens_out">Tokens por mensaje de</span> <strong style="color:#10b981" data-translate="calc_out">salida</strong>
+                            <span class="calc-hint" data-translate="calc_hint_out">(respuesta del bot)</span>
+                        </label>
+                        <div class="calc-token-row">
+                            <input type="range" id="tokOutSlider" min="50" max="2000" step="50" value="180" class="calc-slider">
+                            <input type="number" id="tokOutInput" value="180" min="1" class="calc-number-input">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── RESULTADO ── -->
+                <div class="calculator-result">
+                    <div class="result-header">
+                        <i class="lni lni-calculator"></i>
+                        <span data-translate="calc_result_label">Estimado mensual</span>
+                    </div>
+
+                    <div class="result-main">
+                        <div class="result-usd" id="resultUSD">$0.00 USD</div>
+                        <div class="result-mxn" id="resultMXN">≈ $0.00 MXN</div>
+                    </div>
+
+                    <div class="result-breakdown">
+                        <div class="breakdown-item breakdown-in">
+                            <span class="breakdown-label" data-translate="calc_tokens_in_label">Tokens entrada / costo</span>
+                            <div class="breakdown-dual">
+                                <span class="breakdown-val" id="bdInput">—</span>
+                                <span class="breakdown-cost" id="bdInputCost">—</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-item breakdown-out">
+                            <span class="breakdown-label" data-translate="calc_tokens_out_label">Tokens salida / costo</span>
+                            <div class="breakdown-dual">
+                                <span class="breakdown-val" id="bdOutput">—</span>
+                                <span class="breakdown-cost" id="bdOutputCost">—</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-item breakdown-total">
+                            <span class="breakdown-label" data-translate="calc_tokens_total">Total tokens/mes</span>
+                            <span class="breakdown-val" id="bdTotal">—</span>
+                        </div>
+                    </div>
+
+                    <div class="result-tier" id="resultTier">
+                        <i class="lni lni-gift"></i>
+                        <span>Este volumen entra en el <strong>nivel gratuito</strong> de Gemini</span>
+                    </div>
+
+                    <div class="result-note">
+                        Gemini 2.5 Flash-Lite: entrada $0.10/M · salida $0.40/M tokens<br>
+                        <a href="https://ai.google.dev/gemini-api/docs/pricing?hl=es-419#standard_9" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.6);text-decoration:underline;">
+                            Ver precios oficiales de Google ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <h2 class="section-title" data-translate="faq_title">Preguntas Frecuentes</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-translate="faq_q1">¿Puedo cambiar de plan en cualquier momento?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <span data-translate="faq_a1">Sí, puedes actualizar o degradar tu plan en cualquier momento. Los cambios se reflejarán en tu próxima facturación.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-translate="faq_q2">¿Qué métodos de pago aceptan?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <span data-translate="faq_a2">Aceptamos tarjetas de crédito/débito, PayPal y transferencias bancarias para planes anuales.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-translate="faq_q3">¿Hay algún costo de instalación?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <span data-translate="faq_a3">No, todos nuestros planes incluyen configuración gratuita y soporte durante la implementación.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-translate="faq_q4">¿Ofrecen período de prueba?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            <span data-translate="faq_a4">Sí, ofrecemos 14 días de prueba gratuita en todos los planes, sin necesidad de tarjeta de crédito.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title" data-translate="pricing_cta_title">¿Necesitas un plan personalizado?</h2>
+                <p class="cta-subtitle">
+                    <span data-translate="pricing_cta_subtitle">Contáctanos y diseñaremos una solución que se ajuste perfectamente a las necesidades de tu empresa.</span>
+                </p>
+                <button class="cta-btn" onclick="openWhatsApp()">
+                    <i class="lni lni-whatsapp"></i>
+                    <span data-translate="pricing_cta_btn">Hablar con Ventas</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/partials/pricing.js"></script>
+</body>
+</html>
+{{end}}

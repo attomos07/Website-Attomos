@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Agentes - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/my-agents.css?v=3">
+    <link rel="stylesheet" href="/static/css/onboarding.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="agents-layout">
+                    <!-- Header -->
+                    <div class="page-header">
+                        <div class="header-left">
+                            <h1 class="page-title">
+                                <svg class="page-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                                    <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                                    <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                                    <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                                    <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                                <span data-translate="agents_page_title">Mis Agentes</span>
+                            </h1>
+                            <p class="page-description" data-translate="agents_page_subtitle">Administra todos tus agentes de IA por plataforma</p>
+                        </div>
+                        <div class="header-right">
+                            <button type="button" id="createAgentBtnAgents" class="btn-primary" onclick="openOnboardingModal()">
+                                <i class="lni lni-plus"></i>
+                                <span data-translate="agents_create_btn">Crear Agente</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards with Rotating Dashed Rings -->
+                    <div class="agents-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="lni lni-checkmark-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="activeAgentsCount">0</div>
+                                <div class="stat-label" data-translate="agents_active">Agentes Activos</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon pink">
+                                <i class="lni lni-archive"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalAgentsCount">0</div>
+                                <div class="stat-label" data-translate="agents_total">Total de Agentes</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon indigo">
+                                <i class="lni lni-network"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="platformsCount">0</div>
+                                <div class="stat-label" data-translate="agents_platforms">Plataformas Conectadas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agents Table -->
+                    <div class="agents-table-container" id="agentsTableContainer" style="display: none;">
+                        <div class="table-header">
+                            <h2 class="table-title">
+                                <i class="lni lni-list"></i>
+                                <span data-translate="agents_list_title">Lista de Agentes</span>
+                            </h2>
+                        </div>
+                        <table class="agents-table">
+                            <thead>
+                                <tr>
+                                    <th data-translate="agents_th_agent">Agente</th>
+                                    <th data-translate="agents_th_id">ID</th>
+                                    <th data-translate="agents_th_platform">Plataforma</th>
+                                    <th data-translate="agents_th_number">Número</th>
+                                    <th data-translate="agents_th_status">Estado</th>
+                                    <th style="text-align: right;" data-translate="agents_th_actions">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agentsTableBody">
+                                <!-- Los agentes se cargarán aquí dinámicamente -->
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <div class="loading-spinner"></div>
+                                        <div class="loading-text" data-translate="agents_loading">Cargando agentes...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="32" y1="8" x2="32" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <circle cx="32" cy="6" r="2.5" fill="currentColor"/>
+                                <rect x="18" y="14" width="28" height="24" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <circle cx="26" cy="24" r="3" fill="currentColor"/>
+                                <circle cx="38" cy="24" r="3" fill="currentColor"/>
+                                <path d="M 24 31 Q 32 34 40 31" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                                <rect x="20" y="38" width="24" height="18" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="28" y="42" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <circle cx="32" cy="46" r="1.5" fill="currentColor"/>
+                                <rect x="12" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="46" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="24" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="34" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                            </svg>
+                        </div>
+                        <h3 data-translate="agents_empty_title">No tienes agentes creados</h3>
+                        <p data-translate="agents_empty_desc">Crea tu primer agente para comenzar a automatizar tu atención al cliente</p>
+                        <button type="button" class="btn-primary" onclick="openOnboardingModal()" style="margin-top: 1.5rem;">
+                            <i class="lni lni-plus"></i>
+                            <span data-translate="agents_create_btn">Crear Agente</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo Toast Viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/my-agents.js?v=3"></script>
+</body>
+</html>

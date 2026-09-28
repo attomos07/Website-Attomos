@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujos — Attomos</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/my-agents.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/flows.css">
+</head>
+<body>
+
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="agents-layout">
+
+                    <!-- Header -->
+                    <div class="page-header">
+                        <div class="header-left">
+                            <h1 class="page-title">
+                                <svg class="page-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="10" cy="12" r="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="38" cy="12" r="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="10" cy="36" r="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="38" cy="36" r="4" stroke="currentColor" stroke-width="2.5"/>
+                                    <line x1="14" y1="12" x2="34" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <line x1="14" y1="36" x2="34" y2="36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <line x1="10" y1="16" x2="10" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <line x1="38" y1="16" x2="38" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
+                                Flujos
+                            </h1>
+                            <p class="page-description">Automatizaciones de conversación para tu dependencia</p>
+                        </div>
+                        <div class="header-right">
+                            <button type="button" id="btnNewFlow" class="btn-primary">
+                                <i class="lni lni-plus"></i>
+                                <span>Nuevo flujo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de flujos -->
+                    <div class="agents-table-container" id="flowsTableWrap" style="display:none;">
+                        <div class="table-header">
+                            <h2 class="table-title">
+                                <i class="lni lni-list"></i>
+                                Mis flujos
+                            </h2>
+                            <div class="flows-filter">
+                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                <button class="filter-btn" data-filter="active">Activos</button>
+                                <button class="filter-btn" data-filter="draft">Borradores</button>
+                            </div>
+                        </div>
+                        <table class="agents-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Trigger</th>
+                                    <th>Enviados</th>
+                                    <th>Entregados</th>
+                                    <th>CTR</th>
+                                    <th style="text-align:right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="flowsTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="flowsEmpty">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="16" r="5" stroke="currentColor" stroke-width="2.5"/>
+                                <circle cx="52" cy="16" r="5" stroke="currentColor" stroke-width="2.5"/>
+                                <circle cx="12" cy="48" r="5" stroke="currentColor" stroke-width="2.5"/>
+                                <circle cx="52" cy="48" r="5" stroke="currentColor" stroke-width="2.5"/>
+                                <line x1="17" y1="16" x2="47" y2="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="17" y1="48" x2="47" y2="48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="12" y1="21" x2="12" y2="43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <line x1="52" y1="21" x2="52" y2="43" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3>Aún no tienes flujos</h3>
+                        <p>Crea tu primer flujo para automatizar la conversación con los ciudadanos</p>
+                        <button type="button" id="btnNewFlowEmpty" class="btn-primary" style="margin-top:1.5rem;">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear flujo</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo Toast Viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         EDITOR CANVAS FULLSCREEN
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="canvas-overlay" id="canvasOverlay">
+
+        <!-- Top bar -->
+        <div class="canvas-topbar">
+            <button class="topbar-btn danger" id="btnCloseCanvas" title="Cerrar">
+                <i class="lni lni-close"></i>
+                Cerrar
+            </button>
+
+            <div class="canvas-topbar-title">
+                <input type="text" id="canvasFlowName" placeholder="Nombre del flujo" spellcheck="false"/>
+            </div>
+
+            <div class="canvas-trigger-wrap">
+                <span class="canvas-trigger-label">Trigger:</span>
+                <input type="text" id="canvasFlowTrigger" class="canvas-trigger-input"
+                       placeholder="Ej. BECAS" spellcheck="false"
+                       title="Palabra clave que activa este flujo"/>
+            </div>
+
+            <button class="topbar-btn" id="btnSaveDraftCanvas">
+                <i class="lni lni-save"></i>
+                Guardar borrador
+            </button>
+            <button class="topbar-btn primary" id="btnPublishCanvas">
+                <i class="lni lni-checkmark-circle"></i>
+                Publicar
+            </button>
+        </div>
+
+        <!-- Toolbar — tipos de nodo -->
+        <div class="canvas-toolbar">
+            <button class="tool-item msg" data-type="message" title="Agregar mensaje">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Mensaje
+            </button>
+            <button class="tool-item opts" data-type="options" title="Agregar opciones">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.3"/><circle cx="3.5" cy="12" r="1.3"/><circle cx="3.5" cy="18" r="1.3"/></svg>
+                Opciones
+            </button>
+            <button class="tool-item cond" data-type="condition" title="Agregar condición">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3L21 8v8l-9 5-9-5V8z"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                Condición
+            </button>
+            <button class="tool-item act" data-type="action" title="Agregar acción">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+                Acción
+            </button>
+            <div class="tool-divider"></div>
+            <button class="tool-item delay" data-type="delay" title="Agregar pausa">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                Pausa
+            </button>
+        </div>
+
+        <!-- Canvas SVG -->
+        <div class="canvas-area">
+            <svg id="flowCanvas" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <circle cx="12" cy="12" r="1" fill="#d1d5db" opacity="0.6"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="#ffffff"/>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+                <g id="canvasGroup"></g>
+            </svg>
+
+            <!-- Zoom controls -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="btnZoomIn">+</button>
+                <span class="zoom-label" id="zoomLabel">100%</span>
+                <button class="zoom-btn" id="btnZoomOut">−</button>
+            </div>
+
+            <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:500;color:#9ca3af;background:#ffffff;padding:8px 18px;border-radius:24px;pointer-events:none;white-space:nowrap;border:1px solid #f3f4f6;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                <i class="lni lni-pointer" style="margin-right:6px;font-size:13px;vertical-align:-1px;"></i>Clic para agregar · Arrastra para mover · Puerto → Puerto para conectar
+            </div>
+        </div>
+
+        <!-- Panel de propiedades -->
+        <div class="props-panel" id="propsPanel">
+            <div class="props-header">
+                <span class="props-title">Propiedades</span>
+                <button class="props-close" id="propsClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="props-body" id="propsBody">
+                <p style="font-size:13px;color:#94a3b8;text-align:center;margin-top:32px;">Selecciona un nodo para editar sus propiedades</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/flows.js"></script>
+</body>
+</html>

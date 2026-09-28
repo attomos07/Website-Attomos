@@ -1,0 +1,705 @@
+/* ============================================
+   MY-AGENCY CSS
+   Complementa my-business.css para el módulo
+   gubernamental. No redefine schedule ni
+   dropdowns (ya vienen de my-business.css).
+   ============================================ */
+
+/* ── Badge nivel de gobierno ── */
+.dep-nivel-badge {
+    display: inline-flex; align-items: center; gap:.35rem;
+    padding:.25rem .65rem; border-radius:99px;
+    font-size:.75rem; font-weight:600;
+    background:#e0f2fe; color:#0369a1;
+}
+.dep-nivel-badge.federal   { background:#fef3c7; color:#92400e; }
+.dep-nivel-badge.estatal   { background:#dcfce7; color:#166534; }
+.dep-nivel-badge.municipal { background:#ede9fe; color:#5b21b6; }
+.dep-nivel-badge.autonomo  { background:#fce7f3; color:#9d174d; }
+
+/* ── Cupos toggle ── */
+.cupos-toggle {
+    display:flex; align-items:center; gap:6px;
+    cursor:pointer; white-space:nowrap; user-select:none;
+}
+.cupos-toggle input[type="checkbox"] { display:none; }
+.cupos-slider {
+    width:36px; height:20px; background:#ef4444;
+    border-radius:10px; position:relative; transition:background .2s; flex-shrink:0;
+}
+.cupos-slider::after {
+    content:''; position:absolute;
+    width:14px; height:14px; background:#fff;
+    border-radius:50%; top:3px; left:3px; transition:transform .2s;
+}
+.curso-disponible:checked + .cupos-slider { background:#06b6d4; }
+.curso-disponible:checked + .cupos-slider::after { transform:translateX(16px); }
+.cupos-label { font-size:12px; font-weight:500; color:#ef4444; }
+.curso-disponible:checked ~ .cupos-label { color:#06b6d4; }
+
+/* ============================================
+   CURSOS LIST
+   ============================================ */
+
+.cursos-list { display:flex; flex-direction:column; gap:1.25rem; }
+
+.curso-item {
+    border:1.5px solid #e5e7eb; border-radius:14px;
+    padding:1.25rem; background:#fafafa;
+    display:flex; flex-direction:column; gap:.75rem;
+    transition:border-color .2s, box-shadow .2s;
+}
+.curso-item:hover { border-color:#06b6d4; box-shadow:0 2px 12px rgba(6,182,212,.08); }
+
+.curso-item-row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+.curso-title { flex:1; min-width:160px; font-weight:600; font-size:.95rem; }
+
+.cupos-row {
+    display:flex; align-items:center; gap:.65rem; flex-wrap:wrap;
+    padding:.5rem .75rem; background:#f9fafb;
+    border-radius:10px; border:1px solid #e5e7eb;
+}
+.cupos-label-text {
+    font-size:.82rem; font-weight:600; color:#374151;
+    white-space:nowrap; display:flex; align-items:center; gap:.35rem;
+}
+.cupos-input {
+    width:80px; text-align:center;
+    border-radius:8px; border:1.5px solid #d1d5db;
+    padding:.35rem .5rem; font-size:.9rem; font-weight:600;
+    transition:border-color .2s;
+}
+.cupos-input:focus { outline:none; border-color:#06b6d4; }
+.cupos-unit { font-size:.8rem; color:#6b7280; }
+
+.cupos-status-badge {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.25rem .65rem; border-radius:99px;
+    font-size:.75rem; font-weight:700; transition:all .2s;
+}
+.cupos-status-badge.disponible  { background:#dcfce7; color:#15803d; }
+.cupos-status-badge.agotado     { background:#fee2e2; color:#b91c1c; }
+.cupos-status-badge.por-agotarse{ background:#fef9c3; color:#854d0e; }
+
+.curso-fechas-row { display:flex; align-items:center; gap:.65rem; flex-wrap:wrap; }
+.curso-fechas-row label { font-size:.8rem; font-weight:600; color:#6b7280; white-space:nowrap; }
+.curso-fecha-input {
+    border:1.5px solid #d1d5db; border-radius:8px;
+    padding:.35rem .65rem; font-size:.85rem; transition:border-color .2s;
+}
+.curso-fecha-input:focus { outline:none; border-color:#06b6d4; }
+
+.curso-modalidad-toggle { display:flex; gap:.35rem; }
+.modalidad-btn {
+    padding:.3rem .75rem; border-radius:8px;
+    border:1.5px solid #e5e7eb; background:white; color:#6b7280;
+    font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s;
+}
+.modalidad-btn.active  { border-color:#06b6d4; background:#ecfeff; color:#0891b2; }
+.modalidad-btn:hover:not(.active) { border-color:#d1d5db; color:#374151; }
+
+.curso-image-upload { position:relative; }
+.curso-images-grid  { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+.curso-img-thumb {
+    position:relative; width:72px; height:72px;
+    border-radius:8px; overflow:hidden; border:1.5px solid #e5e7eb; cursor:pointer; flex-shrink:0;
+}
+.curso-img-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.btn-remove-thumb-curso {
+    position:absolute; top:3px; right:3px;
+    width:18px; height:18px; border-radius:50%;
+    border:none; background:rgba(0,0,0,.55); color:white;
+    cursor:pointer; font-size:.55rem;
+    display:flex; align-items:center; justify-content:center;
+}
+.btn-remove-thumb-curso:hover { background:#ef4444; }
+.curso-img-add-btn {
+    width:72px; height:72px; border-radius:8px;
+    border:2px dashed #d1d5db; background:#f9fafb;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:.2rem; cursor:pointer;
+    font-size:.7rem; color:#9ca3af; transition:border-color .2s, color .2s; flex-shrink:0;
+}
+.curso-img-add-btn:hover { border-color:#06b6d4; color:#06b6d4; }
+.curso-img-add-btn i { font-size:1.1rem; }
+.curso-image-uploading {
+    display:none; align-items:center; gap:.4rem;
+    font-size:.78rem; color:#6b7280; margin-top:.35rem;
+}
+
+/* ── Empty hint ── */
+.empty-list-hint {
+    display:flex; align-items:center; gap:.75rem;
+    padding:1.5rem 1rem; color:#9ca3af; font-size:.875rem;
+    border:1.5px dashed #e5e7eb; border-radius:12px; background:#fafafa;
+}
+
+/* ── Botón quitar item ── */
+.btn-remove-item {
+    width:32px; height:32px; border-radius:8px; border:none;
+    background:#fee2e2; color:#ef4444; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.85rem; flex-shrink:0; transition:background .2s;
+}
+.btn-remove-item:hover { background:#fecaca; }
+
+/* ============================================
+   BASE DE DATOS TAB
+   ============================================ */
+
+.bd-table-wrap {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.bd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+}
+
+.bd-table thead tr {
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.bd-table th {
+    padding: .85rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.bd-table td {
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.bd-table tbody tr:hover { background: #fafafa; }
+.bd-table tbody tr:last-child td { border-bottom: none; }
+
+.bd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .2rem .65rem;
+    border-radius: 99px;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.bd-status-badge.confirmado  { background:#dcfce7; color:#15803d; }
+.bd-status-badge.pendiente   { background:#fef9c3; color:#854d0e; }
+.bd-status-badge.cancelado   { background:#fee2e2; color:#b91c1c; }
+.bd-status-badge.completado  { background:#e0f2fe; color:#0369a1; }
+
+/* Spinner (reutiliza brand-spinner de my-business) */
+.brand-spinner {
+    width:22px; height:22px;
+    border:3px solid rgba(6,182,212,.2);
+    border-top-color:#06b6d4;
+    border-radius:50%;
+    animation:brandSpin .7s linear infinite;
+}
+@keyframes brandSpin { to { transform:rotate(360deg); } }
+
+/* ============================================
+   CURSO ITEM — LAYOUT REDISEÑADO
+   ============================================ */
+
+/* Fila encabezado: nombre + toggle + eliminar */
+.curso-header-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.curso-header-row .info-input {
+    flex: 1;
+    font-weight: 600;
+}
+
+/* Fila meta: modalidad + cupos en grid 2 col */
+.curso-meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+@media (max-width: 600px) {
+    .curso-meta-row { grid-template-columns: 1fr; }
+}
+
+.curso-meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+.curso-meta-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+/* Fila fechas */
+.curso-dates-row {
+    display: flex;
+    align-items: flex-end;
+    gap: .75rem;
+}
+.curso-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    position: relative;
+    flex: 1;
+}
+.curso-date-arrow {
+    font-size: 1.1rem;
+    color: #d1d5db;
+    padding-bottom: .35rem;
+    flex-shrink: 0;
+}
+
+/* Date picker display — hereda de time-input-display */
+.date-input-display {
+    min-width: 140px;
+}
+
+/* Date dropdown — más ancha que el time picker */
+.date-dropdown {
+    min-width: 240px !important;
+}
+
+/* Input de fecha nativo dentro de cursos */
+.curso-fecha-input {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    font-size: .9rem;
+    color: #1a1a1a;
+    background: white;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+    width: 100%;
+}
+.curso-fecha-input:hover  { border-color: #06b6d4; }
+.curso-fecha-input:focus  {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6,182,212,.1);
+}
+
+/* ============================================
+   CURSO BOTTOM GRID — fechas + fotos
+   ============================================ */
+
+.curso-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 640px) {
+    .curso-bottom-grid { grid-template-columns: 1fr; }
+}
+
+.curso-dates-col {
+    display: flex;
+    align-items: flex-end;
+    gap: .65rem;
+}
+.curso-dates-col .curso-date-group { flex: 1; }
+.curso-date-arrow {
+    font-size: 1rem; color: #d1d5db;
+    padding-bottom: .5rem; flex-shrink: 0;
+}
+
+/* ============================================
+   CALENDARIO ATTOMOS
+   ============================================ */
+
+.attomos-cal-wrap {
+    position: relative;
+}
+
+/* Botón disparador */
+.attomos-cal-btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .85rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-size: .875rem;
+    color: #1a1a1a;
+    font-weight: 500;
+    transition: border-color .2s, box-shadow .2s;
+    min-width: 160px;
+    user-select: none;
+}
+.attomos-cal-btn:hover {
+    border-color: #06b6d4;
+}
+.attomos-cal-wrap:has(.attomos-cal-drop.open) .attomos-cal-btn {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+}
+.attomos-cal-val {
+    flex: 1;
+    white-space: nowrap;
+    color: #374151;
+}
+
+/* Dropdown del calendario */
+.attomos-cal-drop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 280px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    z-index: 9999;
+    overflow: hidden;
+    /* Animación igual al time-dropdown */
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height .3s cubic-bezier(.23,1,.32,1),
+                opacity .25s ease,
+                visibility .25s ease;
+}
+.attomos-cal-drop.open {
+    max-height: 380px;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Header: < Mes Año > */
+.attomos-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .85rem 1rem .65rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+.attomos-cal-title {
+    font-size: .9rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+.attomos-cal-nav {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+}
+.attomos-cal-nav:hover {
+    background: #f0fdfe;
+    color: #06b6d4;
+}
+
+/* Grid de días */
+.attomos-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    padding: .65rem .75rem;
+}
+.attomos-cal-dow {
+    text-align: center;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #9ca3af;
+    padding: .25rem 0 .4rem;
+    text-transform: uppercase;
+}
+.attomos-cal-cell {
+    text-align: center;
+    padding: .45rem .2rem;
+    border-radius: 8px;
+    font-size: .85rem;
+    color: #374151;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.attomos-cal-cell.empty { cursor: default; }
+.attomos-cal-cell:not(.empty):hover {
+    background: #f0fdfe;
+    color: #06b6d4;
+}
+.attomos-cal-cell.today {
+    font-weight: 700;
+    color: #06b6d4;
+    border: 1.5px solid #06b6d4;
+}
+.attomos-cal-cell.selected {
+    background: #06b6d4;
+    color: white !important;
+    font-weight: 700;
+    border: none;
+}
+.attomos-cal-cell.today.selected {
+    background: #0891b2;
+}
+
+/* Footer: Limpiar / Hoy */
+.attomos-cal-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: .5rem .85rem .75rem;
+    border-top: 1px solid #f3f4f6;
+}
+.attomos-cal-clear,
+.attomos-cal-today {
+    background: none;
+    border: none;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: .3rem .5rem;
+    border-radius: 6px;
+    transition: background .15s;
+    color: #06b6d4;
+}
+.attomos-cal-clear { color: #9ca3af; }
+.attomos-cal-clear:hover { background: #f3f4f6; color: #ef4444; }
+.attomos-cal-today:hover  { background: #f0fdfe; }
+
+/* ============================================
+   RICH TEXT EDITOR
+   ============================================ */
+
+.rte-wrap {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+    background: white;
+}
+.rte-wrap:focus-within {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6,182,212,.1);
+}
+
+/* Barra de herramientas */
+.rte-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: .45rem .65rem;
+    background: #f9fafb;
+    border-bottom: 1.5px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.rte-btn {
+    width: 28px; height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+}
+.rte-btn:hover  { background: #e5e7eb; color: #1a1a1a; }
+.rte-btn.active { background: #ecfeff; color: #06b6d4; }
+.rte-btn b { font-size: .9rem; }
+.rte-btn i { font-size: .9rem; font-style: italic; }
+.rte-btn u { font-size: .9rem; }
+
+.rte-sep {
+    width: 1px; height: 18px;
+    background: #e5e7eb;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+/* Área editable */
+.rte-body {
+    min-height: 80px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: .75rem 1rem;
+    font-size: .9rem;
+    color: #374151;
+    line-height: 1.6;
+    outline: none;
+}
+.rte-body:empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+}
+.rte-body ul, .rte-body ol {
+    padding-left: 1.4rem;
+    margin: .25rem 0;
+}
+.rte-body li { margin: .1rem 0; }
+.rte-body b, .rte-body strong { font-weight: 700; }
+.rte-body i, .rte-body em     { font-style: italic; }
+.rte-body u                   { text-decoration: underline; }
+
+/* ── Ajuste grid bottom: imagen izquierda, fechas derecha ── */
+.curso-bottom-grid {
+    grid-template-columns: auto 1fr !important;
+}
+.curso-dates-col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .75rem;
+}
+.curso-dates-col .curso-date-arrow {
+    text-align: center;
+    padding: 0;
+    color: #d1d5db;
+}
+
+/* ============================================
+   SEDES
+   ============================================ */
+
+.sedes-list {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+.sede-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: .65rem;
+    align-items: center;
+    padding: .75rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fafafa;
+    transition: border-color .2s;
+}
+.sede-item:hover { border-color: #06b6d4; }
+
+/* ============================================
+   CURSO ITEM — ESPACIADO Y LAYOUT FECHAS
+   ============================================ */
+
+/* Más espacio entre secciones del curso */
+.curso-item { gap: 1rem; }
+
+/* Bottom grid: imagen izquierda (auto), derecha (1fr) */
+.curso-bottom-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 640px) {
+    .curso-bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* Columna derecha: fechas + sede apiladas */
+.curso-right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Inicio → Fin en la MISMA fila */
+.curso-dates-row-inline {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.curso-dates-row-inline .attomos-cal-wrap {
+    flex: 1;
+    min-width: 0;
+}
+.curso-dates-row-inline .attomos-cal-btn {
+    width: 100%;
+    min-width: 0;
+}
+.curso-dates-row-inline .curso-date-arrow {
+    flex-shrink: 0;
+    color: #d1d5db;
+    font-size: 1rem;
+}
+
+/* Select sede */
+.curso-sede {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem !important;
+}
+
+/* BDD tabla a todo ancho */
+.bd-table-wrap { width: 100%; }
+.bd-table { width: 100%; }
+
+/* ── Sede item rediseñado ── */
+.sede-item {
+    display: flex !important;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .85rem !important;
+}
+
+.sede-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    min-width: 0;
+}
+
+/* ── Botón basura circular ── */
+.btn-remove-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50% !important;
+    border: none;
+    background: #fee2e2;
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    flex-shrink: 0;
+    transition: background .2s, transform .15s;
+    margin-top: .35rem;
+}
+.btn-remove-circle:hover {
+    background: #fecaca;
+    transform: scale(1.08);
+}
+
+/* Aplicar circular también a btn-remove-holiday e btn-remove-item */
+.btn-remove-holiday,
+.btn-remove-item {
+    border-radius: 50% !important;
+    width: 34px !important;
+    height: 34px !important;
+    flex-shrink: 0;
+}

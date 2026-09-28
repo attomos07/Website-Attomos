@@ -1,0 +1,476 @@
+{{define "register.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Crear Cuenta</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/auth/register.css">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <div class="auth-container">
+        <div class="auth-background">
+            <div class="auth-shape auth-shape-1"></div>
+            <div class="auth-shape auth-shape-2"></div>
+            <div class="auth-shape auth-shape-3"></div>
+        </div>
+
+        <div class="auth-content">
+            <div class="orbital-container">
+                <svg id="animated-blob" viewBox="-5 -5 210 210" xmlns="http://www.w3.org/2000/svg" aria-labelledby="blobTitle">
+                    <title id="blobTitle">Animated Blob</title>
+                    
+                    <!-- Imágenes rotativas dentro del clip path -->
+                    <image id="blobImage1" href="https://images.pexels.com/photos/3268732/pexels-photo-3268732.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:1; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage2" href="https://images.pexels.com/photos/3998415/pexels-photo-3998415.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage3" href="https://images.pexels.com/photos/3845765/pexels-photo-3845765.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
+                    
+                    <!-- Definición del clip path -->
+                    <clipPath id="blobClip">
+                        <path d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
+                              transform="translate(100 100)"/>
+                    </clipPath>
+                    
+                    <!-- Path para el texto (invisible) -->
+                    <path id="textPath"
+                          d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
+                          transform="translate(100 100)"
+                          fill="none" stroke="none"
+                          pathLength="100"/>
+                    
+                    <!-- Texto animado -->
+                    <text class="text-content">
+                        <textPath href="#textPath" startOffset="0%">
+                            · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS
+                            <animate attributeName="startOffset" from="0%" to="100%" dur="15s" repeatCount="indefinite" />
+                        </textPath>
+                        <textPath href="#textPath" startOffset="100%">
+                            · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS
+                            <animate attributeName="startOffset" from="-100%" to="0%" dur="15s" repeatCount="indefinite" />
+                        </textPath>
+                    </text>
+                </svg>
+
+                <script>
+                    (function() {
+                        const images = [
+                            document.getElementById('blobImage1'),
+                            document.getElementById('blobImage2'),
+                            document.getElementById('blobImage3')
+                        ];
+                        let current = 0;
+
+                        setInterval(function() {
+                            images[current].style.opacity = '0';
+                            current = (current + 1) % images.length;
+                            images[current].style.opacity = '1';
+                        }, 4000);
+                    })();
+                </script>
+            </div>
+
+            <div class="auth-form-container">
+                <div class="auth-form-content">
+                    <div class="auth-header">
+                        <h2 class="auth-title" data-translate="register_title">Crear Cuenta</h2>
+                        <p class="auth-subtitle" data-translate="register_subtitle">Completa el formulario para comenzar</p>
+                    </div>
+
+                    <div class="social-login social-login-inline">
+                        <button class="social-btn social-icon-btn google-btn" onclick="registerWithGoogle()" title="" data-translate-title="register_google_title">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                        </button>
+                        
+                        <button class="social-btn social-icon-btn facebook-btn" onclick="registerWithFacebook()" title="" data-translate-title="register_facebook_title">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="divider">
+                        <span data-translate="register_or_email">o regístrate con email</span>
+                    </div>
+
+                    <form class="auth-form" id="registerForm" novalidate>
+
+                        
+                        <div class="form-group">
+                            <label for="businessName" class="form-label" data-translate="register_label_business">Nombre del Negocio</label>
+                            <div class="input-container">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                </svg>
+                                <input type="text" id="businessName" name="businessName" class="form-input" required>
+                            </div>
+                            <small class="input-hint" data-translate="register_hint_business">Ej: Mi Restaurante</small>
+                            <div class="form-error" id="businessNameError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phoneNumber" class="form-label" data-translate="register_label_phone">Número de WhatsApp</label>
+                            <div class="phone-input-wrapper">
+                                <div class="phone-code-container">
+                                    <svg class="input-icon" style="left: 10px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    <input type="text" id="phoneCode" name="phoneCode" class="phone-code-input" maxlength="4" required>
+                                </div>
+                                
+                                <div class="phone-number-container">
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                    </svg>
+                                    <input type="tel" id="phoneNumber" name="phoneNumber" class="phone-number-input" required>
+                                </div>
+                            </div>
+                            <small class="phone-hint" data-translate="register_hint_phone">Código de país + número local. Ej: +52 664 123 4567</small>
+                            <div class="form-error" id="phoneNumberError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label" data-translate="label_email">Email</label>
+                            <div class="input-container">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                                <input type="email" id="email" name="email" class="form-input" required>
+                            </div>
+                            <small class="input-hint" data-translate="hint_email">tu@email.com</small>
+                            <div class="form-error" id="emailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="businessType" class="form-label" data-translate="register_label_btype">Giro de Negocio</label>
+                            <div class="input-container">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                <div class="custom-select-wrapper">
+                                    <input type="text" id="businessType" name="businessType" class="form-input form-select" readonly required>
+                                    <i class="lni lni-chevron-down select-arrow"></i>
+                                    <div class="select-dropdown" id="businessDropdown">
+                                        <div class="select-search-container">
+                                            <i class="lni lni-search-alt search-icon"></i>
+                                            <input type="text" class="select-search" id="businessSearch" placeholder="" data-translate-placeholder="register_search_placeholder" autocomplete="off">
+                                        </div>
+                                        <div class="select-options-container" id="selectOptionsContainer">
+                            <div class="select-option" data-value="clinica-dental" data-keywords="clinica dental">
+                                <i class="lni lni-hospital"></i>
+                                <span data-translate="agent_dental_name">Clínica Dental</span>
+                            </div>
+                            <div class="select-option" data-value="peluqueria" data-keywords="peluqueria salon belleza estetica">
+                                <i class="lni lni-cut"></i>
+                                <span data-translate="agent_beauty_name">Peluquería / Estética</span>
+                            </div>
+<div class="select-option" data-value="gorditas" data-keywords="gorditas comida mexicana antojitos">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><g transform="translate(0,1024) scale(0.1,-0.1)" fill="currentColor" stroke="none"><path d="M4595 5180 c-439 -34 -707 -92 -892 -196 -91 -50 -196 -156 -230
+-231 -22 -48 -27 -73 -27 -144 -1 -83 1 -91 41 -170 l43 -82 -138 -141 c-76
+-78 -145 -157 -155 -178 -27 -57 -23 -151 8 -205 31 -52 64 -70 213 -113 62
+-18 115 -37 118 -42 3 -4 0 -25 -7 -46 -7 -20 -13 -72 -14 -115 -1 -73 -3 -82
+-31 -115 -149 -178 -166 -394 -47 -580 192 -301 824 -545 1643 -636 294 -33
+437 -40 785 -40 360 0 497 8 834 49 596 73 1156 242 1461 440 109 71 239 204
+279 286 60 122 64 258 13 379 l-19 44 29 46 c60 97 47 201 -37 289 l-53 56 34
+39 c107 123 121 277 41 429 -227 432 -1451 823 -3012 962 -208 19 -716 27
+-880 15z m940 -230 c712 -65 1462 -213 1980 -390 372 -128 612 -254 738 -389
+235 -251 -75 -451 -808 -520 -55 -6 -253 -8 -440 -6 -451 4 -785 34 -1275 111
+-986 156 -1746 417 -1995 686 -136 147 -98 278 109 378 167 80 352 116 786
+154 120 11 698 -5 905 -24z m-1760 -808 l111 -73 -33 -36 c-19 -19 -51 -67
+-73 -107 -65 -119 -42 -113 -221 -55 -118 37 -158 54 -162 68 -3 13 31 55 122
+149 69 72 131 130 136 129 6 -1 60 -35 120 -75z m307 -247 l37 -25 -16 -38
+c-10 -23 -16 -69 -17 -124 l-1 -87 -33 -15 c-47 -23 -54 -21 -112 31 -73 65
+-75 75 -33 153 74 137 102 154 175 105z m449 -86 c179 -54 179 -54 179 -84 0
+-40 -27 -57 -184 -119 -172 -68 -181 -68 -233 8 -26 38 -33 58 -33 95 0 77 8
+91 64 117 28 13 56 24 62 24 7 0 72 -18 145 -41z m721 -184 c142 -29 161 -43
+156 -109 l-3 -41 -110 -57 c-60 -32 -121 -58 -134 -58 -27 0 -68 40 -125 122
+-30 44 -37 63 -32 82 7 29 94 98 113 91 7 -2 68 -16 135 -30z m3031 -27 c81
+-55 104 -92 73 -117 -15 -12 -244 -51 -301 -51 -35 0 -133 66 -118 80 4 4 40
+15 79 24 38 10 104 32 145 51 40 18 78 33 82 34 5 1 23 -9 40 -21z m-3505
+-111 c14 -11 15 -104 3 -181 -13 -76 -35 -89 -145 -84 -82 4 -91 6 -113 32
+-21 25 -23 36 -21 94 l3 65 115 47 c110 46 130 49 158 27z m1353 -1 c52 -7
+100 -16 107 -20 8 -5 1 -26 -23 -69 -29 -52 -44 -67 -93 -95 -42 -23 -65 -30
+-80 -25 -27 10 -122 146 -122 174 0 12 8 31 17 42 14 15 26 18 58 12 22 -3 83
+-12 136 -19z m1558 -55 c36 -50 28 -80 -37 -149 -38 -41 -65 -62 -81 -62 -35
+0 -181 147 -181 183 0 34 4 35 120 46 159 14 156 14 179 -18z m-1017 -17 c87
+-53 90 -67 37 -160 -54 -94 -81 -124 -112 -124 -22 0 -182 87 -222 120 -27 23
+-17 61 37 132 l52 68 74 0 c68 0 80 -3 134 -36z m-948 -10 c18 -20 48 -61 66
+-91 40 -65 38 -72 -54 -152 -77 -67 -97 -67 -157 2 -75 86 -92 113 -85 135 4
+11 36 48 72 81 80 75 108 79 158 25z m1459 -26 c25 -61 17 -90 -39 -146 -40
+-40 -47 -44 -78 -38 -44 8 -123 43 -132 58 -4 6 -8 49 -9 95 l-2 84 120 -3
+121 -3 19 -47z m1116 -157 c54 -126 1 -249 -158 -369 -300 -226 -881 -392
+-1641 -469 -250 -25 -992 -25 -1230 0 -562 59 -1009 167 -1305 315 -244 121
+-376 266 -362 397 5 47 39 135 53 135 3 0 30 -20 61 -45 266 -217 787 -352
+1603 -417 202 -15 909 -15 1110 1 944 75 1523 226 1800 469 19 17 38 31 41 32
+4 0 16 -22 28 -49z"/>
+<path d="M3944 4630 c-32 -13 -54 -50 -54 -91 0 -47 28 -72 147 -129 556 -266
+1578 -483 2653 -564 337 -26 495 -30 530 -16 59 24 77 99 36 147 l-24 27 -193
+8 c-928 38 -2019 224 -2659 455 -69 25 -182 74 -253 109 -129 65 -145 70 -183
+54z"/>
+<path d="M7910 4094 c-25 -8 -97 -24 -160 -35 -102 -18 -118 -23 -142 -50 -38
+-40 -37 -82 1 -120 36 -36 68 -37 211 -9 193 39 240 65 240 131 0 76 -63 111
+-150 83z"/></g></svg>
+                                                    <span data-translate="register_btype_gorditas">Gorditas</span>
+                                            </div>
+<div class="select-option" data-value="mariscos" data-keywords="mariscos seafood pescado marisqueria">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><g transform="translate(0,1024) scale(0.1,-0.1)" fill="currentColor" stroke="none"><path d="M2527 7322 c-49 -61 -112 -190 -132 -272 -23 -88 -31 -263 -16 -342
+15 -79 48 -183 73 -227 34 -59 85 -135 117 -171 51 -58 39 -65 -36 -23 -221
+122 -380 300 -432 483 -8 25 -17 56 -22 70 -14 43 -29 141 -30 199 -1 51 -2
+53 -11 26 -23 -69 -7 -292 31 -412 36 -118 158 -289 267 -373 140 -109 339
+-190 505 -205 41 -4 121 -20 179 -37 94 -26 125 -30 285 -35 127 -4 196 -2
+235 7 30 7 75 16 100 21 25 4 68 13 96 19 50 10 53 10 117 -30 80 -48 202
+-115 320 -175 48 -25 87 -49 87 -54 0 -13 -26 -21 -68 -21 -20 0 -61 -4 -91
+-10 -31 -5 -103 -17 -161 -25 -274 -41 -355 -60 -380 -92 -24 -31 -25 -56 -4
+-87 25 -39 53 -40 234 -7 178 33 370 60 622 87 148 16 159 16 193 0 44 -21 37
+-32 -30 -46 -95 -21 -130 -29 -195 -44 -96 -24 -149 -35 -209 -46 -29 -5 -65
+-17 -79 -26 -29 -19 -123 -113 -289 -289 -108 -114 -113 -121 -113 -162 0 -54
+31 -79 88 -70 31 5 54 24 136 109 54 57 135 141 179 187 l81 83 106 24 c58 14
+134 31 170 38 36 8 99 22 140 31 41 8 84 20 95 25 11 4 49 15 85 24 36 9 89
+23 118 31 45 12 57 12 87 -1 19 -7 44 -14 55 -14 11 0 20 -7 20 -15 0 -17 -24
+-31 -76 -44 -22 -5 -84 -21 -139 -36 -55 -14 -118 -30 -140 -35 -140 -32 -265
+-68 -288 -83 -15 -9 -29 -30 -33 -45 -3 -15 -9 -36 -14 -47 -4 -11 -13 -40
+-20 -65 -6 -25 -37 -123 -67 -219 -61 -189 -62 -206 -12 -244 23 -17 32 -18
+62 -8 38 13 50 34 87 156 12 39 26 79 30 90 5 11 18 54 30 95 46 159 51 163
+175 189 33 7 68 17 77 22 10 5 25 9 34 9 10 0 42 7 73 16 31 9 74 20 96 26
+148 38 185 54 286 123 l76 52 159 6 c123 4 172 10 217 26 54 19 87 19 87 1 0
+-4 9 -10 21 -13 12 -3 19 -11 17 -18 -3 -8 -54 -46 -114 -86 -110 -74 -166
+-126 -194 -179 -8 -16 -39 -69 -68 -117 -134 -225 -144 -258 -96 -296 42 -33
+88 -28 118 12 15 19 26 37 26 41 0 3 12 25 27 49 15 23 32 51 38 62 41 76 108
+186 116 190 5 4 24 -5 41 -18 18 -14 48 -32 66 -41 17 -9 32 -21 32 -25 0 -5
+-54 -88 -120 -184 -132 -193 -140 -214 -93 -261 22 -22 33 -26 57 -22 40 8 47
+16 113 115 32 47 61 88 64 91 3 3 8 10 10 15 8 20 102 155 108 155 3 -1 33
+-25 65 -54 l59 -53 -86 -114 c-47 -63 -108 -143 -136 -179 -36 -47 -51 -74
+-51 -96 0 -40 26 -72 66 -80 41 -8 64 14 222 214 41 50 77 92 82 92 4 0 13 -6
+19 -14 6 -7 30 -16 54 -20 49 -7 123 -21 187 -35 25 -5 67 -15 95 -21 27 -5
+52 -14 56 -18 4 -4 9 -44 11 -90 l5 -82 -48 -58 c-27 -31 -73 -88 -103 -127
+l-55 -70 -85 -22 c-170 -44 -501 -230 -654 -368 l-53 -48 -72 36 c-63 31 -190
+90 -252 116 -11 5 -51 21 -90 36 -100 39 -118 46 -137 56 -10 5 -25 9 -33 9
+-8 0 -23 4 -33 10 -57 32 -382 121 -567 154 -94 17 -332 32 -369 22 -48 -12
+-66 -43 -66 -114 0 -120 44 -226 147 -349 34 -40 43 -59 44 -90 0 -21 10 -60
+23 -86 25 -53 129 -165 185 -199 20 -12 38 -24 41 -27 3 -4 14 -11 25 -17 11
+-6 24 -24 29 -40 5 -16 12 -39 17 -51 11 -28 99 -85 159 -102 25 -7 56 -17 70
+-21 71 -23 216 -41 400 -49 214 -9 218 -9 393 15 l108 14 42 -34 c91 -74 228
+-116 374 -116 143 1 442 63 525 110 10 6 23 10 28 10 6 0 70 29 143 64 155 75
+286 161 371 244 39 38 91 74 146 102 144 74 288 191 386 315 21 28 41 52 44
+55 14 14 70 102 70 109 0 5 3 11 8 13 4 2 14 19 23 38 13 27 26 38 60 48 23 7
+56 23 72 34 47 34 123 162 200 338 18 41 60 167 75 225 40 156 54 266 53 440
+0 163 -15 269 -54 386 l-25 73 19 49 c28 70 24 171 -10 252 -94 224 -246 449
+-426 630 -88 89 -215 191 -351 281 -79 52 -145 102 -148 112 -20 62 -196 152
+-391 202 -213 54 -209 54 -585 54 -245 0 -363 -4 -382 -12 -21 -8 -48 -8 -115
+2 -99 16 -235 25 -623 41 -283 12 -466 26 -575 46 -60 11 -146 27 -190 35
+-169 30 -337 42 -364 25 -11 -7 -7 -19 22 -60 21 -28 37 -55 37 -60 0 -19 -75
+-23 -637 -37 -275 -7 -277 -8 -203 -48 19 -10 62 -33 95 -51 33 -17 76 -42 95
+-53 19 -12 49 -29 67 -37 18 -9 37 -23 44 -31 10 -12 -43 -14 -365 -14 -385 0
+-404 -2 -433 -39 -26 -34 -4 -89 45 -114 31 -16 80 -43 205 -116 49 -28 90
+-51 93 -51 2 0 28 -16 58 -35 30 -19 57 -35 60 -35 2 0 43 -22 91 -50 48 -27
+89 -50 91 -50 2 0 23 -12 47 -27 45 -30 110 -66 142 -81 12 -6 27 -17 34 -26
+11 -13 9 -16 -11 -20 -184 -41 -385 -34 -543 19 -276 92 -443 247 -524 488
+-46 135 -57 241 -38 367 16 110 31 179 46 208 5 9 15 31 22 47 7 17 21 42 31
+57 39 58 14 51 -35 -10z m1938 -346 c246 -44 269 -46 560 -57 311 -11 571 -25
+657 -35 56 -7 56 -7 73 -53 9 -25 20 -55 25 -66 15 -37 62 -150 75 -180 26
+-60 63 -192 74 -263 38 -247 -28 -472 -183 -620 -80 -76 -124 -97 -237 -110
+-322 -37 -834 143 -1514 533 -55 31 -120 69 -145 83 -25 14 -61 34 -80 45 -19
+11 -64 36 -100 55 -36 19 -69 38 -75 42 -9 7 -56 33 -180 100 -27 15 -79 44
+-113 64 -35 20 -68 36 -72 36 -5 0 -10 3 -12 8 -1 4 -19 16 -40 27 -20 11 -35
+25 -35 30 1 6 77 11 202 11 110 1 254 5 320 9 119 7 120 8 185 50 61 39 98 72
+89 78 -2 1 -18 12 -36 25 -18 12 -35 22 -39 22 -26 0 -121 59 -97 60 223 7
+523 27 531 35 3 2 -5 25 -17 50 -27 57 -27 58 7 52 15 -2 95 -16 177 -31z
+m2170 -107 c28 -5 70 -14 95 -18 68 -12 165 -47 256 -92 80 -40 81 -41 92 -90
+7 -28 12 -92 12 -142 0 -321 -95 -583 -293 -802 -92 -103 -279 -229 -394 -266
+-62 -20 -75 -21 -153 -12 -137 18 -361 94 -373 128 -3 6 17 37 43 69 43 52
+104 162 140 251 20 51 40 195 40 295 0 174 -35 315 -141 567 -23 57 -39 106
+-35 110 15 15 164 21 411 17 138 -2 273 -9 300 -15z m720 -382 c285 -202 555
+-541 640 -805 22 -66 16 -93 -34 -176 -132 -216 -433 -459 -679 -550 -119 -44
+-157 -51 -287 -51 -75 1 -145 6 -165 13 -40 14 -147 117 -211 202 -56 76 -109
+165 -109 183 0 12 95 75 145 96 28 12 163 120 223 179 69 66 166 188 193 240
+8 15 16 29 19 32 18 18 85 183 119 290 18 60 41 236 41 318 0 43 3 82 6 85 8
+8 10 7 99 -56z m-1342 -1150 c18 -8 60 -20 95 -27 34 -8 62 -19 62 -25 0 -14
+-204 -134 -239 -141 -18 -4 -43 3 -77 21 -85 47 -86 45 13 118 48 36 94 66
+101 66 7 1 27 -5 45 -12z m2024 -122 c22 -108 13 -372 -17 -520 -16 -75 -54
+-212 -70 -250 -42 -104 -127 -262 -159 -295 l-38 -40 -94 0 c-145 1 -304 26
+-437 69 -99 32 -242 92 -305 128 -33 18 -61 33 -65 33 -8 0 -116 82 -124 94
+-18 26 -8 91 37 246 l22 75 39 -3 c105 -8 309 -4 361 8 249 56 545 233 738
+443 39 41 77 75 85 74 9 -1 19 -24 27 -62z m-1646 -37 c15 -34 35 -68 48 -81
+26 -26 8 -43 -112 -105 -88 -46 -128 -61 -142 -56 -36 14 -116 78 -113 92 2 7
+39 33 83 56 44 24 107 60 140 80 70 42 82 44 96 14z m219 -296 l37 -42 -21
+-60 c-12 -32 -25 -62 -29 -66 -4 -4 -24 -2 -44 4 -21 5 -83 20 -138 33 -55 12
+-105 27 -112 33 -13 12 11 26 160 96 37 18 69 36 72 40 10 17 38 2 75 -38z
+m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
+50 -16 99 -32 110 -36 11 -4 58 -15 105 -24 47 -9 104 -21 128 -26 23 -6 56
+-10 72 -10 40 0 39 -17 -10 -87 -73 -107 -195 -222 -313 -297 -31 -20 -61 -34
+-66 -31 -5 3 -24 36 -42 73 -105 218 -311 405 -521 476 -24 7 -23 26 5 57 12
+15 38 45 57 68 32 38 64 52 72 33z m-2387 -293 c88 -11 254 -48 277 -60 10 -5
+26 -9 35 -9 22 0 360 -113 418 -139 22 -10 51 -22 65 -26 81 -24 350 -154 357
+-173 8 -19 -18 -103 -33 -109 -8 -3 -21 2 -29 11 -15 15 -218 117 -295 149
+-80 33 -195 69 -310 97 -86 21 -221 32 -371 29 l-163 -3 -46 44 c-55 54 -96
+121 -106 173 l-7 39 69 -7 c38 -3 101 -10 139 -16z m2179 -15 c89 -30 101 -35
+186 -94 114 -78 221 -203 264 -310 10 -25 23 -55 29 -68 15 -33 5 -46 -99
+-125 -88 -66 -304 -181 -427 -226 -135 -49 -353 -91 -476 -91 -149 0 -269 69
+-319 183 -68 154 -47 304 54 397 75 68 267 200 290 200 7 0 14 4 16 8 5 13
+188 101 263 127 90 31 126 31 219 -1z m-1900 -375 c127 -15 276 -46 349 -71
+97 -33 169 -67 163 -76 -3 -5 -63 -12 -133 -16 -70 -3 -166 -11 -213 -16 -218
+-26 -218 -26 -290 16 -62 36 -160 123 -160 142 0 8 101 27 164 30 16 1 70 -3
+120 -9z m862 -306 c3 -10 10 -26 15 -35 14 -28 11 -56 -8 -62 -33 -10 -328
+-27 -373 -22 -25 3 -81 8 -125 11 -44 3 -118 13 -165 22 -81 15 -110 26 -99
+38 9 9 448 48 659 58 30 2 63 4 73 5 10 1 20 -6 23 -15z"/>
+<path d="M3935 6660 c-38 -15 -67 -57 -72 -104 -5 -38 -1 -51 20 -79 83 -109
+263 -25 226 106 -11 40 -18 49 -49 70 -26 18 -91 22 -125 7z"/></g></svg>
+                                                    <span data-translate="agent_seafood_name">Mariscos / Pescadería</span>
+                                            </div>
+                            <div class="select-option" data-value="gubernamental" data-keywords="gubernamental gobierno municipal estatal federal dependencia oficina publica">
+                                <i class="lni lni-government"></i>
+                                <span data-translate="register_btype_govt">Gubernamental / Institución Pública</span>
+                            </div>
+                            <div class="select-option" data-value="automotriz" data-keywords="automotriz auto carro mecanico taller refaccionaria">
+                                <i class="lni lni-car"></i>
+                                <span data-translate="agent_auto_name">Automotriz</span>
+                            </div>
+                            <div class="select-option" data-value="pizzeria" data-keywords="pizzeria pizza comida restaurante">
+                                <i class="lni lni-pizza"></i>
+                                <span data-translate="agent_pizza_name">Pizzería</span>
+                            </div>
+                            <div class="select-option" data-value="libreria" data-keywords="libreria libros papeleria tienda">
+                                <i class="lni lni-book"></i>
+                                <span data-translate="agent_bookstore_name">Librería</span>
+                            </div>
+                            <div class="select-option" data-value="restaurante" data-keywords="restaurante comida cocina">
+                                <i class="lni lni-restaurant"></i>
+                                <span data-translate="agent_restaurant_name">Restaurante</span>
+                            </div>
+                            <div class="select-option" data-value="panaderia" data-keywords="panaderia reposteria pan pasteleria">
+                                <i class="lni lni-cake"></i>
+                                <span data-translate="agent_bakery_name">Panadería / Repostería</span>
+                            </div>
+                            <div class="select-option" data-value="ensaladas" data-keywords="ensaladas vegetariano saludable verduras">
+                                <i class="lni lni-leaf"></i>
+                                <span data-translate="agent_salad_name">Ensaladas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                            </div>
+                            <div class="form-error" id="businessTypeError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="businessSize" class="form-label" data-translate="register_label_bsize">Tamaño de Negocio</label>
+                            <div class="input-container">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                    <polyline points="2 17 12 22 22 17"></polyline>
+                                    <polyline points="2 12 12 17 22 12"></polyline>
+                                </svg>
+                                <div class="custom-select-wrapper">
+                                    <input type="text" id="businessSize" name="businessSize" class="form-input form-select" readonly required>
+                                    <i class="lni lni-chevron-down select-arrow"></i>
+                                    <div class="select-dropdown" id="businessSizeDropdown">
+                                        <div class="select-options-container" id="selectSizeOptionsContainer">
+                                            <div class="select-option" data-value="microempresa">
+                                                <i class="lni lni-user"></i>
+                                                <span data-translate="register_size_micro">Microempresa (1-10)</span>
+                                            </div>
+                                            <div class="select-option" data-value="pequena">
+                                                <i class="lni lni-users"></i>
+                                                <span data-translate="register_size_small">Pequeña (11-50)</span>
+                                            </div>
+                                            <div class="select-option" data-value="mediana">
+                                                <i class="lni lni-apartment"></i>
+                                                <span data-translate="register_size_medium">Mediana (51-200)</span>
+                                            </div>
+                                            <div class="select-option" data-value="grande">
+                                                <i class="lni lni-apartment"></i>
+                                                <span data-translate="register_size_large">Grande (200+)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-error" id="businessSizeError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label" data-translate="label_password">Contraseña</label>
+                            <div class="input-container">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <input type="password" id="password" name="password" class="form-input" required>
+                                
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                    <svg id="passwordToggleIcon" width="22" height="22" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 7.625C9.60719 7.625 7.64844 9.58375 7.64844 12C7.64844 14.4162 9.60719 16.375 12.0234 16.375C14.4397 16.375 16.3984 14.4162 16.3984 12C16.3984 9.58375 14.4397 7.625 12.0234 7.625ZM9.14844 12C9.14844 10.4122 10.4356 9.125 12.0234 9.125C13.6113 9.125 14.8984 10.4122 14.8984 12C14.8984 13.5878 13.6113 14.875 12.0234 14.875C10.4356 14.875 9.14844 13.5878 9.14844 12Z" fill="#9CA3AF"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 4.5C7.71145 4.5 3.99772 7.05632 2.30101 10.7351C1.93091 11.5375 1.93091 12.4627 2.30101 13.2652C3.99772 16.9439 7.71145 19.5002 12.0234 19.5002C16.3353 19.5002 20.049 16.9439 21.7458 13.2652C22.1159 12.4627 22.1159 11.5375 21.7458 10.7351C20.049 7.05633 16.3353 4.5 12.0234 4.5ZM3.66311 11.3633C5.12472 8.19429 8.32017 6 12.0234 6C15.7266 6 18.922 8.19429 20.3836 11.3633C20.5699 11.7671 20.5699 12.2331 20.3836 12.6369C18.922 15.8059 15.7266 18.0002 12.0234 18.0002C8.32017 18.0002 5.12472 15.8059 3.66311 12.6369C3.47688 12.2331 3.47688 11.7671 3.66311 11.3633Z" fill="#9CA3AF"/></svg>
+                                </button>
+                            </div>
+                            <small class="input-hint" data-translate="register_hint_password">Mínimo 8 caracteres</small>
+                            <div class="form-error" id="passwordError"></div>
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-meter">
+                                    <div class="strength-meter-fill" id="strengthMeterFill"></div>
+                                </div>
+                                <span class="strength-text" id="strengthText"></span>
+                            </div>
+                        </div>
+
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="terms" id="terms" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                <span data-translate="register_terms_pre">Acepto los</span> <a href="/terms" target="_blank" data-translate="register_terms_link1">Términos y Condiciones</a> <span data-translate="register_terms_and">y la</span> <a href="/privacy" target="_blank" data-translate="register_terms_link2">Política de Privacidad</a>
+                            </span>
+                        </label>
+
+                        <button type="submit" class="auth-btn primary-btn" id="registerBtn">
+                            <span class="btn-text" data-translate="register_btn">Crear Cuenta</span>
+                            <div class="btn-loading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <span data-translate="register_loading">Creando cuenta...</span>
+                            </div>
+                        </button>
+
+                        <div class="form-footer">
+                            <p><span data-translate="register_have_account">¿Ya tienes una cuenta?</span> <a href="/login" class="auth-link" data-translate="register_login_link">Inicia Sesión</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{template "partials/footer.html" .}}
+
+    <script src="/static/js/index.js"></script>
+    <script src="/static/js/auth/register.js"></script>
+</body>
+</html>
+{{end}}

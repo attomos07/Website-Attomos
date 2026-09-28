@@ -1,0 +1,120 @@
+{{define "admin/sidebar.html"}}
+<button class="mobile-menu-btn" id="mobileMenuBtn">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <nav class="sidebar-container" id="sidebar">
+
+        <a href="/admin/database-admin" class="icon-button" data-page="database-admin">
+            <svg viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+            <span class="tooltip">Empresas</span>
+        </a>
+
+        <a href="/admin/invoices" class="icon-button" data-page="invoices">
+            <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span class="tooltip">Facturas</span>
+        </a>
+
+        <a href="/admin/sellers" class="icon-button" data-page="sellers">
+            <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span class="tooltip">Vendedores</span>
+        </a>
+
+        <a href="/admin/prospects" class="icon-button" data-page="prospects">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.9 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.81 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"></path>
+                <line x1="18" y1="2" x2="18" y2="8"></line>
+                <line x1="15" y1="5" x2="21" y2="5"></line>
+            </svg>
+            <span class="tooltip">Prospectos</span>
+        </a>
+
+        <a href="/admin/metrics" class="icon-button" data-page="metrics">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span class="tooltip">Métricas</span>
+        </a>
+
+        <div class="divider"></div>
+
+        <button class="icon-button logout-button" id="logoutBtn">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" x2="9" y1="12" y2="12"></line>
+            </svg>
+            <span class="tooltip">Cerrar Sesión</span>
+        </button>
+
+    </nav>
+
+    <script>
+        const sidebar   = document.getElementById('sidebar');
+        const menuBtn   = document.getElementById('mobileMenuBtn');
+        const overlay   = document.getElementById('mobileOverlay');
+
+        menuBtn.addEventListener('click', () => {
+            const open = sidebar.classList.toggle('mobile-active');
+            overlay.classList.toggle('active', open);
+            menuBtn.classList.toggle('active', open);
+            document.body.style.overflow = open ? 'hidden' : '';
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-active');
+            overlay.classList.remove('active');
+            menuBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('mobile-active');
+                overlay.classList.remove('active');
+                menuBtn.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Marcar item activo según URL actual
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.icon-button[data-page]').forEach(btn => {
+            const page = btn.getAttribute('data-page');
+            if (currentPath.includes(page)) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/admin/api/logout', { method: 'POST', credentials: 'include' });
+            } finally {
+                window.location.href = '/admin/login';
+            }
+        });
+    </script>
+{{end}}

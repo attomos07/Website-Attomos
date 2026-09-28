@@ -1,0 +1,176 @@
+{{define "client_history.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - Attomos</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/client-history.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+    <script src="/static/js/translations.js"></script>
+</head>
+<body>
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+
+                <!-- Header -->
+                <div class="historial-header">
+                    <div>
+                        <h1><i class="lni lni-files"></i> <span id="pageTitle" data-translate="hist_title">Historial</span></h1>
+                        <p id="pageSubtitle" data-translate="hist_subtitle">Registro completo de todas las visitas y citas sincronizadas</p>
+                    </div>
+                    <div style="display:flex;gap:.5rem;">
+                        <button class="btn-primary" onclick="exportCSV()" style="background:#f0fdf4;color:#10b981;border:1.5px solid #10b981;box-shadow:none;">
+                            <i class="lni lni-download"></i>
+                            <span>CSV</span>
+                        </button>
+                        <button class="btn-primary" onclick="exportPDF()" style="background:#fef2f2;color:#ef4444;border:1.5px solid #ef4444;box-shadow:none;">
+                            <i class="lni lni-files"></i>
+                            <span>PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="statVisitas">—</div>
+                            <div class="stat-label" data-translate="hist_stat_visits">Visitas Totales</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan"><i class="lni lni-users"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="statClientes">—</div>
+                            <div class="stat-label" data-translate="hist_stat_clients">Clientes Únicos</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="lni lni-calendar"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="statMes">—</div>
+                            <div class="stat-label" data-translate="hist_stat_month">Visitas este Mes</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="lni lni-close"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="statCanceladas">—</div>
+                            <div class="stat-label" data-translate="hist_stat_cancelled">Canceladas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles -->
+                <div class="controls-bar">
+                    <div class="search-box">
+                        <i class="lni lni-search-alt"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por cliente, teléfono o servicio..." data-translate-placeholder="hist_search_placeholder">
+                    </div>
+
+                    <div class="filter-chip-group" id="typeFilters">
+                        <button class="filter-chip active" data-type="all" data-translate="hist_filter_all">Todos</button>
+                        <button class="filter-chip" data-type="visita" data-translate="hist_filter_visits">Visitas</button>
+                        <button class="filter-chip" data-type="cancelada" data-translate="hist_filter_cancelled">Canceladas</button>
+                    </div>
+
+                    <div class="filter-chip-group" id="rangeFilters">
+                        <button class="filter-chip active" data-range="all" data-translate="hist_range_all">Todo</button>
+                        <button class="filter-chip" data-range="week" data-translate="hist_range_week">7 días</button>
+                        <button class="filter-chip" data-range="month" data-translate="hist_range_month">Mes</button>
+                        <button class="filter-chip" data-range="year" data-translate="hist_range_year">Año</button>
+                    </div>
+
+                    <div class="custom-dropdown-wrapper filter-wrapper" style="min-width: 160px;">
+                        <div class="form-input form-dropdown filter-trigger">
+                            <span id="selectedAgent" data-translate="hist_all_agents">Todos los Agentes</span>
+                            <i class="lni lni-chevron-down dropdown-arrow"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-options" id="agentFilterOptions">
+                                <div class="dropdown-option selected" onclick="selectAgentFilter(this, 'all')">
+                                    <span data-translate="hist_all_agents">Todos los Agentes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla -->
+                <div class="historial-table-wrapper">
+                    <table class="historial-table">
+                        <thead>
+                            <tr>
+                                <th data-translate="hist_col_client">Cliente</th>
+                                <th data-translate="hist_col_service">Servicio</th>
+                                <th data-translate="hist_col_worker">Trabajador</th>
+                                <th data-translate="hist_col_date">Fecha</th>
+                                <th data-translate="hist_col_agent">Agente</th>
+                                <th data-translate="hist_col_type">Tipo</th>
+                                <th data-translate="hist_col_source">Origen</th>
+                                <th data-translate="hist_col_actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historialBody">
+                            <!-- skeleton -->
+                            <tr class="skeleton-row">
+                                <td colspan="8" style="height: 52px;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Paginación -->
+                    <div class="pagination" id="paginationBar">
+                        <div class="pagination-btns" id="paginationBtnsPrev"></div>
+                        <span id="paginationInfo" data-translate="hist_loading">Cargando...</span>
+                        <div class="pagination-btns" id="paginationBtns"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel lateral de historial del cliente -->
+    <div class="client-panel-overlay" id="clientPanelOverlay" onclick="closePanelIfOutside(event)">
+        <div class="client-panel" id="clientPanel">
+            <div class="panel-header">
+                <div class="panel-title"><i class="lni lni-user"></i> <span data-translate="hist_panel_title">Historial del Cliente</span></div>
+                <button class="panel-close" onclick="closeClientPanel()"><i class="lni lni-close"></i></button>
+            </div>
+            <div id="clientPanelContent">
+                <div style="text-align:center;padding:2rem;color:#9ca3af;" data-translate="hist_loading">Cargando...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/client-history.js"></script>
+</body>
+</html>
+{{end}}

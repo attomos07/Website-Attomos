@@ -1,0 +1,675 @@
+/* ============================================
+   CONTACT PAGE STYLES - CORREGIDO
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffffff;
+    padding-top: 80px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
+#particles-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.contact-hero {
+    background: #ffffff;
+    padding: 140px 20px 100px;
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title {
+    font-size: 56px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+}
+
+.hero-title .highlight {
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: #6b7280;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   CONTACT METHODS - FONDO BLANCO
+   ============================================ */
+
+.contact-methods-section {
+    padding: 80px 20px;
+    background: #ffffff;
+}
+
+.contact-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.contact-method-card {
+    background: white;
+    padding: 40px 32px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.contact-method-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   ICONOS - ANILLOS CIRCULARES CIAN CON FONDO BLANCO
+   ============================================ */
+
+.method-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #a5f3fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.15);
+}
+
+.method-icon i {
+    font-size: 32px;
+    color: #22d3ee;
+}
+
+.contact-method-card:hover .method-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 30px rgba(34, 211, 238, 0.3);
+    border-color: #67e8f9;
+}
+
+.contact-method-card:hover .method-icon i {
+    color: #06b6d4;
+}
+
+.method-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.method-description {
+    font-size: 15px;
+    color: #6b7280;
+    margin-bottom: 24px;
+}
+
+.method-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.method-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(34, 211, 238, 0.3);
+}
+
+/* ============================================
+   CONTACT FORM & INFO - FONDO BLANCO
+   ============================================ */
+
+.contact-form-section {
+    padding: 100px 20px;
+    background: #ffffff;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 60px;
+}
+
+.form-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.form-subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 32px;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #ef4444;
+    animation: shakeError 0.5s ease;
+}
+
+/* ============================================
+   FIELD ERROR MESSAGES - ANIMADAS
+   ============================================ */
+
+.field-error {
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: slideInError 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.field-error::before {
+    content: '⚠';
+    font-size: 14px;
+    animation: pulseWarning 1s ease-in-out infinite;
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+@keyframes slideInError {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseWarning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.submit-btn {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.2);
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(34, 211, 238, 0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================
+   INFO CARDS
+   ============================================ */
+
+.info-card {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 32px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+}
+
+.info-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+}
+
+.info-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Info Icons - ANILLOS CIRCULARES CIAN CON FONDO BLANCO */
+.info-icon {
+    width: 48px;
+    height: 48px;
+    background: #ffffff;
+    border: 3px solid #a5f3fc;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.15);
+}
+
+.info-icon i {
+    font-size: 24px;
+    color: #22d3ee;
+}
+
+.info-content h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.info-content p {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+/* ============================================
+   SOCIAL CARD - ICONOS VISIBLES
+   ============================================ */
+
+.social-card {
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.social-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.social-links {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.social-link {
+    width: 52px;
+    height: 52px;
+    background: #ffffff;
+    border: 2px solid #a5f3fc;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22d3ee;
+    font-size: 24px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 2px 10px rgba(34, 211, 238, 0.1);
+}
+
+.social-link:hover {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 8px 25px rgba(34, 211, 238, 0.3);
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+
+/* ============================================
+   SUCCESS MESSAGE
+   ============================================ */
+
+.success-message {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: white;
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+    border: 2px solid #10b981;
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.success-message.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.success-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.success-content i {
+    font-size: 32px;
+    color: #10b981;
+}
+
+.success-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.success-content p {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+/* ============================================
+   DIGITAL BANNER
+   ============================================ */
+
+.map-section {
+    padding: 80px 20px;
+    background: #ffffff;
+}
+
+.digital-banner {
+    max-width: 900px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-radius: 24px;
+    padding: 48px 56px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    box-shadow: 0 10px 40px rgba(34, 211, 238, 0.12);
+    border: 2px solid #a5f3fc;
+}
+
+.digital-banner-icon {
+    width: 90px;
+    height: 90px;
+    background: #ffffff;
+    border: 3px solid #a5f3fc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(34, 211, 238, 0.2);
+}
+
+.digital-banner-icon i {
+    font-size: 40px;
+    color: #22d3ee;
+}
+
+.digital-banner-content h3 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.digital-banner-content p {
+    font-size: 16px;
+    color: #6b7280;
+    line-height: 1.7;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .digital-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 36px 28px;
+        gap: 24px;
+    }
+}
+
+/* ============================================
+   WHATSAPP FLOAT
+   ============================================ */
+
+.whatsapp-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+}
+
+.whatsapp-float:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.7); }
+    70% { box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 10px rgba(37, 211, 102, 0); }
+}
+
+.whatsapp-tooltip {
+    position: absolute;
+    right: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.whatsapp-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-left-color: #1f2937;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(-10px);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 968px) {
+    .contact-methods-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    body { padding-top: 70px; }
+    
+    .contact-hero {
+        padding: 120px 20px 80px;
+    }
+    
+    .hero-title {
+        font-size: 36px;
+    }
+    
+    .hero-subtitle {
+        font-size: 16px;
+    }
+    
+    .section-title {
+        font-size: 32px;
+    }
+    
+    .contact-methods-grid {
+        gap: 20px;
+    }
+    
+    .whatsapp-float {
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+    }
+    
+    .whatsapp-tooltip {
+        display: none;
+    }
+
+    .success-message {
+        right: 10px;
+        left: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 32px;
+    }
+    
+    .form-title {
+        font-size: 28px;
+    }
+}

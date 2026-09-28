@@ -1,0 +1,356 @@
+{{define "comy/sidebar-comy.html"}}
+
+<aside class="comy-sidebar" id="comySidebar">
+
+  <div class="comy-sidebar-top">
+    <a href="/comy" class="comy-logo" title="Comy">
+      <div class="comy-logo-mark">C</div>
+      <span class="comy-beta">Beta</span>
+    </a>
+
+    <nav class="comy-sidebar-nav" id="comySidebarLinks">
+      <div class="comy-side-indicator" id="comySideIndicator"></div>
+      <a href="/comy" class="comy-side-link" data-match="/comy" title="Directorio">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="comy-side-tooltip">Directorio</span>
+      </a>
+      <a href="/comy/map" class="comy-side-link" data-match="/comy/map" title="Rastreo">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
+        <span class="comy-side-tooltip">Rastreo</span>
+      </a>
+      <a href="/comy/orders" class="comy-side-link" data-match="/comy/orders" title="Mis pedidos">
+        <svg width="20" height="20" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2m4 7h4m-4 5h4m-8-5h.01M8 16h.01"/></svg>
+        <span class="comy-side-tooltip">Mis pedidos</span>
+      </a>
+      <a href="/comy/favoritos" class="comy-side-link" data-match="/comy/favoritos" title="Favoritos">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676a.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>
+        <span class="comy-side-tooltip">Favoritos</span>
+      </a>
+      <a href="/comy/settings" class="comy-side-link" data-match="/comy/settings" title="Configuración">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
+        <span class="comy-side-tooltip">Configuración</span>
+      </a>
+      <a href="/" class="comy-side-link comy-side-link-muted" data-match="/" title="Attomos">
+        <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
+        <span class="comy-side-tooltip">Attomos</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="comy-sidebar-bottom">
+    <!-- GUEST (default) -->
+    <div id="comyGuest" class="comy-guest-stack">
+      <a href="/comy/login" class="comy-icon-btn" title="Iniciar sesión">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="m16 17l5-5l-5-5m5 5H9m0 9H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+      </a>
+      <a href="/comy/register" class="comy-icon-btn comy-icon-btn-primary" title="Registrarse">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2.6"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M19 8v6m3-3h-6"/></svg>
+      </a>
+    </div>
+
+    <!-- USER (se muestra si hay sesión) -->
+    <div id="comyUser" class="comy-user-area" style="display:none">
+      <div class="comy-avatar-wrap" id="comyAvatarWrap">
+        <div class="comy-avatar" id="comyAvatar">
+          <!-- Foto de perfil real: descomentar cuando login/register entreguen session.photoUrl
+          <img id="comyAvatarImg" src="" alt="" style="display:none">
+          -->
+          <span id="comyInitials">?</span>
+        </div>
+        <div class="comy-user-dropdown" id="comyDropdown">
+          <div class="cd-header">
+            <div class="cd-name" id="cdName">—</div>
+            <div class="cd-role" id="cdRole">—</div>
+          </div>
+          <div class="cd-divider"></div>
+          <a href="/comy/profile" class="cd-item">Mi perfil</a>
+          <a href="/comy/orders"  class="cd-item">Mis pedidos</a>
+          <div class="cd-divider"></div>
+          <button class="cd-item cd-logout" id="comyLogoutBtn">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Barra de navegación inferior (solo mobile) -->
+<nav class="comy-mobile-nav" id="comyMobileNav">
+  <div class="cmn-indicator" id="comyMobileIndicator"></div>
+  <a href="/comy" class="cmn-link" data-match="/comy">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+    <span class="cmn-label">Inicio</span>
+  </a>
+  <a href="/comy/map" class="cmn-link" data-match="/comy/map">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2.3"/></svg></span>
+    <span class="cmn-label">Rastreo</span>
+  </a>
+  <a href="/comy/orders" class="cmn-link" data-match="/comy/orders">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="2.3"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2m4 7h4m-4 5h4m-8-5h.01M8 16h.01"/></svg></span>
+    <span class="cmn-label">Pedidos</span>
+  </a>
+  <a href="/comy/favoritos" class="cmn-link" data-match="/comy/favoritos">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676a.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg></span>
+    <span class="cmn-label">Favoritos</span>
+  </a>
+  <a href="/comy/settings" class="cmn-link" data-match="/comy/settings">
+    <span class="cmn-icon"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.3"/></svg></span>
+    <span class="cmn-label">Ajustes</span>
+  </a>
+</nav>
+
+<style>
+  :root {
+    --c-accent: #F59500;
+    --c-accent-dark: #C97800;
+    --c-accent-soft: #FFF3DC;
+    --c-ink: #1A1A1A;
+    --c-muted: #9A9A9A;
+    --c-border: #EBEBEB;
+    --c-muted-bg: #F0F0F0;
+    --c-panel: #FFFFFF;
+    --c-bg: #F5F5F8;
+    --c-shadow: 0 14px 34px rgba(180,110,0,.12);
+    --c-sidebar-w: 76px;
+    /* Alto de la barra inferior en mobile (sin contar el safe-area del iPhone).
+       Las páginas la usan para no quedar tapadas: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom)) */
+    --c-mobile-nav-h: 64px;
+    --c-font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body { margin-left: var(--c-sidebar-w); background: var(--c-bg); font-family: var(--c-font); }
+  .comy-content { min-height: 100vh; }
+
+  .comy-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 500;
+    width: var(--c-sidebar-w);
+    background: var(--c-panel);
+    border-right: 1px solid var(--c-border);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 0;
+    font-family: var(--c-font);
+  }
+
+  .comy-sidebar-top { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; width: 100%; }
+  .comy-logo { position: relative; display: flex; text-decoration: none; }
+  .comy-logo-mark {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+  }
+  .comy-beta {
+    position: absolute; top: -6px; right: -14px;
+    background: var(--c-ink); color: #fff; font-size: .5rem; font-weight: 700;
+    padding: 1px 4px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em;
+  }
+
+  .comy-sidebar-nav { position: relative; display: flex; flex-direction: column; gap: .5rem; width: 100%; align-items: center; }
+  .comy-side-indicator {
+    position: absolute; top: 0; left: 50%; width: 40px; height: 40px;
+    border-radius: 50%; background: var(--c-accent);
+    box-shadow: 0 6px 16px rgba(245,149,0,.35);
+    transform: translate(-50%, 0); opacity: 0;
+    transition: top .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
+    z-index: 0; pointer-events: none;
+  }
+  .comy-side-link {
+    position: relative; z-index: 1;
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--c-muted); text-decoration: none;
+    transition: color .18s;
+  }
+  .comy-side-link:hover { color: #fff; }
+  .comy-side-link.active { color: #fff; }
+  .comy-side-link-muted { color: #c7c1ba; }
+  .comy-side-link-muted:hover { color: #fff; }
+  .comy-side-link-muted.active { color: #fff; }
+
+  .comy-side-tooltip {
+    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+    background: var(--c-ink); color: #fff; font-size: .72rem; font-weight: 600;
+    padding: .35rem .6rem; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 50;
+  }
+  .comy-side-link:hover .comy-side-tooltip { opacity: 1; }
+
+  .comy-sidebar-bottom { display: flex; flex-direction: column; align-items: center; gap: .6rem; width: 100%; }
+  .comy-guest-stack { display: flex; flex-direction: column; gap: .5rem; }
+  .comy-icon-btn {
+    width: 38px; height: 38px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--c-ink); border: 1.5px solid var(--c-border); text-decoration: none;
+    transition: all .2s;
+  }
+  .comy-icon-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .comy-icon-btn-primary {
+    background: var(--c-accent); color: #fff; border-color: var(--c-accent);
+    box-shadow: 0 6px 16px rgba(245,149,0,.3);
+  }
+  .comy-icon-btn-primary:hover { background: var(--c-accent-dark); border-color: var(--c-accent-dark); color: #fff; }
+
+  .comy-user-area { position: relative; }
+  .comy-avatar-wrap { position: relative; }
+  .comy-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--c-accent); color: #fff; font-weight: 700; font-size: .85rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    border: 2.5px solid #fff; box-shadow: 0 3px 10px rgba(245,149,0,.4);
+  }
+  .comy-avatar:hover { box-shadow: 0 0 0 4px rgba(245,149,0,.18); }
+  .comy-user-dropdown {
+    position: absolute; bottom: 0; left: calc(100% + 14px);
+    background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(0,0,0,.12); min-width: 200px;
+    display: none; z-index: 1000; overflow: hidden;
+  }
+  .comy-avatar-wrap:hover .comy-user-dropdown,
+  .comy-avatar-wrap.open .comy-user-dropdown { display: block; }
+  .cd-header { padding: .9rem 1.1rem; }
+  .cd-name  { font-size: .9rem; font-weight: 700; color: var(--c-ink); }
+  .cd-role  { font-size: .75rem; color: var(--c-muted); }
+  .cd-divider { height: 1px; background: var(--c-border); }
+  .cd-item {
+    display: block; padding: .7rem 1.1rem; font-size: .85rem; color: #374151;
+    text-decoration: none; transition: background .12s; width: 100%;
+    background: none; border: none; cursor: pointer; font-family: inherit; text-align: left;
+  }
+  .cd-item:hover { background: var(--c-accent-soft); }
+  .cd-logout { color: var(--c-accent); }
+  .cd-logout:hover { background: var(--c-accent-soft); }
+
+  /* ===== Barra inferior mobile ===== */
+  .comy-mobile-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+    height: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom));
+    padding: 0 .35rem env(safe-area-inset-bottom);
+    background: rgba(255,255,255,.96);
+    -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
+    border-top: 1px solid var(--c-border);
+    font-family: var(--c-font);
+  }
+  .cmn-link {
+    position: relative; z-index: 1; flex: 1; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
+    color: var(--c-muted); text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .2s;
+  }
+  .cmn-icon {
+    width: 52px; height: 30px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cmn-label { font-size: .66rem; font-weight: 700; white-space: nowrap; }
+  .cmn-link:active .cmn-icon { transform: scale(.9); }
+  .cmn-link.active { color: var(--c-ink); }
+  .cmn-link.active .cmn-icon { color: #2A2200; }
+
+  /* Píldora deslizante detrás del ícono activo (mismo mecanismo que el círculo del sidebar) */
+  .cmn-indicator {
+    position: absolute; top: calc((var(--c-mobile-nav-h) - 30px) / 2 - 9px); left: 0;
+    width: 52px; height: 30px; border-radius: 999px;
+    background: var(--c-accent); box-shadow: 0 4px 12px rgba(245,149,0,.3);
+    opacity: 0; pointer-events: none; z-index: 0;
+    transition: left .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
+  }
+
+  @media (max-width: 700px) {
+    body { margin-left: 0; padding-bottom: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom)); }
+    .comy-sidebar { display: none; }
+    .comy-mobile-nav { display: flex; }
+  }
+</style>
+
+<script>
+(function() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  document.querySelectorAll('[data-match]').forEach(a => {
+    const match = a.dataset.match.replace(/\/+$/, '') || '/';
+    if (match === path) a.classList.add('active');
+  });
+
+  // Círculo deslizante del menú lateral
+  const sideNav = document.getElementById('comySidebarLinks');
+  const sideIndicator = document.getElementById('comySideIndicator');
+  if (sideNav && sideIndicator) {
+    const sideLinks = Array.from(sideNav.querySelectorAll('.comy-side-link'));
+    const moveIndicatorTo = link => {
+      sideIndicator.style.top = link.offsetTop + 'px';
+      sideIndicator.style.opacity = '1';
+    };
+    const activeSideLink = sideLinks.find(a => a.classList.contains('active'));
+    if (activeSideLink) moveIndicatorTo(activeSideLink);
+
+    sideLinks.forEach(link => {
+      link.addEventListener('mouseenter', () => moveIndicatorTo(link));
+    });
+    sideNav.addEventListener('mouseleave', () => {
+      const current = sideLinks.find(a => a.classList.contains('active'));
+      if (current) moveIndicatorTo(current);
+      else sideIndicator.style.opacity = '0';
+    });
+  }
+
+  // Píldora deslizante de la barra inferior mobile
+  const mobileNav = document.getElementById('comyMobileNav');
+  const mobileIndicator = document.getElementById('comyMobileIndicator');
+  if (mobileNav && mobileIndicator) {
+    const mobileLinks = Array.from(mobileNav.querySelectorAll('.cmn-link'));
+    const moveMobileIndicator = (link, animate) => {
+      const icon = link.querySelector('.cmn-icon');
+      if (!icon || !link.offsetWidth) return; // barra oculta (desktop)
+      if (!animate) mobileIndicator.style.transition = 'none';
+      mobileIndicator.style.left = (link.offsetLeft + icon.offsetLeft) + 'px';
+      mobileIndicator.style.top  = (link.offsetTop + icon.offsetTop) + 'px';
+      mobileIndicator.style.opacity = '1';
+      if (!animate) requestAnimationFrame(() => { mobileIndicator.style.transition = ''; });
+    };
+    const activeMobile = () => mobileLinks.find(a => a.classList.contains('active'));
+
+    if (activeMobile()) moveMobileIndicator(activeMobile(), false);
+
+    // Al tocar, la píldora se desliza antes de navegar
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        moveMobileIndicator(link, true);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (activeMobile()) moveMobileIndicator(activeMobile(), false);
+    });
+  }
+
+  const wrap = document.getElementById('comyAvatarWrap');
+  if (wrap) {
+    wrap.addEventListener('click', () => wrap.classList.toggle('open'));
+    document.addEventListener('click', e => { if (!wrap.contains(e.target)) wrap.classList.remove('open'); });
+  }
+
+  try {
+    const session = JSON.parse(localStorage.getItem('comyUser') || 'null');
+    if (session) {
+      document.getElementById('comyGuest').style.display = 'none';
+      document.getElementById('comyUser').style.display  = 'block';
+      document.getElementById('cdName').textContent = session.name || session.email;
+      document.getElementById('cdRole').textContent = session.role === 'driver' ? '🛵 Repartidor' : '🛍️ Comprador';
+      document.getElementById('comyInitials').textContent = (session.name || session.email || '?').charAt(0).toUpperCase();
+      // Foto de perfil real: descomentar cuando login/register entreguen session.photoUrl
+      // if (session.photoUrl) {
+      //   document.getElementById('comyInitials').style.display = 'none';
+      //   const img = document.getElementById('comyAvatarImg');
+      //   img.src = session.photoUrl;
+      //   img.style.display = 'block';
+      // }
+    }
+  } catch(e) {}
+
+  const logoutBtn = document.getElementById('comyLogoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('comyUser');
+    window.location.href = '/comy';
+  });
+})();
+</script>
+{{end}}

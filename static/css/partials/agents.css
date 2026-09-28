@@ -1,0 +1,536 @@
+/* ============================================
+   AGENTS PAGE STYLES - CORREGIDO
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffffff;
+    padding-top: 80px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
+#particles-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.agents-hero {
+    background: #ffffff;
+    padding: 140px 20px 100px 20px;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-container {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 56px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.1;
+    margin-bottom: 24px;
+}
+
+.hero-title .highlight {
+    background: #06b6d4;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: #6b7280;
+    margin: 0 auto;
+    line-height: 1.6;
+    max-width: 700px;
+}
+
+/* ============================================
+   FILTER SECTION - FONDO BLANCO
+   ============================================ */
+
+.agents-filter-section {
+    padding: 60px 20px 40px 20px;
+    background: #ffffff;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-btn:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+}
+
+.filter-btn.active {
+    background: #06b6d4;
+    color: white;
+    border-color: #06b6d4;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.filter-btn i {
+    font-size: 18px;
+}
+
+/* ============================================
+   AGENTS GRID - FONDO BLANCO
+   ============================================ */
+
+.agents-grid-section {
+    padding: 80px 20px;
+    background: #ffffff;
+}
+
+.agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+.agent-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 2px solid transparent;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.agent-card:nth-child(1) { animation-delay: 0.1s; }
+.agent-card:nth-child(2) { animation-delay: 0.15s; }
+.agent-card:nth-child(3) { animation-delay: 0.2s; }
+.agent-card:nth-child(4) { animation-delay: 0.25s; }
+.agent-card:nth-child(5) { animation-delay: 0.3s; }
+.agent-card:nth-child(6) { animation-delay: 0.35s; }
+.agent-card:nth-child(7) { animation-delay: 0.4s; }
+.agent-card:nth-child(8) { animation-delay: 0.45s; }
+.agent-card:nth-child(9) { animation-delay: 0.5s; }
+.agent-card:nth-child(10) { animation-delay: 0.55s; }
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.agent-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(6, 182, 212, 0.25);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+/* ============================================
+   ICONOS - ANILLOS CIRCULARES CIAN CON FONDO BLANCO
+   ============================================ */
+
+.agent-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #06b6d4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
+}
+
+.agent-icon i {
+    font-size: 32px;
+    color: #06b6d4;
+}
+
+.agent-card:hover .agent-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    border-color: #06b6d4;
+}
+
+.agent-card:hover .agent-icon i {
+    color: #06b6d4;
+}
+
+.agent-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+}
+
+.agent-description {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.agent-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+}
+
+.feature-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(6, 182, 212, 0.1);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #06b6d4;
+    transition: all 0.3s ease;
+}
+
+.feature-tag i {
+    font-size: 14px;
+}
+
+.agent-card:hover .feature-tag {
+    background: rgba(6, 182, 212, 0.15);
+}
+
+.agent-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: #06b6d4;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.agent-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+}
+
+/* ============================================
+   COMING SOON CARDS
+   ============================================ */
+
+.agent-card.agent-coming-soon {
+    position: relative;
+    opacity: 0.6;
+    filter: grayscale(30%);
+    pointer-events: none;
+}
+
+.agent-card.agent-coming-soon:hover {
+    transform: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-color: transparent;
+}
+
+.agent-card.agent-coming-soon .agent-icon {
+    border-color: #d1d5db;
+    box-shadow: none;
+}
+
+.agent-card.agent-coming-soon .agent-icon i {
+    color: #9ca3af;
+}
+
+.agent-card.agent-coming-soon .feature-tag {
+    background: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+}
+
+.coming-soon-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+}
+
+/* ============================================
+   CTA SECTION - CAMBIADO A FONDO BLANCO
+   ============================================ */
+
+.agents-cta-section {
+    padding: 100px 20px;
+    background: #ffffff;
+}
+
+.cta-content {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.cta-title {
+    font-size: 42px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+}
+
+.cta-subtitle {
+    font-size: 18px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 36px;
+}
+
+.cta-btn {
+    padding: 18px 36px;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.3);
+}
+
+.cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(37, 211, 102, 0.4);
+}
+
+/* ============================================
+   WHATSAPP FLOATING BUTTON
+   ============================================ */
+
+.whatsapp-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: pulse 2s infinite;
+}
+
+.whatsapp-float:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 8px 30px rgba(37, 211, 102, 0.6);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+    70% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+.whatsapp-tooltip {
+    position: absolute;
+    right: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1a1a1a;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.whatsapp-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-left-color: #1a1a1a;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(-10px);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 70px;
+    }
+
+    .agents-hero {
+        padding: 120px 20px 80px 20px;
+        min-height: 50vh;
+    }
+
+    .hero-title {
+        font-size: 36px;
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+    }
+
+    .filter-controls {
+        gap: 8px;
+    }
+
+    .filter-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .filter-btn i {
+        font-size: 16px;
+    }
+
+    .agents-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .agent-card {
+        padding: 32px 24px;
+    }
+
+    .cta-title {
+        font-size: 32px;
+    }
+
+    .cta-subtitle {
+        font-size: 16px;
+    }
+
+    .cta-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .whatsapp-float {
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+    }
+
+    .whatsapp-tooltip {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 32px;
+    }
+
+    .agent-name {
+        font-size: 20px;
+    }
+
+    .agent-description {
+        font-size: 14px;
+    }
+}

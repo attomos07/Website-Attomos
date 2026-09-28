@@ -1,0 +1,577 @@
+{{define "my-agency.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Dependencia - Attomos</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/my-business.css">
+    <link rel="stylesheet" href="/static/css/my-agency.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+
+    <!-- Sileo toast system -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <link rel="stylesheet" href="/static/css/sileo.css">
+
+    <style>
+    /* ── Brand Images ── */
+    .brand-upload-wrap {
+        position: relative;
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        background: #f9fafb;
+        min-height: 130px;
+        overflow: hidden;
+        transition: border-color .2s;
+    }
+    .brand-upload-wrap:hover { border-color: #06b6d4; }
+    .brand-banner-preview { position: relative; width: 100%; }
+    .brand-banner-preview img { width: 100%; height: 160px; object-fit: cover; display: block; border-radius: 10px; }
+    .brand-placeholder {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: .5rem; padding: 1.75rem 1rem;
+        text-align: center; color: #9ca3af; font-size: .875rem;
+        min-height: 130px;
+    }
+    .brand-placeholder small { font-size: .75rem; color: #d1d5db; }
+    .brand-remove-btn {
+        position: absolute; top: 8px; right: 8px;
+        background: rgba(0,0,0,.5); color: #fff;
+        border: none; border-radius: 50%;
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: .7rem; transition: background .2s; z-index: 2;
+    }
+    .brand-remove-btn:hover { background: rgba(6,182,212,.85); }
+    .btn-brand-upload {
+        display: inline-flex; align-items: center; gap: .4rem;
+        padding: .45rem 1rem; margin-top: .4rem;
+        border: 1.5px solid #06b6d4; border-radius: 8px;
+        background: white; color: #06b6d4;
+        font-size: .82rem; font-weight: 600;
+        cursor: pointer; transition: all .2s;
+    }
+    .btn-brand-upload:hover { background: #06b6d4; color: #fff; }
+    .brand-logo-area {
+        position: relative;
+        width: 100px; height: 100px;
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        background: #f9fafb;
+        flex-shrink: 0; cursor: pointer;
+        overflow: hidden; transition: border-color .2s;
+    }
+    .brand-logo-area:hover { border-color: #06b6d4; }
+    .brand-logo-preview { width: 100%; height: 100%; position: relative; }
+    .brand-logo-preview img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .brand-logo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .brand-remove-logo { top: 4px; right: 4px; width: 22px; height: 22px; font-size: .6rem; }
+    .brand-uploading {
+        position: absolute; inset: 0; background: rgba(255,255,255,.82);
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: .4rem; font-size: .78rem; color: #6b7280;
+    }
+    .brand-spinner {
+        width: 22px; height: 22px;
+        border: 3px solid rgba(6,182,212,.2);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: brandSpin .7s linear infinite;
+    }
+    @keyframes brandSpin { to { transform: rotate(360deg); } }
+
+    /* ── Cupos toggle ── */
+    .cupos-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        user-select: none;
+    }
+    .cupos-toggle input[type="checkbox"] { display: none; }
+    .cupos-slider {
+        width: 36px; height: 20px;
+        background: #ef4444;
+        border-radius: 10px;
+        position: relative;
+        transition: background .2s;
+        flex-shrink: 0;
+    }
+    .cupos-slider::after {
+        content: '';
+        position: absolute;
+        width: 14px; height: 14px;
+        background: #fff;
+        border-radius: 50%;
+        top: 3px; left: 3px;
+        transition: transform .2s;
+    }
+    .curso-disponible:checked + .cupos-slider { background: #06b6d4; }
+    .curso-disponible:checked + .cupos-slider::after { transform: translateX(16px); }
+    .cupos-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #ef4444;
+    }
+    .curso-disponible:checked ~ .cupos-label { color: #06b6d4; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+                <div class="profile-layout">
+
+                    <!-- =============================================
+                         HEADER
+                         ============================================= -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     style="width:2rem;height:2rem;color:#06b6d4;flex-shrink:0;">
+                                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                                    <path d="M2 12h20"/>
+                                </svg>
+                                Mi Dependencia
+                            </h1>
+                            <p class="page-subtitle">Administra la información de tu institución pública</p>
+                        </div>
+                    </div>
+
+                    <!-- =============================================
+                         SELECTOR DE OFICINAS / MÓDULOS
+                         ============================================= -->
+                    <div class="branch-selector-bar">
+                        <div class="branch-dropdown-wrapper" id="branchDropdownWrapper">
+                            <button type="button" class="branch-dropdown-btn" id="branchDropdownBtn">
+                                <i class="lni lni-map-marker"></i>
+                                <span id="branchDropdownLabel">Oficina / Módulo 1</span>
+                                <i class="lni lni-chevron-down branch-chevron" id="branchChevron"></i>
+                            </button>
+                            <div class="branch-dropdown-menu" id="branchDropdownMenu">
+                                <div class="branch-list" id="branchList"></div>
+                                <div class="branch-dropdown-footer">
+                                    <button type="button" class="btn-add-branch" id="btnAddBranch">
+                                        <i class="lni lni-plus"></i>
+                                        <span>Nueva Oficina / Módulo</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="branch-badge" id="branchBadge">Oficina activa</span>
+                    </div>
+
+                    <!-- =============================================
+                         TABS
+                         ============================================= -->
+                    <div class="page-tabs-bar">
+                        <button type="button" class="page-tab active" data-tab="mi-dependencia">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                                <path d="M2 12h20"/>
+                            </svg>
+                            Mi Dependencia
+                        </button>
+                        <button type="button" class="page-tab" data-tab="cursos">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                            Cursos
+                        </button>
+                        <button type="button" class="page-tab" data-tab="base-datos">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                            Base de Datos
+                        </button>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════
+                         TAB: MI DEPENDENCIA
+                         ══════════════════════════════════════════════ -->
+                    <div id="tab-mi-dependencia" class="page-tab-panel active">
+                        <div class="profile-grid">
+
+                            <!-- ── Información de la dependencia ── -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="lni lni-government"></i>
+                                        <h2>Información de la Dependencia</h2>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+
+                                    <div class="info-group">
+                                        <label class="info-label">Nombre de la Dependencia</label>
+                                        <input type="text" class="info-input" id="depNameInput"
+                                               placeholder="Ej: Secretaría de Educación Pública">
+                                        <div class="info-example">Nombre oficial completo</div>
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Siglas / Acrónimo</label>
+                                        <input type="text" class="info-input" id="depAcronymInput"
+                                               placeholder="Ej: SEP, IMSS, CONACYT">
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Área / Departamento</label>
+                                        <input type="text" class="info-input" id="depAreaInput"
+                                               placeholder="Ej: Dirección de Capacitación y Desarrollo">
+                                        <div class="info-example">Unidad interna responsable de esta oficina</div>
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Dependencia Madre / Organismo Superior</label>
+                                        <input type="text" class="info-input" id="depParentInput"
+                                               placeholder="Ej: Gobierno del Estado de Sonora">
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Nivel de Gobierno</label>
+                                        <div class="custom-select-wrapper" id="govLevelWrapper">
+                                            <input type="text" class="info-input form-select" id="govLevelInput" readonly
+                                                   placeholder="Seleccionar...">
+                                            <i class="lni lni-chevron-down select-arrow"></i>
+                                            <div class="select-dropdown" id="govLevelDropdown">
+                                                <div class="select-options-container" id="govLevelOptions">
+                                                    <div class="select-option" data-value="federal">
+                                                        <i class="lni lni-flag"></i>
+                                                        <span>Federal</span>
+                                                    </div>
+                                                    <div class="select-option" data-value="estatal">
+                                                        <i class="lni lni-map"></i>
+                                                        <span>Estatal</span>
+                                                    </div>
+                                                    <div class="select-option" data-value="municipal">
+                                                        <i class="lni lni-map-marker"></i>
+                                                        <span>Municipal</span>
+                                                    </div>
+                                                    <div class="select-option" data-value="autonomo">
+                                                        <i class="lni lni-apartment"></i>
+                                                        <span>Organismo Autónomo</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">RFC</label>
+                                        <input type="text" class="info-input" id="rfcInput"
+                                               placeholder="Ej: SEP9301011I0" maxlength="13">
+                                    </div>
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">Descripción / Misión</label>
+                                        <textarea class="info-textarea" id="depDescriptionInput" rows="4"
+                                                  placeholder="Describe la misión, objetivos o servicios principales de esta dependencia..."></textarea>
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Sitio Web oficial</label>
+                                        <input type="url" class="info-input" id="websiteInput"
+                                               placeholder="https://www.gob.mx/mi-dependencia">
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">Email de Contacto</label>
+                                        <input type="email" class="info-input" id="emailInput"
+                                               placeholder="atencion@dependencia.gob.mx">
+                                    </div>
+
+                                    <div class="info-group">
+                                        <label class="info-label">
+                                            <i class="lni lni-phone"></i>
+                                            Teléfono de esta Oficina
+                                        </label>
+                                        <input type="tel" class="info-input" id="phoneNumberInput"
+                                               placeholder="Ej: +52 662 123 4567">
+                                        <div class="info-example">Número directo de esta oficina o módulo</div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- ── Horario de Atención ── -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="lni lni-calendar"></i>
+                                        <h2>Horario de Atención</h2>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="schedule-list" id="scheduleList"></div>
+
+                                    <div class="info-group full-width" style="margin-top:32px;">
+                                        <label class="info-label">
+                                            <i class="lni lni-calendar"></i>
+                                            Días Festivos / Inhábiles
+                                        </label>
+                                        <button type="button" class="btn-add-holiday" id="btnAddHoliday">
+                                            <i class="lni lni-plus"></i>
+                                            Agregar Día Inhábil
+                                        </button>
+                                        <div class="holidays-list" id="holidaysList"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ── Ubicación ── -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="lni lni-map-marker"></i>
+                                        <h2>Ubicación y Sedes</h2>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="info-group full-width">
+                                        <label class="info-label">Dirección principal</label>
+                                        <input type="text" class="info-input" id="addressInput"
+                                               placeholder="Ej: Blvd. Kino 1000, Piso 3">
+                                    </div>
+                                    <div class="info-group">
+                                        <label class="info-label">Ciudad / Municipio</label>
+                                        <input type="text" class="info-input" id="cityInput"
+                                               placeholder="Ej: Hermosillo">
+                                    </div>
+                                    <div class="info-group">
+                                        <label class="info-label">Estado</label>
+                                        <input type="text" class="info-input" id="stateInput"
+                                               placeholder="Ej: Sonora">
+                                    </div>
+                                    <div class="info-group full-width">
+                                        <label class="info-label">Link de Google Maps</label>
+                                        <input type="url" class="info-input" id="mapsLinkInput"
+                                               placeholder="https://maps.google.com/?q=...">
+                                        <div class="info-example">Pega el enlace de "Compartir" de Google Maps</div>
+                                    </div>
+
+                                    <!-- Sedes -->
+                                    <div class="info-group full-width" style="margin-top:.5rem;">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+                                            <label class="info-label" style="margin:0;">
+                                                <i class="lni lni-map-marker" style="color:#06b6d4;"></i>
+                                                Sedes donde se imparten cursos
+                                            </label>
+                                            <button type="button" class="btn-add-holiday" id="btnAddSede" style="margin:0;">
+                                                <i class="lni lni-plus"></i>
+                                                Agregar Sede
+                                            </button>
+                                        </div>
+                                        <div class="sedes-list" id="sedesList"></div>
+                                        <div class="info-example">Las sedes agregadas estarán disponibles al crear cursos</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ── Redes Sociales / Contacto oficial ── -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="lni lni-share-alt"></i>
+                                        <h2>Redes Sociales y Contacto</h2>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">
+                                            <i class="lni lni-facebook-oval"></i>
+                                            Facebook
+                                        </label>
+                                        <input type="url" class="info-input" id="facebookInput"
+                                               placeholder="https://facebook.com/tudependencia">
+                                    </div>
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">
+                                            <i class="lni lni-instagram"></i>
+                                            Instagram
+                                        </label>
+                                        <input type="url" class="info-input" id="instagramInput"
+                                               placeholder="https://instagram.com/tudependencia">
+                                    </div>
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">
+                                            <i class="lni lni-twitter"></i>
+                                            Twitter / X
+                                        </label>
+                                        <input type="url" class="info-input" id="twitterInput"
+                                               placeholder="https://twitter.com/tudependencia">
+                                    </div>
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">
+                                            <i class="lni lni-youtube"></i>
+                                            YouTube
+                                        </label>
+                                        <input type="url" class="info-input" id="youtubeInput"
+                                               placeholder="https://youtube.com/@tudependencia">
+                                        <div class="info-example">Canal oficial para videoconferencias y transmisiones</div>
+                                    </div>
+
+                                    <div class="info-group full-width">
+                                        <label class="info-label">
+                                            <i class="lni lni-linkedin"></i>
+                                            LinkedIn
+                                        </label>
+                                        <input type="url" class="info-input" id="linkedinInput"
+                                               placeholder="https://linkedin.com/company/tudependencia">
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div><!-- /profile-grid -->
+                    </div><!-- /tab-mi-dependencia -->
+
+                    <!-- ══════════════════════════════════════════════
+                         TAB: CURSOS
+                         ══════════════════════════════════════════════ -->
+                    <div id="tab-cursos" class="page-tab-panel" style="display:none;">
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round"
+                                         style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                    <h2>Cursos y Talleres</h2>
+                                </div>
+                                <button type="button" class="btn-card-add" id="btnAddCurso">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar Curso
+                                </button>
+                            </div>
+                            <div class="card-content" style="display:flex;flex-direction:column;gap:1.25rem;">
+                                <p style="font-size:.875rem;color:#6b7280;margin:0;">
+                                    Agrega los cursos, talleres o programas disponibles. El agente de IA informará
+                                    a los ciudadanos sobre disponibilidad y cupos restantes.
+                                </p>
+                                <div class="cursos-list" id="cursosList"></div>
+                                <div class="empty-list-hint" id="cursosHint">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round"
+                                         style="width:1.5rem;height:1.5rem;color:#9ca3af;">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                    <span>No hay cursos. Haz clic en "Agregar Curso" para añadir uno.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /tab-cursos -->
+
+                    <!-- ══════════════════════════════════════════════
+                         TAB: BASE DE DATOS
+                         ══════════════════════════════════════════════ -->
+                    <div id="tab-base-datos" class="page-tab-panel" style="display:none;">
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round"
+                                         style="width:1.1rem;height:1.1rem;color:#06b6d4;">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                    </svg>
+                                    <h2>Registros de Ciudadanos</h2>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:.75rem;">
+                                    <input type="text" id="bdSearch" class="info-input"
+                                           placeholder="Buscar..."
+                                           style="width:200px;padding:.4rem .75rem;font-size:.85rem;">
+                                    <button type="button" class="btn-card-add" onclick="loadBaseDatos()">
+                                        <i class="lni lni-reload"></i>
+                                        Actualizar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content" style="display:block;padding:0;overflow:hidden;">
+
+                                <!-- Loader -->
+                                <div id="bdLoader" style="display:none;align-items:center;justify-content:center;gap:.75rem;padding:3rem;color:#6b7280;">
+                                    <div class="brand-spinner"></div>
+                                    <span>Cargando registros...</span>
+                                </div>
+
+                                <!-- Tabla -->
+                                <div class="bd-table-wrap">
+                                    <table class="bd-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Curso / Programa</th>
+                                                <th>Fecha registro</th>
+                                                <th>Teléfono</th>
+                                                <th>Email</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="bdTbody"></tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Empty state -->
+                                <div id="bdEmpty" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:3rem;color:#9ca3af;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                         style="width:3rem;height:3rem;opacity:.4;">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                    </svg>
+                                    <p style="font-size:.9rem;">No hay registros todavía</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div><!-- /tab-base-datos -->
+
+                </div><!-- /profile-layout -->
+            </div><!-- /content-wrapper -->
+        </div><!-- /main-content -->
+    </div><!-- /app-container -->
+
+    <button class="btn-save" id="saveProfileBtn">
+        <i class="lni lni-checkmark"></i>
+        <span>Guardar Cambios</span>
+    </button>
+
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/my-agency.js"></script>
+</body>
+</html>
+{{end}}

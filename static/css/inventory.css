@@ -1,0 +1,1023 @@
+/* ============================================
+   INVENTORY PAGE CSS
+   Vista tipo hoja de cálculo para el inventario
+   sincronizado (VIN + fotos vía IA Gemini)
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+}
+
+/* Layout (igual que el resto de la app) */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    padding-top: 100px; /* Espacio para el userbar flotante */
+    padding-left: calc(2rem + 96px); /* Espacio para el sidebar flotante */
+    background: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.inventory-layout {
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   EMBED MODE — cuando esta página se carga
+   dentro del iframe del tab "Inventario" en
+   Mi Negocio (?embed=1)
+   ============================================ */
+
+.embed-mode #sidebarWrap,
+.embed-mode #userbarWrap {
+    display: none !important;
+}
+
+.embed-mode .content-wrapper {
+    padding: 1rem !important;
+}
+
+.embed-mode .page-header {
+    display: none;
+}
+
+.embed-mode .inventory-layout {
+    max-width: 100%;
+}
+
+/* ============================================
+   TOGGLE DE VISTA — Negocio / Sheets
+   ============================================ */
+
+.inv-view-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 0.3rem;
+    margin-bottom: 1.5rem;
+}
+
+.inv-view-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.1rem;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.inv-view-tab i {
+    font-size: 1rem;
+}
+
+.inv-view-tab:hover {
+    color: #1a1a1a;
+}
+
+.inv-view-tab.active {
+    background: #06b6d4;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(6, 182, 212, 0.35);
+}
+
+.inv-view-panel {
+    display: none;
+}
+
+.inv-view-panel.active {
+    display: block;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-title i {
+    font-size: 2rem;
+    color: #06b6d4;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   SHEET CONTAINER
+   ============================================ */
+
+.sheet-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: auto;
+    max-height: 65vh;
+}
+
+/* ============================================
+   SHEET TABLE — grid tipo hoja de cálculo,
+   con la paleta e identidad visual de Attomos
+   ============================================ */
+
+.sheet-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: inherit; /* misma tipografía que el resto de la app */
+    font-size: 13px;
+    color: #1a1a1a;
+    width: max-content;
+    min-width: 100%;
+}
+
+.sheet-table th,
+.sheet-table td {
+    border-right: 1px solid #eef0f2;
+    border-bottom: 1px solid #eef0f2;
+    padding: 6px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* Fila de letras de columna (A, B, C…) */
+.col-letter-row th {
+    background: #f9fafb;
+    color: #9ca3af;
+    font-weight: 600;
+    text-align: center;
+    height: 26px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Esquina superior izquierda */
+.corner-cell {
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+}
+
+/* Columna de números de fila (1, 2, 3…) */
+.row-number-cell {
+    background: #f9fafb;
+    color: #9ca3af;
+    font-weight: 600;
+    text-align: center;
+    width: 34px;
+    min-width: 34px;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    border-right: 1px solid #e5e7eb;
+}
+
+/* Fila 1 (encabezados de columna tal como están escritos en el sheet) */
+.sheet-header-row td {
+    background: #ffffff;
+    font-weight: 700;
+    color: #374151;
+}
+
+/* Celda "activa" — acento cian de Attomos en vez del azul de Sheets */
+.cell-selected {
+    outline: 2px solid #06b6d4;
+    outline-offset: -2px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Fila vacía separadora (por si el backend llega a mandar una en el futuro) */
+.row-empty td {
+    background: #ffffff;
+    height: 26px;
+}
+
+/* Ancho genérico por celda — no hay columnas fijas, cualquier hoja puede
+   traer cualquier cantidad/orden de columnas */
+.sheet-table th,
+.sheet-table td {
+    min-width: 90px;
+    max-width: 220px;
+}
+.row-number-cell,
+.corner-cell {
+    min-width: 34px;
+    max-width: 34px;
+}
+
+/* Checkbox — acento cian de Attomos (siempre de solo lectura) */
+.sheet-checkbox {
+    width: 15px;
+    height: 15px;
+    accent-color: #06b6d4;
+    cursor: not-allowed;
+    vertical-align: middle;
+}
+
+/* Enlace (columnas con fórmula =HYPERLINK) — acento cian de Attomos */
+.album-link {
+    color: #06b6d4;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.album-link:hover {
+    text-decoration: underline;
+}
+
+/* Números */
+.num-cell {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* Miniatura (columnas con fórmula =IMAGE) */
+.sheet-photo-thumb {
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    display: block;
+    vertical-align: middle;
+}
+
+/* Celda de la columna de fotos configurada — siempre se puede subir */
+.sheet-photo-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sheet-photo-upload-btn {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    border: 1.5px dashed #06b6d4;
+    background: rgba(6, 182, 212, 0.06);
+    color: #06b6d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+}
+.sheet-photo-upload-btn:hover {
+    background: #06b6d4;
+    color: #fff;
+}
+
+/* Barra de herramientas — misma paleta que la barra real de Sheets
+   (gris claro, íconos redondeados, resaltado azul al pasar el mouse) */
+.sheet-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.4rem 0.55rem;
+    background: #f1f3f4;
+    border: 1px solid #dadce0;
+    border-bottom: none;
+    border-radius: 14px 14px 0 0;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+}
+.sheet-toolbar-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #5f6368;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    transition: background 0.15s, color 0.15s;
+}
+.sheet-toolbar-btn:hover {
+    background: #e8f0fe;
+    color: #06b6d4;
+}
+/* Puntito rojo: todavía no se ha configurado esa columna */
+.sheet-toolbar-btn.needs-config::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 1.5px solid #f1f3f4;
+}
+
+/* Divisor vertical entre grupos de íconos, igual que en Sheets */
+.sheet-toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: #dadce0;
+    margin: 0 0.4rem;
+    flex-shrink: 0;
+}
+
+/* Botón de acción con texto (Subir foto IA) — se distingue de los íconos de configuración */
+.sheet-toolbar-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 32px;
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    border: none;
+    background: #06b6d4;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.sheet-toolbar-action:hover {
+    background: #0891b2;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+.sheet-toolbar-action i {
+    font-size: 1rem;
+}
+
+/* La barra de herramientas ya cierra arriba el contenedor de la hoja */
+.sheet-toolbar + .sheet-container {
+    border-radius: 0 0 14px 14px;
+}
+
+/* ============================================
+   MODAL — configurar columnas de fotos/álbum
+   ============================================ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.22s ease;
+}
+/* El fondo oscuro + blur vive en un ::before detrás de la tarjeta, en vez
+   de en el propio .modal-overlay, para que el backdrop-filter no termine
+   desenfocando también .modal-card (que es hija, no hermana, del overlay). */
+.modal-overlay::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+}
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-card {
+    position: relative;
+    z-index: 1;
+    background: #ffffff;
+    border-radius: 18px;
+    width: min(440px, 100%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    transform: scale(0.94) translateY(12px);
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(.22, 1, .36, 1), opacity 0.22s ease;
+}
+.modal-overlay.open .modal-card {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+.modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+.modal-header h3 i {
+    color: #06b6d4;
+    font-size: 1.2rem;
+}
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+.modal-close:hover {
+    background: #e5e7eb;
+}
+.modal-body {
+    padding: 1.25rem 1.5rem;
+}
+.modal-body-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.modal-body select.api-key-input {
+    cursor: pointer;
+}
+.modal-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed #e5e7eb;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #06b6d4;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.5rem;
+}
+.modal-hint-text {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+/* Lista de checkboxes: columnas para nombrar fotos (una o varias) */
+.file-name-columns-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 0.6rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+}
+.file-name-col-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    font-size: 0.82rem;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+}
+.file-name-col-chip:hover {
+    border-color: #06b6d4;
+}
+.file-name-col-chip input[type="checkbox"] {
+    accent-color: #06b6d4;
+    cursor: pointer;
+}
+.file-name-col-chip.checked {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: #06b6d4;
+    color: #0891b2;
+    font-weight: 600;
+}
+
+/* ============================================
+   CELDAS EDITABLES (texto/número) — se reflejan
+   directo en la hoja real al confirmar
+   ============================================ */
+
+.sheet-cell-editable {
+    cursor: text;
+}
+.sheet-cell-editable:hover {
+    background: #f0fdff;
+    outline: 1px dashed #06b6d4;
+    outline-offset: -1px;
+}
+.sheet-cell-input {
+    width: 100%;
+    border: none;
+    outline: 2px solid #06b6d4;
+    outline-offset: -2px;
+    font: inherit;
+    color: inherit;
+    padding: 1px 3px;
+    background: #fff;
+    border-radius: 3px;
+}
+
+/* ============================================
+   MODAL DE SUBIDA CON IA — dropzone + preview
+   ============================================ */
+
+.ai-upload-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.75rem 1rem;
+    border: 2px dashed #06b6d4;
+    border-radius: 12px;
+    background: rgba(6, 182, 212, 0.05);
+    color: #06b6d4;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ai-upload-dropzone:hover {
+    background: rgba(6, 182, 212, 0.1);
+}
+.ai-upload-dropzone i {
+    font-size: 1.6rem;
+}
+.ai-upload-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.85rem;
+}
+.ai-upload-preview-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Pie de la hoja: última actualización */
+.sheet-footnote {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.85rem;
+    color: #9ca3af;
+    font-size: 0.78rem;
+}
+.sheet-footnote i { font-size: 0.85rem; }
+
+/* ============================================
+   VISTA NEGOCIO — trasladado desde my-business
+   (tarjeta genérica + tabla de existencias)
+   ============================================ */
+
+.profile-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.card-title i {
+    font-size: 1.5rem;
+    color: #06b6d4;
+}
+
+.card-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.empty-list-hint {
+    grid-column: 1/-1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-list-hint i { font-size: 1.25rem; }
+
+.inv-sync-hint { font-size: 0.78rem; color: #6b7280; display: flex; align-items: center; gap: 4px; }
+.inv-sync-hint i { font-size: 0.85rem; }
+.btn-rd-sync {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .3rem .85rem;
+    border: 1.5px solid #f97316; border-radius: 8px;
+    background: white; color: #f97316;
+    font-size: .78rem; font-weight: 600; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+}
+.btn-rd-sync:hover { background: #f97316; color: #fff; }
+.btn-rd-sync:disabled { opacity: .6; cursor: not-allowed; }
+
+.inv-summary-bar { display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.inv-summary-card {
+    flex: 1; min-width: 100px; border-radius: 12px; padding: 14px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border: 1.5px solid transparent;
+}
+.inv-summary-card.inv-ok  { background: #ecfdf5; border-color: #bbf7d0; }
+.inv-summary-card.inv-low { background: #fffbeb; border-color: #fde68a; }
+.inv-summary-card.inv-out { background: #fef2f2; border-color: #fecaca; }
+.inv-sum-num { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.inv-summary-card.inv-ok  .inv-sum-num { color: #16a34a; }
+.inv-summary-card.inv-low .inv-sum-num { color: #d97706; }
+.inv-summary-card.inv-out .inv-sum-num { color: #ef4444; }
+.inv-sum-lbl { font-size: 0.75rem; color: #6b7280; text-align: center; }
+
+.inv-table-wrap { overflow-x: auto; }
+.inv-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.inv-table thead th {
+    text-align: left; padding: 10px 12px; background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb; color: #374151; font-weight: 600;
+    white-space: nowrap;
+}
+.inv-th-center { text-align: center !important; }
+.inv-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .15s; }
+.inv-table tbody tr:hover { background: #f9fafb; }
+.inv-table td { padding: 10px 12px; vertical-align: middle; }
+.inv-prod-name { font-weight: 600; color: #111827; }
+.inv-prod-img {
+    width: 38px; height: 38px; border-radius: 8px; object-fit: cover;
+    border: 1px solid #e5e7eb; margin-right: 10px; flex-shrink: 0;
+    background: #f3f4f6;
+}
+.inv-prod-cell { display: flex; align-items: center; }
+.inv-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+}
+.inv-badge-ok  { background: #dcfce7; color: #16a34a; }
+.inv-badge-low { background: #fef3c7; color: #d97706; }
+.inv-badge-out { background: #fee2e2; color: #ef4444; }
+.inv-qty-cell { text-align: center; font-weight: 700; font-size: 1rem; color: #111827; }
+.inv-qty-na { color: #9ca3af; font-size: 0.8rem; font-weight: 400; }
+.inv-adjust-cell { text-align: center; }
+.inv-adj-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.inv-adj-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+    background: #fff; cursor: pointer; font-size: 1rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: #374151; transition: all .15s; line-height: 1;
+}
+.inv-adj-btn:hover { background: #06b6d4; border-color: #06b6d4; color: #fff; }
+.inv-adj-input {
+    width: 52px; text-align: center; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 4px 6px; font-size: 0.9rem; font-weight: 700; color: #111827;
+    outline: none;
+}
+.inv-adj-input:focus { border-color: #06b6d4; }
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(6, 182, 212, 0.2);
+    border-top-color: #06b6d4;
+    border-radius: 50%;
+    animation: inv-spin 0.8s linear infinite;
+    display: inline-block;
+}
+@keyframes inv-spin { to { transform: rotate(360deg); } }
+
+/* ============================================
+   CONEXIÓN GOOGLE SHEETS (inventario)
+   — mismos componentes que usa integrations.html
+   para conectar cualquier otro servicio —
+   ============================================ */
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.status-badge.connected { background: #10b981; color: white; }
+.status-badge.disconnected { background: #f3f4f6; color: #6b7280; }
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: sheet-pulse 2s ease-in-out infinite;
+}
+@keyframes sheet-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.api-key-form { margin-bottom: 0; }
+.input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.input-label {
+    font-size: 0.875rem; font-weight: 600; color: #374151;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.input-label i { font-size: 1rem; color: #06b6d4; }
+.input-wrapper { position: relative; display: flex; align-items: center; }
+.api-key-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    background: white;
+    transition: all 0.3s ease;
+}
+.api-key-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+.api-key-input::placeholder { color: #9ca3af; }
+.input-hint {
+    color: #6b7280;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+}
+.input-hint i { margin-top: 0.15rem; flex-shrink: 0; }
+
+.connection-info {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+.connection-details { display: flex; flex-direction: column; gap: 0.75rem; }
+.connection-detail { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+.connection-label { color: #6b7280; font-weight: 600; }
+.connection-value { color: #1a1a1a; font-weight: 500; }
+.connection-link {
+    color: #06b6d4;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: all 0.3s ease;
+}
+.connection-link:hover { color: #0891b2; gap: 0.5rem; }
+.connection-link i { font-size: 0.875rem; }
+
+.card-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    text-decoration: none;
+}
+.btn i { font-size: 1.05rem; }
+.btn-connect {
+    background: #06b6d4;
+    color: white;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+}
+.btn-connect:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35); }
+.btn-connect:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-disconnect { background: white; color: #ef4444; border: 2px solid #ef4444; justify-content: center; }
+.btn-disconnect:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+.btn-secondary { background: white; color: #6b7280; border: 2px solid #e5e7eb; }
+.btn-secondary:hover { background: #f9fafb; border-color: #06b6d4; color: #06b6d4; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+        padding-top: 90px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .page-title i {
+        font-size: 1.5rem;
+    }
+
+    .sheet-container {
+        max-height: 60vh;
+    }
+
+    .card-content {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
+    }
+
+    .inv-view-tabs {
+        width: 100%;
+    }
+
+    .inv-view-tab {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ── Barra de herramientas: se acomoda en varias líneas en vez de
+       desbordar o encimarse ── */
+    .sheet-toolbar {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.5rem;
+    }
+
+    .sheet-toolbar-divider {
+        display: none;
+    }
+
+    .sheet-toolbar-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .sheet-toolbar-action {
+        flex: 1 1 100%;
+        justify-content: center;
+        font-size: 0.8rem;
+        padding: 0 0.75rem;
+        white-space: normal;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    /* ── Tabla: más compacta, con la primera columna de datos fija al
+       hacer scroll horizontal — así no se pierde de vista con qué
+       unidad estás (ej. el VIN) mientras ves el resto de las columnas ── */
+    .sheet-container {
+        max-height: 50vh;
+    }
+
+    .sheet-table th,
+    .sheet-table td {
+        padding: 5px 6px;
+        font-size: 12px;
+        min-width: 78px;
+    }
+
+    .sheet-table th:nth-child(2),
+    .sheet-table td:nth-child(2) {
+        position: sticky;
+        left: 34px;
+        z-index: 1;
+        background: #fff;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .col-letter-row th:nth-child(2) {
+        z-index: 3;
+        background: #f9fafb;
+        box-shadow: none;
+    }
+
+    .sheet-header-row td:nth-child(2) {
+        z-index: 2;
+        font-weight: 700;
+    }
+
+    .sheet-photo-thumb {
+        width: 26px;
+        height: 26px;
+    }
+
+    .sheet-photo-upload-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
+    }
+
+    .sheet-checkbox {
+        width: 17px;
+        height: 17px;
+    }
+}

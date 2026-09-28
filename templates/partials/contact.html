@@ -1,0 +1,221 @@
+{{define "contact.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto - {{.title}}</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/partials/contact.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section con Partículas -->
+    <section class="contact-hero">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-container">
+            <h1 class="hero-title">
+                <span data-translate="contact_hero_pre">¿Tienes alguna</span> <span class="highlight" data-translate="contact_hero_hi">pregunta?</span>
+            </h1>
+            <p class="hero-subtitle">
+                <span data-translate="contact_hero_subtitle">Estamos aquí para ayudarte. Contáctanos y te responderemos en menos de 24 horas.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Contact Methods -->
+    <section class="contact-methods-section">
+        <div class="container">
+            <div class="contact-methods-grid">
+                <div class="contact-method-card">
+                    <div class="method-icon">
+                        <i class="lni lni-whatsapp"></i>
+                    </div>
+                    <h3 class="method-title" data-translate="contact_method_wa">WhatsApp</h3>
+                    <p class="method-description" data-translate="contact_method_wa_desc">Chatea con nosotros directamente</p>
+                    <a href="https://wa.me/526623710899" class="method-link" target="_blank">
+                        <i class="lni lni-whatsapp"></i>
+                        <span data-translate="contact_open_wa">Abrir WhatsApp</span>
+                    </a>
+                </div>
+
+                <div class="contact-method-card">
+                    <div class="method-icon">
+                        <i class="lni lni-envelope"></i>
+                    </div>
+                    <h3 class="method-title" data-translate="contact_method_email">Email</h3>
+                    <p class="method-description" data-translate="contact_method_email_desc">Envíanos un correo electrónico</p>
+                    <a href="mailto:attomos07@gmail.com" class="method-link">
+                        <i class="lni lni-envelope"></i>
+                        attomos07@gmail.com
+                    </a>
+                </div>
+
+                <div class="contact-method-card">
+                    <div class="method-icon">
+                        <i class="lni lni-phone"></i>
+                    </div>
+                    <h3 class="method-title" data-translate="contact_method_phone">Teléfono</h3>
+                    <p class="method-description" data-translate="contact_method_phone_desc">Llámanos de Lun - Vie, 9am - 6pm</p>
+                    <a href="tel:+526623710899" class="method-link">
+                        <i class="lni lni-phone"></i>
+                        +52 662 371 0899
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form & Info -->
+    <section class="contact-form-section">
+        <div class="container">
+            <div class="contact-grid">
+                <!-- Contact Form -->
+                <div class="form-container">
+                    <h2 class="form-title" data-translate="contact_form_title">Envíanos un mensaje</h2>
+                    <p class="form-subtitle" data-translate="contact_form_subtitle">Completa el formulario y te contactaremos lo antes posible.</p>
+
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name" data-translate="contact_label_name">Nombre completo</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email" data-translate="contact_label_email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone" data-translate="contact_label_phone">Teléfono</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="company" data-translate="contact_label_company">Empresa</label>
+                                <input type="text" id="company" name="company">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subject" data-translate="contact_label_subject">Asunto</label>
+                            <select id="subject" name="subject" required>
+                                <option value="" data-translate="contact_subject_placeholder">Selecciona un asunto</option>
+                                <option value="sales" data-translate="contact_subject_sales">Ventas</option>
+                                <option value="support" data-translate="contact_subject_support">Soporte Técnico</option>
+                                <option value="partnership" data-translate="contact_subject_partnership">Alianzas</option>
+                                <option value="other" data-translate="contact_subject_other">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message" data-translate="contact_label_message">Mensaje</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="lni lni-telegram-original"></i>
+                            <span data-translate="contact_submit">Enviar Mensaje</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="info-container">
+                    <div class="info-card">
+                        <h3 class="info-title" data-translate="contact_info_title">Información de Contacto</h3>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="lni lni-map-marker"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4 data-translate="contact_info_location">Ubicación</h4>
+                                <p data-translate="contact_info_location_val">Hermosillo, Sonora<br>México · 100% Digital</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="lni lni-timer"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4 data-translate="contact_info_hours">Horario de Atención</h4>
+                                <p data-translate="contact_info_hours_val">Lunes - Viernes: 9:00 AM - 6:00 PM<br>Sábado: 10:00 AM - 2:00 PM</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="lni lni-support"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4 data-translate="contact_info_support">Soporte 24/7</h4>
+                                <p data-translate="contact_info_support_val">Disponible para clientes<br>del plan Attomos y Electrón</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="social-card">
+                        <h3 class="social-title" data-translate="contact_follow_us">Síguenos</h3>
+                        <div class="social-links">
+                            <a href="#" class="social-link" aria-label="WhatsApp">
+                                <i class="lni lni-whatsapp"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="Facebook">
+                                <i class="lni lni-facebook-original"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="Instagram">
+                                <i class="lni lni-instagram-original"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="TikTok">
+                                <i class="lni lni-tiktok"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Digital Banner -->
+    <section class="map-section">
+        <div class="container">
+            <div class="digital-banner">
+                <div class="digital-banner-icon">
+                    <i class="lni lni-world"></i>
+                </div>
+                <div class="digital-banner-content">
+                    <h3 data-translate="contact_banner_title">Empresa 100% Digital</h3>
+                    <p data-translate="contact_banner_desc">Atendemos a nuestros clientes de forma remota desde Hermosillo, Sonora. Sin fronteras, sin filas, sin desplazamientos — todo desde WhatsApp.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/partials/contact.js"></script>
+</body>
+</html>
+{{end}}

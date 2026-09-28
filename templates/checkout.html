@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Attomos</title>
+
+        <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/checkout.css">
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/static/js/translations.js"></script>
+</head>
+<body>
+    <!-- Main Checkout Container -->
+    <div class="checkout-container">
+        <!-- Left Side - Payment Form -->
+        <div class="payment-section">
+            <!-- Logo Header Animado DENTRO del formulario -->
+            <header class="checkout-header">
+                <a href="/plans" class="cancel-link-top">
+                    <i class="lni lni-arrow-left"></i>
+                    <span data-translate="checkout_back_to_plans">Volver a Planes</span>
+                </a>
+                <div class="logo-container">
+                    <h1>ATTMOS</h1>
+                    <svg id="svg">
+                        <circle id="base" />
+                        <path id="ring" />
+                        <path id="second" />
+                        <path id="third" />
+                    </svg>
+                </div>
+            </header>
+
+            <div class="payment-header">
+                <h2 class="payment-title" data-translate="checkout_payment_info_title">Información de Pago</h2>
+            </div>
+
+            <form id="paymentForm" class="payment-form">
+                <!-- Billing Information -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-user"></i>
+                        <span data-translate="checkout_billing_info_title">Información de Facturación</span>
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_full_name_label">Nombre Completo *</label>
+                            <input type="text" class="form-input" id="fullName" required>
+                            <small class="input-hint" data-translate="checkout_full_name_hint">Juan Pérez</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_email_label">Email *</label>
+                            <input type="email" class="form-input" id="email" required>
+                            <small class="input-hint" data-translate="checkout_email_hint">contacto@tuempresa.com</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_phone_label">Teléfono</label>
+                            <div class="phone-input-wrapper">
+                                <input type="text" class="phone-code-input" id="phoneCode" readonly>
+                                <input type="tel" class="form-input phone-number-input" id="phone">
+                            </div>
+                            <small class="input-hint" id="phoneHintExample" data-translate="checkout_phone_hint">6621234567</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_company_label">Compañía *</label>
+                            <input type="text" class="form-input" id="compania" placeholder="Mi Empresa SA" data-translate-placeholder="checkout_company_placeholder" required>
+                            <small class="input-hint" data-translate="checkout_company_hint">Nombre de tu empresa</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_address_label">Dirección *</label>
+                            <input type="text" class="form-input" id="direccion" placeholder="Calle Ejemplo 123, Col. Centro" data-translate-placeholder="checkout_address_placeholder" required>
+                            <small class="input-hint" data-translate="checkout_address_hint">Tu dirección de contacto</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_country_label">País *</label>
+                            <div class="custom-select-wrapper country-select-wrapper">
+                                <input type="text" 
+                                       id="country" 
+                                       name="country" 
+                                       class="form-input form-select" 
+                                       value="🇲🇽 México"
+                                       readonly
+                                       required>
+                                <i class="lni lni-chevron-down select-arrow"></i>
+                                <div class="select-dropdown" id="countryDropdown">
+                                    <div class="select-options-container" id="countryOptionsContainer">
+                                        <div class="select-option" data-value="MX" data-flag="🇲🇽" data-code="+52" data-name="México" data-country-key="checkout_country_mx">
+                                            <span class="country-flag">🇲🇽</span>
+                                            <span data-translate="checkout_country_mx">México</span>
+                                        </div>
+                                        <div class="select-option" data-value="US" data-flag="🇺🇸" data-code="+1" data-name="Estados Unidos" data-country-key="checkout_country_us">
+                                            <span class="country-flag">🇺🇸</span>
+                                            <span data-translate="checkout_country_us">Estados Unidos</span>
+                                        </div>
+                                        <div class="select-option" data-value="CA" data-flag="🇨🇦" data-code="+1" data-name="Canadá" data-country-key="checkout_country_ca">
+                                            <span class="country-flag">🇨🇦</span>
+                                            <span data-translate="checkout_country_ca">Canadá</span>
+                                        </div>
+                                        <div class="select-option" data-value="ES" data-flag="🇪🇸" data-code="+34" data-name="España" data-country-key="checkout_country_es">
+                                            <span class="country-flag">🇪🇸</span>
+                                            <span data-translate="checkout_country_es">España</span>
+                                        </div>
+                                        <div class="select-option" data-value="AR" data-flag="🇦🇷" data-code="+54" data-name="Argentina" data-country-key="checkout_country_ar">
+                                            <span class="country-flag">🇦🇷</span>
+                                            <span data-translate="checkout_country_ar">Argentina</span>
+                                        </div>
+                                        <div class="select-option" data-value="CO" data-flag="🇨🇴" data-code="+57" data-name="Colombia" data-country-key="checkout_country_co">
+                                            <span class="country-flag">🇨🇴</span>
+                                            <span data-translate="checkout_country_co">Colombia</span>
+                                        </div>
+                                        <div class="select-option" data-value="CL" data-flag="🇨🇱" data-code="+56" data-name="Chile" data-country-key="checkout_country_cl">
+                                            <span class="country-flag">🇨🇱</span>
+                                            <span data-translate="checkout_country_cl">Chile</span>
+                                        </div>
+                                        <div class="select-option" data-value="PE" data-flag="🇵🇪" data-code="+51" data-name="Perú" data-country-key="checkout_country_pe">
+                                            <span class="country-flag">🇵🇪</span>
+                                            <span data-translate="checkout_country_pe">Perú</span>
+                                        </div>
+                                        <div class="select-option" data-value="RU" data-flag="🇷🇺" data-code="+7" data-name="Rusia" data-country-key="checkout_country_ru">
+                                            <span class="country-flag">🇷🇺</span>
+                                            <span data-translate="checkout_country_ru">Rusia</span>
+                                        </div>
+                                        <div class="select-option" data-value="UZ" data-flag="🇺🇿" data-code="+998" data-name="Uzbekistán" data-country-key="checkout_country_uz">
+                                            <span class="country-flag">🇺🇿</span>
+                                            <span data-translate="checkout_country_uz">Uzbekistán</span>
+                                        </div>
+                                        <div class="select-option" data-value="JP" data-flag="🇯🇵" data-code="+81" data-name="Japón" data-country-key="checkout_country_jp">
+                                            <span class="country-flag">🇯🇵</span>
+                                            <span data-translate="checkout_country_jp">Japón</span>
+                                        </div>
+                                        <div class="select-option" data-value="CN" data-flag="🇨🇳" data-code="+86" data-name="China" data-country-key="checkout_country_cn">
+                                            <span class="country-flag">🇨🇳</span>
+                                            <span data-translate="checkout_country_cn">China</span>
+                                        </div>
+                                        <div class="select-option" data-value="FR" data-flag="🇫🇷" data-code="+33" data-name="Francia" data-country-key="checkout_country_fr">
+                                            <span class="country-flag">🇫🇷</span>
+                                            <span data-translate="checkout_country_fr">Francia</span>
+                                        </div>
+                                        <div class="select-option" data-value="PT" data-flag="🇵🇹" data-code="+351" data-name="Portugal" data-country-key="checkout_country_pt">
+                                            <span class="country-flag">🇵🇹</span>
+                                            <span data-translate="checkout_country_pt">Portugal</span>
+                                        </div>
+                                        <div class="select-option" data-value="DE" data-flag="🇩🇪" data-code="+49" data-name="Alemania" data-country-key="checkout_country_de">
+                                            <span class="country-flag">🇩🇪</span>
+                                            <span data-translate="checkout_country_de">Alemania</span>
+                                        </div>
+                                        <div class="select-option" data-value="KR" data-flag="🇰🇷" data-code="+82" data-name="Corea del Sur" data-country-key="checkout_country_kr">
+                                            <span class="country-flag">🇰🇷</span>
+                                            <span data-translate="checkout_country_kr">Corea del Sur</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="countryCode" value="MX">
+                            </div>
+                            <small class="input-hint" data-translate="checkout_country_hint">Selecciona tu país</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-translate="checkout_postal_label">Código Postal *</label>
+                            <input type="text" class="form-input" id="postalCode" required>
+                            <small class="input-hint" id="postalHintExample" data-translate="checkout_postal_hint">83000</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturación -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-invoice"></i>
+                        <span data-translate="checkout_invoice_title">Facturación</span>
+                    </h3>
+
+                    <div class="form-group invoice-toggle-group">
+                        <label class="invoice-checkbox-label">
+                            <input type="checkbox" id="requiresInvoice">
+                            <span class="checkbox-custom"></span>
+                            <span data-translate="checkout_invoice_checkbox">¿Requieres Factura?</span>
+                        </label>
+                    </div>
+
+                    <div id="billingFields" class="billing-fields-container">
+                        <div class="form-row billing-row">
+                            <div class="form-group">
+                                <label class="form-label" data-translate="checkout_razon_social_label">Razón Social *</label>
+                                <input type="text" class="form-input" id="razonSocial" placeholder="Nombre o Razón Social">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-translate="checkout_rfc_label">RFC *</label>
+                                <input type="text" class="form-input" id="rfc" placeholder="XAXX010101000" maxlength="13" style="text-transform:uppercase;">
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <div class="billing-row">
+                            <div class="form-group">
+                                <label class="form-label" data-translate="checkout_fiscal_address_label">Dirección Fiscal *</label>
+                                <textarea class="form-input" id="direccionFiscal" placeholder="Calle, Número, Colonia, Municipio, Estado" style="min-height:80px; resize:vertical;"></textarea>
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row billing-row">
+                            <div class="form-group">
+                                <label class="form-label" data-translate="checkout_postal_label">Código Postal *</label>
+                                <input type="text" class="form-input" id="codigoPostal" placeholder="83000" maxlength="5">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-translate="checkout_invoice_email_label">Email para Factura *</label>
+                                <input type="email" class="form-input" id="emailFactura" placeholder="facturacion@empresa.com">
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <!-- Uso CFDI -->
+                        <div class="form-group billing-row">
+                            <label class="form-label" data-translate="checkout_cfdi_use_label">Uso del CFDI *</label>
+                            <div class="cfdi-select-wrapper">
+                                <div class="cfdi-select-trigger" id="usoCfdi-trigger" tabindex="0">
+                                    <span id="usoCfdi-selected" data-translate="checkout_cfdi_use_placeholder">Seleccionar uso</span>
+                                    <i class="lni lni-chevron-down"></i>
+                                </div>
+                                <div class="cfdi-select-dropdown" id="usoCfdi-dropdown">
+                                    <div class="cfdi-option" data-value="">Seleccionar uso</div>
+                                    <div class="cfdi-option" data-value="G01">G01 – Adquisición de mercancías</div>
+                                    <div class="cfdi-option" data-value="G02">G02 – Devoluciones, descuentos o bonificaciones</div>
+                                    <div class="cfdi-option" data-value="G03">G03 – Gastos en general</div>
+                                    <div class="cfdi-option" data-value="I01">I01 – Construcciones</div>
+                                    <div class="cfdi-option" data-value="I02">I02 – Mobiliario y equipo de oficina</div>
+                                    <div class="cfdi-option" data-value="I03">I03 – Equipo de transporte</div>
+                                    <div class="cfdi-option" data-value="I04">I04 – Equipo de cómputo y accesorios</div>
+                                    <div class="cfdi-option" data-value="I08">I08 – Otra maquinaria y equipo</div>
+                                    <div class="cfdi-option" data-value="S01">S01 – Sin efectos fiscales</div>
+                                </div>
+                                <input type="hidden" id="usoCfdi" value="">
+                            </div>
+                            <div class="error-message" id="usoCfdi-error"></div>
+                        </div>
+
+                        <!-- Régimen Fiscal -->
+                        <div class="form-group billing-row">
+                            <label class="form-label" data-translate="checkout_fiscal_regime_label">Régimen Fiscal *</label>
+                            <div class="cfdi-select-wrapper">
+                                <div class="cfdi-select-trigger" id="regimenFiscal-trigger" tabindex="0">
+                                    <span id="regimenFiscal-selected" data-translate="checkout_fiscal_regime_placeholder">Seleccionar régimen</span>
+                                    <i class="lni lni-chevron-down"></i>
+                                </div>
+                                <div class="cfdi-select-dropdown" id="regimenFiscal-dropdown">
+                                    <div class="cfdi-option" data-value="">Seleccionar régimen</div>
+                                    <div class="cfdi-option" data-value="601">601 – General de Ley Personas Morales</div>
+                                    <div class="cfdi-option" data-value="603">603 – Personas Morales con Fines no Lucrativos</div>
+                                    <div class="cfdi-option" data-value="605">605 – Sueldos y Salarios e Ingresos Asimilados</div>
+                                    <div class="cfdi-option" data-value="606">606 – Arrendamiento</div>
+                                    <div class="cfdi-option" data-value="612">612 – Personas Físicas con Actividades Empresariales</div>
+                                    <div class="cfdi-option" data-value="616">616 – Sin obligaciones fiscales</div>
+                                    <div class="cfdi-option" data-value="621">621 – Incorporación Fiscal</div>
+                                    <div class="cfdi-option" data-value="625">625 – Actividades a través de Plataformas Tecnológicas</div>
+                                    <div class="cfdi-option" data-value="626">626 – Régimen Simplificado de Confianza (RESICO)</div>
+                                </div>
+                                <input type="hidden" id="regimenFiscal" value="">
+                            </div>
+                            <div class="error-message" id="regimenFiscal-error"></div>
+                        </div>
+
+                        <div class="billing-info-notice">
+                            <i class="lni lni-information"></i>
+                            <div>
+                                <p data-translate-html="checkout_invoice_notice_1">La factura tarda <strong>3 días hábiles</strong> en ser emitida.</p>
+                                <p data-translate="checkout_invoice_notice_2">¿Dudas? Contáctanos por WhatsApp.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-credit-cards"></i>
+                        <span data-translate="checkout_payment_method_title">Método de Pago</span>
+                    </h3>
+
+                    <div class="payment-method-selector">
+                        <label class="payment-method-option active">
+                            <input type="radio" name="paymentMethod" value="card" checked>
+                            <div class="method-content">
+                                <i class="lni lni-credit-cards"></i>
+                                <span data-translate="checkout_card_option">Tarjeta de Crédito/Débito</span>
+                            </div>
+                        </label>
+                        <label class="payment-method-option">
+                            <input type="radio" name="paymentMethod" value="paypal">
+                            <div class="method-content">
+                                <i class="lni lni-paypal"></i>
+                                <span>PayPal</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Card Details with Stripe Elements -->
+                    <div id="cardDetails" class="card-details">
+                        <div class="stripe-container" id="stripe-container">
+                            <div id="card-element"></div>
+                        </div>
+                        <div class="error-message" id="card-errors"></div>
+                    </div>
+
+                    <!-- PayPal Option -->
+                    <div id="paypalDetails" class="paypal-details" style="display: none;">
+                        <div class="paypal-info">
+                            <i class="lni lni-paypal" style="font-size: 3rem; color: #0070ba;"></i>
+                            <p data-translate="checkout_paypal_text">Serás redirigido a PayPal para completar tu pago de forma segura.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitButton" disabled>
+                    <i class="lni lni-lock"></i>
+                    <span data-translate="checkout_submit_button">Realizar Pago Seguro</span>
+                </button>
+
+                <!-- Subscription notice -->
+                <div class="subscription-renewal-notice">
+                    <i class="lni lni-reload"></i>
+                    <span data-translate-html="checkout_renewal_notice">Estás contratando una membresía <strong>mensual</strong> con renovación automática. Puedes cancelar en cualquier momento.</span>
+                </div>
+
+                <!-- Cancel Link -->
+                <a href="/plans" class="cancel-link">
+                    <i class="lni lni-arrow-left"></i>
+                    <span data-translate="checkout_back_to_plans">Volver a Planes</span>
+                </a>
+
+                <!-- Security Badges al final -->
+                <div class="payment-security-badges">
+                    
+                    <div class="security-badge-item">
+                        <i class="lni lni-shield"></i>
+                        <span data-translate="checkout_ssl_badge">Cifrado SSL</span>
+                    </div>
+                    <div class="security-badge-item">
+                        <i class="lni lni-certificate"></i>
+                        <span>Powered by Stripe</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Side - Order Summary -->
+        <div class="order-summary">
+            <div class="summary-header">
+                <h2 class="summary-title">
+                    <i class="lni lni-cart"></i>
+                    <span data-translate="checkout_summary_title">Resumen de Compra</span>
+                </h2>
+            </div>
+
+            <!-- Selected Plan Card -->
+            <div class="selected-plan-card">
+                <div class="plan-badge" data-translate="checkout_plan_badge">Plan Seleccionado</div>
+                <h3 class="plan-name" id="selectedPlanName">Plan Neutrón</h3>
+                <div class="plan-billing-period">
+                    <span class="billing-label" data-translate="checkout_billing_period_label">Período de facturación:</span>
+                    <span class="billing-value" id="billingPeriod">Mensual</span>
+                </div>
+            </div>
+
+            <!-- Cupón de Descuento -->
+            <div class="coupon-section">
+                <div class="coupon-header">
+                    <i class="lni lni-tag"></i>
+                    <span data-translate="checkout_coupon_question">¿Tienes un cupón?</span>
+                </div>
+                <div id="coupon-input-container">
+                    <div class="coupon-input-row">
+                        <input type="text" class="coupon-input" id="coupon-code" placeholder="Código de descuento" data-translate-placeholder="checkout_coupon_placeholder" maxlength="50">
+                        <button type="button" id="apply-coupon" class="btn-coupon">
+                            <i class="lni lni-checkmark"></i>
+                            <span data-translate="checkout_coupon_apply_btn">Aplicar</span>
+                        </button>
+                    </div>
+                    <div class="coupon-result" id="coupon-result" style="display:none;"></div>
+                </div>
+                <div id="discount-breakdown" style="display:none;">
+                    <div class="coupon-applied-badge">
+                        <div class="coupon-applied-info">
+                            <i class="lni lni-checkmark-circle"></i>
+                            <span id="coupon-name">Cupón aplicado</span>
+                        </div>
+                        <button type="button" id="remove-coupon" class="btn-remove-coupon">
+                            <i class="lni lni-close"></i> <span data-translate="checkout_coupon_remove_btn">Quitar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="price-breakdown">
+                <div class="price-item" id="discount-line" style="display:none;">
+                    <span class="price-label" style="color:#10b981;" data-translate="checkout_discount_label">Descuento</span>
+                    <span class="price-value" id="discount-summary" style="color:#10b981;">-$0.00</span>
+                </div>
+                <div class="price-separator"></div>
+                <div class="price-item total">
+                    <span class="price-label" data-translate="checkout_total_label">Total a Pagar</span>
+                    <span class="price-value" id="total">...</span>
+                </div>
+                
+            </div>
+
+            <!-- Features Included -->
+            <div class="features-included">
+                <h4 class="features-title" data-translate="checkout_features_title">Incluye:</h4>
+                <ul class="features-list" id="planFeatures">
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>3 Chatbots incluidos</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>10,000 mensajes/mes</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Todas las plataformas</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Soporte prioritario</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="processing-animation">
+                <div class="spinner"></div>
+            </div>
+            <h3 class="processing-title" data-translate="checkout_processing_title">Procesando tu pago...</h3>
+            <p class="processing-text" data-translate="checkout_processing_text">Por favor espera, no cierres esta ventana.</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content success-modal">
+            <div class="success-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h3 class="success-title" data-translate="checkout_success_title">¡Pago Exitoso!</h3>
+            <p class="success-text" data-translate="checkout_success_text">Tu suscripción ha sido activada correctamente.</p>
+            <button class="btn-success" onclick="window.location.href='/dashboard'" data-translate="checkout_dashboard_btn">
+                Ir al Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/checkout.js"></script>
+</body>
+</html>

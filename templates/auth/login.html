@@ -1,0 +1,176 @@
+{{define "login.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Iniciar Sesión</title>
+    <link rel="stylesheet" href="https://cdn.lineicons.com/4.0/lineicons.css" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/auth/login.css">
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <div class="auth-container">
+        <div class="auth-background">
+            <div class="auth-shape auth-shape-1"></div>
+            <div class="auth-shape auth-shape-2"></div>
+            <div class="auth-shape auth-shape-3"></div>
+        </div>
+
+        <div class="auth-content">
+            <div class="orbital-container">
+                <svg id="animated-blob" viewBox="-5 -5 210 210" xmlns="http://www.w3.org/2000/svg" aria-labelledby="blobTitle">
+                    <title id="blobTitle">Animated Blob</title>
+                    
+                    <!-- Imágenes rotativas dentro del clip path -->
+                    <image id="blobImage1" href="https://images.pexels.com/photos/3268732/pexels-photo-3268732.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:1; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage2" href="https://images.pexels.com/photos/3998415/pexels-photo-3998415.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage3" href="https://images.pexels.com/photos/3845765/pexels-photo-3845765.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
+                    
+                    <!-- Definición del clip path -->
+                    <clipPath id="blobClip">
+                        <path d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
+                              transform="translate(100 100)"/>
+                    </clipPath>
+                    
+                    <!-- Path para el texto (invisible) -->
+                    <path id="textPath"
+                          d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
+                          transform="translate(100 100)"
+                          fill="none" stroke="none"
+                          pathLength="100"/>
+                    
+                    <!-- Texto animado -->
+                    <text class="text-content">
+                        <textPath href="#textPath" startOffset="0%">
+                            · WELCOME TO ATTOMOS · WELCOME TO ATTOMOS · WELCOME TO ATTOMOS
+                            <animate attributeName="startOffset" from="0%" to="100%" dur="15s" repeatCount="indefinite" />
+                        </textPath>
+                        <textPath href="#textPath" startOffset="100%">
+                            · BIENVENIDO A ATTOMOS · BIENVENIDO A ATTOMOS · BIENVENIDO A ATTOMOS
+                            <animate attributeName="startOffset" from="-100%" to="0%" dur="15s" repeatCount="indefinite" />
+                        </textPath>
+                    </text>
+                </svg>
+
+                <script>
+                    (function() {
+                        const images = [
+                            document.getElementById('blobImage1'),
+                            document.getElementById('blobImage2'),
+                            document.getElementById('blobImage3')
+                        ];
+                        let current = 0;
+
+                        setInterval(function() {
+                            images[current].style.opacity = '0';
+                            current = (current + 1) % images.length;
+                            images[current].style.opacity = '1';
+                        }, 4000);
+                    })();
+                </script>
+            </div>
+
+            <div class="auth-form-container">
+                <div class="auth-form-content">
+                    <div class="auth-header">
+                        <h2 class="auth-title" data-translate="login_title">Iniciar Sesión</h2>
+                        <p class="auth-subtitle" data-translate="login_subtitle">Ingresa tus credenciales para acceder a tu cuenta</p>
+                    </div>
+
+                    <div class="social-login social-login-inline">
+                        <button class="social-btn social-icon-btn google-btn" onclick="loginWithGoogle()" title="" data-translate-title="login_google_title">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                        </button>
+                        
+                        <button class="social-btn social-icon-btn facebook-btn" onclick="loginWithFacebook()" title="" data-translate-title="login_facebook_title">
+                            <i class="lni lni-facebook-original"></i>
+                        </button>
+                    </div>
+
+                    <div class="divider">
+                        <span data-translate="login_or_email">o continúa con email</span>
+                    </div>
+
+                    <form class="auth-form" id="loginForm">
+                        <div class="form-group">
+                            <label for="email" class="form-label" data-translate="label_email">Email</label>
+                            <div class="input-container">
+                                <i class="lni lni-envelope input-icon"></i>
+                                <input type="email" id="email" name="email" class="form-input" required>
+                            </div>
+                            <small class="input-hint" data-translate="hint_email">tu@email.com</small>
+                            <div class="form-error" id="emailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label" data-translate="label_password">Contraseña</label>
+                            <div class="input-container">
+                                <i class="lni lni-lock input-icon"></i>
+                                <input type="password" id="password" name="password" class="form-input" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                    <svg id="passwordToggleIcon" width="22" height="22" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 7.625C9.60719 7.625 7.64844 9.58375 7.64844 12C7.64844 14.4162 9.60719 16.375 12.0234 16.375C14.4397 16.375 16.3984 14.4162 16.3984 12C16.3984 9.58375 14.4397 7.625 12.0234 7.625ZM9.14844 12C9.14844 10.4122 10.4356 9.125 12.0234 9.125C13.6113 9.125 14.8984 10.4122 14.8984 12C14.8984 13.5878 13.6113 14.875 12.0234 14.875C10.4356 14.875 9.14844 13.5878 9.14844 12Z" fill="#9CA3AF"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 4.5C7.71145 4.5 3.99772 7.05632 2.30101 10.7351C1.93091 11.5375 1.93091 12.4627 2.30101 13.2652C3.99772 16.9439 7.71145 19.5002 12.0234 19.5002C16.3353 19.5002 20.049 16.9439 21.7458 13.2652C22.1159 12.4627 22.1159 11.5375 21.7458 10.7351C20.049 7.05633 16.3353 4.5 12.0234 4.5ZM3.66311 11.3633C5.12472 8.19429 8.32017 6 12.0234 6C15.7266 6 18.922 8.19429 20.3836 11.3633C20.5699 11.7671 20.5699 12.2331 20.3836 12.6369C18.922 15.8059 15.7266 18.0002 12.0234 18.0002C8.32017 18.0002 5.12472 15.8059 3.66311 12.6369C3.47688 12.2331 3.47688 11.7671 3.66311 11.3633Z" fill="#9CA3AF"/></svg>
+                                </button>
+                            </div>
+                            <small class="input-hint" data-translate="hint_password">Tu contraseña</small>
+                            <div class="form-error" id="passwordError"></div>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="remember" id="remember">
+                                <span class="checkmark"></span>
+                                <span data-translate="login_remember">Recordarme</span>
+                            </label>
+                            <a href="../recover-password" class="forgot-link" data-translate="login_forgot">¿Olvidaste tu contraseña?</a>
+                        </div>
+
+                        <button type="submit" class="auth-btn primary-btn" id="loginBtn">
+                            <span class="btn-text" data-translate="login_btn">Iniciar Sesión</span>
+                            <div class="btn-loading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <span data-translate="login_loading">Iniciando...</span>
+                            </div>
+                        </button>
+
+                        <div class="form-footer">
+                            <p><span data-translate="login_no_account">¿No tienes una cuenta?</span> <a href="/register" class="auth-link" data-translate="login_register_link">Regístrate aquí</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{template "partials/footer.html" .}}
+
+    <script src="/static/js/index.js"></script>
+    <script src="/static/js/auth/login.js"></script>
+</body>
+</html>
+{{end}}

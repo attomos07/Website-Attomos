@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Selecciona tu Plan - Attomos</title>
+<!-- Favicon -->
+<link href="/static/images/attomos-favicon.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/static/images/attomos-favicon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+<link href="/static/css/select-plan.css" rel="stylesheet">
+<style>
+        .loading-price {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+    </style>
+</link></head>
+<body>
+<!-- Main Content -->
+<div class="container">
+<!-- Header -->
+<div class="header">
+<h1>Selecciona el plan perfecto para tu negocio</h1>
+<p>Comienza con 30 días gratis y escala cuando lo necesites. Sin tarjeta de crédito requerida.</p>
+</div>
+<!-- Billing Toggle -->
+<div class="billing-toggle">
+<span class="billing-option active" data-cycle="monthly">Mensual</span>
+<label class="toggle-switch">
+<input id="billingToggle" type="checkbox"/>
+<span class="toggle-slider"></span>
+</label>
+<span class="billing-option" data-cycle="annual">Anual</span>
+</div>
+<!-- Plans Grid -->
+<div class="plans-grid">
+<!-- Plan Gratuito (Destacado en Verde) -->
+<div class="plan-card free-trial">
+<div class="plan-badge trial">Prueba Gratis</div>
+<div class="plan-header">
+<h2>Gratuito</h2>
+<div class="plan-price">
+<span class="price">$0</span>
+<span class="period">/ 30 días</span>
+</div>
+<p class="plan-subtitle">Perfecto para probar sin compromisos</p>
+</div>
+<ul class="plan-features">
+<li><span class="icon">✓</span> 1 agente de WhatsApp</li>
+<li><span class="icon">✓</span> WhatsApp Web (escaneo QR)</li>
+<li><span class="icon">✓</span> Mensajes ilimitados</li>
+<li><span class="icon">✓</span> IA con Gemini</li>
+<li><span class="icon">✓</span> Google Sheets</li>
+<li><span class="icon">✓</span> Google Calendar</li>
+<li><span class="icon">✓</span> Horarios personalizados de atención</li>
+<li><span class="icon">✓</span> Catálogo de servicios</li>
+<li><span class="icon">✓</span> Promociones de servicios</li>
+<li><span class="icon">✓</span> Ofertas de trabajo</li>
+</ul>
+<button class="plan-button primary" onclick="selectPlan('gratuito', 'monthly')">
+                    Comenzar Gratis
+                </button>
+</div>
+<!-- Plan Protón -->
+<div class="plan-card featured"><div class="plan-badge popular">Más Popular</div>
+<div class="plan-header">
+<h2>Protón</h2>
+<div class="plan-price">
+<span class="price" data-annual="0" data-monthly="0">
+<span class="loading-price">Cargando...</span>
+</span>
+<span class="period">/ mes</span>
+</div>
+<p class="plan-subtitle">Ideal para empresas de servicios</p>
+</div>
+<ul class="plan-features">
+<li><span class="icon">✓</span> Agentes ilimitados</li>
+<li><span class="icon">✓</span> Meta WhatsApp Business API</li>
+<li><span class="icon">✓</span> Mensajes ilimitados</li>
+<li><span class="icon">✓</span> IA con Gemini avanzada</li>
+<li><span class="icon">✓</span> Chatwoot CRM integrado</li>
+<li><span class="icon">✓</span> Google Calendar</li>
+<li><span class="icon">✓</span> Horarios personalizados de atención</li>
+<li><span class="icon">✓</span> Catálogo de servicios</li>
+<li><span class="icon">✓</span> Promociones de servicios</li>
+<li><span class="icon">✓</span> Ofertas de trabajo</li>
+</ul>
+<button class="plan-button primary" onclick="selectPlan('proton', getCurrentBillingCycle())">
+                    Seleccionar Protón
+                </button>
+</div>
+<!-- Plan Neutrón (Más Popular) -->
+<div class="plan-card">
+
+<div class="plan-header">
+<h2>Neutrón</h2>
+<div class="plan-price">
+<span class="price" data-annual="0" data-monthly="0">
+<span class="loading-price">Cargando...</span>
+</span>
+<span class="period">/ mes</span>
+</div>
+<p class="plan-subtitle">Ideal para e-commerce</p>
+</div>
+<ul class="plan-features">
+<li><span class="icon">✓</span> Agentes ilimitados</li>
+<li><span class="icon">✓</span> Meta WhatsApp Business API</li>
+<li><span class="icon">✓</span> Mensajes ilimitados</li>
+<li><span class="icon">✓</span> Chatwoot CRM integrado</li>
+<li><span class="icon">✓</span> IA con Gemini avanzada</li>
+<li><span class="icon">✓</span> Google Sheets para ventas</li>
+<li><span class="icon">✓</span> Catálogo de productos</li>
+<li><span class="icon">✓</span> Promociones y packs</li>
+<li><span class="icon">✓</span> Página web + App móvil</li>
+<li><span class="icon">✓</span> Sistema de inventario</li>
+<li><span class="icon">✓</span> Punto de venta (POS)</li>
+<li><span class="icon">✓</span> Ofertas de trabajo</li>
+</ul>
+<button class="plan-button primary" onclick="selectPlan('neutron', getCurrentBillingCycle())">
+                    Seleccionar Neutrón
+                </button>
+</div>
+<!-- Plan Electrón -->
+</div>
+</div>
+<!-- Loading Modal -->
+<div class="modal" id="loadingModal">
+<div class="modal-content">
+<div class="spinner"></div>
+<p id="loadingMessage">Procesando tu selección...</p>
+</div>
+</div>
+
+<!-- Modal: ¿Ya tienes tu propia API key de Gemini? -->
+<div class="apikey-modal-overlay" id="apiKeyModalOverlay" style="display:none;">
+<div class="apikey-modal">
+<div class="apikey-modal-icon">
+<i class="lni lni-key"></i>
+</div>
+<h3 class="apikey-modal-title">¿Ya tienes tu propia API key de Gemini?</h3>
+<p class="apikey-modal-desc">
+Si ya cuentas con una API key de Google Gemini, la usaremos directamente. Si no, nosotros creamos y configuramos una automáticamente por ti — no tienes que hacer nada.
+</p>
+
+<div class="apikey-modal-field" id="apiKeyInputWrap" style="display:none;">
+<label for="apiKeyModalInput">Pega tu API key (opcional, también puedes agregarla después en Integraciones)</label>
+<input autocomplete="off" id="apiKeyModalInput" placeholder="AIzaSy..." type="text">
+</div>
+
+<div class="apikey-modal-actions">
+<button class="apikey-modal-btn secondary" id="apiKeyModalNo" type="button">
+No, créenmela automáticamente
+</button>
+<button class="apikey-modal-btn primary" id="apiKeyModalYes" type="button">
+Sí, ya tengo una
+</button>
+</div>
+</div>
+</div>
+
+<style>
+    .apikey-modal-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(15, 15, 20, 0.6);
+        display: flex; align-items: center; justify-content: center;
+        padding: 1rem;
+    }
+    .apikey-modal {
+        background: #fff; border-radius: 16px; max-width: 440px; width: 100%;
+        padding: 2rem; text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .apikey-modal-icon {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #eef2ff; color: #4f46e5;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin: 0 auto 1rem;
+    }
+    .apikey-modal-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 0.6rem; }
+    .apikey-modal-desc { font-size: 0.92rem; color: #6b7280; line-height: 1.5; margin: 0 0 1.25rem; }
+    .apikey-modal-field { text-align: left; margin-bottom: 1.25rem; }
+    .apikey-modal-field label { display: block; font-size: 0.82rem; color: #6b7280; margin-bottom: 0.4rem; }
+    .apikey-modal-field input {
+        width: 100%; padding: 0.6rem 0.8rem; border-radius: 8px;
+        border: 1px solid #d1d5db; font-size: 0.9rem; box-sizing: border-box;
+    }
+    .apikey-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+    .apikey-modal-btn {
+        padding: 0.7rem 1rem; border-radius: 10px; font-size: 0.92rem; font-weight: 600;
+        cursor: pointer; border: none; transition: opacity 0.15s;
+    }
+    .apikey-modal-btn:hover { opacity: 0.85; }
+    .apikey-modal-btn.primary { background: #4f46e5; color: #fff; }
+    .apikey-modal-btn.secondary { background: #f3f4f6; color: #374151; }
+</style>
+
+<script src="/static/js/select-plan.js"></script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+{{define "comy/directory-comy.html"}}
+<!-- Sin esto el navegador del celular renderiza a ~980px y escala todo hacia abajo,
+     así que ningún @media de mobile se activa. Idealmente va en el <head> del layout. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+{{template "comy/sidebar-comy.html" .}}
+
+<div class="comy-content" style="background:#fff">
+  <div class="comy-page">
+
+    <!-- Barra superior -->
+    <div class="comy-topbar">
+      <h1 class="comy-title">Buen provecho{{if .UserName}}, {{.UserName}}{{end}} 😋</h1>
+
+      <div class="comy-search">
+        <input type="text" id="comySearchInput" placeholder="Busca por nombre de platillo o empresa">
+        <svg width="16" height="16" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"><path d="m21 21l-4.34-4.34"/><circle cx="11" cy="11" r="8"/></g></svg>
+      </div>
+
+      <div class="comy-topbar-right">
+        <button class="comy-bell" title="Notificaciones">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M10.268 21a2 2 0 0 0 3.464 0m-10.47-5.674A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+          {{if .NotificationCount}}<span class="comy-bell-dot">{{.NotificationCount}}</span>{{end}}
+        </button>
+
+        <!-- GUEST -->
+        <div id="comyTopGuest" class="comy-guest-btns">
+          <a href="/comy/login" class="comy-btn-ghost">Iniciar sesión</a>
+          <a href="/comy/register" class="comy-btn-primary">Registrarse</a>
+        </div>
+
+        <!-- USER -->
+        <div id="comyTopUser" class="comy-top-user" style="display:none">
+          <div class="comy-top-avatar" id="comyTopAvatar">
+            <!-- Foto de perfil real: descomentar cuando login/register entreguen session.photoUrl
+            <img id="comyTopAvatarImg" src="" alt="" style="display:none">
+            -->
+            <span id="comyTopInitials">?</span>
+          </div>
+          <div class="comy-top-meta">
+            <div class="comy-top-name" id="comyTopName">—</div>
+            <div class="comy-top-role" id="comyTopRole">Usuario</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comy-body">
+      <div class="comy-main">
+
+        <!-- Hero -->
+        <div class="comy-hero">
+          <div class="comy-hero-circle" style="background:#4CAF50; top:-20px; right:6rem"></div>
+          <div class="comy-hero-circle" style="background:#9C27B0; top:16px; right:2rem; width:5rem; height:5rem"></div>
+          <div class="comy-hero-circle" style="background:#00BCD4; bottom:-10px; right:9rem"></div>
+          <div class="comy-hero-illustration">🛵</div>
+          <div class="comy-hero-text">
+            <h2>Hola{{if .UserName}} {{.UserName}}{{end}},</h2>
+            <p>Envío gratis en compras mayores a <strong>$200</strong></p>
+            <button class="comy-hero-btn" type="button">Conoce más</button>
+          </div>
+        </div>
+
+        <!-- Categorías -->
+        <section class="comy-section">
+          <div class="comy-section-head">
+            <h2>Categoría de menú</h2>
+            <a href="#" class="comy-viewall">Ver todo
+              <svg width="12" height="12" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="m9 18l6-6l-6-6"/></svg>
+            </a>
+          </div>
+
+          <div class="comy-categories-wrap" id="comyCategoriesWrap">
+          <div class="comy-categories" id="comyCategories">
+            <button class="comy-cat active" data-cat="pizza"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/pizza.png" alt="Pizza"></span><span>Pizza</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="burger"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/burger.png" alt="Burger"></span><span>Burger</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="hotdog"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/dogo.png" alt="Hotdog"></span><span>Hotdog</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="taco"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/taco.png" alt="Taco"></span><span>Taco</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="snack"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/snack.png" alt="Snack"></span><span>Snack</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="drink"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/soda.png" alt="Bebida"></span><span>Bebida</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="boneless"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/boneless.png" alt="Boneless"></span><span>Boneless</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="sushi"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/sushi.png" alt="Sushi"></span><span>Sushi</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+            <button class="comy-cat" data-cat="percheron"><span class="comy-cat-icon"><img src="/api/uploads/bucket?key=comy-categories/percheron.png" alt="Percherón"></span><span>Percherón</span><span class="comy-cat-chev"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="m9 18l6-6l-6-6"/></svg></span></button>
+          </div>
+          </div>
+
+          <!-- Toggle Empresas / Platillos -->
+          <div class="comy-toggle" id="comyToggle" role="tablist">
+            <button class="comy-toggle-opt active" data-view="empresas" role="tab" aria-selected="true">Empresas</button>
+            <button class="comy-toggle-opt" data-view="platillos" role="tab" aria-selected="false">Platillos</button>
+            <div class="comy-toggle-thumb" id="comyToggleThumb"></div>
+          </div>
+        </section>
+
+        <!-- Panel: Empresas -->
+        <section class="comy-panel" id="comyPanelEmpresas">
+          <div class="comy-grid" id="comyEmpresasGrid">
+            <div class="comy-panel-loading">Cargando negocios…</div>
+          </div>
+        </section>
+
+        <!-- Panel: Platillos (de todas las empresas) -->
+        <section class="comy-panel" id="comyPanelPlatillos" style="display:none">
+          <div class="comy-grid" id="comyPlatillosGrid">
+            <div class="comy-panel-loading">Cargando platillos…</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Columna derecha -->
+      <div class="comy-side" id="comySide">
+        <div class="comy-m-sheet-handle" id="comyMSheetHandle"></div>
+        <div class="comy-card-balance">
+          <div class="comy-card-circle" style="width:9rem;height:9rem;top:-2.5rem;right:-2.5rem;background:rgba(255,255,255,.15)"></div>
+          <div class="comy-card-circle" style="width:5rem;height:5rem;bottom:1rem;right:-1rem;background:rgba(255,255,255,.1)"></div>
+          <div class="comy-card-top">
+            <span>Tarjeta de débito</span>
+            <span class="comy-card-brand">VISA</span>
+          </div>
+          <div class="comy-card-amount">$ 1,560.00</div>
+          <div class="comy-card-bottom">
+            <span id="comyCardOwner">{{if .UserName}}{{.UserName}}{{else}}Invitado{{end}}</span>
+            <span class="comy-card-num">•••• 3247</span>
+          </div>
+        </div>
+
+        <div class="comy-order-box">
+          <div class="comy-section-head">
+            <h2>Mi pedido</h2>
+            <a href="#" class="comy-viewall">Ver todo
+              <svg width="12" height="12" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="m9 18l6-6l-6-6"/></svg>
+            </a>
+          </div>
+
+          <div class="comy-order-list">
+            <!-- {{range .PedidoActual}} -->
+            <div class="comy-order-item">
+              <div class="comy-order-thumb" style="background:#FFF3DC">🍄</div>
+              <div class="comy-order-info">
+                <div class="comy-order-name">Pizza de Champiñón</div>
+                <div class="comy-order-qty">x1</div>
+              </div>
+              <div class="comy-order-price"><small>$</small>149</div>
+            </div>
+            <div class="comy-order-item">
+              <div class="comy-order-thumb" style="background:#E8F5F0">🍅</div>
+              <div class="comy-order-info">
+                <div class="comy-order-name">Pizza Italiana</div>
+                <div class="comy-order-qty">x2</div>
+              </div>
+              <div class="comy-order-price"><small>$</small>270</div>
+            </div>
+            <div class="comy-order-item">
+              <div class="comy-order-thumb" style="background:#E8F5F0">🍔</div>
+              <div class="comy-order-info">
+                <div class="comy-order-name">Burger Clásica</div>
+                <div class="comy-order-qty">x1</div>
+              </div>
+              <div class="comy-order-price"><small>$</small>99</div>
+            </div>
+            <!-- {{end}} -->
+          </div>
+
+          <button class="comy-checkout-btn" type="button">Pagar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solo mobile: barra flotante de pedido + fondo del bottom sheet -->
+  <div class="comy-m-backdrop" id="comyMBackdrop"></div>
+  <button class="comy-m-cartbar" id="comyMCartBar" type="button">
+    <span class="comy-m-cartbar-count" id="comyMCartCount">0</span>
+    <span>Ver mi pedido</span>
+    <span class="comy-m-cartbar-total" id="comyMCartTotal">$0</span>
+  </button>
+</div>
+
+<style>
+  /* Amarillo puro brillante — sobreescribe --c-accent solo en esta página
+     (la variable original viene del sidebar/stylesheet global de Comy) */
+  :root {
+    --c-accent: #FFD400;
+    --c-accent-dark: #E6BF00;
+  }
+
+  .comy-page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; background: #fff; }
+
+  /* Topbar */
+  .comy-topbar { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .comy-title { font-size: 1.3rem; font-weight: 800; color: var(--c-ink); flex-shrink: 0; font-family: var(--c-font); }
+  .comy-search {
+    flex: 1; min-width: 220px; max-width: 360px;
+    display: flex; align-items: center; gap: .6rem;
+    background: #F2F2F4; border: 2px solid transparent;
+    border-radius: 999px; padding: calc(.75rem - 2px) calc(1.25rem - 2px); color: var(--c-muted);
+    transition: background .2s, border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .comy-search:focus-within {
+    background: #fff; border-color: var(--c-accent);
+    box-shadow: 0 6px 18px rgba(255,212,0,.28);
+    transform: translateY(-1px);
+  }
+  .comy-search svg { flex-shrink: 0; transition: color .2s; }
+  .comy-search:focus-within svg { color: var(--c-ink); }
+  .comy-search input { border: none; background: none; outline: none; font-size: .85rem; width: 100%; color: var(--c-ink); font-family: var(--c-font); }
+  .comy-topbar-right { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
+  .comy-bell {
+    position: relative; width: 40px; height: 40px; border-radius: 12px;
+    background: var(--c-muted-bg); color: var(--c-muted); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, color .2s;
+  }
+  .comy-bell:hover { background: var(--c-accent-soft); color: var(--c-ink); }
+  .comy-bell svg { transform-origin: top center; }
+  .comy-bell:hover svg { animation: comyBellRing .5s ease; }
+  .comy-bell:active { transform: scale(.92); }
+  @keyframes comyBellRing {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(14deg); }
+    40% { transform: rotate(-12deg); }
+    60% { transform: rotate(8deg); }
+    80% { transform: rotate(-6deg); }
+  }
+  .comy-bell-dot {
+    position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 3px;
+    background: var(--c-accent); color: #2A2200; font-size: .6rem; font-weight: 700;
+    border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    animation: comyBellPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes comyBellPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,212,0,.55); }
+    50% { box-shadow: 0 0 0 5px rgba(255,212,0,0); }
+  }
+  .comy-guest-btns { display: flex; align-items: center; gap: .5rem; }
+  .comy-btn-ghost {
+    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
+    font-size: .82rem; font-weight: 600; color: var(--c-ink); border: 1.5px solid var(--c-border);
+  }
+  .comy-btn-ghost:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .comy-btn-primary {
+    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
+    font-size: .82rem; font-weight: 700; color: #2A2200; background: var(--c-accent);
+    box-shadow: 0 6px 16px rgba(255,212,0,.35);
+  }
+  .comy-btn-primary:hover { background: var(--c-accent-dark); }
+  .comy-top-user { display: flex; align-items: center; gap: .6rem; }
+  .comy-top-avatar {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #2A2200;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem;
+    overflow: hidden; flex-shrink: 0;
+  }
+  /* Foto de perfil real: descomentar junto con el <img> de arriba
+  .comy-top-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  */
+  .comy-top-name { font-size: .85rem; font-weight: 700; color: var(--c-ink); }
+  .comy-top-role { font-size: .72rem; color: var(--c-muted); }
+
+  /* Layout de cuerpo */
+  .comy-body { display: flex; gap: 1.5rem; align-items: flex-start; }
+  .comy-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.25rem; }
+  .comy-side {
+    width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1.25rem;
+    background: #fff; border-radius: 24px; padding: 1.25rem;
+  }
+
+  /* Hero */
+  .comy-hero {
+    position: relative; overflow: hidden; border-radius: 20px; min-height: 150px;
+    background: linear-gradient(135deg, #FFF3DC 0%, #FDE8B8 100%);
+    display: flex; align-items: center; gap: 1.25rem; padding: 0 1.5rem;
+  }
+  .comy-hero-circle { position: absolute; border-radius: 50%; opacity: .4; }
+  .comy-hero-illustration { font-size: 4.5rem; z-index: 1; flex-shrink: 0; }
+  .comy-hero-text { z-index: 1; }
+  .comy-hero-text h2 { font-size: 1.15rem; font-weight: 800; color: var(--c-ink); font-family: var(--c-font); }
+  .comy-hero-text p { font-size: .85rem; color: var(--c-ink); margin-top: .25rem; }
+  .comy-hero-text strong { color: var(--c-accent); }
+  .comy-hero-btn {
+    margin-top: .8rem; background: var(--c-accent); color: #2A2200; border: none; cursor: pointer;
+    border-radius: 12px; padding: .55rem 1.2rem; font-size: .82rem; font-weight: 700; font-family: var(--c-font);
+  }
+  .comy-hero-btn:hover { background: var(--c-accent-dark); }
+
+  .comy-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .comy-section-head h2 { font-size: 1.02rem; font-weight: 800; color: var(--c-ink); font-family: var(--c-font); }
+  .comy-viewall { color: var(--c-accent); font-size: .8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: .2rem; }
+
+  /* Categorías — slider arrastrable */
+  /* contain: inline-size → el ancho del slider lo pone el contenedor, nunca sus chips.
+     Sin esto, los 9 chips empujaban el ancho de toda la página en mobile. */
+  .comy-categories-wrap { position: relative; contain: inline-size; min-width: 0; }
+  .comy-categories-wrap::after {
+    content: ''; position: absolute; top: 0; right: 0; bottom: .3rem; width: 40px;
+    background: linear-gradient(to right, rgba(255,255,255,0), #fff);
+    pointer-events: none; transition: opacity .2s;
+  }
+  .comy-categories-wrap.at-end::after { opacity: 0; }
+  .comy-categories {
+    display: flex; gap: .6rem; overflow-x: auto; padding-bottom: .3rem; position: relative;
+    scroll-snap-type: x proximity; cursor: grab; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .comy-categories::-webkit-scrollbar { display: none; }
+  .comy-categories.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+  .comy-categories .comy-cat { scroll-snap-align: start; }
+  .comy-cat-indicator {
+    position: absolute; top: 0; left: 0; height: 100%; border-radius: 18px;
+    background: var(--c-accent); box-shadow: 0 6px 16px rgba(255,212,0,.35);
+    transition: left .32s cubic-bezier(.34,1.4,.5,1), width .32s cubic-bezier(.34,1.4,.5,1);
+    z-index: 0; pointer-events: none;
+  }
+  .comy-cat {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; gap: .45rem;
+    min-width: 82px; padding: .9rem .7rem; border-radius: 18px; border: none; cursor: pointer;
+    background: var(--c-panel); color: var(--c-ink); font-size: .78rem; font-weight: 700; font-family: var(--c-font);
+    transition: background .18s, color .18s;
+  }
+  .comy-cat-icon {
+    width: 44px; height: 44px; border-radius: 12px; background: #F0F0F0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+    overflow: hidden; transition: background .18s;
+  }
+  .comy-cat-icon img { width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
+  .comy-cat.active .comy-cat-icon { background: rgba(255,255,255,.25); }
+  .comy-cat-chev {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--c-accent); color: #2A2200;
+    display: flex; align-items: center; justify-content: center; transition: background .18s, color .18s;
+  }
+  .comy-cat.active { background: transparent; color: #2A2200; }
+  .comy-cat.active .comy-cat-chev { background: rgba(255,255,255,.3); color: #fff; }
+  .comy-cat:not(.active) .comy-cat-chev { color: #fff; }
+
+  /* Toggle Empresas / Platillos */
+  .comy-toggle {
+    position: relative; display: inline-flex; margin-top: 1.1rem;
+    background: var(--c-panel); border-radius: 999px; padding: 4px; gap: 2px;
+  }
+  .comy-toggle-opt {
+    position: relative; z-index: 1; border: none; background: none; cursor: pointer;
+    padding: .55rem 1.4rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
+    color: var(--c-muted); transition: color .2s; min-width: 130px; font-family: var(--c-font);
+  }
+  .comy-toggle-opt.active { color: #2A2200; }
+  .comy-toggle-thumb {
+    position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px);
+    background: var(--c-accent); border-radius: 999px; transition: transform .22s ease;
+    box-shadow: 0 6px 16px rgba(255,212,0,.35);
+  }
+
+  .comy-panel { margin-top: .25rem; }
+  .comy-panel-loading, .comy-panel-empty { grid-column: 1 / -1; text-align: center; color: var(--c-muted); font-size: .85rem; padding: 2rem 0; }
+  .comy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 1000px) { .comy-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Tarjeta de platillo / empresa — igual al FoodCard del mockup */
+  .comy-food-card {
+    position: relative; background: var(--c-panel); border-radius: 20px; padding: 1rem;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    text-decoration: inherit; color: inherit; min-width: 0;
+  }
+  .comy-food-badge { position: absolute; top: 1rem; right: 1rem; font-size: .95rem; }
+  .comy-food-photo {
+    width: 9rem; height: 9rem; border-radius: 50%; background: #FFF3DC;
+    display: flex; align-items: center; justify-content: center; font-size: 3.2rem; margin-bottom: .4rem;
+    overflow: hidden;
+  }
+  .comy-food-name { font-weight: 800; color: var(--c-ink); font-size: .95rem; font-family: var(--c-font); }
+  .comy-food-shop { color: var(--c-muted); font-size: .74rem; margin-top: .15rem; }
+  .comy-food-stars { color: var(--c-accent); font-size: .72rem; margin-top: .35rem; letter-spacing: 1px; }
+  .comy-food-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: .6rem; }
+  .comy-food-row-meta { color: var(--c-muted); font-size: .78rem; justify-content: center; }
+  .comy-food-price { font-weight: 800; color: var(--c-ink); font-size: .95rem; }
+  .comy-food-price small { color: var(--c-muted); font-weight: 600; font-size: .7rem; }
+  .comy-food-add {
+    width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--c-accent); color: #2A2200; display: flex; align-items: center; justify-content: center;
+  }
+  .comy-food-add:hover { background: var(--c-accent-dark); }
+
+  /* Tarjeta de débito */
+  .comy-card-balance {
+    position: relative; overflow: hidden; border-radius: 24px; padding: 1.5rem; min-height: 150px;
+    background: linear-gradient(135deg, #FFD400 0%, #FFE55C 100%); color: #2A2200;
+  }
+  .comy-card-circle { position: absolute; border-radius: 50%; }
+  .comy-card-top { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
+  .comy-card-brand { font-weight: 800; font-style: italic; }
+  .comy-card-amount { font-size: 1.65rem; font-weight: 800; margin-top: 1.25rem; position: relative; z-index: 1; font-family: var(--c-font); }
+  .comy-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
+
+  /* Panel de pedido */
+  .comy-order-box { background: transparent; border-radius: 20px; padding: 1.25rem 0 0; }
+  .comy-order-list { display: flex; flex-direction: column; }
+  .comy-order-item { display: flex; align-items: center; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--c-border); }
+  .comy-order-item:last-child { border-bottom: none; }
+  .comy-order-thumb { width: 3.2rem; height: 3.2rem; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .comy-order-info { flex: 1; min-width: 0; }
+  .comy-order-name { font-weight: 700; color: var(--c-ink); font-size: .85rem; font-family: var(--c-font); }
+  .comy-order-qty { color: var(--c-muted); font-size: .72rem; margin-top: .1rem; }
+  .comy-order-price { font-weight: 800; color: var(--c-ink); font-size: .85rem; }
+  .comy-order-price small { color: var(--c-muted); font-weight: 600; font-size: .68rem; }
+  .comy-checkout-btn {
+    width: 100%; margin-top: 1.1rem; background: var(--c-accent); color: #2A2200; border: none;
+    border-radius: 14px; padding: .85rem; font-size: .95rem; font-weight: 800; cursor: pointer; font-family: var(--c-font);
+  }
+  .comy-checkout-btn:hover { background: var(--c-accent-dark); }
+
+  @media (max-width: 960px) {
+    .comy-body { flex-direction: column; }
+    .comy-side { width: 100%; }
+  }
+
+  /* Elementos exclusivos de mobile — ocultos en PC */
+  .comy-m-backdrop, .comy-m-cartbar, .comy-m-sheet-handle { display: none; }
+
+  /* ================= Mobile ================= */
+  @media (max-width: 700px) {
+    /* Nada puede ser más ancho que la pantalla */
+    html, body { overflow-x: hidden; max-width: 100%; }
+    body { background: #fff; }
+    .comy-content, .comy-page, .comy-page *, .comy-page *::before, .comy-page *::after { box-sizing: border-box; }
+    .comy-content { width: 100%; max-width: 100vw; min-width: 0; overflow-x: hidden; }
+    .comy-page, .comy-body, .comy-main, .comy-section, .comy-panel, .comy-hero { width: 100%; max-width: 100%; min-width: 0; }
+    .comy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .comy-page { padding: 1rem 1rem 3rem; }
+
+    /* Topbar: título + acciones arriba, buscador en su propia fila */
+    .comy-topbar { gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .comy-title {
+      flex: 1 1 auto; min-width: 0; font-size: 1.1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* Campana + login/registro en su propia fila, arriba del título */
+    .comy-topbar-right { order: -1; flex: 1 1 100%; margin-left: 0; gap: .5rem; justify-content: space-between; }
+    .comy-title { flex-basis: 100%; }
+    .comy-search { order: 3; flex: 1 1 100%; min-width: 0; max-width: none; }
+    .comy-search input { font-size: 16px; } /* evita el zoom automático de iOS al enfocar */
+    .comy-bell { width: 36px; height: 36px; border-radius: 10px; }
+    .comy-guest-btns { gap: .35rem; }
+    .comy-btn-ghost, .comy-btn-primary { padding: .42rem .8rem; font-size: .75rem; }
+    .comy-top-avatar { width: 36px; height: 36px; border-radius: 10px; }
+    .comy-top-meta { display: none; }
+
+    /* Hero */
+    .comy-hero { min-height: 120px; padding: 1rem 1.1rem; gap: .9rem; border-radius: 18px; }
+    .comy-hero-illustration { font-size: 3rem; }
+    .comy-hero-circle { transform: scale(.7); }
+    .comy-hero-text h2 { font-size: 1rem; }
+    .comy-hero-text p { font-size: .8rem; }
+    .comy-hero-btn { margin-top: .6rem; padding: .5rem 1rem; font-size: .78rem; }
+
+    /* Categorías: el slider llega de orilla a orilla */
+    .comy-section-head { margin-bottom: .75rem; }
+    .comy-categories-wrap { margin: 0 -1rem; width: calc(100% + 2rem); max-width: none; }
+    .comy-categories { padding: 0 1rem .3rem; scroll-padding-left: 1rem; gap: .5rem; }
+    .comy-cat { min-width: 72px; padding: .7rem .55rem; gap: .35rem; border-radius: 16px; font-size: .74rem; }
+    .comy-cat-indicator { border-radius: 16px; }
+    .comy-cat-icon { width: 38px; height: 38px; border-radius: 10px; }
+    .comy-cat-chev { width: 22px; height: 22px; }
+
+    /* Toggle a todo el ancho */
+    .comy-toggle { display: flex; width: 100%; margin-top: .9rem; }
+    .comy-toggle-opt { flex: 1; min-width: 0; padding: .6rem .5rem; }
+
+    /* Grid 2 columnas con tarjetas compactas */
+    .comy-grid { gap: .7rem; }
+    .comy-food-card { padding: .8rem .65rem; border-radius: 16px; }
+    .comy-food-badge { top: .6rem; right: .6rem; font-size: .85rem; }
+    .comy-food-photo { width: 100%; max-width: 7.5rem; height: auto; aspect-ratio: 1; font-size: 2.4rem; }
+    .comy-food-name { font-size: .85rem; line-height: 1.25; overflow-wrap: anywhere; }
+    .comy-food-shop { font-size: .7rem; }
+    .comy-food-row { margin-top: .45rem; gap: .35rem; flex-wrap: wrap; }
+    .comy-food-row-meta { font-size: .72rem; }
+    .comy-food-price { font-size: .88rem; }
+
+    /* Espacio para que la barra flotante no tape la última fila */
+    /* El body ya reserva el alto de la barra inferior (sidebar-comy); aquí solo el de la barra de pedido */
+    .comy-page { padding-bottom: 5rem; }
+
+    /* La columna derecha se vuelve un bottom sheet */
+    .comy-card-balance { display: none; }
+    .comy-side {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+      width: 100%; max-height: 80vh; overflow-y: auto; gap: 0;
+      background: #fff; border-radius: 24px 24px 0 0;
+      padding: .6rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -12px 40px rgba(0,0,0,.18);
+      transform: translateY(105%); transition: transform .32s cubic-bezier(.2,.8,.2,1);
+    }
+    .comy-side.open { transform: translateY(0); }
+    .comy-m-sheet-handle {
+      display: block; width: 42px; height: 5px; border-radius: 999px;
+      background: var(--c-border); margin: 0 auto .9rem; cursor: pointer;
+    }
+    .comy-order-box { padding-top: 0; }
+
+    .comy-m-backdrop {
+      display: block; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .comy-m-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    /* Barra flotante "Ver mi pedido" */
+    .comy-m-cartbar {
+      display: flex; align-items: center; gap: .75rem;
+      position: fixed; left: 1rem; right: 1rem; bottom: calc(var(--c-mobile-nav-h, 64px) + .75rem + env(safe-area-inset-bottom)); z-index: 999;
+      padding: .85rem 1rem; border: none; border-radius: 16px; cursor: pointer;
+      background: var(--c-accent); color: #2A2200; font-family: var(--c-font);
+      font-size: .92rem; font-weight: 800; box-shadow: 0 10px 28px rgba(255,212,0,.45);
+    }
+    .comy-m-cartbar:active { transform: scale(.98); }
+    .comy-m-cartbar-count {
+      min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px;
+      background: rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; font-size: .8rem;
+    }
+    .comy-m-cartbar-total { margin-left: auto; }
+  }
+
+  @media (max-width: 360px) {
+    .comy-btn-ghost { display: none; } /* en pantallas muy angostas solo queda "Registrarse" */
+    .comy-grid { gap: .55rem; }
+    .comy-food-card { padding: .7rem .5rem; }
+  }
+</style>
+
+<script>
+(function() {
+  // Sesión → mostrar avatar/nombre en topbar en vez de botones de invitado
+  try {
+    const session = JSON.parse(localStorage.getItem('comyUser') || 'null');
+    if (session) {
+      document.getElementById('comyTopGuest').style.display = 'none';
+      document.getElementById('comyTopUser').style.display  = 'flex';
+      const name = session.name || session.email || 'Usuario';
+      document.getElementById('comyTopName').textContent = name;
+      document.getElementById('comyTopRole').textContent = session.role === 'driver' ? 'Repartidor' : 'Comprador';
+      document.getElementById('comyTopInitials').textContent = name.charAt(0).toUpperCase();
+      // Foto de perfil real: descomentar cuando login/register entreguen session.photoUrl
+      // if (session.photoUrl) {
+      //   document.getElementById('comyTopInitials').style.display = 'none';
+      //   const img = document.getElementById('comyTopAvatarImg');
+      //   img.src = session.photoUrl;
+      //   img.style.display = 'block';
+      // }
+    }
+  } catch(e) {}
+
+  // Chips de categoría — indicador deslizante (mismo mecanismo que el círculo del sidebar)
+  const catsWrap = document.getElementById('comyCategoriesWrap');
+  const catsContainer = document.querySelector('.comy-categories');
+  const catButtons = Array.from(document.querySelectorAll('.comy-cat'));
+  if (catsContainer && catButtons.length) {
+    const indicator = document.createElement('div');
+    indicator.className = 'comy-cat-indicator';
+    catsContainer.prepend(indicator);
+
+    const moveCatIndicator = btn => {
+      indicator.style.left = btn.offsetLeft + 'px';
+      indicator.style.width = btn.offsetWidth + 'px';
+    };
+
+    const initialActive = catButtons.find(b => b.classList.contains('active')) || catButtons[0];
+    // Sin transición en el primer posicionamiento, para que no "viaje" desde 0 al cargar
+    indicator.style.transition = 'none';
+    moveCatIndicator(initialActive);
+    requestAnimationFrame(() => { indicator.style.transition = ''; });
+
+    // Arrastrar con mouse para deslizar (touch/trackpad ya funcionan nativo con overflow-x)
+    let isPointerDown = false, didDrag = false, startX = 0, startScroll = 0;
+    catsContainer.addEventListener('mousedown', e => {
+      isPointerDown = true; didDrag = false;
+      startX = e.pageX; startScroll = catsContainer.scrollLeft;
+    });
+    window.addEventListener('mousemove', e => {
+      if (!isPointerDown) return;
+      const delta = e.pageX - startX;
+      if (Math.abs(delta) > 4) {
+        didDrag = true;
+        catsContainer.classList.add('dragging');
+        catsContainer.scrollLeft = startScroll - delta;
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      isPointerDown = false;
+      catsContainer.classList.remove('dragging');
+    });
+
+    const updateFade = () => {
+      if (!catsWrap) return;
+      const atEnd = catsContainer.scrollLeft + catsContainer.clientWidth >= catsContainer.scrollWidth - 4;
+      catsWrap.classList.toggle('at-end', atEnd);
+    };
+    catsContainer.addEventListener('scroll', updateFade);
+    updateFade();
+
+    catButtons.forEach(btn => {
+      btn.addEventListener('click', e => {
+        if (didDrag) { e.preventDefault(); return; }
+        catButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        moveCatIndicator(btn);
+        // En mobile, llevar el chip tocado a la vista
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        // TODO: filtrar comyPanelPlatillos / comyPanelEmpresas por btn.dataset.cat
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const current = catButtons.find(b => b.classList.contains('active'));
+      if (current) moveCatIndicator(current);
+      updateFade();
+    });
+  }
+
+  // Toggle Empresas / Platillos
+  const toggle = document.getElementById('comyToggle');
+  const thumb  = document.getElementById('comyToggleThumb');
+  const panelEmpresas  = document.getElementById('comyPanelEmpresas');
+  const panelPlatillos = document.getElementById('comyPanelPlatillos');
+
+  toggle.querySelectorAll('.comy-toggle-opt').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      toggle.querySelectorAll('.comy-toggle-opt').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      thumb.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
+
+      const view = btn.dataset.view;
+      panelEmpresas.style.display  = view === 'empresas'  ? '' : 'none';
+      panelPlatillos.style.display = view === 'platillos' ? '' : 'none';
+    });
+  });
+
+  // Empresas — se pinta por JS porque el handler GetNindaDirectory no manda
+  // datos al template (c.HTML(200, "...", gin.H{})), así que .Empresas
+  // siempre viene vacío del lado del servidor. Usamos el endpoint que ya
+  // existe para esto: GET /api/comy/stores
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function renderEmpresaCard(store) {
+    const photoStyle = store.coverImage
+      ? ` style="background-image:url('${escapeHtml(store.coverImage)}');background-size:cover;background-position:center;font-size:0"`
+      : '';
+    // Sin portada: placeholder real del bucket en vez del emoji 🏪
+    const photoContent = store.coverImage
+      ? ''
+      : '<img src="/api/uploads/bucket?key=comy-categories/empresa.png" alt="" style="width:100%;height:100%;object-fit:cover">';
+    const meta = [store.businessType, store.city].filter(Boolean).join(' · ');
+
+    return `
+      <a href="/comy/${store.id}" class="comy-food-card comy-empresa-card">
+        <div class="comy-food-photo"${photoStyle}>${photoContent}</div>
+        <div class="comy-food-name">${escapeHtml(store.name)}</div>
+        ${meta ? `<div class="comy-food-row comy-food-row-meta"><span>${escapeHtml(meta)}</span></div>` : ''}
+      </a>`;
+  }
+
+  function loadEmpresas() {
+    const grid = document.getElementById('comyEmpresasGrid');
+    fetch('/api/comy/stores')
+      .then(r => r.json())
+      .then(data => {
+        const stores = data.stores || [];
+        if (stores.length === 0) {
+          grid.innerHTML = '<div class="comy-panel-empty">Aún no hay negocios disponibles.</div>';
+          return;
+        }
+        grid.innerHTML = stores.map(renderEmpresaCard).join('');
+      })
+      .catch(err => {
+        console.error('Error cargando empresas:', err);
+        grid.innerHTML = '<div class="comy-panel-empty">No se pudieron cargar los negocios.</div>';
+      });
+  }
+
+  // Platillos — igual que Empresas, se pinta por JS contra un endpoint real
+  // (GET /api/comy/dishes) que junta los productos de todas las empresas,
+  // ya que el range de .Platillos del template nunca tuvo datos reales.
+  function renderPlatilloCard(dish) {
+    const img = (dish.images && dish.images[0]) || '';
+    const photoStyle = img
+      ? ` style="background-image:url('${escapeHtml(img)}');background-size:cover;background-position:center;font-size:0"`
+      : '';
+    const photoContent = img ? '' : '🍽️';
+
+    return `
+      <a href="/comy/${dish.branchId}?item=${encodeURIComponent(dish.title)}" class="comy-food-card">
+        <div class="comy-food-badge">${dish.isPromo ? '🔥' : ''}</div>
+        <div class="comy-food-photo"${photoStyle}>${photoContent}</div>
+        <div class="comy-food-name">${escapeHtml(dish.title)}</div>
+        <div class="comy-food-shop">${escapeHtml(dish.branchName)}</div>
+        <div class="comy-food-row">
+          <span class="comy-food-price"><small>$</small>${escapeHtml(String(dish.price))}</span>
+          ${dish.isPromo && dish.originalPrice ? `<span class="price-original" style="color:var(--c-muted);font-size:.78rem;text-decoration:line-through">$${escapeHtml(String(dish.originalPrice))}</span>` : ''}
+        </div>
+      </a>`;
+  }
+
+  function loadPlatillos() {
+    const grid = document.getElementById('comyPlatillosGrid');
+    if (!grid) return;
+    fetch('/api/comy/dishes')
+      .then(r => r.json())
+      .then(data => {
+        const dishes = data.dishes || [];
+        if (dishes.length === 0) {
+          grid.innerHTML = '<div class="comy-panel-empty">Aún no hay platillos publicados.</div>';
+          return;
+        }
+        grid.innerHTML = dishes.map(renderPlatilloCard).join('');
+      })
+      .catch(err => {
+        console.error('Error cargando platillos:', err);
+        grid.innerHTML = '<div class="comy-panel-empty">No se pudieron cargar los platillos.</div>';
+      });
+  }
+
+  loadEmpresas();
+  loadPlatillos();
+
+  // Mobile: barra flotante + bottom sheet de "Mi pedido"
+  const side     = document.getElementById('comySide');
+  const backdrop = document.getElementById('comyMBackdrop');
+  const cartBar  = document.getElementById('comyMCartBar');
+  const handle   = document.getElementById('comyMSheetHandle');
+  const mobileMQ = window.matchMedia('(max-width: 700px)');
+
+  function updateCartBar() {
+    let count = 0, total = 0;
+    document.querySelectorAll('.comy-order-item').forEach(item => {
+      const qty = parseInt((item.querySelector('.comy-order-qty')?.textContent || '').replace(/\D/g, ''), 10) || 1;
+      const price = parseFloat((item.querySelector('.comy-order-price')?.textContent || '').replace(/[^\d.]/g, '')) || 0;
+      count += qty;
+      total += price;
+    });
+    document.getElementById('comyMCartCount').textContent = count;
+    document.getElementById('comyMCartTotal').textContent = '$' + total.toLocaleString('es-MX');
+    cartBar.style.display = count ? '' : 'none';
+  }
+
+  function openSheet() {
+    side.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSheet() {
+    side.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  cartBar.addEventListener('click', openSheet);
+  backdrop.addEventListener('click', closeSheet);
+  handle.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+  mobileMQ.addEventListener('change', e => { if (!e.matches) closeSheet(); });
+
+  updateCartBar();
+})();
+</script>
+{{end}}

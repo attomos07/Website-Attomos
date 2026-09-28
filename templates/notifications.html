@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - Attomos</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/notifications.css">
+</head>
+<body>
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+                <div class="notifications-layout">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-title">
+                            <h1>
+                                <i class="lni lni-alarm"></i>
+                                Notificaciones
+                            </h1>
+                            <p>Mantente al tanto de todas tus citas y alertas</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-secondary" id="markAllReadBtn">
+                                <i class="lni lni-checkmark-circle"></i>
+                                <span>Marcar todas como leídas</span>
+                            </button>
+                            <button class="btn-danger" id="clearAllBtn">
+                                <i class="lni lni-trash"></i>
+                                <span>Limpiar todo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="notif-stats">
+                        <div class="notif-stat-pill unread-pill">
+                            <span class="pill-dot"></span>
+                            <span id="unreadCount">0</span> sin leer
+                        </div>
+                        <div class="notif-stat-pill total-pill">
+                            <i class="lni lni-alarm"></i>
+                            <span id="totalCount">0</span> en total
+                        </div>
+                        <div class="notif-stat-pill urgent-pill" id="urgentPill" style="display:none;">
+                            <i class="lni lni-timer"></i>
+                            <span id="urgentCount">0</span> urgentes
+                        </div>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="filter-tabs">
+                        <button class="tab-btn active" data-filter="all">
+                            <i class="lni lni-list"></i> Todas
+                        </button>
+                        <button class="tab-btn" data-filter="unread">
+                            <i class="lni lni-eye"></i> Sin leer
+                        </button>
+                        <button class="tab-btn" data-filter="urgent">
+                            <i class="lni lni-timer"></i> Urgentes
+                        </button>
+                        <button class="tab-btn" data-filter="appointment">
+                            <i class="lni lni-calendar"></i> Citas
+                        </button>
+                        <button class="tab-btn" data-filter="warning">
+                            <i class="lni lni-warning"></i> Avisos
+                        </button>
+                    </div>
+
+                    <!-- Notification Groups -->
+                    <div id="notificationsContainer">
+
+                        <!-- Skeleton loader -->
+                        <div class="skeleton-group" id="skeletonLoader">
+                            <div class="group-label skeleton-label"></div>
+                            <div class="notif-card skeleton-card"></div>
+                            <div class="notif-card skeleton-card"></div>
+                            <div class="notif-card skeleton-card"></div>
+                        </div>
+
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState" style="display:none;">
+                        <div class="empty-icon">
+                            <i class="lni lni-alarm"></i>
+                        </div>
+                        <h3>Todo en orden</h3>
+                        <p id="emptyMessage">No tienes notificaciones pendientes</p>
+                        <a href="/appointments" class="btn-primary">
+                            <i class="lni lni-calendar"></i>
+                            <span>Ver mis citas</span>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/userbar.js"></script>
+    <script src="/static/js/notifications.js"></script>
+</body>
+</html>

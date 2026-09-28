@@ -1,0 +1,126 @@
+<!-- Botón de menú (solo mobile): abre el sidebar como cajón flotante -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menú" aria-expanded="false" aria-controls="sidebar">
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </button>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Sidebar estilo iOS 27: panel flotante que se contrae a íconos (escritorio)
+         y se vuelve cajón flotante en mobile. Los textos con data-translate se
+         traducen con translations.js; los demás los pone sidebar.js con t(). -->
+    <nav class="sidebar-container sb" id="sidebar" aria-label="Navegación del panel">
+        <div class="sb-top">
+            <a href="/" class="sb-brand">
+                <img src="/static/images/attomos-favicon.png" alt="">
+                <span>Attomos</span>
+            </a>
+            <span class="sb-title" id="sbTitle">Menú</span>
+            <button class="sb-toggle" id="sbToggle" type="button" aria-label="Expandir menú" aria-expanded="false">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3.5"></rect><path d="M9.5 4v16"></path></svg>
+            </button>
+        </div>
+
+        <div class="sb-search-wrap">
+            <label class="sb-search" id="sbSearchBox">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg>
+                <input id="sbSearch" type="search" placeholder="Buscar" autocomplete="off" aria-label="Buscar en el menú">
+            </label>
+        </div>
+
+        <div class="sb-scroll" id="sbScroll">
+            <div class="sb-hov" id="sbHov" aria-hidden="true"></div>
+            <div class="sb-ind" id="sbInd" aria-hidden="true"></div>
+
+            <a href="/dashboard" class="sb-item" data-page="dashboard">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></span>
+                <span class="sb-label" data-translate="dash_nav_dashboard">Dashboard</span>
+            </a>
+
+            <a href="/my-business" class="sb-item" id="myBusinessMenuItem" data-page="my-business">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M3 9h18l-1.5 9a2 2 0 0 1-2 1.8H6.5A2 2 0 0 1 4.5 18L3 9z"/><path d="M3 9l1.5-5h15L21 9"/><path d="M9 9v1a3 3 0 0 0 6 0V9"/></svg></span>
+                <span class="sb-label" data-translate="dash_nav_business">Mi Negocio</span>
+            </a>
+
+            <!-- Giro gubernamental — se muestra solo cuando businessType = "gubernamental" -->
+            <a href="/my-agency" class="sb-item" id="myAgencyMenuItem" style="display:none;" data-page="my-agency">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M2 12h20"/></svg></span>
+                <span class="sb-label" data-translate="dash_nav_agency">Mi Dependencia</span>
+            </a>
+
+            <a href="/my-agents" class="sb-item" data-page="my-agents">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_agents">Mis Agentes</span>
+            </a>
+
+            <!-- Flujos — solo giro gubernamental -->
+            <a href="/flows" class="sb-item" id="flowsMenuItem" style="display:none;" data-page="flows">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><line x1="7" y1="6" x2="17" y2="6"/><line x1="7" y1="18" x2="17" y2="18"/><line x1="5" y1="8" x2="5" y2="16"/><line x1="19" y1="8" x2="19" y2="16"/></svg></span>
+                <span class="sb-label" data-translate="dash_nav_flows">Flujos</span>
+            </a>
+
+            <div class="sb-group" data-group-key="dash_group_manage" data-group-fallback="Gestión">Gestión</div>
+
+            <!-- Citas: giros que NO son de comida -->
+            <a href="/appointments" class="sb-item" id="appointmentsMenuItem" data-page="appointments">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+                <span class="sb-label" data-translate="dash_nav_appointments">Mis Citas</span>
+            </a>
+
+            <!-- Pedidos: giros de comida -->
+            <a href="/orders" class="sb-item" id="ordersMenuItem" style="display:none;" data-page="orders">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+                <span class="sb-label" data-translate="dash_nav_orders">Mis Pedidos</span>
+            </a>
+
+            <a href="/client-history" class="sb-item" id="clientHistoryMenuItem" style="display:none;" data-page="client-history">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+                <span class="sb-label" id="clientHistoryTooltip" data-translate="hist_title">Historial</span>
+            </a>
+
+            <a href="/crm" class="sb-item" id="crmMenuItem" data-page="crm">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_crm">CRM</span>
+            </a>
+
+            <a href="#" id="messagesLink" class="sb-item" data-page="messages" style="display:none;" data-loading="true">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+                <span class="sb-label"><span class="messages-text" data-translate="dash_nav_messages">Mensajes</span><span class="messages-loading" data-translate="loading">Cargando...</span></span>
+            </a>
+
+            <a href="/business-portfolio" class="sb-item" id="portfolioMenuItem" style="display:none;" data-page="business-portfolio">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_portfolio">Business Portfolio</span>
+            </a>
+
+            <div class="sb-group" data-group-key="dash_group_account" data-group-fallback="Cuenta">Cuenta</div>
+
+            <a href="/integrations" class="sb-item" data-page="integrations">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_integrations">Integraciones</span>
+            </a>
+
+            <a href="/plans" class="sb-item" data-page="plans">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_plans">Planes</span>
+            </a>
+
+            <a href="/billing" class="sb-item" data-page="billing">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg></span>
+                <span class="sb-label" data-translate="dash_nav_billing">Facturación</span>
+            </a>
+
+            <a href="/settings" class="sb-item" data-page="settings">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></span>
+                <span class="sb-label" data-translate="dash_nav_settings">Configuración</span>
+            </a>
+
+            <p class="sb-empty" id="sbEmpty" hidden>Sin resultados</p>
+        </div>
+
+        <div class="sb-bottom">
+            <button class="sb-item sb-logout" id="logoutBtn" type="button">
+                <span class="sb-ic"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg></span>
+                <span class="sb-label" data-translate="dash_logout">Cerrar Sesión</span>
+            </button>
+        </div>
+    </nav>

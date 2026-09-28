@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#06b6d4">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Facturación - Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/billing.css">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="billing-layout">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-credit-cards"></i>
+                                <span data-translate="billing_title">Facturación</span>
+                            </h1>
+                            <p class="page-subtitle" data-translate="billing_subtitle">Gestiona tu suscripción y revisa tus transacciones</p>
+                        </div>
+
+                    </div>
+
+                    <!-- Current Subscription (dinámica via JS) -->
+                    <div class="subscription-card">
+                        <div class="subscription-header">
+                            <div class="subscription-title-wrapper">
+                                <h2 class="subscription-title" data-translate="billing_current_sub">Suscripción Actual</h2>
+                                <span class="subscription-status inactive" id="subscriptionStatus" data-translate="billing_loading">Cargando...</span>
+                            </div>
+                            <a href="/billing/payment-method" class="edit-payment-btn">
+                                <i class="lni lni-pencil"></i>
+                                <span data-translate="billing_edit_payment">Editar Método de Pago</span>
+                            </a>
+                        </div>
+
+                        <div class="subscription-details">
+                            <div class="subscription-info">
+                                <div class="info-row" id="subPlanRow">
+                                    <span class="info-label" data-translate="billing_label_plan">Plan:</span>
+                                    <span class="info-value" style="color:#9ca3af;" data-translate="billing_loading">Cargando...</span>
+                                </div>
+                                <div class="info-row" id="subPriceRow">
+                                    <span class="info-label" data-translate="billing_label_price">Precio:</span>
+                                    <span class="info-value">—</span>
+                                </div>
+
+                                <div class="info-row" id="subNextRow">
+                                    <span class="info-label" data-translate="billing_label_next">Próximo cobro:</span>
+                                    <span class="info-value">—</span>
+                                </div>
+                                <div class="info-row" id="subMethodRow" style="display:none;">
+                                    <span class="info-label" data-translate="billing_label_method">Método de pago:</span>
+                                    <span class="info-value">
+                                        <i class="lni lni-credit-cards"></i>
+                                        Stripe
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="subscription-actions">
+                                <a href="/plans" class="action-link upgrade">
+                                    <i class="lni lni-arrow-up-circle"></i>
+                                    <span data-translate="billing_upgrade">Actualizar Plan</span>
+                                </a>
+                                <button class="action-link danger" id="cancelBtn" onclick="cancelSubscription()">
+                                    <i class="lni lni-close-circle"></i>
+                                    <span data-translate="billing_cancel_sub">Cancelar Suscripción</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payments Table -->
+                    <div class="agents-table-container" id="paymentsTableContainer">
+                        <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid #f3f4f6;">
+                            <h3 style="font-size:1rem;font-weight:700;color:#1a1a1a;" data-translate="billing_history">Historial de Pagos</h3>
+                        </div>
+                        <table class="agents-table" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th data-translate="billing_th_payment_id">ID de Pago</th>
+                                    <th data-translate="billing_th_receipt_id">ID de Recibo</th>
+                                    <th data-translate="billing_th_sub">Suscripción</th>
+                                    <th data-translate="billing_th_month">Mes</th>
+                                    <th data-translate="billing_th_date">Fecha de Pago</th>
+                                    <th style="color:#06b6d4;" data-translate="billing_th_amount">Cantidad</th>
+                                    <th data-translate="billing_th_status">Estado</th>
+                                    <th style="text-align:right;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsTableBody"></tbody>
+                        </table>
+
+                        <!-- Empty State -->
+                        <div class="empty-state" id="emptyState" style="display:none;">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="10" y="14" width="44" height="36" rx="5" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <line x1="10" y1="26" x2="54" y2="26" stroke="currentColor" stroke-width="2.5"/>
+                                    <line x1="22" y1="14" x2="22" y2="50" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="38" cy="38" r="3" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <h3 data-translate="billing_no_payments">No hay pagos registrados</h3>
+                            <p data-translate="billing_no_payments_desc">Aquí aparecerán tus pagos una vez que realices una suscripción</p>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-wrapper" id="paginationWrapper" style="display:none;">
+                            <button class="page-btn" id="prevBtn" onclick="changePage(-1)">
+                                <i class="lni lni-chevron-left"></i>
+                            </button>
+                            <div class="page-numbers" id="pageNumbers"></div>
+                            <button class="page-btn" id="nextBtn" onclick="changePage(1)">
+                                <i class="lni lni-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/billing.js"></script>
+</body>
+</html>
