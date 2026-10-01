@@ -1591,6 +1591,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- Botón "Crear Agente" en cápsula (igual que en el Dashboard) --- */
+/* Selectores con más peso porque onboarding.css se carga después */
+.page-header .btn-primary,
+.empty-state .btn-primary {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-header .btn-primary:active,
+.empty-state .btn-primary:active {
+  transform: scale(0.95);
+  transition-duration: 0.12s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .confirm-modal.active .confirm-content,
   .onboarding-modal.active .onboarding-modal-content,
