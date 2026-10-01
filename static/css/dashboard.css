@@ -4111,3 +4111,404 @@ body {
 
 /* Ocultar cuando el tutorial está activo */
 .tutorial-active .tutorial-launch-btn { display: none; }
+
+/* ============================================================================
+   CAPA iOS 27 — Dashboard
+   Trabaja con la capa iOS al final de dashboard.js
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 1. Entrada de la página --- */
+/* Reemplaza slideUp / cardRise por la entrada escalonada */
+.content-wrapper,
+.stat-card,
+.ai-billing-section,
+.billing-card,
+.services-unified-section {
+  animation: none;
+}
+
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 65ms);
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 2. Botones en cápsula con rebote al presionar --- */
+.dashboard-layout .page-header .btn-primary,
+.btn-export {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dashboard-layout .page-header .btn-primary:active,
+.btn-export:active {
+  transform: scale(0.95);
+  transition-duration: 0.12s;
+}
+
+/* --- 3. Selectores de vista: cápsula blanca que se desliza --- */
+.view-toggle-group.ios-seg {
+  position: relative;
+  isolation: isolate;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.04);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.ios-seg .view-toggle-btn {
+  position: relative;
+  z-index: 1;
+  width: 32px;
+  border-radius: 999px;
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.ios-seg .view-toggle-btn:hover {
+  color: #06b6d4;
+}
+
+.ios-seg .view-toggle-btn.active {
+  color: #06b6d4;
+}
+
+.service-unified-card.least-requested .ios-seg .view-toggle-btn.active {
+  color: #8b5cf6;
+}
+
+.ios-seg .view-toggle-btn:not(.active):active {
+  opacity: 0.5;
+}
+
+/* --- 4. Selects de moneda y periodo --- */
+.ios-select {
+  position: relative;
+  display: inline-block;
+}
+
+.ios-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.ios-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 0.9rem 0.6rem 1.05rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-select-trigger svg {
+  width: 12px;
+  height: 12px;
+  color: #6b7280;
+  transition: transform 0.45s var(--ios-spring), color 0.2s ease;
+}
+
+.ios-select-trigger:hover {
+  border-color: #06b6d4;
+}
+
+.ios-select-trigger:active {
+  transform: scale(0.96);
+}
+
+.ios-select.is-open .ios-select-trigger {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.ios-select.is-open .ios-select-trigger svg {
+  transform: rotate(180deg);
+  color: #06b6d4;
+}
+
+.ios-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  min-width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  scrollbar-width: thin;
+}
+
+.ios-select.ios-up .ios-select-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.ios-select-menu > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-select-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.ios-select-option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.3s var(--ios-spring);
+}
+
+.ios-select-option.ios-hover {
+  color: #0891b2;
+}
+
+.ios-select-option:active {
+  transform: scale(0.97);
+}
+
+.ios-select-option.selected {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.ios-select-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 14px;
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+/* --- 5. Barras de servicios y cambio de vista --- */
+@keyframes iosRowIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.service-bar-item.ios-row {
+  animation: iosRowIn 0.6s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 60ms);
+}
+
+.service-bar-item.ios-row .service-bar-fill {
+  transition: width 1.1s var(--ios-spring);
+  transition-delay: calc(var(--r, 0) * 60ms + 120ms);
+}
+
+.service-bar-track,
+.service-bar-fill {
+  border-radius: 999px;
+}
+
+@keyframes iosPanelIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.service-view-panel,
+#costChartContainer,
+#costTableContainer {
+  animation: iosPanelIn 0.5s var(--ios-spring-smooth);
+}
+
+/* --- 6. Modales --- */
+@keyframes iosBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosBackdropOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Crear Agente */
+.onboarding-modal.active .onboarding-overlay {
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.onboarding-modal.active .onboarding-modal-content {
+  border-radius: 28px;
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.onboarding-modal.ios-closing {
+  pointer-events: none;
+}
+
+.onboarding-modal.ios-closing .onboarding-overlay {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.onboarding-modal.ios-closing .onboarding-modal-content {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* "Completa tu perfil" y "Negocio requerido" (estilos en línea → !important) */
+#businessWarningModal #bwBox,
+#businessRequiredModal #brqBox {
+  border-radius: 28px !important;
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both !important;
+}
+
+.ios-bw.ios-closing {
+  pointer-events: none;
+  animation: iosBackdropOut 0.22s ease both !important;
+}
+
+.ios-bw.ios-closing > div {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both !important;
+}
+
+#businessWarningModal button,
+#businessWarningModal a,
+#businessRequiredModal button,
+#businessRequiredModal a {
+  border-radius: 999px !important;
+}
+
+/* Tutorial */
+.tutorial-card {
+  border-radius: 24px;
+  animation:
+    iosModalIn 0.6s var(--ios-spring),
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tut-btn-prev,
+.tut-btn-next,
+.tutorial-card-header .tut-icon {
+  border-radius: 999px;
+}
+
+.tut-btn-prev:active,
+.tut-btn-next:active {
+  transform: scale(0.94);
+}
+
+.tut-dot {
+  transition: background 0.3s ease, transform 0.45s var(--ios-spring), width 0.45s var(--ios-spring);
+}
+
+.tut-dot.active {
+  width: 16px;
+  border-radius: 999px;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .service-bar-item.ios-row,
+  .service-view-panel,
+  #costChartContainer,
+  #costTableContainer,
+  .tutorial-card {
+    animation: none;
+  }
+
+  .service-bar-item.ios-row .service-bar-fill,
+  .ios-select-trigger,
+  .ios-select-option {
+    transition: none;
+  }
+}

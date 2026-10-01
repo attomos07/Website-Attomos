@@ -1651,3 +1651,395 @@ function showNotification(message, type = 'info') {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+// ============================================================================
+// CAPA iOS 27 — Dashboard
+// Entrada escalonada, contadores, selectores segmentados, selects tipo iOS,
+// barras con resorte y modales. No cambia la lógica de arriba.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA DE LA PÁGINA
+    // ====================================================================
+    function pageEntrance() {
+        const parts = [
+            '.dashboard-layout > .page-header',
+            '.stats-grid > .stat-card',
+            '.ai-billing-section .billing-header',
+            '.ai-billing-section .billing-card',
+            '.services-unified-header',
+            '.services-unified-grid > .service-unified-card',
+        ];
+        let i = 0;
+        parts.forEach((sel) => document.querySelectorAll(sel).forEach((el) => {
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        }));
+        // Al terminar se quita la clase para que el hover vuelva a usar transform
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // ====================================================================
+    // 2. NÚMEROS DE LAS TARJETAS: cuentan del valor anterior al nuevo
+    // ====================================================================
+    const countingNow = new WeakSet();
+    function countTo(el, from, to) {
+        if (from === to || reduce.matches) return;
+        countingNow.add(el);
+        const start = performance.now(), dur = 750;
+        (function frame(now) {
+            const t = clamp((now - start) / dur);
+            const e = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.round(from + (to - from) * e);
+            if (t < 1) requestAnimationFrame(frame);
+            else {
+                el.textContent = to;
+                requestAnimationFrame(() => countingNow.delete(el));
+            }
+        })(start);
+    }
+    function watchNumbers(selector) {
+        document.querySelectorAll(selector).forEach((el) => {
+            let shown = parseInt(el.textContent, 10);
+            if (isNaN(shown)) shown = 0;
+            new MutationObserver(() => {
+                if (countingNow.has(el)) return;
+                const raw = el.textContent.trim();
+                if (!/^\d+$/.test(raw)) return;   // "--" u otros textos se dejan igual
+                const next = parseInt(raw, 10);
+                if (next === shown) return;
+                const prev = shown;
+                shown = next;
+                el.textContent = prev;
+                countTo(el, prev, next);
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    // ====================================================================
+    // 3. SELECTORES DE VISTA (línea / barras / tabla): cápsula que se desliza
+    // ====================================================================
+    const segments = new WeakSet();
+    function segmentFor(group) {
+        if (segments.has(group)) return;
+        segments.add(group);
+        group.classList.add('ios-seg');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        group.prepend(thumb);
+
+        const X = spring(0, 440, 30), W = spring(0, 440, 30), S = spring(1, 600, 30, 0.001);
+        let ready = false;
+
+        function place(snap) {
+            const a = group.querySelector('.view-toggle-btn.active');
+            if (!a || !group.offsetWidth) { ready = false; render(); return; }
+            X.t = a.offsetLeft; W.t = a.offsetWidth;
+            if (snap || !ready) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+            ready = true;
+            render();
+            kick();
+        }
+        function render() {
+            if (!ready) { thumb.style.opacity = 0; return; }
+            const st = Math.min(Math.abs(X.vel) / 2500, 0.18);
+            thumb.style.opacity = 1;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${S.v * (1 + st)}, ${S.v * (1 - st * 0.4)})`;
+        }
+        renderers.add(render);
+
+        // El onclick original ya marcó .active cuando llega aquí
+        group.addEventListener('click', () => place(false));
+        group.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.view-toggle-btn.active')) { S.t = 0.9; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => group.addEventListener(ev, release));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(group);
+        place(true);
+    }
+
+    // ====================================================================
+    // 4. SELECTS (moneda y periodo): menú iOS que nace del botón
+    // El <select> original se queda oculto y recibe el valor + evento change,
+    // así que loadBillingData sigue funcionando igual.
+    // ====================================================================
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    const selects = new Set();
+    const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    function iosSelect(select) {
+        if (!select || select.dataset.iosSelect) return;
+        select.dataset.iosSelect = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'ios-select';
+        select.parentNode.insertBefore(wrap, select);
+        wrap.appendChild(select);
+        select.classList.add('ios-select-native');
+        select.tabIndex = -1;
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ios-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.innerHTML = `<span class="ios-select-label"></span>${CHEVRON}`;
+        const label = trigger.querySelector('.ios-select-label');
+
+        const menu = document.createElement('div');
+        menu.className = 'ios-select-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+        const ind = document.createElement('span');
+        ind.className = 'ios-select-ind';
+        ind.setAttribute('aria-hidden', 'true');
+
+        wrap.append(trigger, menu);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        function paintLabel() {
+            const opt = select.options[select.selectedIndex];
+            label.textContent = opt ? opt.textContent.trim() : '';
+        }
+
+        function buildOptions() {
+            menu.innerHTML = '';
+            menu.appendChild(ind);
+            [...select.options].forEach((o) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'ios-select-option';
+                b.setAttribute('role', 'option');
+                b.dataset.value = o.value;
+                b.textContent = o.textContent.trim();
+                if (o.selected) { b.classList.add('selected'); b.setAttribute('aria-selected', 'true'); }
+                menu.appendChild(b);
+            });
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = trigger.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 20, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        function hoverTo(el) {
+            if (el === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = el;
+            if (!el) { V.t = 0; kick(); return; }
+            el.classList.add('ios-hover');
+            X.t = el.offsetLeft; Y.t = el.offsetTop; W.t = el.offsetWidth; H.t = el.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+
+        function setOpen(v) {
+            if (v === open) return;
+            open = v;
+            wrap.classList.toggle('is-open', v);
+            trigger.setAttribute('aria-expanded', v);
+            if (v) {
+                selects.forEach((s) => s !== api && s.close());
+                buildOptions();
+                // Se abre hacia arriba si abajo no cabe
+                wrap.classList.remove('ios-up');
+                const r = menu.getBoundingClientRect();
+                if (r.bottom > window.innerHeight - 12 && trigger.getBoundingClientRect().top - r.height > 12) {
+                    wrap.classList.add('ios-up');
+                }
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                if (!reduce.matches && menu.animate) {
+                    menu.querySelectorAll('.ios-select-option').forEach((it, i) => {
+                        it.animate(
+                            [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                            { duration: 380, delay: 30 + i * 18, easing: 'cubic-bezier(0.34, 1.35, 0.64, 1)', fill: 'backwards' }
+                        );
+                    });
+                }
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        function choose(value) {
+            if (select.value !== value) {
+                select.value = value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            paintLabel();
+            menu.querySelectorAll('.ios-select-option').forEach((b) => {
+                const on = b.dataset.value === value;
+                b.classList.toggle('selected', on);
+                b.setAttribute('aria-selected', on);
+            });
+            setTimeout(() => setOpen(false), 160);   // deja ver la palomita antes de cerrar
+        }
+
+        trigger.addEventListener('click', () => setOpen(!open));
+        menu.addEventListener('pointermove', (e) => {
+            const el = e.target.closest('.ios-select-option');
+            if (el) hoverTo(el);
+        });
+        menu.addEventListener('pointerleave', () => hoverTo(null));
+        menu.addEventListener('click', (e) => {
+            const b = e.target.closest('.ios-select-option');
+            if (b) choose(b.dataset.value);
+        });
+        // Si translations.js cambia el texto de las opciones, se actualiza el botón
+        new MutationObserver(paintLabel).observe(select, { subtree: true, childList: true, characterData: true });
+        select.addEventListener('change', paintLabel);
+
+        const api = { close: () => setOpen(false), contains: (n) => wrap.contains(n) };
+        selects.add(api);
+        paintLabel();
+        render();
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        selects.forEach((s) => { if (!s.contains(e.target)) s.close(); });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') selects.forEach((s) => s.close());
+    });
+    window.addEventListener('resize', () => renderers.forEach((r) => r()));
+
+    // ====================================================================
+    // 5. BARRAS DE SERVICIOS: filas escalonadas y llenado con resorte
+    // ====================================================================
+    function tagRows(box) {
+        let n = 0;
+        box.querySelectorAll('.service-bar-item:not(.ios-row)').forEach((row) => {
+            row.style.setProperty('--r', n++);
+            row.classList.add('ios-row');
+        });
+    }
+    function watchBars() {
+        document.querySelectorAll('.service-bars-container').forEach((box) => {
+            tagRows(box);
+            new MutationObserver(() => tagRows(box)).observe(box, { childList: true });
+        });
+    }
+
+    // ====================================================================
+    // 6. MODALES
+    // ====================================================================
+    function animateClose(modal, done) {
+        if (!modal || reduce.matches || modal.classList.contains('ios-closing')) { done(); return; }
+        modal.classList.add('ios-closing');
+        setTimeout(() => { done(); modal.classList.remove('ios-closing'); }, 230);
+    }
+
+    // Onboarding (Crear Agente)
+    const origCloseOnboarding = window.closeOnboardingModal;
+    if (typeof origCloseOnboarding === 'function') {
+        window.closeOnboardingModal = function () {
+            const m = document.getElementById('onboardingModal');
+            if (!m || !m.classList.contains('active')) { origCloseOnboarding.apply(this, arguments); return; }
+            animateClose(m, () => origCloseOnboarding.apply(this, arguments));
+        };
+    }
+
+    // "Completa tu perfil de negocio": su lógica llama modal.remove();
+    // se reemplaza en esa instancia para animar la salida antes de quitarlo.
+    new MutationObserver((records) => {
+        records.forEach((r) => r.addedNodes.forEach((n) => {
+            if (n.nodeType === 1 && n.id === 'businessWarningModal') {
+                n.classList.add('ios-bw');
+                const nativeRemove = Element.prototype.remove;
+                n.remove = function () {
+                    // Se sueltan los ids de inmediato: si el modal se vuelve a abrir
+                    // mientras este se desvanece, el nuevo no choca con estos ids
+                    n.removeAttribute('id');
+                    n.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+                    animateClose(n, () => nativeRemove.call(n));
+                };
+            }
+        }));
+    }).observe(document.body, { childList: true });
+
+    // ====================================================================
+    // ARRANQUE
+    // ====================================================================
+    function init() {
+        pageEntrance();
+        watchNumbers('.stats-grid .stat-value');
+        document.querySelectorAll('.view-toggle-group').forEach(segmentFor);
+        iosSelect(document.getElementById('currencySelect'));
+        iosSelect(document.getElementById('billingTimeRange'));
+        watchBars();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
