@@ -503,9 +503,9 @@ function registerWithGoogle() {
     window.location.href = '/api/auth/google/login';
 }
 
-function registerWithFacebook() {
-    showNotificationIOS('Redirigiendo a Facebook...', 'info');
-    trackRegisterEvent('social_register_attempt', { provider: 'facebook' });
+function registerWithApple() {
+    showNotificationIOS('Redirigiendo a Apple...', 'info');
+    trackRegisterEvent('social_register_attempt', { provider: 'apple' });
     setTimeout(() => {
         showNotificationIOS('Funcionalidad en desarrollo', 'warning');
     }, 1000);

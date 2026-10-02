@@ -272,9 +272,9 @@ function loginWithGoogle() {
     window.location.href = '/api/auth/google/login';
 }
 
-function loginWithFacebook() {
-    showNotificationIOS('Redirigiendo a Facebook...', 'info');
-    trackLoginEvent('social_login_attempt', { provider: 'facebook' });
+function loginWithApple() {
+    showNotificationIOS('Redirigiendo a Apple...', 'info');
+    trackLoginEvent('social_login_attempt', { provider: 'apple' });
     setTimeout(() => {
         showNotificationIOS('Funcionalidad en desarrollo', 'warning');
     }, 1000);

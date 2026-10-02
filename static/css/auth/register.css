@@ -17,7 +17,6 @@
   --warning-orange: #f59e0b;
   --error-red: #ef4444;
   --google-blue: #4285f4;
-  --facebook-blue: #1877f2;
 }
 
 /* Reset y base */
@@ -269,20 +268,6 @@ body {
   background: var(--google-blue);
   box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3);
 }
-.google-btn:hover svg path {
-  fill: white;
-}
-
-.facebook-btn {
-  border-color: var(--facebook-blue);
-  color: var(--facebook-blue);
-}
-.facebook-btn:hover {
-  background: var(--facebook-blue);
-  color: white;
-  box-shadow: 0 8px 25px rgba(24, 119, 242, 0.3);
-}
-
 .divider {
   position: relative;
   text-align: center;
@@ -961,4 +946,410 @@ body {
   40%       { transform: translateX(4px); }
   60%       { transform: translateX(-4px); }
   80%       { transform: translateX(4px); }
+}
+
+/* ============================================================================
+   REDISEÑO iOS — Autenticación
+   Mismo lenguaje que el resto del sitio: todo en blanco, tarjeta con borde
+   fino, campos y botones en cápsula, menús de vidrio y botones sociales
+   redondos (Google y Apple).
+   ============================================================================ */
+:root {
+  --at-label: #1d1d1f;
+  --at-label-2: #6e6e73;
+  --at-label-3: #8e8e93;
+  --at-hair: rgba(0, 0, 0, 0.08);
+  --at-hair-2: rgba(60, 60, 67, 0.18);
+  --at-tint: rgba(6, 182, 212, 0.07);
+  --at-tint-2: rgba(6, 182, 212, 0.12);
+  --at-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --at-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  color: var(--at-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.auth-container {
+  background: #ffffff;
+}
+
+/* --- Tarjeta del formulario --- */
+.auth-form-container {
+  padding: 2.75rem;
+  border: 1px solid var(--at-hair);
+  border-radius: 32px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 20px 50px rgba(0, 0, 0, 0.07);
+}
+
+@keyframes atRise {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.auth-form-content {
+  animation: atRise 0.8s var(--at-spring) both;
+}
+
+.auth-title {
+  color: var(--at-label);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.auth-subtitle {
+  color: var(--at-label-2);
+  opacity: 1;
+  letter-spacing: -0.01em;
+}
+
+/* --- Botones sociales: círculos --- */
+.social-login-inline {
+  gap: 1rem;
+}
+
+.social-btn {
+  border: 1px solid var(--at-hair-2);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--at-spring);
+}
+
+.social-icon-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+}
+
+.social-icon-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
+.social-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.25);
+}
+
+.social-btn:active {
+  transform: scale(0.92);
+  transition-duration: 0.12s;
+}
+
+/* Google: logo a color sobre blanco (ya no se rellena de azul) */
+.google-btn,
+.google-btn:hover {
+  background: #ffffff;
+  border-color: var(--at-hair-2);
+}
+
+/* Apple: botón negro con el logo en blanco, como pide Apple */
+.apple-btn {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+.apple-btn:hover {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
+  color: #ffffff;
+}
+
+.apple-btn svg {
+  margin-top: -2px;
+}
+
+/* --- Separador --- */
+.divider::before {
+  background: var(--at-hair);
+}
+
+.divider span {
+  color: var(--at-label-3);
+  opacity: 1;
+  font-size: 0.82rem;
+}
+
+/* --- Campos --- */
+.form-label {
+  font-size: 0.82rem;
+  color: var(--at-label-2);
+  letter-spacing: -0.005em;
+}
+
+.form-input,
+.phone-number-input,
+.phone-code-input {
+  border: 1px solid var(--at-hair-2);
+  border-radius: 999px;
+  color: var(--at-label);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus,
+.phone-code-input:focus,
+.phone-number-input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px var(--at-tint-2);
+  transform: none;
+}
+
+.form-input.error,
+.phone-code-input.error,
+.phone-number-input.error {
+  animation: atShake 0.4s ease;
+}
+
+@keyframes atShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+.input-icon {
+  color: var(--at-label-3);
+  opacity: 1;
+}
+
+.input-container:focus-within .input-icon,
+.form-input:focus + .input-icon {
+  color: #06b6d4;
+}
+
+.password-toggle {
+  right: 8px;
+  border-radius: 50%;
+  transition: background 0.2s ease, opacity 0.2s ease, transform 0.4s var(--at-spring);
+}
+
+.password-toggle:hover {
+  background: var(--at-tint);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.85);
+}
+
+.input-hint,
+.phone-hint {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--at-label-3);
+  opacity: 1;
+}
+
+@keyframes atReveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.form-error.show {
+  padding-left: 1rem;
+  animation: atReveal 0.35s var(--at-spring);
+}
+
+/* --- Menús de giro y tamaño (se abren con resorte) --- */
+.select-dropdown {
+  max-height: none;
+  border: 1px solid var(--at-hair);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 24px 56px rgba(0, 0, 0, 0.14);
+  transform: translateY(-6px) scale(0.96);
+  transform-origin: top center;
+  transition: opacity 0.2s ease, transform 0.5s var(--at-spring), visibility 0.2s;
+}
+
+.custom-select-wrapper.active .select-dropdown {
+  max-height: none;
+  transform: none;
+}
+
+.custom-select-wrapper.active .form-select {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px var(--at-tint-2);
+}
+
+.select-arrow {
+  right: 18px;
+  color: var(--at-label-3);
+  opacity: 1;
+  transition: transform 0.5s var(--at-spring), color 0.2s ease;
+}
+
+.select-search-container {
+  background: transparent;
+  border-bottom: 1px solid var(--at-hair);
+  padding: 0.65rem 0.75rem;
+}
+
+.select-search {
+  border: 1px solid var(--at-hair-2);
+  border-radius: 999px;
+  background: #ffffff;
+  padding-left: 1rem;
+}
+
+.select-search:focus {
+  box-shadow: 0 0 0 4px var(--at-tint-2);
+}
+
+.select-options-container {
+  padding: 6px;
+}
+
+.select-option {
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  transition: background 0.15s ease, transform 0.3s var(--at-spring);
+}
+
+.select-option i {
+  font-size: 1.35rem;
+  width: 30px;
+}
+
+.select-option svg {
+  width: 30px;
+  height: 30px;
+}
+
+.select-option span {
+  color: var(--at-label);
+}
+
+.select-option:hover {
+  background: var(--at-tint);
+}
+
+.select-option:active {
+  transform: scale(0.97);
+}
+
+.select-option.selected {
+  background: var(--at-tint-2);
+}
+
+.select-option.selected span {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.select-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+.select-no-results {
+  color: var(--at-label-3);
+  opacity: 1;
+}
+
+/* --- Fuerza de contraseña --- */
+.strength-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--at-hair);
+}
+
+.strength-meter-fill {
+  border-radius: 999px;
+  transition: width 0.6s var(--at-spring), background 0.3s ease;
+}
+
+/* --- Casillas redondas --- */
+.checkmark {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border: 1.5px solid var(--at-hair-2);
+  border-radius: 50%;
+  background: #ffffff;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.45s var(--at-spring);
+}
+
+.checkbox-container:active .checkmark {
+  transform: scale(0.88);
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark {
+  background: #06b6d4;
+  border-color: #06b6d4;
+}
+
+@keyframes atCheckPop {
+  from { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+  font-size: 0.75rem;
+  animation: atCheckPop 0.45s var(--at-spring);
+}
+
+.forgot-link,
+.auth-link,
+.checkbox-label a {
+  color: #0891b2;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-link:hover,
+.auth-link:hover {
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+/* --- Botón principal --- */
+.auth-btn {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.3s ease, opacity 0.2s ease, transform 0.45s var(--at-spring);
+}
+
+.primary-btn {
+  background: #06b6d4;
+  box-shadow: 0 12px 28px -12px rgba(6, 182, 212, 0.7);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: #0891b2;
+  transform: none;
+  box-shadow: 0 14px 30px -12px rgba(6, 182, 212, 0.75);
+}
+
+.auth-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 0.12s;
+}
+
+.form-footer {
+  color: var(--at-label-2);
+  opacity: 1;
+}
+
+/* --- Móvil: la tarjeta ocupa la pantalla, sin marco --- */
+@media (max-width: 768px) {
+  .auth-form-container {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-form-content,
+  .form-input.error,
+  .form-error.show,
+  .checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+    animation: none;
+  }
 }
