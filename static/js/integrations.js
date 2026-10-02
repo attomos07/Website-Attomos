@@ -619,7 +619,7 @@ function enableMetaEdit() {
 async function removeMetaCredentials() {
     if (!requireAgentSelected()) return;
     
-    if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta WhatsApp? Esto desconectará tu bot.')) {
+    if (!await iosConfirm('¿Estás seguro de que quieres eliminar las credenciales de Meta WhatsApp? Esto desconectará tu bot.')) {
         return;
     }
     
@@ -907,7 +907,7 @@ async function saveGeminiKey() {
 async function removeGeminiKey() {
     if (!requireAgentSelected()) return;
     
-    if (!confirm('¿Estás seguro de que quieres eliminar la Gemini API Key?')) {
+    if (!await iosConfirm('¿Estás seguro de que quieres eliminar la Gemini API Key?')) {
         return;
     }
     
@@ -1169,7 +1169,7 @@ async function disconnectGoogleService(service) {
     if (!requireAgentSelected()) return;
 
     const label = service === 'sheets' ? 'Google Sheets' : 'Google Calendar';
-    if (!confirm(`¿Estás seguro de que quieres desconectar ${label}?`)) {
+    if (!await iosConfirm(`¿Estás seguro de que quieres desconectar ${label}?`)) {
         return;
     }
 
@@ -1715,7 +1715,7 @@ function enableSPEIEdit() {
 
 async function removeSPEIConfig() {
     if (!selectedAgentId) return;
-    if (!confirm('¿Eliminar la configuración SPEI? El bot ya no podrá ofrecer transferencias.')) return;
+    if (!await iosConfirm('¿Eliminar la configuración SPEI? El bot ya no podrá ofrecer transferencias.')) return;
 
     const branchId = await getBranchIdForAgent(selectedAgentId);
     if (!branchId) return;
@@ -1814,7 +1814,7 @@ function enableClickEdit() {
 
 async function removeClickConfig() {
     if (!selectedAgentId) return;
-    if (!confirm(t('integ_click_confirm_remove', '¿Eliminar la configuración de Click? El bot ya no podrá ofrecer este método de pago.'))) return;
+    if (!await iosConfirm(t('integ_click_confirm_remove', '¿Eliminar la configuración de Click? El bot ya no podrá ofrecer este método de pago.'))) return;
 
     const branchId = await getBranchIdForAgent(selectedAgentId);
     if (!branchId) return;
@@ -1911,7 +1911,7 @@ function enablePaymeEdit() {
 
 async function removePaymeConfig() {
     if (!selectedAgentId) return;
-    if (!confirm(t('integ_payme_confirm_remove', '¿Eliminar la configuración de Payme? El bot ya no podrá ofrecer este método de pago.'))) return;
+    if (!await iosConfirm(t('integ_payme_confirm_remove', '¿Eliminar la configuración de Payme? El bot ya no podrá ofrecer este método de pago.'))) return;
 
     const branchId = await getBranchIdForAgent(selectedAgentId);
     if (!branchId) return;
@@ -1993,7 +1993,7 @@ async function connectStripe() {
 
 async function disconnectStripe() {
     if (!selectedAgentId) return;
-    if (!confirm('¿Desconectar Stripe? El bot ya no podrá generar links de pago con tarjeta.')) return;
+    if (!await iosConfirm('¿Desconectar Stripe? El bot ya no podrá generar links de pago con tarjeta.')) return;
 
     const branchId = await getBranchIdForAgent(selectedAgentId);
     if (!branchId) return;
@@ -2704,7 +2704,7 @@ function enableRepairDeskEdit() {
 
 async function disconnectRepairDesk() {
     if (!selectedAgentId) return;
-    if (!confirm('¿Desconectar RepairDesk? Se dejará de sincronizar el inventario.')) return;
+    if (!await iosConfirm('¿Desconectar RepairDesk? Se dejará de sincronizar el inventario.')) return;
 
     try {
         const res = await fetch(`/api/repairdesk/disconnect/${selectedAgentId}`, {
@@ -2919,7 +2919,7 @@ function srEnableEdit() {
 
 async function srDisconnect() {
     if (!selectedAgentId) return;
-    if (!confirm('¿Desconectar SoftRestaurant? Los pedidos nuevos ya no se enviarán automáticamente.')) return;
+    if (!await iosConfirm('¿Desconectar SoftRestaurant? Los pedidos nuevos ya no se enviarán automáticamente.')) return;
     try {
         const res = await fetch(`/api/softrestaurant/config/${selectedAgentId}`, {
             method: 'DELETE', credentials: 'include'
@@ -3105,3 +3105,296 @@ function _obAddWorkerRow(data) {
     list.appendChild(item);
     _obRenumberWorkers();
 }
+
+// ============================================================================
+// CAPA iOS 27 — Integraciones
+// Entrada escalonada, selector de agente tipo iOS, insignias de estado,
+// confirmaciones en modal (iosConfirm) y modal de Crear Agente.
+// No cambia la lógica de arriba.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+    const tr = (key, fallback) => (typeof t === 'function' ? t(key, fallback) : fallback);
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA (página y tarjetas al elegir agente)
+    // ====================================================================
+    function rise(elements, startAt = 0) {
+        let i = startAt;
+        elements.forEach((el) => {
+            if (!el) return;
+            el.classList.remove('ios-in');
+            void el.offsetWidth;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        return i;
+    }
+    const visibleCards = () => [...document.querySelectorAll('#integrationsGrid > .integration-card')]
+        .filter((c) => getComputedStyle(c).display !== 'none');
+
+    function pageEntrance() {
+        const i = rise([
+            document.querySelector('.page-header'),
+            document.querySelector('.agent-selector'),
+            document.getElementById('noAgentsBanner'),
+        ]);
+        rise(visibleCards(), i);
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // Al cambiar de agente, las tarjetas visibles vuelven a entrar escalonadas
+    function watchAgentChange() {
+        const display = document.getElementById('agentSelectDisplay');
+        if (!display) return;
+        let lastText = display.textContent.trim();
+        new MutationObserver(() => {
+            const now = display.textContent.trim();
+            if (now === lastText) return;
+            lastText = now;
+            requestAnimationFrame(() => rise(visibleCards()));
+        }).observe(display, { childList: true, characterData: true, subtree: true });
+    }
+
+    // ====================================================================
+    // 2. SELECTOR DE AGENTE: menú que nace del campo, cápsula y ✓
+    // ====================================================================
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    function agentSelect() {
+        const wrapper = document.getElementById('agentSelect');
+        const menu = document.getElementById('agentSelectDropdown');
+        const anchor = document.getElementById('agentSelectDisplay');
+        const container = document.getElementById('agentSelectOptions');
+        if (!wrapper || !menu || !anchor || !container) return;
+
+        menu.classList.add('ios-dd');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+        const ind = document.createElement('span');
+        ind.className = 'ios-dd-ind';
+        ind.setAttribute('aria-hidden', 'true');
+        container.prepend(ind);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = anchor.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    menu.style.clipPath = `inset(${lerp(a.top - c.top, 0, p)}px ${lerp(c.right - a.right, 0, p)}px ${lerp(c.bottom - a.bottom, 0, p)}px ${lerp(a.left - c.left, 0, p)}px round ${lerp(a.height / 2, 22, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        function hoverTo(item) {
+            if (item === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = item;
+            if (!item) { V.t = 0; kick(); return; }
+            // La lista se vuelve a pintar al cargar agentes: se repone la cápsula
+            if (!container.contains(ind)) container.prepend(ind);
+            item.classList.add('ios-hover');
+            X.t = item.offsetLeft; Y.t = item.offsetTop; W.t = item.offsetWidth; H.t = item.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+        container.addEventListener('pointermove', (e) => {
+            const item = e.target.closest('.select-option');
+            if (item) hoverTo(item);
+        });
+        container.addEventListener('pointerleave', () => hoverTo(null));
+
+        function sync() {
+            const now = wrapper.classList.contains('active');
+            if (now === open) return;
+            open = now;
+            if (open) {
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                if (!reduce.matches && menu.animate) {
+                    container.querySelectorAll('.select-option').forEach((it, i) => {
+                        it.animate(
+                            [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                            { duration: 380, delay: 30 + i * 22, easing: SPRING, fill: 'backwards' }
+                        );
+                    });
+                }
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+        new MutationObserver(sync).observe(wrapper, { attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('resize', render);
+        render();
+    }
+
+    // ====================================================================
+    // 3. INSIGNIAS DE ESTADO: rebote al conectar / desconectar
+    // ====================================================================
+    function watchBadges() {
+        document.querySelectorAll('.status-badge').forEach((badge) => {
+            let wasConnected = badge.classList.contains('connected');
+            new MutationObserver(() => {
+                const now = badge.classList.contains('connected');
+                if (now === wasConnected) return;
+                wasConnected = now;
+                if (reduce.matches || !badge.animate) return;
+                badge.animate(
+                    [{ transform: 'scale(0.7)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }],
+                    { duration: 600, easing: SPRING }
+                );
+            }).observe(badge, { attributes: true, attributeFilter: ['class'] });
+        });
+    }
+
+    // Botón "Copiar URL del webhook": rebote al copiar
+    function watchCopyButton() {
+        const btn = document.getElementById('btnCopyWebhook');
+        if (!btn) return;
+        new MutationObserver(() => {
+            if (btn.classList.contains('copied') && !reduce.matches && btn.animate) {
+                btn.animate([{ transform: 'scale(0.88)' }, { transform: 'scale(1)' }], { duration: 500, easing: SPRING });
+            }
+        }).observe(btn, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // ====================================================================
+    // 4. CONFIRMACIÓN tipo iOS (reemplaza confirm() del navegador)
+    // integrations.js la usa con: if (!await iosConfirm('...')) return;
+    // ====================================================================
+    window.iosConfirm = function (message) {
+        return new Promise((resolve) => {
+            const isDisconnect = /desconect/i.test(message);
+            const actionText = isDisconnect ? tr('integ_confirm_disconnect', 'Desconectar') : tr('integ_confirm_delete', 'Eliminar');
+            const modal = document.createElement('div');
+            modal.className = 'ios-confirm';
+            modal.setAttribute('role', 'alertdialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.innerHTML = `
+                <div class="ios-confirm-backdrop"></div>
+                <div class="ios-confirm-card">
+                    <div class="ios-confirm-icon"><i class="lni ${isDisconnect ? 'lni-plug' : 'lni-trash-can'}"></i></div>
+                    <h3 class="ios-confirm-title">${tr('integ_confirm_title', '¿Estás seguro?')}</h3>
+                    <p class="ios-confirm-text"></p>
+                    <div class="ios-confirm-actions">
+                        <button type="button" class="ios-confirm-cancel">${tr('integ_cancel', 'Cancelar')}</button>
+                        <button type="button" class="ios-confirm-ok">${actionText}</button>
+                    </div>
+                </div>`;
+            modal.querySelector('.ios-confirm-text').textContent = message;
+            document.body.appendChild(modal);
+            const ok = modal.querySelector('.ios-confirm-ok');
+            const cancel = modal.querySelector('.ios-confirm-cancel');
+            requestAnimationFrame(() => cancel.focus());
+
+            let done = false;
+            function finish(value) {
+                if (done) return;
+                done = true;
+                document.removeEventListener('keydown', onKey);
+                modal.classList.add('ios-closing');
+                setTimeout(() => modal.remove(), reduce.matches ? 0 : 230);
+                resolve(value);
+            }
+            function onKey(e) {
+                if (e.key === 'Escape') finish(false);
+                if (e.key === 'Enter') finish(true);
+            }
+            ok.addEventListener('click', () => finish(true));
+            cancel.addEventListener('click', () => finish(false));
+            modal.querySelector('.ios-confirm-backdrop').addEventListener('click', () => finish(false));
+            document.addEventListener('keydown', onKey);
+        });
+    };
+
+    // ====================================================================
+    // 5. MODAL DE CREAR AGENTE: salida animada
+    // ====================================================================
+    function wrapOnboardingClose() {
+        const orig = window.closeOnboardingModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const m = document.getElementById('onboardingModal');
+            if (!m || !m.classList.contains('active') || reduce.matches) { orig.apply(self, args); return; }
+            m.classList.add('ios-closing');
+            setTimeout(() => { orig.apply(self, args); m.classList.remove('ios-closing'); }, 230);
+        };
+        wrapped.__ios = true;
+        window.closeOnboardingModal = wrapped;
+    }
+
+    function init() {
+        pageEntrance();
+        watchAgentChange();
+        agentSelect();
+        watchBadges();
+        watchCopyButton();
+        wrapOnboardingClose();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

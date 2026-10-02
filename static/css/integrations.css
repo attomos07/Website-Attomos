@@ -1173,3 +1173,382 @@ body {
     flex-shrink: 0;
     object-fit: contain;
 }
+
+/* ============================================================================
+   CAPA iOS 27 — Integraciones
+   Trabaja con la capa iOS al final de integrations.js
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+  }
+}
+
+/* --- 1. Entrada --- */
+.content-wrapper,
+.integration-card {
+  animation: none;
+}
+
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+.integration-card {
+  border-radius: 28px;
+}
+
+.card-note,
+.connection-info,
+.stripe-section,
+.spei-section,
+.no-agents-banner {
+  border-radius: 20px;
+}
+
+/* --- 2. Botones y campos en cápsula --- */
+.btn,
+.btn-primary,
+.btn-copy-webhook {
+  border-radius: 999px !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:not(:disabled):active,
+.btn-primary:active,
+.btn-copy-webhook:active {
+  transform: scale(0.95);
+  transition-duration: 0.12s;
+}
+
+.api-key-input,
+.select-display {
+  border-radius: 999px;
+  padding-left: 1.25rem;
+}
+
+.toggle-visibility {
+  border-radius: 999px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.toggle-visibility:not(:disabled):hover {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.toggle-visibility:not(:disabled):active {
+  transform: translateY(-50%) scale(0.85);
+}
+
+.status-badge {
+  border-radius: 999px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.stripe-chip {
+  border-radius: 999px;
+}
+
+/* Interruptores de SoftRestaurant estilo iOS (el <style> de la página carga después: más peso) */
+.sr-toggle-label .sr-toggle-switch {
+  width: 42px;
+  height: 25px;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.2);
+  transition: background 0.25s ease;
+}
+
+.sr-toggle-label .sr-toggle-switch::after {
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.08);
+  transition: transform 0.5s var(--ios-spring), width 0.25s ease;
+}
+
+.sr-toggle-label input[type="checkbox"]:checked + .sr-toggle-switch::after {
+  transform: translateX(17px);
+}
+
+.sr-toggle-label:active input:not(:disabled) + .sr-toggle-switch::after {
+  width: 26px;
+}
+
+.sr-toggle-label:active input:checked:not(:disabled) + .sr-toggle-switch::after {
+  transform: translateX(12px);
+}
+
+/* --- 3. Selector de agente --- */
+.custom-select.active .select-display {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.custom-select .select-arrow {
+  transition: transform 0.45s var(--ios-spring), color 0.2s ease;
+}
+
+.ios-dd {
+  max-height: none !important;
+  opacity: 1 !important;
+  transition: none !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+.ios-dd > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-dd .select-options {
+  position: relative;
+  padding: 6px;
+}
+
+.ios-dd-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.ios-dd .select-option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  background: transparent !important;
+  transition: color 0.15s ease, transform 0.3s var(--ios-spring);
+}
+
+.ios-dd .select-option.ios-hover {
+  color: #0891b2;
+}
+
+.ios-dd .select-option:active {
+  transform: scale(0.97);
+}
+
+.ios-dd .select-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 12px;
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+/* --- 4. Confirmación tipo iOS --- */
+@keyframes iosBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.ios-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ios-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.ios-confirm-card {
+  position: relative;
+  width: min(380px, 100%);
+  padding: 1.75rem 1.5rem 1.25rem;
+  border-radius: 28px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.35), 0 2px 10px rgba(15, 23, 42, 0.06);
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.ios-confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 0.9rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #ef4444;
+  font-size: 1.6rem;
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+.ios-confirm-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ios-confirm-text {
+  margin: 0 0 1.4rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.ios-confirm-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ios-confirm-actions button {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-confirm-cancel {
+  background: rgba(118, 118, 128, 0.12);
+  color: #374151;
+}
+
+.ios-confirm-cancel:hover {
+  background: rgba(118, 118, 128, 0.18);
+}
+
+.ios-confirm-ok {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+}
+
+.ios-confirm-ok:hover {
+  background: #dc2626;
+}
+
+.ios-confirm-actions button:active {
+  transform: scale(0.95);
+}
+
+.ios-confirm.ios-closing {
+  pointer-events: none;
+}
+
+.ios-confirm.ios-closing .ios-confirm-backdrop {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.ios-confirm.ios-closing .ios-confirm-card {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* --- 5. Modal de Crear Agente (estilos de la página en <style>: más peso) --- */
+.onboarding-modal.active .onboarding-modal-content {
+  border-radius: 28px;
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.onboarding-modal.active .onboarding-overlay {
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.onboarding-modal.ios-closing {
+  pointer-events: none;
+}
+
+.onboarding-modal.ios-closing .onboarding-overlay {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.onboarding-modal.ios-closing .onboarding-modal-content {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes iosSheetIn  { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes iosSheetOut { from { transform: none; } to { transform: translateY(100%); } }
+
+@media (max-width: 768px) {
+  .onboarding-modal.active .onboarding-modal-content {
+    border-radius: 24px 24px 0 0;
+    animation: iosSheetIn 0.6s var(--ios-spring) both;
+  }
+
+  .onboarding-modal.ios-closing .onboarding-modal-content {
+    animation: iosSheetOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+}
+
+.ios-confirm-actions button:focus {
+  outline: none;
+}
+
+.ios-confirm-actions button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .ios-confirm-card,
+  .ios-confirm-icon,
+  .onboarding-modal.active .onboarding-modal-content {
+    animation: none;
+  }
+}

@@ -313,3 +313,256 @@ function handleContactSales() {
     // Redirigir a formulario de contacto o abrir modal
     window.location.href = '/contact-sales';
 }
+
+// ============================================================================
+// CAPA iOS 27 — Planes
+// Entrada escalonada, Mensual/Anual como selector segmentado, precios que
+// ruedan al cambiar, secciones que aparecen al hacer scroll y modal de API key.
+// No cambia la lógica de arriba: el checkbox #billingToggle sigue siendo
+// la fuente de verdad (se le cambia el valor y se dispara "change").
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    // --- Motor de resortes (solo para la cápsula del selector) ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA DE LA PÁGINA
+    // ====================================================================
+    function rise(elements, startAt = 0) {
+        let i = startAt;
+        elements.forEach((el) => {
+            if (!el) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        return i;
+    }
+    function pageEntrance() {
+        rise([
+            document.querySelector('.page-header'),
+            document.querySelector('.current-plan-banner'),
+            document.querySelector('.billing-toggle'),
+            ...document.querySelectorAll('.pricing-grid > .pricing-card'),
+        ]);
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // Tabla comparativa y preguntas frecuentes: entran al llegar con el scroll
+    function scrollReveal() {
+        const items = [
+            document.querySelector('.comparison-title'),
+            document.querySelector('.comparison-table-wrapper'),
+            document.querySelector('.faq-title'),
+            ...document.querySelectorAll('.faq-item'),
+        ].filter(Boolean);
+        if (!('IntersectionObserver' in window) || reduce.matches) return;
+        items.forEach((el) => el.classList.add('ios-wait'));
+        let batch = 0, batchTimer = null;
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                io.unobserve(el);
+                // Los que aparecen juntos entran escalonados
+                el.style.setProperty('--i', batch++);
+                clearTimeout(batchTimer);
+                batchTimer = setTimeout(() => { batch = 0; }, 120);
+                el.classList.remove('ios-wait');
+                el.classList.add('ios-in');
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        items.forEach((el) => io.observe(el));
+    }
+
+    // ====================================================================
+    // 2. MENSUAL / ANUAL: selector segmentado con cápsula que se desliza
+    // ====================================================================
+    function billingSegment() {
+        const box = document.getElementById('billingToggleContainer');
+        const input = document.getElementById('billingToggle');
+        if (!box || !input) return;
+        const labels = box.querySelectorAll('.toggle-label');
+        if (labels.length < 2) return;
+
+        const seg = document.createElement('div');
+        seg.className = 'ios-billing-seg';
+        seg.setAttribute('role', 'radiogroup');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-billing-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        const monthly = document.createElement('button');
+        const annual = document.createElement('button');
+        [monthly, annual].forEach((b, i) => {
+            b.type = 'button';
+            b.className = 'ios-billing-opt';
+            b.setAttribute('role', 'radio');
+            b.appendChild(labels[i]);   // se mueven las etiquetas: siguen traduciéndose
+        });
+        const save = document.createElement('span');
+        save.className = 'savings-badge';
+        save.textContent = '-20%';
+        annual.appendChild(save);
+        seg.append(thumb, monthly, annual);
+        box.appendChild(seg);
+        box.classList.add('ios-billing');
+
+        const X = spring(0, 440, 30), W = spring(0, 440, 30), S = spring(1, 600, 30, 0.001);
+        let ready = false;
+        function place(snap) {
+            const a = input.checked ? annual : monthly;
+            monthly.classList.toggle('active', !input.checked);
+            annual.classList.toggle('active', input.checked);
+            monthly.setAttribute('aria-checked', !input.checked);
+            annual.setAttribute('aria-checked', input.checked);
+            if (!a.offsetWidth) return;
+            X.t = a.offsetLeft; W.t = a.offsetWidth;
+            if (snap || !ready) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+            ready = true;
+            render();
+            kick();
+        }
+        function render() {
+            const st = Math.min(Math.abs(X.vel) / 2600, 0.16);
+            thumb.style.opacity = ready ? 1 : 0;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${S.v * (1 + st)}, ${S.v * (1 - st * 0.4)})`;
+        }
+        renderers.add(render);
+
+        function choose(isAnnual) {
+            if (input.checked === isAnnual) return;
+            input.checked = isAnnual;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            place(false);
+        }
+        monthly.addEventListener('click', () => choose(false));
+        annual.addEventListener('click', () => choose(true));
+        seg.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.ios-billing-opt.active')) { S.t = 0.94; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => seg.addEventListener(ev, release));
+        input.addEventListener('change', () => place(false));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(seg);
+        place(true);
+    }
+
+    // ====================================================================
+    // 3. PRECIOS: el número rueda del valor anterior al nuevo
+    // ====================================================================
+    const rolling = new WeakSet();
+    function parsePrice(text) {
+        const m = /\$\s*([\d,]+(?:\.(\d+))?)/.exec(text || '');
+        if (!m) return null;
+        return { n: parseFloat(m[1].replace(/,/g, '')), decimals: m[2] ? m[2].length : 0, commas: m[1].includes(',') };
+    }
+    function formatPrice(n, info) {
+        const s = info.commas
+            ? n.toLocaleString('es-MX', { minimumFractionDigits: info.decimals, maximumFractionDigits: info.decimals })
+            : n.toFixed(info.decimals);
+        return '$' + s;
+    }
+    function watchPrices() {
+        document.querySelectorAll('.price-amount').forEach((el) => {
+            let shown = parsePrice(el.textContent);
+            new MutationObserver(() => {
+                if (rolling.has(el)) return;
+                const next = parsePrice(el.textContent);
+                if (!next || !shown || next.n === shown.n) { shown = next; return; }
+                const from = shown.n, to = next.n;
+                shown = next;
+                if (reduce.matches) return;
+                rolling.add(el);
+                const start = performance.now(), dur = 650;
+                (function frame(now) {
+                    const t = clamp((now - start) / dur);
+                    const e = 1 - Math.pow(1 - t, 3);
+                    el.textContent = formatPrice(from + (to - from) * e, next);
+                    if (t < 1) requestAnimationFrame(frame);
+                    else {
+                        el.textContent = formatPrice(to, next);
+                        requestAnimationFrame(() => rolling.delete(el));
+                    }
+                })(start);
+                if (el.animate) {
+                    el.animate(
+                        [
+                            { transform: `translateY(${to > from ? 10 : -10}px)`, filter: 'blur(4px)', opacity: 0.4 },
+                            { transform: 'none', filter: 'blur(0)', opacity: 1 },
+                        ],
+                        { duration: 600, easing: SPRING }
+                    );
+                }
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    // ====================================================================
+    // 4. MODAL DE API KEY: salida animada
+    // ====================================================================
+    function wrapApiKeyClose() {
+        const orig = window.closeApiKeyModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const overlay = document.getElementById('apiKeyModalOverlay');
+            if (!overlay || overlay.style.display === 'none' || reduce.matches) { orig.apply(self, args); return; }
+            overlay.classList.add('ios-closing');
+            setTimeout(() => { orig.apply(self, args); overlay.classList.remove('ios-closing'); }, 220);
+        };
+        wrapped.__ios = true;
+        window.closeApiKeyModal = wrapped;
+    }
+
+    function init() {
+        pageEntrance();
+        billingSegment();
+        watchPrices();
+        scrollReveal();
+        wrapApiKeyClose();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

@@ -789,3 +789,287 @@ input:checked + .toggle-slider:before {
         font-size: 0.85rem;
     }
 }
+
+/* ============================================================================
+   CAPA iOS 27 — Planes
+   Trabaja con la capa iOS al final de plans.js
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 1. Entrada --- */
+/* Las tarjetas ya no arrancan invisibles: ahora entran con .ios-in */
+.pricing-card {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  border-radius: 28px;
+}
+
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Esperando a que el scroll los alcance */
+.ios-wait {
+  opacity: 0;
+}
+
+/* Filas de la tabla comparativa (las activa el IntersectionObserver de plans.js) */
+@keyframes iosRowIn {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.comparison-table tbody tr.animate-in {
+  animation: iosRowIn 0.6s var(--ios-spring) forwards;
+}
+
+.comparison-table-wrapper {
+  border-radius: 28px;
+}
+
+/* --- 2. Botones en cápsula --- */
+.plan-button,
+.banner-link {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.plan-button:not(:disabled):active,
+.banner-link:active {
+  transform: scale(0.96);
+  transition-duration: 0.12s;
+}
+
+.current-plan-banner {
+  border-radius: 28px;
+}
+
+.popular-badge,
+.free-badge {
+  border-radius: 0 0 16px 16px;
+}
+
+/* --- 3. Mensual / Anual --- */
+.ios-billing .toggle-switch {
+  display: none;
+}
+
+.ios-billing-seg {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.ios-billing-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.05);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.ios-billing-opt {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease;
+}
+
+.ios-billing-opt .toggle-label {
+  color: #6b7280;
+  transition: color 0.25s ease;
+}
+
+.ios-billing-opt.active .toggle-label {
+  color: #0f172a;
+}
+
+.ios-billing-opt:not(.active):active {
+  opacity: 0.55;
+}
+
+.ios-billing-opt .savings-badge {
+  margin-left: 0;
+  border-radius: 999px;
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.ios-billing-opt.active .savings-badge {
+  transform: scale(1.08);
+}
+
+.price-amount {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 4. Preguntas frecuentes: acordeón con resorte --- */
+.faq-item {
+  border-radius: 22px;
+}
+
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  max-height: none;
+  transition:
+    grid-template-rows 0.55s var(--ios-spring-smooth),
+    padding 0.45s var(--ios-spring-smooth),
+    opacity 0.3s ease;
+}
+
+.faq-answer > p {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.faq-item.active .faq-answer {
+  grid-template-rows: 1fr;
+  max-height: none;
+}
+
+.faq-toggle {
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.55s var(--ios-spring);
+}
+
+.faq-question:active .faq-question-text {
+  transform: scale(0.98);
+}
+
+.faq-question-text {
+  transition: transform 0.3s var(--ios-spring);
+}
+
+/* --- 5. Modal de API key (estilos de la página en <style>: más peso) --- */
+@keyframes iosBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+@keyframes iosRevealIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+#apiKeyModalOverlay.apikey-modal-overlay {
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+#apiKeyModalOverlay .apikey-modal {
+  border-radius: 28px;
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+#apiKeyModalOverlay .apikey-modal-icon {
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+#apiKeyModalOverlay .apikey-modal-btn {
+  border-radius: 999px;
+  transition: opacity 0.15s ease, transform 0.35s var(--ios-spring);
+}
+
+#apiKeyModalOverlay .apikey-modal-btn:active {
+  transform: scale(0.96);
+}
+
+#apiKeyModalOverlay .apikey-modal-field {
+  animation: iosRevealIn 0.45s var(--ios-spring);
+}
+
+#apiKeyModalOverlay .apikey-modal-field input {
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+}
+
+#apiKeyModalOverlay.ios-closing {
+  pointer-events: none;
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+#apiKeyModalOverlay.ios-closing .apikey-modal {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .comparison-table tbody tr.animate-in,
+  #apiKeyModalOverlay .apikey-modal,
+  #apiKeyModalOverlay .apikey-modal-icon {
+    animation: none;
+  }
+
+  .comparison-table tbody tr.animate-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .ios-wait {
+    opacity: 1;
+  }
+}
