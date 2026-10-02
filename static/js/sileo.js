@@ -17,10 +17,19 @@ const SWAP_COLLAPSE_MS  = 200;
 const HEADER_EXIT_MS    = DURATION_MS * 0.7;
 const SWIPE_DISMISS     = 30;
 const SWIPE_MAX         = 20;
+const SWIPE_UP_MAX      = 64;    /* hacia arriba cede más, como en iOS */
+const SWIPE_FLICK       = 0.45;  /* px/ms — un "flick" rápido también descarta */
+const EXIT_LEAD_MS      = 170;   /* la píldora se recoge antes de subir */
 
 /* Spring config */
 const SPRING           = { type: 'spring', bounce: 0.25, duration: DURATION_S };
 const SPRING_NO_BOUNCE = { type: 'spring', bounce: 0,    duration: DURATION_S };
+const SPRING_POP       = { type: 'spring', bounce: 0.5,  duration: 0.5 };
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* Resistencia elástica al arrastrar (rubber band de UIScrollView) */
+const rubberBand = (d, dim) => (1 - 1 / ((d * 0.55) / dim + 1)) * dim;
 
 /* Motion API — resolved lazily so CDN is guaranteed loaded */
 function getAnimate() {
@@ -350,7 +359,10 @@ function buildDom(item) {
 
   applyHeader(inst, item.state || 'success', item.title || item.state || 'success', item.icon);
   applyDescription(inst, item);
-  measurePill(inst);
+  /* Nace como un círculo al centro (la isla) y en el siguiente frame
+     crece hasta su ancho real, revelando el título */
+  inst.pillWidth = HEIGHT;
+  syncGeometry(inst, true);
 
   el.addEventListener('mouseenter', () => {
     if (!hovered) { hovered = true; pauseAll(); }
@@ -368,6 +380,8 @@ function buildDom(item) {
     el.classList.add('ready');
     requestAnimationFrame(() => measurePill(inst));
   });
+
+  if (item.state === 'error') setTimeout(() => stateFeedback(inst, 'error'), DURATION_MS * 0.45);
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -378,10 +392,20 @@ function syncDom(item, latestId) {
   if (!inst) return;
   const el = inst.el;
 
+  if (inst.closing) return;
+
   if (item.exiting && !el.classList.contains('exiting')) {
-    collapse(inst);
+    /* Salida tipo Dynamic Island: la píldora se recoge en un círculo con el
+       ícono y luego sube y se desvanece */
     clearInstTimers(inst);
-    requestAnimationFrame(() => el.classList.add('exiting'));
+    inst.closing = true;
+    inst.open = false;
+    el.classList.add('closing');
+    syncGeometry(inst);
+    inst.timers.exit = setTimeout(
+      () => el.classList.add('exiting'),
+      REDUCED_MOTION.matches ? 0 : EXIT_LEAD_MS
+    );
     return;
   }
 
@@ -415,6 +439,7 @@ function syncDom(item, latestId) {
 ──────────────────────────────────────────────────────────────── */
 function applyView(inst, item) {
   const state = item.state || 'success';
+  const prevState = inst.view && inst.view.state;
   const fill  = item.fill  || '#ffffff';  /* PATCHED: light default */
   inst.view = { ...item };
   inst.fill = fill;
@@ -442,6 +467,8 @@ function applyView(inst, item) {
     measurePill(inst);
     measureContent(inst);
   });
+
+  if (prevState && prevState !== state) stateFeedback(inst, state);
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -482,6 +509,7 @@ function applyHeader(inst, state, title, icon) {
 
   div.append(badge, titleEl);
   stack.appendChild(div);
+  popBadge(badge);
 
   requestAnimationFrame(() => measurePill(inst));
 }
@@ -526,6 +554,7 @@ function applyDescription(inst, item) {
    MEASUREMENTS
 ──────────────────────────────────────────────────────────────── */
 function measurePill(inst) {
+  if (inst.closing) return;
   const inner  = inst.el.querySelector('.sileo-header-inner.current');
   const header = inst.el.querySelector('.sileo-header');
   if (!inner || !header) return;
@@ -555,7 +584,7 @@ function syncGeometry(inst, first) {
   const svg        = inst.el.querySelector('svg');
   if (!pill || !body || !svg) return;
 
-  const pw    = Math.max(inst.pillWidth || HEIGHT, HEIGHT);
+  const pw    = inst.closing ? HEIGHT : Math.max(inst.pillWidth || HEIGHT, HEIGHT);
   const blur  = ROUNDNESS * BLUR_RATIO;
   const pillH = inst.open ? HEIGHT + blur * 3 : HEIGHT;
 
@@ -611,7 +640,7 @@ function syncGeometry(inst, first) {
    EXPAND / COLLAPSE
 ──────────────────────────────────────────────────────────────── */
 function expand(inst) {
-  if (inst.open) return;
+  if (inst.open || inst.closing) return;
   if (!inst.contentHeight) measureContent(inst);
   inst.open = true;
   syncGeometry(inst);
@@ -677,25 +706,91 @@ function clearInstTimers(inst) {
 ════════════════════════════════════════════════════════════════ */
 function onPointerDown(e, id, inst) {
   if (e.target.closest('.sileo-action-btn')) return;
+  if (inst.closing) return;
+  const el = inst.el;
   inst.pointerStart = e.clientY;
   e.currentTarget.setPointerCapture(e.pointerId);
+  el.classList.add('pressed');
+
+  /* Velocidad para detectar el "flick" */
+  let lastY = e.clientY, lastT = performance.now(), vel = 0;
 
   function onMove(ev) {
-    const dy = ev.clientY - inst.pointerStart;
-    const sign = dy > 0 ? 1 : -1;
-    const clamped = Math.min(Math.abs(dy), SWIPE_MAX) * sign;
-    inst.el.style.transform = `translateZ(0) translateY(${clamped}px) scale(1)`;
+    if (inst.pointerStart === null) return;
+    const dy  = ev.clientY - inst.pointerStart;
+    const now = performance.now();
+    const dt  = Math.max(1, now - lastT);
+    vel   = vel * 0.4 + ((ev.clientY - lastY) / dt) * 0.6;
+    lastY = ev.clientY;
+    lastT = now;
+    /* Arriba cede más (es la dirección para descartar); abajo casi nada */
+    const off = dy < 0 ? -rubberBand(-dy, SWIPE_UP_MAX) : rubberBand(dy, SWIPE_MAX);
+    el.classList.add('dragging');
+    el.style.transform = `translateZ(0) translateY(${off}px) scale(1)`;
   }
   function onUp(ev) {
+    if (inst.pointerStart === null) return;
     const dy = ev.clientY - inst.pointerStart;
     inst.pointerStart = null;
-    inst.el.style.transform = '';
-    inst.el.removeEventListener('pointermove', onMove);
-    inst.el.removeEventListener('pointerup',   onUp);
-    if (Math.abs(dy) > SWIPE_DISMISS) dismissToast(id);
+    /* Al soltar regresa con resorte (la transición vuelve a estar activa) */
+    el.classList.remove('dragging', 'pressed');
+    el.style.transform = '';
+    el.removeEventListener('pointermove',   onMove);
+    el.removeEventListener('pointerup',     onUp);
+    el.removeEventListener('pointercancel', onUp);
+    if (Math.abs(dy) > SWIPE_DISMISS || (dy < -6 && vel < -SWIPE_FLICK)) dismissToast(id);
   }
-  inst.el.addEventListener('pointermove', onMove, { passive: true });
-  inst.el.addEventListener('pointerup',   onUp,   { passive: true });
+  el.addEventListener('pointermove',   onMove, { passive: true });
+  el.addEventListener('pointerup',     onUp,   { passive: true });
+  el.addEventListener('pointercancel', onUp,   { passive: true });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   iOS FEEDBACK  — ícono que aparece con resorte y se dibuja, y
+   respuesta física al cambiar de estado
+════════════════════════════════════════════════════════════════ */
+function popBadge(badge) {
+  if (REDUCED_MOTION.matches) return;
+  try { getAnimate()(badge, { scale: [0.35, 1], opacity: [0, 1] }, SPRING_POP); } catch (_) {}
+
+  /* El trazo del ícono se dibuja (el spinner de carga no) */
+  const svg = badge.querySelector('svg');
+  if (!svg || svg.classList.contains('spin')) return;
+  svg.querySelectorAll('path, line, polyline, circle').forEach((shape, i) => {
+    let len = 0;
+    try { len = shape.getTotalLength(); } catch (_) {}
+    if (!len || !shape.animate) return;
+    shape.style.strokeDasharray = `${len}`;
+    const a = shape.animate(
+      [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+      { duration: 420, delay: 110 + i * 70, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' }
+    );
+    a.onfinish = () => { shape.style.strokeDasharray = ''; };
+  });
+}
+
+function stateFeedback(inst, state) {
+  if (REDUCED_MOTION.matches || !inst.el.animate || inst.closing) return;
+  if (state === 'error') {
+    /* "No" de iOS: sacudida horizontal que se amortigua */
+    inst.el.animate(
+      [
+        { translate: '0 0' }, { translate: '-8px 0' }, { translate: '7px 0' },
+        { translate: '-5px 0' }, { translate: '3px 0' }, { translate: '0 0' },
+      ],
+      { duration: 460, easing: 'ease-out' }
+    );
+  } else if (state !== 'loading') {
+    /* Pequeño latido, como la isla al confirmar */
+    inst.el.animate(
+      [
+        { scale: 1, easing: 'cubic-bezier(.2,.9,.3,1)' },
+        { scale: 1.05, offset: 0.35, easing: 'cubic-bezier(.34,1.56,.64,1)' },
+        { scale: 1 },
+      ],
+      { duration: 560 }
+    );
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════

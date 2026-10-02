@@ -257,11 +257,11 @@ async function loadStripePublicKey() {
             console.log('✅ Stripe public key loaded');
         } else {
             console.error('❌ Error loading Stripe key');
-            alert(t('checkout_err_config_payment', 'Error al configurar el sistema de pagos. Por favor recarga la página.'));
+            iosAlert(t('checkout_err_config_payment', 'Error al configurar el sistema de pagos. Por favor recarga la página.'));
         }
     } catch (error) {
         console.error('❌ Error:', error);
-        alert(t('checkout_err_connection', 'Error de conexión. Por favor recarga la página.'));
+        iosAlert(t('checkout_err_connection', 'Error de conexión. Por favor recarga la página.'));
     }
 }
 
@@ -731,7 +731,7 @@ function initPaymentForm() {
             });
             
             if (!isValid) {
-                alert(t('checkout_err_fill_required', 'Por favor completa todos los campos requeridos correctamente.'));
+                iosAlert(t('checkout_err_fill_required', 'Por favor completa todos los campos requeridos correctamente.'));
                 if (firstErrorField) {
                     firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     firstErrorField.focus();
@@ -740,7 +740,7 @@ function initPaymentForm() {
             }
             
             if (!cardData.complete) {
-                alert(t('checkout_err_fill_card', 'Por favor completa los datos de tu tarjeta.'));
+                iosAlert(t('checkout_err_fill_card', 'Por favor completa los datos de tu tarjeta.'));
                 const stripeContainer = document.getElementById('stripe-container');
                 stripeContainer.classList.add('error');
                 setTimeout(() => {
@@ -823,7 +823,7 @@ async function processPayment() {
         if (confirmError) {
             hideProcessingModal();
             console.error('❌ Payment error:', confirmError);
-            alert(`${t('checkout_err_generic_prefix', 'Error:')} ${confirmError.message}`);
+            iosAlert(`${t('checkout_err_generic_prefix', 'Error:')} ${confirmError.message}`);
             return;
         }
 
@@ -874,7 +874,7 @@ async function processPayment() {
     } catch (error) {
         console.error('❌ Payment error:', error);
         hideProcessingModal();
-        alert(`${t('checkout_err_processing_prefix', 'Error procesando el pago:')} ${error.message}`);
+        iosAlert(`${t('checkout_err_processing_prefix', 'Error procesando el pago:')} ${error.message}`);
     }
 }
 
@@ -1287,3 +1287,414 @@ document.addEventListener('DOMContentLoaded', function() {
     initBillingFields();
     initCoupon();
 });
+
+// ============================================================================
+// CAPA iOS 27 — Checkout
+// Entrada escalonada, menús de país/CFDI que se despliegan con resorte y una
+// cápsula que sigue al cursor, Tarjeta/PayPal como selector segmentado,
+// "¿Requieres factura?" como interruptor, total que rueda al cambiar,
+// alertas estilo iOS y modales con salida animada. No cambia la lógica.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    const SPRING = (window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)'))
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 0. ALERTA ESTILO iOS (reemplaza a alert() en este archivo)
+    // ====================================================================
+    const alertQueue = [];
+    let alertOpen = false;
+
+    function showNextAlert() {
+        if (alertOpen || !alertQueue.length) return;
+        alertOpen = true;
+        const { message, resolve } = alertQueue.shift();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'ios-alert';
+        overlay.setAttribute('role', 'alertdialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.innerHTML = `
+            <div class="ios-alert-card">
+                <div class="ios-alert-icon"><i class="lni lni-warning"></i></div>
+                <p class="ios-alert-message"></p>
+                <button type="button" class="ios-alert-btn">OK</button>
+            </div>`;
+        overlay.querySelector('.ios-alert-message').textContent = message;
+        document.body.appendChild(overlay);
+
+        const btn = overlay.querySelector('.ios-alert-btn');
+        let closed = false;
+        function close() {
+            if (closed) return;
+            closed = true;
+            document.removeEventListener('keydown', onKey, true);
+            const done = () => {
+                overlay.remove();
+                alertOpen = false;
+                resolve();
+                showNextAlert();
+            };
+            if (reduce.matches) { done(); return; }
+            overlay.classList.add('ios-closing');
+            setTimeout(done, 200);
+        }
+        function onKey(e) {
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
+            }
+        }
+        btn.addEventListener('click', close);
+        document.addEventListener('keydown', onKey, true);
+    }
+
+    window.iosAlert = function (message) {
+        return new Promise((resolve) => {
+            alertQueue.push({ message: String(message ?? ''), resolve });
+            showNextAlert();
+        });
+    };
+
+    // ====================================================================
+    // 1. ENTRADA
+    // ====================================================================
+    function pageEntrance() {
+        let i = 0;
+        [
+            document.querySelector('.payment-section'),
+            document.querySelector('.order-summary'),
+        ].forEach((el) => {
+            if (!el) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        // Dentro del formulario las secciones suben una tras otra
+        let j = 2;
+        document.querySelectorAll('.payment-section > .payment-header, .payment-form > .form-section, .payment-form > .btn-submit').forEach((el) => {
+            el.style.setProperty('--i', j++);
+            el.classList.add('ios-in-soft');
+        });
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+            if (e.animationName === 'iosSoftIn' && e.target.classList.contains('ios-in-soft')) {
+                e.target.classList.remove('ios-in-soft');
+            }
+        });
+    }
+
+    // Lista "Incluye": entra escalonada cada vez que se pinta (carga / idioma)
+    function watchFeatures() {
+        const list = document.getElementById('planFeatures');
+        if (!list) return;
+        const tag = () => {
+            let n = 0;
+            list.querySelectorAll('li:not(.ios-row)').forEach((li) => {
+                li.style.setProperty('--r', n++);
+                li.classList.add('ios-row');
+            });
+        };
+        new MutationObserver(tag).observe(list, { childList: true });
+        tag();
+    }
+
+    // El nombre del plan "rebota" al llenarse
+    function popOnChange(el) {
+        if (!el || !el.animate) return;
+        let prev = el.textContent;
+        new MutationObserver(() => {
+            if (el.textContent === prev) return;
+            prev = el.textContent;
+            if (reduce.matches) return;
+            el.animate(
+                [{ transform: 'scale(0.85)', opacity: 0.3, filter: 'blur(4px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }],
+                { duration: 600, easing: SPRING }
+            );
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+    }
+
+    // ====================================================================
+    // 2. TOTAL: el número rueda del valor anterior al nuevo
+    // ====================================================================
+    const rolling = new WeakSet();
+    function parseMoney(text) {
+        const m = /\$\s*([\d,]+(?:\.(\d+))?)\s*(.*)$/.exec((text || '').trim());
+        if (!m) return null;
+        return { n: parseFloat(m[1].replace(/,/g, '')), decimals: m[2] ? m[2].length : 0, suffix: m[3] };
+    }
+    const formatMoney = (n, info) => `$${n.toFixed(info.decimals)}${info.suffix ? ' ' + info.suffix : ''}`;
+
+    function watchTotal(el) {
+        if (!el) return;
+        let shown = parseMoney(el.textContent);
+        new MutationObserver(() => {
+            if (rolling.has(el)) return;
+            const next = parseMoney(el.textContent);
+            if (!next) { shown = null; return; }
+            if (shown && next.n === shown.n) { shown = next; return; }
+            const from = shown ? shown.n : 0, to = next.n;
+            shown = next;
+            if (reduce.matches) return;
+            if (el.animate) {
+                el.animate(
+                    [
+                        { transform: `translateY(${to >= from ? 10 : -10}px)`, filter: 'blur(4px)', opacity: 0.4 },
+                        { transform: 'none', filter: 'blur(0)', opacity: 1 },
+                    ],
+                    { duration: 600, easing: SPRING }
+                );
+            }
+            if (from === to) return;
+            rolling.add(el);
+            const start = performance.now(), dur = 650;
+            (function frame(now) {
+                const t = clamp((now - start) / dur);
+                const e = 1 - Math.pow(1 - t, 3);
+                el.textContent = formatMoney(from + (to - from) * e, next);
+                if (t < 1) requestAnimationFrame(frame);
+                else {
+                    el.textContent = formatMoney(to, next);
+                    requestAnimationFrame(() => rolling.delete(el));
+                }
+            })(start);
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+    }
+
+    // ====================================================================
+    // 3. MENÚS DE PAÍS Y CFDI: se despliegan desde su campo con resorte y
+    // una cápsula sigue al cursor. La lógica original sigue abriendo y
+    // cerrando con sus clases (.active / .open); aquí solo se observa.
+    // ====================================================================
+    function morphMenu({ menu, anchor, watch, isOpen, scroller, itemSelector }) {
+        if (!menu || !anchor || !watch || !scroller) return;
+        menu.classList.add('ios-morph');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+
+        scroller.classList.add('ios-dd-scroller');
+        const ind = document.createElement('span');
+        ind.className = 'ios-dd-ind';
+        ind.setAttribute('aria-hidden', 'true');
+        scroller.appendChild(ind);   // al final: no altera los :nth-child de las opciones
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = anchor.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 22, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        function hoverTo(el) {
+            if (el === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = el;
+            if (!el) { V.t = 0; kick(); return; }
+            el.classList.add('ios-hover');
+            X.t = el.offsetLeft; Y.t = el.offsetTop; W.t = el.offsetWidth; H.t = el.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+
+        function sync() {
+            const v = isOpen();
+            if (v === open) return;
+            open = v;
+            if (v) {
+                V.v = V.t = 0;
+                hovered = null;
+                P.t = 1;
+                // La opción elegida queda a la vista
+                const sel = scroller.querySelector(`${itemSelector}.selected`);
+                if (sel) scroller.scrollTop = Math.max(0, sel.offsetTop - scroller.clientHeight / 2 + sel.offsetHeight / 2);
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        scroller.addEventListener('pointermove', (e) => {
+            const el = e.target.closest(itemSelector);
+            if (el && scroller.contains(el)) hoverTo(el);
+        });
+        scroller.addEventListener('pointerleave', () => hoverTo(null));
+        scroller.addEventListener('scroll', () => hoverTo(null), { passive: true });
+        new MutationObserver(sync).observe(watch, { attributes: true, attributeFilter: ['class'] });
+        render();
+    }
+
+    function initMenus() {
+        const countryWrap = document.querySelector('.country-select-wrapper');
+        if (countryWrap) {
+            morphMenu({
+                menu: document.getElementById('countryDropdown'),
+                anchor: document.getElementById('country'),
+                watch: countryWrap,
+                isOpen: () => countryWrap.classList.contains('active'),
+                scroller: document.getElementById('countryOptionsContainer'),
+                itemSelector: '.select-option',
+            });
+        }
+
+        ['usoCfdi', 'regimenFiscal'].forEach((id) => {
+            const dd = document.getElementById(`${id}-dropdown`);
+            if (!dd) return;
+            morphMenu({
+                menu: dd,
+                anchor: document.getElementById(`${id}-trigger`),
+                watch: dd,
+                isOpen: () => dd.classList.contains('open'),
+                scroller: dd,
+                itemSelector: '.cfdi-option',
+            });
+        });
+    }
+
+    // ====================================================================
+    // 4. TARJETA / PAYPAL: selector segmentado con cápsula que se desliza
+    // ====================================================================
+    function methodSegment() {
+        const box = document.querySelector('.payment-method-selector');
+        if (!box) return;
+        box.classList.add('ios-seg');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        box.prepend(thumb);
+
+        const X = spring(0, 440, 30), Y = spring(0, 440, 30), W = spring(0, 440, 30), H = spring(0, 440, 30);
+        const S = spring(1, 600, 30, 0.001);
+        let ready = false;
+        function place(snap) {
+            const a = box.querySelector('.payment-method-option.active');
+            if (!a || !a.offsetWidth) return;
+            X.t = a.offsetLeft; Y.t = a.offsetTop; W.t = a.offsetWidth; H.t = a.offsetHeight;
+            if (snap || !ready) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; X.vel = Y.vel = W.vel = H.vel = 0; }
+            ready = true;
+            render();
+            kick();
+        }
+        function render() {
+            const st = Math.min(Math.abs(X.vel) / 2600, 0.14);
+            thumb.style.opacity = ready ? 1 : 0;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.height = `${H.v}px`;
+            thumb.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${S.v * (1 + st)}, ${S.v * (1 - st * 0.4)})`;
+        }
+        renderers.add(render);
+
+        new MutationObserver(() => place(false)).observe(box, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        box.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.payment-method-option.active')) { S.t = 0.95; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => box.addEventListener(ev, release));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(box);
+        place(true);
+    }
+
+    // ====================================================================
+    // 5. MODALES: el de "procesando" sale con animación
+    // ====================================================================
+    function wrapProcessingClose() {
+        const orig = window.hideProcessingModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const modal = document.getElementById('processingModal');
+            if (!modal || !modal.classList.contains('show') || modal.classList.contains('ios-closing') || reduce.matches) {
+                if (!modal || !modal.classList.contains('ios-closing')) orig.apply(self, args);
+                return;
+            }
+            modal.classList.add('ios-closing');
+            setTimeout(() => {
+                modal.classList.remove('ios-closing');
+                orig.apply(self, args);
+                // Si mientras tanto se abrió el de éxito, el scroll sigue bloqueado
+                if (document.querySelector('.modal-overlay.show')) document.body.style.overflow = 'hidden';
+            }, 230);
+        };
+        wrapped.__ios = true;
+        window.hideProcessingModal = wrapped;
+    }
+
+    window.addEventListener('resize', () => renderers.forEach((r) => r()));
+    document.addEventListener('scroll', () => renderers.forEach((r) => r()), { passive: true, capture: true });
+
+    function init() {
+        pageEntrance();
+        watchFeatures();
+        popOnChange(document.getElementById('selectedPlanName'));
+        watchTotal(document.getElementById('total'));
+        initMenus();
+        methodSegment();
+        wrapProcessingClose();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

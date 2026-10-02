@@ -11,6 +11,13 @@
     1.034 41.6%,1.038 45%,1.035 50.1%,1.012 64.2%,1.003 73%,
     0.999 83.7%,1
   );
+  /* Resorte con más rebote para la entrada tipo Dynamic Island */
+  --spring-drop: linear(
+    0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021,
+    1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02,
+    1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.995, 0.997,
+    0.998, 0.999, 1, 1, 1.001, 1.001, 1, 1
+  );
   --dur: 600ms;
   --h:   40px;
   --w:   350px;
@@ -75,12 +82,16 @@
   width: var(--w);
   height: var(--_h, var(--h));
   opacity: 0;
-  transform: translateZ(0) translateY(-6px) scale(.95);
-  transform-origin: center;
+  /* Cae desde arriba, pequeña, como si saliera de la isla */
+  transform: translateZ(0) translateY(-26px) scale(.72);
+  transform-origin: 50% 0;
   contain: layout style;
   overflow: visible;
   cursor: pointer;
   filter: drop-shadow(var(--toast-shadow));
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .sileo-toast[data-state="loading"] { cursor: default; }
 
@@ -88,11 +99,22 @@
   opacity: 1;
   transform: translateZ(0) scale(1) translateY(0);
   transition:
-    transform  calc(var(--dur)*.66) var(--spring-easing),
-    opacity    calc(var(--dur)*.66) var(--spring-easing),
+    transform  calc(var(--dur)*1.05) var(--spring-drop),
+    opacity    calc(var(--dur)*.4)  ease,
     height     var(--dur)           var(--spring-easing),
+    scale      calc(var(--dur)*.6)  var(--spring-drop),
     margin-bottom calc(var(--dur)*.66) var(--spring-easing),
     margin-top    calc(var(--dur)*.66) var(--spring-easing);
+}
+
+/* Presionar: se hunde un poco, como un botón de iOS */
+.sileo-toast.pressed { scale: .97; }
+
+/* Arrastrando: el toast sigue al dedo sin retraso */
+.sileo-toast.ready.dragging {
+  transition:
+    height var(--dur)          var(--spring-easing),
+    scale  calc(var(--dur)*.6) var(--spring-drop);
 }
 
 #sileo-vp .sileo-toast:not(.ready) {
@@ -102,7 +124,23 @@
 .sileo-toast.exiting {
   opacity: 0 !important;
   pointer-events: none;
-  transform: translateZ(0) translateY(-6px) scale(.95) !important;
+  /* Sube y se encoge de regreso a la isla; los de abajo suben a su lugar */
+  transform: translateZ(0) translateY(-22px) scale(.55) !important;
+  margin-bottom: calc(-1 * (var(--_h, var(--h)) + .75rem));
+  transition:
+    transform     calc(var(--dur)*.55) cubic-bezier(.4, 0, .6, 1),
+    opacity       calc(var(--dur)*.45) ease calc(var(--dur)*.08),
+    height        var(--dur)           var(--spring-easing),
+    margin-bottom calc(var(--dur)*.66) var(--spring-easing);
+}
+
+/* Al cerrarse, la píldora queda como un círculo con solo el ícono */
+.sileo-toast.closing { pointer-events: none; }
+.sileo-toast.closing .sileo-header { padding-left: 8px; padding-right: 8px; }
+.sileo-toast.closing .sileo-title {
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity 140ms ease, filter 140ms ease;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -156,7 +194,8 @@
   transition:
     transform  var(--dur) var(--spring-easing),
     left       var(--dur) var(--spring-easing),
-    max-width  var(--dur) var(--spring-easing);
+    max-width  var(--dur) var(--spring-easing),
+    padding    calc(var(--dur)*.5) var(--spring-easing);
 }
 
 .sileo-header-stack {
@@ -263,6 +302,10 @@
 .sileo-action-btn:hover {
   background: color-mix(in oklch, var(--_c) 22%, rgba(0,0,0,0.05));
 }
+.sileo-action-btn {
+  transition: background 150ms ease, transform 300ms var(--spring-drop);
+}
+.sileo-action-btn:active { transform: scale(.94); }
 
 /* Progress bar */
 .sileo-progress {
@@ -279,7 +322,7 @@
   background: var(--_c);
   border-radius: 9999px;
   width: 0%;
-  transition: width 0.3s ease;
+  transition: width 0.5s var(--spring-easing);
 }
 .sileo-progress-text {
   font-size: .7rem;
@@ -292,12 +335,12 @@
    KEYFRAMES
 ═══════════════════════════════════════════════════════ */
 @keyframes hdr-enter {
-  from { opacity: 0; filter: blur(6px); }
-  to   { opacity: 1; filter: blur(0px); }
+  from { opacity: 0; filter: blur(6px); transform: translateY(5px) scale(.96); }
+  to   { opacity: 1; filter: blur(0px); transform: none; }
 }
 @keyframes hdr-exit {
-  from { opacity: 1; filter: blur(0px); }
-  to   { opacity: 0; filter: blur(6px); }
+  from { opacity: 1; filter: blur(0px); transform: none; }
+  to   { opacity: 0; filter: blur(6px); transform: translateY(-5px) scale(.96); }
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -305,6 +348,7 @@
 .spin { animation: spin 1s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
+  .sileo-toast,
   #sileo-vp *,
   #sileo-vp *::before,
   #sileo-vp *::after {
