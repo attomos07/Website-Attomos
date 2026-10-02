@@ -2179,3 +2179,675 @@ body {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+/* ============================================================================
+   CAPA iOS 27 — Mis Citas y Mis Pedidos
+   El mismo bloque va al final de appointments.css y de orders.css.
+   Trabaja con la capa iOS al final de appointments.js / orders.js.
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* ---------------------------------------------------------------
+   1. Entrada de la página y de cada pestaña
+   --------------------------------------------------------------- */
+.content-wrapper,
+.stat-card,
+.controls-section {
+  animation: none;
+}
+
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------
+   2. Botones y campos en cápsula
+   --------------------------------------------------------------- */
+.btn-primary,
+.btn-secondary,
+.btn-submit,
+.btn-cancel,
+.btn-cancel-form,
+.btn-add-item,
+.pos-submit-btn {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-submit:not(:disabled):active,
+.btn-cancel:active,
+.btn-cancel-form:active,
+.btn-add-item:active,
+.pos-submit-btn:not(:disabled):active {
+  transform: scale(0.95);
+  transition-duration: 0.12s;
+}
+
+.search-box,
+.filter-wrapper .form-input,
+.pos-search-wrap input {
+  border-radius: 999px;
+}
+
+.actions-btn,
+.calendar-nav-btn,
+.pos-clear-btn,
+.pos-qty-btn {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.actions-btn:active,
+.calendar-nav-btn:active,
+.pos-clear-btn:active,
+.pos-qty-btn:active {
+  transform: scale(0.88);
+}
+
+.ios-dd-anchor-open.actions-btn {
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #ecfeff;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.ios-dd-anchor-open.form-input,
+.ios-dd-anchor-open.form-dropdown {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+/* ---------------------------------------------------------------
+   3. Segmentados (pestañas, vista lista/calendario, tipo y pago)
+   --------------------------------------------------------------- */
+.ios-seg {
+  position: relative;
+  isolation: isolate;
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  will-change: transform, width, height;
+}
+
+.ios-seg > button {
+  position: relative;
+  z-index: 1;
+  border-radius: 999px;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease, border-color 0.25s ease, opacity 0.2s ease;
+}
+
+.ios-seg > button:not(.active):active {
+  opacity: 0.55;
+}
+
+/* Cápsula cian con texto blanco */
+.ios-seg-tint {
+  padding: 4px;
+  gap: 4px;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.1);
+}
+
+.ios-seg-tint .ios-seg-thumb {
+  background: #06b6d4;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.ios-seg-tint > button {
+  border-color: transparent !important;
+}
+
+.ios-seg-tint > button.active {
+  color: #ffffff !important;
+}
+
+.ios-seg-tint > button:not(.active):hover {
+  color: #06b6d4;
+}
+
+.orders-tabs-bar.ios-seg {
+  display: inline-flex;
+}
+
+/* Cápsula blanca (vista lista / calendario) */
+.ios-seg-light {
+  padding: 4px;
+  gap: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.ios-seg-light .ios-seg-thumb {
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+.ios-seg-light > button {
+  border-color: transparent !important;
+}
+
+.ios-seg-light > button.active {
+  color: #06b6d4;
+}
+
+/* Cápsula cian suave (pago en el modal de pedido) */
+.ios-seg-soft {
+  padding: 4px;
+  gap: 4px;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.08);
+}
+
+.ios-seg-soft .ios-seg-thumb {
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #06b6d4, 0 4px 12px rgba(6, 182, 212, 0.18);
+}
+
+.ios-seg-soft > button {
+  border-color: transparent !important;
+}
+
+.ios-seg-soft > button.active {
+  color: #06b6d4;
+}
+
+/* ---------------------------------------------------------------
+   4. Menús (filtros, dropdowns del modal, productos, acciones)
+   --------------------------------------------------------------- */
+.ios-dd {
+  max-height: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  pointer-events: auto !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
+  border-radius: 20px !important;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+.ios-dd > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-dd .dropdown-options,
+.ios-dd .product-options-list,
+.actions-menu.ios-dd {
+  position: relative;
+  padding: 6px;
+}
+
+.actions-menu.ios-dd {
+  width: 210px;
+}
+
+/* La tarjeta/fila del menú abierto va por encima de las demás */
+.ios-dd-host {
+  z-index: 50;
+}
+
+.ios-dd-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.ios-dd-ind[data-tone="whatsapp"],
+.ios-dd-ind[data-tone="sheet"],
+.ios-dd-ind[data-tone="ready"]     { background: rgba(34, 197, 94, 0.12); }
+.ios-dd-ind[data-tone="complete"],
+.ios-dd-ind[data-tone="delivered"] { background: rgba(59, 130, 246, 0.12); }
+.ios-dd-ind[data-tone="preparing"] { background: rgba(168, 85, 247, 0.12); }
+.ios-dd-ind[data-tone="cancel"],
+.ios-dd-ind[data-tone="delete"]    { background: rgba(239, 68, 68, 0.1); }
+.ios-dd-ind[data-tone=""]          { background: rgba(118, 118, 128, 0.12); }
+
+.ios-dd .dropdown-option,
+.ios-dd .product-option,
+.ios-dd .action-item {
+  position: relative;
+  z-index: 1;
+  border-radius: 999px;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, transform 0.3s var(--ios-spring);
+}
+
+.ios-dd .dropdown-option {
+  padding: 0.65rem 0.95rem;
+}
+
+.ios-dd .dropdown-option:active,
+.ios-dd .product-option:active,
+.ios-dd .action-item:active {
+  transform: scale(0.97);
+}
+
+.ios-dd .dropdown-option.ios-hover span {
+  color: #0891b2;
+}
+
+/* Seleccionada: palomita a la derecha, como en iOS */
+.ios-dd .dropdown-option.selected span:last-child {
+  color: #0891b2;
+  font-weight: 600;
+}
+
+.ios-dd .dropdown-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 12px;
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+.ios-dd .action-item svg,
+.ios-dd .action-item i {
+  transition: color 0.15s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-dd .action-item.ios-hover svg,
+.ios-dd .action-item.ios-hover i {
+  transform: scale(1.12);
+}
+
+.ios-dd .action-item.delete {
+  border-top: 0;
+  margin-top: 0;
+}
+
+.ios-dd .product-dropdown-search-wrap {
+  margin: 6px 6px 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.1);
+}
+
+/* ---------------------------------------------------------------
+   5. Selects nativos (tipo de pedido, trabajador)
+   --------------------------------------------------------------- */
+.ios-select {
+  position: relative;
+  width: 100%;
+}
+
+.ios-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.ios-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0.8rem 1.1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.pos-ticket .ios-select-trigger {
+  padding: 0.55rem 0.9rem;
+  border-width: 1.5px;
+  font-size: 0.875rem;
+}
+
+.ios-select-trigger svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: #6b7280;
+  transition: transform 0.45s var(--ios-spring), color 0.2s ease;
+}
+
+.ios-select-trigger:hover {
+  border-color: #06b6d4;
+}
+
+.ios-select-trigger:active {
+  transform: scale(0.98);
+}
+
+.ios-select.is-open .ios-select-trigger {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.ios-select.is-open .ios-select-trigger svg {
+  transform: rotate(180deg);
+  color: #06b6d4;
+}
+
+.ios-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 3000;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.ios-select.ios-up .ios-select-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.ios-select-menu > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-select-option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.3s var(--ios-spring);
+}
+
+.ios-select-option.ios-hover {
+  color: #0891b2;
+}
+
+.ios-select-option:active {
+  transform: scale(0.97);
+}
+
+.ios-select-option.selected {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.ios-select-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 12px;
+  color: #06b6d4;
+}
+
+/* ---------------------------------------------------------------
+   6. Listas: filas, calendario, catálogo y ticket
+   --------------------------------------------------------------- */
+@keyframes iosRowIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.orders-table tbody tr.ios-row > td,
+.appointments-table tbody tr.ios-row > td,
+.pos-product-card.ios-row {
+  animation: iosRowIn 0.6s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 45ms);
+}
+
+@keyframes iosCellIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: none; }
+}
+
+.calendar-day.ios-cell {
+  animation: iosCellIn 0.5s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 8ms);
+}
+
+.calendar-day {
+  border-radius: 16px;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.calendar-day.has-appointments:active {
+  transform: scale(0.94);
+}
+
+.pos-product-card {
+  border-radius: 18px;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.35s var(--ios-spring);
+}
+
+@keyframes iosItemIn {
+  from { opacity: 0; transform: translateX(-14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.pos-item-row.ios-item-in,
+.item-row.ios-item-in {
+  animation: iosItemIn 0.5s var(--ios-spring);
+}
+
+.pos-item-row {
+  border-radius: 999px;
+}
+
+.pos-qty-num {
+  display: inline-block;
+}
+
+/* Bloques que aparecen (fecha/hora del POS, calculadora de efectivo) */
+@keyframes iosRevealIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.appt-pos-datetime,
+.cash-calculator {
+  animation: iosRevealIn 0.45s var(--ios-spring);
+}
+
+/* ---------------------------------------------------------------
+   7. Modales
+   --------------------------------------------------------------- */
+@keyframes iosBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosSheetIn  { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes iosSheetOut { from { transform: none; } to { transform: translateY(100%); } }
+
+.modal-overlay,
+.confirm-overlay {
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+.modal.active .modal-overlay,
+.confirm-modal.active .confirm-overlay {
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.modal.active .modal-content,
+.confirm-modal.active .confirm-content {
+  border-radius: 28px;
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.modal.ios-closing,
+.confirm-modal.ios-closing {
+  pointer-events: none;
+}
+
+.modal.ios-closing .modal-overlay,
+.confirm-modal.ios-closing .confirm-overlay {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.modal.ios-closing .modal-content,
+.confirm-modal.ios-closing .confirm-content {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.modal-close {
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.modal-close:active {
+  transform: scale(0.88);
+}
+
+.confirm-icon {
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.btn-confirm-cancel,
+.btn-confirm-action {
+  border-radius: 999px;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.btn-confirm-cancel {
+  border: 0;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.btn-confirm-cancel:hover {
+  background: rgba(118, 118, 128, 0.18);
+}
+
+.btn-confirm-cancel:active,
+.btn-confirm-action:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.cash-quick-btn {
+  border-radius: 999px;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.35s var(--ios-spring);
+}
+
+.cash-quick-btn:active {
+  transform: scale(0.9);
+}
+
+@media (max-width: 768px) {
+  /* En móvil el modal es una hoja que sube desde abajo */
+  .modal.active {
+    align-items: flex-end;
+  }
+
+  .modal.active .modal-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 24px 24px 0 0;
+    animation: iosSheetIn 0.6s var(--ios-spring) both;
+  }
+
+  .modal.ios-closing .modal-content {
+    animation: iosSheetOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
+  .orders-tabs-bar.ios-seg {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .orders-table tbody tr.ios-row > td,
+  .appointments-table tbody tr.ios-row > td,
+  .pos-product-card.ios-row,
+  .calendar-day.ios-cell,
+  .pos-item-row.ios-item-in,
+  .item-row.ios-item-in,
+  .modal.active .modal-content,
+  .confirm-modal.active .confirm-content,
+  .confirm-icon {
+    animation: none;
+  }
+}

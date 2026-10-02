@@ -1196,3 +1196,665 @@ document.getElementById('posSubmitBtn')?.addEventListener('click', async () => {
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Crear Pedido`;
     }
 });
+
+// ============================================================================
+// CAPA iOS 27 — Mis Citas y Mis Pedidos
+// El mismo bloque va al final de appointments.js y de orders.js. Mis Citas
+// carga los dos archivos, así que el candado de abajo evita correrlo dos veces.
+// No cambia la lógica de arriba: observa clases y nodos nuevos.
+// ============================================================================
+(function () {
+    if (window.__attomosIosPages) return;
+    window.__attomosIosPages = true;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+    const pop = (el, from = 0.85, duration = 520) => {
+        if (!el || reduce.matches || !el.animate) return;
+        el.animate([{ transform: `scale(${from})` }, { transform: 'scale(1)' }], { duration, easing: SPRING });
+    };
+
+    // ====================================================================
+    // 1. ENTRADA DE LA PÁGINA y de cada pestaña
+    // ====================================================================
+    function rise(elements, startAt = 0) {
+        let i = startAt;
+        elements.forEach((el) => {
+            if (!el) return;
+            el.classList.remove('ios-in');
+            void el.offsetWidth;   // reinicia la animación si ya la tenía
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        return i;
+    }
+    function panelParts(panel) {
+        if (!panel) return [];
+        if (panel.id === 'tab-punto-venta') return [...panel.querySelectorAll('.pos-catalog, .pos-ticket')];
+        return [
+            ...panel.querySelectorAll('.stats-grid > .stat-card'),
+            panel.querySelector('.controls-section'),
+            ...panel.querySelectorAll('.orders-container, .appointments-container, .calendar-container, .empty-state'),
+        ];
+    }
+    function pageEntrance() {
+        const header = document.querySelector('.page-header');
+        const i = rise([
+            header?.querySelector('.header-title'),
+            header?.querySelector('.header-actions'),
+            document.querySelector('.orders-tabs-bar'),
+        ]);
+        rise(panelParts(document.querySelector('.orders-tab-panel.active')), i);
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // ====================================================================
+    // 2. NÚMEROS DE LAS TARJETAS (también montos con $)
+    // ====================================================================
+    const countingNow = new WeakSet();
+    function parseStat(text) {
+        const raw = text.trim();
+        if (/^\d+$/.test(raw)) return { n: parseInt(raw, 10), money: false };
+        const m = /^\$([\d,]+(?:\.\d+)?)$/.exec(raw);
+        if (m) return { n: parseFloat(m[1].replace(/,/g, '')), money: true, commas: raw.includes(',') };
+        return null;
+    }
+    function formatStat(n, info) {
+        if (!info.money) return String(Math.round(n));
+        return '$' + (info.commas
+            ? n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : n.toFixed(2));
+    }
+    function countTo(el, from, to, info) {
+        if (from === to || reduce.matches) return;
+        countingNow.add(el);
+        const start = performance.now(), dur = 750;
+        (function frame(now) {
+            const t = clamp((now - start) / dur);
+            const e = 1 - Math.pow(1 - t, 3);
+            el.textContent = formatStat(from + (to - from) * e, info);
+            if (t < 1) requestAnimationFrame(frame);
+            else {
+                el.textContent = formatStat(to, info);
+                requestAnimationFrame(() => countingNow.delete(el));
+            }
+        })(start);
+    }
+    function watchNumbers() {
+        document.querySelectorAll('.stats-grid .stat-value').forEach((el) => {
+            let shown = parseStat(el.textContent)?.n || 0;
+            new MutationObserver(() => {
+                if (countingNow.has(el)) return;
+                const info = parseStat(el.textContent);
+                if (!info || info.n === shown) return;
+                const prev = shown;
+                shown = info.n;
+                el.textContent = formatStat(prev, info);
+                countTo(el, prev, info.n, info);
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    // ====================================================================
+    // 3. SEGMENTADOS: cápsula que se desliza (pestañas, vista, tipo, pago)
+    // ====================================================================
+    const SEGMENTS = [
+        ['.orders-tabs-bar', '.orders-tab', 'tint'],
+        ['.view-controls', '.view-btn', 'light'],
+        ['.pos-type-row', '.pos-type-btn', 'tint'],
+        ['.pos-payment-btns', '.pos-pay-btn', 'tint'],
+        ['.pay-method-toggle', '.pay-method-btn', 'soft'],
+    ];
+    const segments = new WeakSet();
+    function segmentFor(group, btnSel, tone) {
+        if (segments.has(group)) return;
+        segments.add(group);
+        group.classList.add('ios-seg', `ios-seg-${tone}`);
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        group.prepend(thumb);
+
+        const X = spring(0, 440, 30), Y = spring(0, 440, 30), W = spring(0, 440, 30), H = spring(0, 440, 30);
+        const S = spring(1, 600, 30, 0.001);
+        let ready = false;
+
+        function place(snap) {
+            const a = group.querySelector(`${btnSel}.active`);
+            if (!a || !group.offsetWidth || !a.offsetWidth) { ready = false; render(); return; }
+            X.t = a.offsetLeft; Y.t = a.offsetTop; W.t = a.offsetWidth; H.t = a.offsetHeight;
+            if (snap || !ready) {
+                [X, Y, W, H].forEach((s) => { s.v = s.t; s.vel = 0; });
+            }
+            ready = true;
+            render();
+            kick();
+        }
+        function render() {
+            if (!group.isConnected) { renderers.delete(render); [X, Y, W, H, S].forEach((s) => springs.delete(s)); return; }
+            if (!ready) { thumb.style.opacity = 0; return; }
+            const st = Math.min(Math.abs(X.vel) / 2600, 0.16);
+            thumb.style.opacity = 1;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.height = `${H.v}px`;
+            thumb.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${S.v * (1 + st)}, ${S.v * (1 - st * 0.4)})`;
+        }
+        renderers.add(render);
+
+        // La lógica original cambia .active; aquí solo se sigue ese cambio
+        new MutationObserver(() => place(false))
+            .observe(group, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        group.addEventListener('pointerdown', (e) => {
+            if (e.target.closest(`${btnSel}.active`)) { S.t = 0.94; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => group.addEventListener(ev, release));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(group);
+        place(true);
+    }
+    function enhanceSegments(root = document) {
+        SEGMENTS.forEach(([sel, btn, tone]) => {
+            if (root.matches?.(sel)) segmentFor(root, btn, tone);
+            root.querySelectorAll?.(sel).forEach((g) => segmentFor(g, btn, tone));
+        });
+    }
+
+    // ====================================================================
+    // 4. MENÚS: filtros, dropdowns del modal, productos y acciones de la tabla
+    // Nacen del botón con resorte y tienen una cápsula que sigue al cursor.
+    // ====================================================================
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    const menus = new WeakMap();
+    const ACTION_TONES = ['whatsapp', 'sheet', 'complete', 'preparing', 'ready', 'delivered', 'cancel', 'delete'];
+
+    function describeMenu(el) {
+        if (el.matches('.custom-dropdown-wrapper')) {
+            const menu = el.querySelector(':scope > .dropdown-menu');
+            return menu && {
+                menu, root: el,
+                anchor: el.querySelector(':scope > .form-dropdown, :scope > .filter-trigger, :scope > .form-input') || el,
+                container: menu.querySelector('.dropdown-options') || menu,
+                itemSel: '.dropdown-option',
+                isOpen: () => el.classList.contains('active'),
+            };
+        }
+        if (el.matches('.product-dropdown-wrapper')) {
+            const menu = el.querySelector('.product-dropdown-menu');
+            return menu && {
+                menu, root: el,
+                anchor: el.querySelector('.product-dropdown-input') || el,
+                container: menu.querySelector('.product-options-list') || menu,
+                itemSel: '.product-option',
+                isOpen: () => el.classList.contains('open'),
+            };
+        }
+        if (el.matches('.actions-menu')) {
+            return {
+                menu: el, root: el.parentElement,
+                anchor: el.parentElement.querySelector('.actions-btn') || el.parentElement,
+                container: el,
+                itemSel: '.action-item',
+                tones: true,
+                isOpen: () => el.classList.contains('active'),
+            };
+        }
+        return null;
+    }
+
+    function menuFor(el) {
+        if (menus.has(el)) return menus.get(el);
+        const d = describeMenu(el);
+        if (!d) return null;
+        const { menu, anchor, container, itemSel } = d;
+
+        menu.classList.add('ios-dd');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+
+        const ind = document.createElement('span');
+        ind.className = 'ios-dd-ind';
+        ind.setAttribute('aria-hidden', 'true');
+        container.prepend(ind);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null, savedPos = null;
+
+        function render() {
+            if (!menu.isConnected) {
+                renderers.delete(render);
+                [P, X, Y, W, H, V].forEach((s) => springs.delete(s));
+                return;
+            }
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+                anchor.classList.remove('ios-dd-anchor-open');
+                d.root?.classList.remove('ios-dd-host');
+                savedPos = null;
+            } else {
+                // orders.js borra el style del menú de acciones al cerrarlo;
+                // se repone la posición mientras termina la animación
+                if (!open && savedPos && !menu.style.position) Object.assign(menu.style, savedPos);
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = anchor.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 20, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        function hoverTo(item) {
+            if (item === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = item;
+            if (!item) { V.t = 0; kick(); return; }
+            if (!container.contains(ind)) container.prepend(ind);   // la lista se volvió a pintar
+            item.classList.add('ios-hover');
+            if (d.tones) ind.dataset.tone = ACTION_TONES.find((c) => item.classList.contains(c)) || '';
+            X.t = item.offsetLeft; Y.t = item.offsetTop; W.t = item.offsetWidth; H.t = item.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+        container.addEventListener('pointermove', (e) => {
+            const item = e.target.closest(itemSel);
+            if (item && container.contains(item)) hoverTo(item);
+        });
+        container.addEventListener('pointerleave', () => hoverTo(null));
+        menu.addEventListener('input', () => hoverTo(null));
+
+        function sync() {
+            const now = d.isOpen();
+            if (now === open) return;
+            open = now;
+            if (open) {
+                anchor.classList.add('ios-dd-anchor-open');
+                d.root?.classList.add('ios-dd-host');
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                requestAnimationFrame(() => {
+                    if (menu.style.position) {
+                        savedPos = { position: menu.style.position, top: menu.style.top, bottom: menu.style.bottom, right: menu.style.right, left: menu.style.left, zIndex: menu.style.zIndex };
+                    }
+                    const sel = container.querySelector(`${itemSel}.selected`);
+                    if (sel && container.scrollHeight > container.clientHeight) {
+                        container.scrollTop = sel.offsetTop - container.clientHeight / 2 + sel.offsetHeight / 2;
+                    }
+                });
+                if (!reduce.matches && menu.animate && d.tones) {
+                    menu.querySelectorAll(itemSel).forEach((it, i) => {
+                        it.animate(
+                            [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                            { duration: 380, delay: 30 + i * 20, easing: SPRING, fill: 'backwards' }
+                        );
+                    });
+                }
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        const api = { sync };
+        menus.set(el, api);
+        return api;
+    }
+
+    const MENU_SEL = '.custom-dropdown-wrapper, .product-dropdown-wrapper, .actions-menu';
+    function enhanceMenus(root = document) {
+        if (root.matches?.(MENU_SEL)) menuFor(root);
+        root.querySelectorAll?.(MENU_SEL).forEach(menuFor);
+    }
+
+    // ====================================================================
+    // 5. SELECTS NATIVOS (tipo de pedido, trabajador del POS)
+    // ====================================================================
+    const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const iosSelects = new Set();
+    function iosSelect(select) {
+        if (!select || select.dataset.iosSelect) return;
+        select.dataset.iosSelect = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'ios-select';
+        select.parentNode.insertBefore(wrap, select);
+        wrap.appendChild(select);
+        select.classList.add('ios-select-native');
+        select.tabIndex = -1;
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ios-select-trigger';
+        trigger.innerHTML = `<span class="ios-select-label"></span>${CHEVRON}`;
+        const label = trigger.querySelector('.ios-select-label');
+        const menu = document.createElement('div');
+        menu.className = 'ios-select-menu';
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+        const ind = document.createElement('span');
+        ind.className = 'ios-dd-ind';
+        wrap.append(trigger, menu);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        const paint = () => {
+            const o = select.options[select.selectedIndex];
+            label.textContent = o ? o.textContent.trim() : '';
+        };
+        function build() {
+            menu.innerHTML = '';
+            menu.appendChild(ind);
+            [...select.options].forEach((o) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'ios-select-option' + (o.selected ? ' selected' : '');
+                b.dataset.value = o.value;
+                b.textContent = o.textContent.trim();
+                menu.appendChild(b);
+            });
+        }
+        function render() {
+            if (!wrap.isConnected) {
+                renderers.delete(render);
+                [P, X, Y, W, H, V].forEach((s) => springs.delete(s));
+                iosSelects.delete(api);
+                return;
+            }
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = trigger.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    menu.style.clipPath = `inset(${lerp(a.top - c.top, 0, p)}px ${lerp(c.right - a.right, 0, p)}px ${lerp(c.bottom - a.bottom, 0, p)}px ${lerp(a.left - c.left, 0, p)}px round ${lerp(a.height / 2, 20, pc)}px)`;
+                }
+            }
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px)`;
+        }
+        renderers.add(render);
+
+        function hoverTo(b) {
+            if (b === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = b;
+            if (!b) { V.t = 0; kick(); return; }
+            b.classList.add('ios-hover');
+            X.t = b.offsetLeft; Y.t = b.offsetTop; W.t = b.offsetWidth; H.t = b.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+        function setOpen(v) {
+            if (v === open) return;
+            open = v;
+            wrap.classList.toggle('is-open', v);
+            if (v) {
+                iosSelects.forEach((s) => s !== api && s.close());
+                build();
+                wrap.classList.remove('ios-up');
+                const r = menu.getBoundingClientRect();
+                if (r.bottom > window.innerHeight - 12 && trigger.getBoundingClientRect().top - r.height > 12) wrap.classList.add('ios-up');
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+        trigger.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!open); });
+        menu.addEventListener('pointermove', (e) => { const b = e.target.closest('.ios-select-option'); if (b) hoverTo(b); });
+        menu.addEventListener('pointerleave', () => hoverTo(null));
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const b = e.target.closest('.ios-select-option');
+            if (!b) return;
+            if (select.value !== b.dataset.value) {
+                select.value = b.dataset.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            paint();
+            menu.querySelectorAll('.ios-select-option').forEach((x) => x.classList.toggle('selected', x === b));
+            setTimeout(() => setOpen(false), 160);
+        });
+        new MutationObserver(paint).observe(select, { subtree: true, childList: true, characterData: true });
+        select.addEventListener('change', paint);
+
+        const api = { close: () => setOpen(false), contains: (n) => wrap.contains(n) };
+        iosSelects.add(api);
+        paint();
+        render();
+    }
+    function enhanceSelects(root = document) {
+        root.querySelectorAll?.('#orderType, #apptPosWorker').forEach(iosSelect);
+    }
+    document.addEventListener('pointerdown', (e) => {
+        iosSelects.forEach((s) => { if (!s.contains(e.target)) s.close(); });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') iosSelects.forEach((s) => s.close());
+    });
+
+    // ====================================================================
+    // 6. LISTAS: filas de la tabla, calendario, catálogo y ticket del POS
+    // ====================================================================
+    function rowKey(tr) {
+        return tr.querySelector('[id^="dropdown-"]')?.id || null;
+    }
+    function watchTable(tbody) {
+        if (!tbody) return;
+        let prev = new Set();
+        new MutationObserver(() => {
+            const now = new Set();
+            let n = 0;
+            tbody.querySelectorAll(':scope > tr').forEach((tr) => {
+                const k = rowKey(tr);
+                if (!k) return;
+                now.add(k);
+                // Solo entran animadas las filas que no estaban en la vista anterior
+                if (!prev.has(k)) {
+                    tr.style.setProperty('--r', Math.min(n++, 14));
+                    tr.classList.add('ios-row');
+                }
+            });
+            prev = now;
+            enhanceMenus(tbody);
+        }).observe(tbody, { childList: true });
+    }
+
+    let calDir = 0;
+    function watchCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        if (!grid) return;
+        document.getElementById('prevMonth')?.addEventListener('click', () => { calDir = -1; }, true);
+        document.getElementById('nextMonth')?.addEventListener('click', () => { calDir = 1; }, true);
+        let pending = false;
+        new MutationObserver(() => {
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(() => {
+                pending = false;
+                if (reduce.matches || !grid.animate) return;
+                if (calDir) {
+                    grid.animate(
+                        [{ transform: `translateX(${calDir * 30}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+                        { duration: 500, easing: SPRING }
+                    );
+                }
+                grid.querySelectorAll('.calendar-day').forEach((c, i) => {
+                    c.style.setProperty('--r', i);
+                    c.classList.remove('ios-cell');
+                    void c.offsetWidth;
+                    c.classList.add('ios-cell');
+                });
+                calDir = 0;
+            });
+        }).observe(grid, { childList: true });
+    }
+
+    function watchCatalog() {
+        const grid = document.getElementById('posProductsGrid');
+        if (!grid) return;
+        new MutationObserver(() => {
+            let n = 0;
+            grid.querySelectorAll('.pos-product-card:not(.ios-row)').forEach((c) => {
+                c.style.setProperty('--r', Math.min(n++, 16));
+                c.classList.add('ios-row');
+            });
+        }).observe(grid, { childList: true });
+        // Al tocar un producto, rebota la tarjeta
+        grid.addEventListener('click', (e) => pop(e.target.closest('.pos-product-card'), 0.9, 450));
+    }
+
+    function watchTicket() {
+        const list = document.getElementById('posItemsList');
+        if (!list) return;
+        let prev = new Map();
+        new MutationObserver(() => {
+            const now = new Map();
+            list.querySelectorAll('.pos-item-row').forEach((row) => {
+                const name = row.querySelector('.pos-item-name')?.textContent || '';
+                const qty = parseInt(row.querySelector('.pos-qty-num')?.textContent, 10) || 0;
+                now.set(name, qty);
+                if (!prev.has(name)) row.classList.add('ios-item-in');
+                else if (prev.get(name) !== qty) pop(row.querySelector('.pos-qty-num'), qty > prev.get(name) ? 1.5 : 0.6, 460);
+            });
+            prev = now;
+        }).observe(list, { childList: true });
+    }
+
+    // ====================================================================
+    // 7. MODALES: entrada con resorte y salida animada
+    // ====================================================================
+    function animateClose(modal, done) {
+        if (!modal || !modal.classList.contains('active') || reduce.matches || modal.classList.contains('ios-closing')) { done(); return; }
+        modal.classList.add('ios-closing');
+        setTimeout(() => { done(); modal.classList.remove('ios-closing'); }, 230);
+    }
+    function wrapClose(name, getModal) {
+        const orig = window[name];
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            animateClose(getModal(), () => orig.apply(self, args));
+        };
+        wrapped.__ios = true;
+        window[name] = wrapped;
+    }
+
+    // ====================================================================
+    // OBSERVADOR GENERAL
+    // ====================================================================
+    new MutationObserver((records) => {
+        records.forEach((r) => {
+            if (r.type === 'attributes') {
+                const el = r.target;
+                if (!el.classList) return;
+                if (el.matches(MENU_SEL)) menuFor(el)?.sync();
+                // Al cambiar de pestaña, el panel nuevo entra escalonado
+                if (el.matches('.orders-tab-panel') && el.classList.contains('active') && r.oldValue && !r.oldValue.includes('active')) {
+                    rise(panelParts(el));
+                    enhanceSegments(el);
+                }
+                return;
+            }
+            r.addedNodes.forEach((n) => {
+                if (n.nodeType !== 1) return;
+                enhanceMenus(n);
+                enhanceSegments(n);
+                enhanceSelects(n);
+                if (n.matches('.item-row')) n.classList.add('ios-item-in');
+            });
+        });
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+
+    window.addEventListener('resize', () => renderers.forEach((r) => r()));
+    document.addEventListener('scroll', () => renderers.forEach((r) => r()), { passive: true, capture: true });
+
+    function init() {
+        pageEntrance();
+        watchNumbers();
+        enhanceSegments();
+        enhanceMenus();
+        enhanceSelects();
+        watchTable(document.getElementById('ordersList'));
+        watchTable(document.getElementById('appointmentsList'));
+        watchCalendar();
+        watchCatalog();
+        watchTicket();
+        // Se envuelven aquí (no antes) porque en Mis Citas orders.js vuelve a
+        // declarar algunas de estas funciones después de appointments.js
+        wrapClose('closeOrderModal', () => document.getElementById('orderModal'));
+        wrapClose('closeAppointmentModal', () => document.getElementById('appointmentModal'));
+        wrapClose('closeConfirmModal', () => document.getElementById('confirmModal'));
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
