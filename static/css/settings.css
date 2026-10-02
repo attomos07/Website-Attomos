@@ -839,3 +839,296 @@ body {
 .settings-grid > .settings-card:nth-child(2) { animation-delay: 0.15s; }
 .settings-grid > .settings-card:nth-child(3) { animation-delay: 0.25s; }
 .settings-grid > .settings-card:nth-child(4) { animation-delay: 0.35s; }
+
+/* ============================================================================
+   CAPA iOS 27 — Configuración
+   Trabaja con la capa iOS al final de settings.js
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 1. Entrada --- */
+/* Las animaciones anteriores se apagan: ahora entra cada bloque con .ios-in */
+.content-wrapper,
+.settings-card {
+  animation: none;
+}
+
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in,
+.settings-grid > .settings-card.ios-in:nth-child(n) {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+/* --- 2. Tarjetas --- */
+.settings-card {
+  border-radius: 28px;
+  transition: transform 0.6s var(--ios-spring), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.settings-card-icon {
+  transition: transform 0.55s var(--ios-spring);
+}
+
+.danger-info {
+  border-radius: 20px;
+}
+
+/* --- 3. Campos y botones en cápsula --- */
+.form-input {
+  border-radius: 999px;
+  padding-left: 1.4rem;
+}
+
+.toggle-password {
+  width: 38px;
+  height: 38px;
+  right: 0.6rem;
+  border-radius: 50%;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.toggle-password:hover {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.toggle-password:active {
+  transform: translateY(-50%) scale(0.85);
+}
+
+.toggle-password svg {
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.btn {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.25s ease, opacity 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.btn:active,
+.btn-primary:active,
+.btn-danger:active {
+  transform: scale(0.96);
+  transition-duration: 0.12s;
+}
+
+.btn-secondary {
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.btn-secondary:hover {
+  background: rgba(118, 118, 128, 0.18);
+}
+
+/* Mensajes de éxito / error: entran con rebote */
+.success-message,
+.error-message {
+  border-radius: 22px;
+}
+
+@keyframes slideInFromTop {
+  0%   { opacity: 0; transform: translateY(-14px) scale(0.96); filter: blur(4px); }
+  55%  { opacity: 1; transform: translateY(3px) scale(1.01); filter: blur(0); }
+  80%  { transform: translateY(-1px) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+/* --- 4. WhatsApp --- */
+.whatsapp-support {
+  border-radius: 28px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.6s var(--ios-spring), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.whatsapp-support:active {
+  transform: scale(0.98);
+  transition-duration: 0.15s;
+}
+
+.whatsapp-icon,
+.whatsapp-arrow {
+  transition: transform 0.6s var(--ios-spring);
+}
+
+.whatsapp-number {
+  border-radius: 999px;
+}
+
+/* --- 5. Modales --- */
+@keyframes iosBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.modal-overlay,
+.confirmation-modal-overlay {
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+/* El contenedor ya no hace fade: lo hacen el fondo y la tarjeta */
+.confirmation-modal.active,
+.success-modal.active {
+  animation: none;
+}
+
+.modal.active .modal-overlay,
+.confirmation-modal.active .confirmation-modal-overlay,
+.success-modal.active .confirmation-modal-overlay {
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.modal-content,
+.confirmation-modal-content,
+.success-modal-content {
+  border-radius: 28px;
+  box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.35), 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.modal.active .modal-content,
+.confirmation-modal.active .confirmation-modal-content,
+.success-modal.active .success-modal-content {
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.modal.active .modal-icon,
+.confirmation-modal.active .confirmation-modal-icon,
+.success-modal.active .success-modal-icon {
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+/* El ícono de la última advertencia late después de aparecer */
+.confirmation-modal.active .confirmation-modal-icon {
+  animation:
+    iosIconPop 0.6s var(--ios-spring) 0.12s both,
+    pulse 2s ease-in-out 0.8s infinite;
+}
+
+.modal.ios-closing,
+.confirmation-modal.ios-closing {
+  pointer-events: none;
+}
+
+.modal.ios-closing .modal-overlay,
+.confirmation-modal.ios-closing .confirmation-modal-overlay {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.modal.ios-closing .modal-content,
+.confirmation-modal.ios-closing .confirmation-modal-content {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* Campo "ELIMINAR": tiembla y avisa en línea */
+@keyframes iosShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+
+#confirmDelete.ios-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  animation: iosShake 0.42s ease;
+}
+
+.ios-field-hint {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin: 0;
+  padding-left: 1.4rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  opacity: 0;
+  overflow: hidden;
+  transition: grid-template-rows 0.45s var(--ios-spring-smooth), opacity 0.25s ease, margin 0.45s var(--ios-spring-smooth);
+}
+
+.ios-field-hint > span {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ios-field-hint.show {
+  grid-template-rows: 1fr;
+  margin-top: 0.6rem;
+  opacity: 1;
+}
+
+/* --- Móvil --- */
+@media (max-width: 768px) {
+  .settings-card,
+  .whatsapp-support {
+    border-radius: 22px;
+  }
+
+  .whatsapp-support:hover .whatsapp-arrow {
+    transform: rotate(90deg) translateX(6px);
+  }
+}
+
+/* --- Movimiento reducido --- */
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .settings-grid > .settings-card.ios-in:nth-child(n),
+  .modal.active .modal-content,
+  .confirmation-modal.active .confirmation-modal-content,
+  .success-modal.active .success-modal-content,
+  .modal.active .modal-icon,
+  .confirmation-modal.active .confirmation-modal-icon,
+  .success-modal.active .success-modal-icon,
+  #confirmDelete.ios-invalid {
+    animation: none;
+  }
+}

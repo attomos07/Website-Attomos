@@ -457,3 +457,221 @@ if (!document.getElementById('notification-styles')) {
     `;
     document.head.appendChild(style);
 }
+
+// ============================================================================
+// CAPA iOS 27 — Facturación
+// Entrada escalonada, filas que suben, menú de fila con resorte y cápsula
+// que sigue al cursor, estado que "rebota" al cambiar y modal con salida.
+// No cambia la lógica de arriba.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const SPRING = (window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)'))
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA DE LA PÁGINA
+    // ====================================================================
+    function pageEntrance() {
+        let i = 0;
+        [
+            document.querySelector('.page-header'),
+            document.querySelector('.subscription-card'),
+            document.getElementById('paymentsTableContainer'),
+        ].forEach((el) => {
+            if (!el) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // Filas de pagos: entran escalonadas cada vez que se pinta una página
+    function watchRows() {
+        const tbody = document.getElementById('paymentsTableBody');
+        if (!tbody) return;
+        const tag = () => {
+            let n = 0;
+            tbody.querySelectorAll('tr:not(.ios-row)').forEach((tr) => {
+                tr.style.setProperty('--r', n++);
+                tr.classList.add('ios-row');
+            });
+        };
+        new MutationObserver(tag).observe(tbody, { childList: true });
+        tag();
+    }
+
+    // El estado de la suscripción "rebota" cuando cambia
+    function watchStatus() {
+        const el = document.getElementById('subscriptionStatus');
+        if (!el || !el.animate) return;
+        let prev = el.className;
+        new MutationObserver(() => {
+            if (el.className === prev) return;
+            prev = el.className;
+            if (reduce.matches) return;
+            el.animate(
+                [{ transform: 'scale(0.6)', opacity: 0 }, { transform: 'none', opacity: 1 }],
+                { duration: 650, easing: SPRING }
+            );
+        }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // ====================================================================
+    // 2. MENÚ DE FILA (⋮): se despliega con resorte desde el botón y una
+    // cápsula sigue al cursor entre las opciones
+    // ====================================================================
+    function enhanceMenu(menu) {
+        if (menu.__ios) return;
+        menu.__ios = true;
+        menu.classList.add('ios-ctx');
+
+        const ind = document.createElement('span');
+        ind.className = 'ios-ctx-ind';
+        ind.setAttribute('aria-hidden', 'true');
+        menu.prepend(ind);
+
+        const Y = spring(0, 520, 36), H = spring(0, 520, 36), V = spring(0, 600, 44, 0.001);
+        let hovered = null;
+        function render() {
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translateY(${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+        function hoverTo(el) {
+            if (el === hovered) return;
+            hovered = el;
+            if (!el) { V.t = 0; kick(); return; }
+            Y.t = el.offsetTop; H.t = el.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { Y.v = Y.t; H.v = H.t; }
+            kick();
+        }
+        menu.addEventListener('pointermove', (e) => {
+            const b = e.target.closest('button');
+            if (b) hoverTo(b);
+        });
+        menu.addEventListener('pointerleave', () => hoverTo(null));
+
+        if (!reduce.matches && menu.animate) {
+            menu.animate(
+                [
+                    { clipPath: 'inset(0 0 calc(100% - 36px) calc(100% - 36px) round 18px)', opacity: 0.4 },
+                    { clipPath: 'inset(0 0 0 0 round 20px)', opacity: 1 },
+                ],
+                { duration: 520, easing: SPRING }
+            );
+            menu.querySelectorAll('button').forEach((b, i) => {
+                b.animate(
+                    [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                    { duration: 380, delay: 40 + i * 30, easing: 'cubic-bezier(0.34, 1.35, 0.64, 1)', fill: 'backwards' }
+                );
+            });
+        }
+
+        // Salida animada: la lógica original llama a menu.remove()
+        const nativeRemove = menu.remove.bind(menu);
+        let leaving = false;
+        menu.remove = function () {
+            if (leaving) return;
+            leaving = true;
+            renderers.delete(render);
+            [Y, H, V].forEach((s) => springs.delete(s));
+            if (reduce.matches || !menu.animate) { nativeRemove(); return; }
+            menu.style.pointerEvents = 'none';
+            const a = menu.animate(
+                [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.94) translateY(-4px)' }],
+                { duration: 160, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }
+            );
+            a.onfinish = nativeRemove;
+        };
+    }
+
+    function watchMenus() {
+        new MutationObserver((records) => {
+            records.forEach((r) => r.addedNodes.forEach((n) => {
+                if (n.nodeType === 1 && n.classList.contains('row-context-menu')) enhanceMenu(n);
+            }));
+        }).observe(document.body, { childList: true });
+    }
+
+    // ====================================================================
+    // 3. MODAL DE CONFIRMACIÓN: salida animada y Esc para cerrar
+    // ====================================================================
+    function wrapConfirmClose() {
+        const orig = window.closeConfirmModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const modal = document.getElementById('confirmModal');
+            if (!modal || !modal.classList.contains('active') || modal.classList.contains('ios-closing') || reduce.matches) {
+                orig.apply(self, args);
+                return;
+            }
+            modal.classList.add('ios-closing');
+            setTimeout(() => {
+                modal.classList.remove('ios-closing');
+                orig.apply(self, args);
+            }, 230);
+        };
+        wrapped.__ios = true;
+        window.closeConfirmModal = wrapped;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.querySelector('#confirmModal.active')) window.closeConfirmModal();
+        document.querySelectorAll('.row-context-menu').forEach((m) => m.remove());
+    });
+
+    function init() {
+        pageEntrance();
+        watchRows();
+        watchStatus();
+        watchMenus();
+        wrapConfirmClose();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

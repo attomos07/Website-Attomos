@@ -269,3 +269,132 @@ document.addEventListener('keydown', (e) => {
         closeFinalConfirmation();
     }
 });
+
+// ============================================================================
+// CAPA iOS 27 — Configuración
+// Entrada escalonada, modales con resorte y salida animada, y el campo
+// "ELIMINAR" tiembla en lugar de mostrar un alert(). No cambia la lógica.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // ====================================================================
+    // 1. ENTRADA
+    // ====================================================================
+    function pageEntrance() {
+        let i = 0;
+        [
+            document.querySelector('.page-header'),
+            ...document.querySelectorAll('.settings-grid > .settings-card'),
+        ].forEach((el) => {
+            if (!el) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+    }
+
+    // ====================================================================
+    // 2. MODALES: salida animada antes de que la lógica original los oculte
+    // ====================================================================
+    function wrapClose(name, id) {
+        const orig = window[name];
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const modal = document.getElementById(id);
+            // Esc llama a los dos cierres: si no está abierto, sigue normal
+            if (!modal || !modal.classList.contains('active') || modal.classList.contains('ios-closing') || reduce.matches) {
+                if (!modal || !modal.classList.contains('ios-closing')) orig.apply(self, args);
+                return;
+            }
+            modal.classList.add('ios-closing');
+            setTimeout(() => {
+                modal.classList.remove('ios-closing');
+                orig.apply(self, args);
+            }, 230);
+        };
+        wrapped.__ios = true;
+        window[name] = wrapped;
+    }
+
+    // ====================================================================
+    // 3. CONFIRMAR "ELIMINAR": tiembla y avisa en línea en vez de alert()
+    // ====================================================================
+    function wrapConfirmDelete() {
+        const orig = window.confirmDelete;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const input = document.getElementById('confirmDelete');
+        if (!input) return;
+
+        const hint = document.createElement('div');
+        hint.className = 'ios-field-hint';
+        hint.setAttribute('role', 'alert');
+        hint.innerHTML = '<span></span>';
+        const hintText = hint.firstChild;
+        input.insertAdjacentElement('afterend', hint);
+
+        const clear = () => {
+            input.classList.remove('ios-invalid');
+            hint.classList.remove('show');
+        };
+        input.addEventListener('input', clear);
+
+        const wrapped = function () {
+            const word = t('settings_delete_type', 'ELIMINAR');
+            if (input.value !== word) {
+                hintText.textContent = t('settings_confirm_type', 'Por favor escribe ELIMINAR para confirmar');
+                hint.classList.add('show');
+                input.classList.remove('ios-invalid');
+                void input.offsetWidth;            // reinicia el temblor
+                input.classList.add('ios-invalid');
+                input.focus();
+                return;
+            }
+            clear();
+            return orig.apply(this, arguments);
+        };
+        wrapped.__ios = true;
+        window.confirmDelete = wrapped;
+
+        // Al cerrar el modal se limpia el aviso
+        const closeOrig = window.closeDeleteModal;
+        if (typeof closeOrig === 'function') {
+            const closeWrapped = function () {
+                clear();
+                return closeOrig.apply(this, arguments);
+            };
+            closeWrapped.__ios = true;
+            window.closeDeleteModal = closeWrapped;
+        }
+    }
+
+    // Al abrir el modal de eliminar, el cursor va directo al campo
+    function focusOnOpen() {
+        const orig = window.showDeleteModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const out = orig.apply(this, arguments);
+            const input = document.getElementById('confirmDelete');
+            if (input && window.matchMedia('(pointer: fine)').matches) setTimeout(() => input.focus(), 350);
+            return out;
+        };
+        wrapped.__ios = true;
+        window.showDeleteModal = wrapped;
+    }
+
+    function init() {
+        pageEntrance();
+        wrapClose('closeDeleteModal', 'deleteModal');
+        wrapClose('closeFinalConfirmation', 'finalConfirmationModal');
+        wrapConfirmDelete();
+        focusOnOpen();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

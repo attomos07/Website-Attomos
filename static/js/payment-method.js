@@ -657,3 +657,380 @@ function showNotification(message, type = 'info') {
     setTimeout(() => n.classList.add('active'), 10);
     setTimeout(() => { n.classList.remove('active'); setTimeout(() => n.remove(), 300); }, 3500);
 }
+
+// ============================================================================
+// CAPA iOS 27 — Método de pago
+// Entrada escalonada, tarjeta que se inclina con el cursor y gira con
+// resorte, selects de mes/año estilo iOS, tarjetas guardadas escalonadas y
+// modal con salida. Los <select> originales siguen siendo la fuente de verdad.
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const CLOSED_CLIP = 'inset(50% 50% 50% 50%)';
+    const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    // --- Motor de resortes ---
+    const springs = new Set();
+    const renderers = new Set();
+    const spring = (v = 0, k = 380, d = 30, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.add(s);
+        return s;
+    };
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = null, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if ([...springs].every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ====================================================================
+    // 1. ENTRADA
+    // El encabezado entra de inmediato; las tarjetas cuando termina la carga.
+    // ====================================================================
+    function rise(elements, startAt = 0) {
+        let i = startAt;
+        elements.forEach((el) => {
+            if (!el) return;
+            el.style.setProperty('--i', i++);
+            el.classList.add('ios-in');
+        });
+    }
+
+    function pageEntrance() {
+        rise([document.querySelector('.page-header')]);
+        document.addEventListener('animationend', (e) => {
+            if (e.animationName === 'iosRiseMove' && e.target.classList.contains('ios-in')) {
+                e.target.classList.remove('ios-in');
+            }
+        });
+
+        const grid = document.getElementById('pmGrid');
+        if (!grid) return;
+        let shown = false;
+        const reveal = () => {
+            if (shown || grid.style.display === 'none') return;
+            shown = true;
+            rise([
+                document.querySelector('.card-visual-section'),
+                document.querySelector('.form-card'),
+                document.querySelector('.saved-methods-section'),
+            ], 1);
+        };
+        const mo = new MutationObserver(() => { reveal(); if (shown) mo.disconnect(); });
+        mo.observe(grid, { attributes: true, attributeFilter: ['style'] });
+        reveal();
+    }
+
+    // Tarjetas guardadas: entran escalonadas cada vez que se pinta la lista
+    function watchMethods() {
+        const list = document.getElementById('methodsList');
+        if (!list) return;
+        const tag = () => {
+            let n = 0;
+            list.querySelectorAll(':scope > .method-item:not(.ios-row), :scope > .btn-add-card:not(.ios-row), :scope > .pm-empty-methods:not(.ios-row)').forEach((el) => {
+                el.style.setProperty('--r', n++);
+                el.classList.add('ios-row');
+            });
+        };
+        new MutationObserver(tag).observe(list, { childList: true });
+        tag();
+    }
+
+    // ====================================================================
+    // 2. TARJETA: se inclina siguiendo al cursor (el giro lo hace el CSS)
+    // ====================================================================
+    function cardTilt() {
+        const wrapper = document.getElementById('cardWrapper');
+        if (!wrapper) return;
+        const RX = spring(0, 260, 22, 0.01), RY = spring(0, 260, 22, 0.01), S = spring(1, 300, 24, 0.0005);
+        function render() {
+            if (Math.abs(RX.v) < 0.01 && Math.abs(RY.v) < 0.01 && Math.abs(S.v - 1) < 0.0005) {
+                wrapper.style.transform = '';
+                return;
+            }
+            wrapper.style.transform = `perspective(900px) rotateX(${RX.v}deg) rotateY(${RY.v}deg) scale(${S.v})`;
+        }
+        renderers.add(render);
+        wrapper.addEventListener('pointermove', (e) => {
+            if (e.pointerType !== 'mouse' || reduce.matches) return;
+            const card = document.getElementById('creditCard');
+            const r = (card || wrapper).getBoundingClientRect();
+            const px = clamp((e.clientX - r.left) / r.width) - 0.5;
+            const py = clamp((e.clientY - r.top) / r.height) - 0.5;
+            RX.t = -py * 10;
+            RY.t = px * 12;
+            S.t = 1.02;
+            kick();
+        });
+        wrapper.addEventListener('pointerleave', () => { RX.t = 0; RY.t = 0; S.t = 1; kick(); });
+        wrapper.addEventListener('pointerdown', () => { S.t = 0.98; kick(); });
+        wrapper.addEventListener('pointerup', () => { S.t = 1.02; kick(); });
+    }
+
+    // ====================================================================
+    // 3. SELECTS DE MES Y AÑO estilo iOS
+    // ====================================================================
+    const selects = new Set();
+
+    function iosSelect(select) {
+        if (!select || select.dataset.iosSelect) return null;
+        select.dataset.iosSelect = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'ios-select';
+        select.parentNode.insertBefore(wrap, select);
+        wrap.appendChild(select);
+        select.classList.add('ios-select-native');
+        select.tabIndex = -1;
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ios-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.innerHTML = `<span class="ios-select-label"></span>${CHEVRON}`;
+        const label = trigger.querySelector('.ios-select-label');
+
+        const menu = document.createElement('div');
+        menu.className = 'ios-select-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.style.visibility = 'hidden';
+        menu.style.clipPath = CLOSED_CLIP;
+        const ind = document.createElement('span');
+        ind.className = 'ios-select-ind';
+        ind.setAttribute('aria-hidden', 'true');
+
+        wrap.append(trigger, menu);
+
+        const P = spring(0, 400, 30, 0.001);
+        const X = spring(0, 520, 36), Y = spring(0, 520, 36), W = spring(0, 520, 36), H = spring(0, 520, 36);
+        const V = spring(0, 600, 44, 0.001);
+        let open = false, hovered = null;
+
+        function paintLabel() {
+            const opt = select.options[select.selectedIndex];
+            label.textContent = opt ? opt.textContent.trim() : '';
+            trigger.classList.toggle('is-placeholder', !select.value);
+        }
+
+        function syncError() {
+            const has = select.classList.contains('error');
+            if (trigger.classList.contains('error') !== has) trigger.classList.toggle('error', has);
+        }
+
+        function buildOptions() {
+            menu.innerHTML = '';
+            menu.appendChild(ind);
+            [...select.options].forEach((o) => {
+                if (!o.value) return;   // el "MM" / "AAAA" vacío no se ofrece
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'ios-select-option';
+                b.setAttribute('role', 'option');
+                b.dataset.value = o.value;
+                b.textContent = o.textContent.trim();
+                if (o.value === select.value) { b.classList.add('selected'); b.setAttribute('aria-selected', 'true'); }
+                menu.appendChild(b);
+            });
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                menu.style.visibility = 'hidden';
+                menu.style.clipPath = CLOSED_CLIP;
+            } else {
+                menu.style.visibility = 'visible';
+                menu.style.setProperty('--ios-p', pc.toFixed(3));
+                if (open && atRest(P)) menu.style.clipPath = 'none';
+                else {
+                    const a = trigger.getBoundingClientRect(), c = menu.getBoundingClientRect();
+                    const t = lerp(a.top - c.top, 0, p), l = lerp(a.left - c.left, 0, p);
+                    const r = lerp(c.right - a.right, 0, p), b = lerp(c.bottom - a.bottom, 0, p);
+                    menu.style.clipPath = `inset(${t}px ${r}px ${b}px ${l}px round ${lerp(a.height / 2, 20, pc)}px)`;
+                }
+            }
+            const st = Math.min(Math.abs(Y.vel) / 1800, 0.2);
+            ind.style.width = `${W.v}px`;
+            ind.style.height = `${H.v}px`;
+            ind.style.opacity = clamp(V.v);
+            ind.style.transform = `translate(${X.v}px, ${Y.v}px) scale(${1 - st * 0.2}, ${1 + st})`;
+        }
+        renderers.add(render);
+
+        function hoverTo(el) {
+            if (el === hovered) return;
+            if (hovered) hovered.classList.remove('ios-hover');
+            hovered = el;
+            if (!el) { V.t = 0; kick(); return; }
+            el.classList.add('ios-hover');
+            X.t = el.offsetLeft; Y.t = el.offsetTop; W.t = el.offsetWidth; H.t = el.offsetHeight; V.t = 1;
+            if (V.v < 0.05) { X.v = X.t; Y.v = Y.t; W.v = W.t; H.v = H.t; }
+            kick();
+        }
+
+        function setOpen(v) {
+            if (v === open) return;
+            open = v;
+            wrap.classList.toggle('is-open', v);
+            trigger.setAttribute('aria-expanded', v);
+            // La tarjeta del formulario queda por encima de lo demás mientras está abierto
+            const host = wrap.closest('.form-card');
+            if (host) host.classList.toggle('ios-dd-host', v || [...selects].some((s) => s !== api && s.isOpen()));
+            if (v) {
+                selects.forEach((s) => s !== api && s.close());
+                buildOptions();
+                // Se abre hacia arriba si abajo no cabe
+                wrap.classList.remove('ios-up');
+                const r = menu.getBoundingClientRect();
+                if (r.bottom > window.innerHeight - 12 && trigger.getBoundingClientRect().top - r.height > 12) {
+                    wrap.classList.add('ios-up');
+                }
+                // La opción elegida queda a la vista
+                const sel = menu.querySelector('.ios-select-option.selected');
+                menu.scrollTop = sel ? Math.max(0, sel.offsetTop - menu.clientHeight / 2 + sel.offsetHeight / 2) : 0;
+                V.v = V.t = 0; hovered = null;
+                P.t = 1;
+                if (!reduce.matches && menu.animate) {
+                    menu.querySelectorAll('.ios-select-option').forEach((it, i) => {
+                        it.animate(
+                            [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+                            { duration: 380, delay: 30 + Math.min(i, 12) * 16, easing: 'cubic-bezier(0.34, 1.35, 0.64, 1)', fill: 'backwards' }
+                        );
+                    });
+                }
+            } else {
+                P.t = 0;
+                hoverTo(null);
+            }
+            render();
+            kick();
+        }
+
+        function choose(value) {
+            if (select.value !== value) {
+                select.value = value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            paintLabel();
+            menu.querySelectorAll('.ios-select-option').forEach((b) => {
+                const on = b.dataset.value === value;
+                b.classList.toggle('selected', on);
+                b.setAttribute('aria-selected', on);
+            });
+            setTimeout(() => setOpen(false), 160);   // deja ver la palomita antes de cerrar
+        }
+
+        trigger.addEventListener('click', () => setOpen(!open));
+        menu.addEventListener('pointermove', (e) => {
+            const el = e.target.closest('.ios-select-option');
+            if (el) hoverTo(el);
+        });
+        menu.addEventListener('pointerleave', () => hoverTo(null));
+        menu.addEventListener('scroll', () => hoverTo(null), { passive: true });
+        menu.addEventListener('click', (e) => {
+            const b = e.target.closest('.ios-select-option');
+            if (b) choose(b.dataset.value);
+        });
+        // populateMonths() reconstruye las opciones al cambiar idioma
+        new MutationObserver(paintLabel).observe(select, { subtree: true, childList: true, characterData: true });
+        // saveCard() marca errores en el <select>: se reflejan en el botón
+        new MutationObserver(syncError).observe(select, { attributes: true, attributeFilter: ['class'] });
+        select.addEventListener('change', paintLabel);
+
+        const api = {
+            close: () => setOpen(false),
+            isOpen: () => open,
+            contains: (n) => wrap.contains(n),
+            refresh: () => { paintLabel(); syncError(); },
+        };
+        selects.add(api);
+        paintLabel();
+        syncError();
+        render();
+        return api;
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        selects.forEach((s) => { if (!s.contains(e.target)) s.close(); });
+    });
+    window.addEventListener('resize', () => renderers.forEach((r) => r()));
+
+    // editMethod() y resetForm() cambian el valor sin disparar "change":
+    // después de llamarlas se repintan los botones
+    function wrapRefresh(name) {
+        const orig = window[name];
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const out = orig.apply(this, arguments);
+            selects.forEach((s) => s.refresh());
+            return out;
+        };
+        wrapped.__ios = true;
+        window[name] = wrapped;
+    }
+
+    // ====================================================================
+    // 4. MODAL DE CONFIRMACIÓN: salida animada y Esc para cerrar
+    // ====================================================================
+    function wrapConfirmClose() {
+        const orig = window.closeConfirmModal;
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const modal = document.getElementById('confirmModal');
+            if (!modal || !modal.classList.contains('active') || modal.classList.contains('ios-closing') || reduce.matches) {
+                orig.apply(self, args);
+                return;
+            }
+            modal.classList.add('ios-closing');
+            setTimeout(() => {
+                modal.classList.remove('ios-closing');
+                orig.apply(self, args);
+            }, 230);
+        };
+        wrapped.__ios = true;
+        window.closeConfirmModal = wrapped;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        selects.forEach((s) => s.close());
+        if (document.querySelector('#confirmModal.active')) window.closeConfirmModal();
+    });
+
+    function init() {
+        pageEntrance();
+        watchMethods();
+        cardTilt();
+        iosSelect(document.getElementById('fieldExpMonth'));
+        iosSelect(document.getElementById('fieldExpYear'));
+        wrapRefresh('editMethod');
+        wrapRefresh('resetForm');
+        wrapRefresh('cancelForm');
+        wrapConfirmClose();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

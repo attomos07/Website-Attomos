@@ -556,3 +556,583 @@ body {
     .card-number { font-size: 0.95rem; }
     .method-actions { flex-direction: column; }
 }
+
+/* ============================================================================
+   CAPA iOS 27 — Método de pago
+   Trabaja con la capa iOS al final de payment-method.js
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 1. Entrada --- */
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+@keyframes iosRowIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.methods-list > .ios-row {
+  animation: iosRowIn 0.6s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 55ms + 150ms);
+}
+
+@keyframes iosFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.pm-loading {
+  animation: iosFadeIn 0.4s ease both;
+}
+
+/* --- 2. Tarjetas contenedoras y encabezado --- */
+.card-visual-section,
+.saved-methods-section,
+.form-card {
+  border-radius: 28px;
+}
+
+.back-btn {
+  padding: 0.4rem 0.85rem 0.4rem 0.55rem;
+  margin-left: -0.55rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.back-btn:hover {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.back-btn:active {
+  transform: scale(0.95);
+}
+
+.back-btn i {
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.back-btn:hover i {
+  transform: translateX(-3px);
+}
+
+/* --- 3. Tarjeta: giro con resorte e inclinación (JS) --- */
+.credit-card-wrapper {
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.credit-card {
+  transition: transform 0.9s var(--ios-spring);
+}
+
+.card-face {
+  border-radius: 20px;
+}
+
+.no-card-state {
+  animation: iosFadeIn 0.5s var(--ios-spring) both;
+}
+
+/* --- 4. Tarjetas guardadas --- */
+.method-item {
+  border-radius: 22px;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, background 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.method-item:active {
+  transform: scale(0.98);
+  transition-duration: 0.12s;
+}
+
+.method-brand-icon {
+  border-radius: 8px;
+}
+
+.method-default-badge {
+  border-radius: 999px;
+}
+
+.method-action-btn {
+  border-radius: 50%;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.method-action-btn:active {
+  transform: scale(0.85);
+}
+
+.btn-add-card {
+  border-radius: 999px;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.btn-add-card:active {
+  transform: scale(0.97);
+}
+
+/* --- 5. Formulario --- */
+.form-header-icon {
+  border-radius: 50%;
+}
+
+.field-input {
+  border-radius: 999px;
+  padding-left: 2.75rem;
+}
+
+.field-icon {
+  left: 1rem;
+  z-index: 2;
+}
+
+.field-input-wrapper .toggle-cvc-visibility {
+  right: 0.5rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.field-input-wrapper .toggle-cvc-visibility:hover {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.field-input-wrapper .toggle-cvc-visibility:active {
+  transform: translateY(-50%) scale(0.85);
+}
+
+@keyframes iosBadgePop {
+  from { opacity: 0; transform: translateY(-50%) scale(0.5); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+
+.field-brand-badge {
+  border-radius: 999px;
+  animation: iosBadgePop 0.5s var(--ios-spring);
+}
+
+@keyframes iosRevealIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.cvc-hint {
+  border-radius: 18px;
+  animation: iosRevealIn 0.45s var(--ios-spring);
+}
+
+.cvc-hint-btn {
+  transition: transform 0.4s var(--ios-spring);
+}
+
+.cvc-hint-btn:active {
+  transform: scale(0.8);
+}
+
+/* Error: un pequeño temblor */
+@keyframes iosShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+.field-input.error,
+.ios-select-trigger.error {
+  animation: iosShake 0.4s ease;
+}
+
+/* Selects de mes / año */
+.ios-select {
+  position: relative;
+  display: block;
+}
+
+.ios-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.ios-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: normal;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.ios-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ios-select-trigger.is-placeholder .ios-select-label {
+  color: #9ca3af;
+}
+
+.ios-select-trigger svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: #9ca3af;
+  transition: transform 0.45s var(--ios-spring), color 0.2s ease;
+}
+
+.ios-select-trigger:hover {
+  border-color: #06b6d4;
+}
+
+.ios-select-trigger:active {
+  transform: scale(0.97);
+}
+
+.ios-select-trigger.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.ios-select.is-open .ios-select-trigger {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.ios-select.is-open .ios-select-trigger svg {
+  transform: rotate(180deg);
+  color: #06b6d4;
+}
+
+.ios-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  width: 100%;
+  min-width: 170px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  scrollbar-width: thin;
+}
+
+.ios-select.ios-up .ios-select-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.ios-select-menu > * {
+  opacity: calc((var(--ios-p, 1) - 0.3) * 2.5);
+}
+
+.ios-select-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.ios-select-option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.3s var(--ios-spring);
+}
+
+.ios-select-option.ios-hover {
+  color: #0891b2;
+}
+
+.ios-select-option:active {
+  transform: scale(0.97);
+}
+
+.ios-select-option.selected {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.ios-select-option.selected::after {
+  content: "✓";
+  margin-left: auto;
+  padding-left: 14px;
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+/* La tarjeta con un menú abierto queda por encima del resto */
+.form-card.ios-dd-host {
+  position: relative;
+  z-index: 50;
+}
+
+/* Interruptor "tarjeta principal" estilo iOS */
+.default-toggle {
+  border-radius: 22px;
+}
+
+.toggle-switch {
+  width: 50px;
+  height: 30px;
+}
+
+.toggle-slider {
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.22);
+  transition: background 0.3s ease;
+}
+
+.toggle-slider::before {
+  width: 26px;
+  height: 26px;
+  left: 2px;
+  top: 2px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
+  transition: transform 0.5s var(--ios-spring), width 0.3s var(--ios-spring);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Al presionar, la perilla se estira como en iOS */
+.toggle-label:active .toggle-slider::before {
+  width: 32px;
+}
+
+.toggle-label:active .toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(14px);
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+}
+
+/* Botones */
+.btn-save-card,
+.btn-cancel-form {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-save-card {
+  transition: box-shadow 0.25s ease, opacity 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.btn-cancel-form {
+  border: 0;
+  background: rgba(118, 118, 128, 0.12);
+  transition: background 0.2s ease, transform 0.45s var(--ios-spring);
+  animation: iosRevealIn 0.45s var(--ios-spring);
+}
+
+.btn-cancel-form:hover {
+  background: rgba(118, 118, 128, 0.18);
+}
+
+.btn-save-card:not(:disabled):active,
+.btn-cancel-form:active {
+  transform: scale(0.96);
+  transition-duration: 0.12s;
+}
+
+.btn-save-card i.lni-reload {
+  animation: spin 0.9s linear infinite;
+}
+
+/* --- 6. Modal de confirmación --- */
+@keyframes iosBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes iosModalIn {
+  from { transform: translateY(28px) scale(0.92); }
+  to   { transform: none; }
+}
+
+@keyframes iosModalFade {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes iosModalOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.confirm-overlay {
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+.confirm-modal.active .confirm-overlay {
+  animation: iosBackdropIn 0.3s ease both;
+}
+
+.confirm-modal.active .confirm-content {
+  border-radius: 28px;
+  box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.35), 0 2px 10px rgba(15, 23, 42, 0.06);
+  animation:
+    iosModalIn 0.6s var(--ios-spring) both,
+    iosModalFade 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.confirm-modal.ios-closing {
+  pointer-events: none;
+}
+
+.confirm-modal.ios-closing .confirm-overlay {
+  animation: iosBackdropOut 0.22s ease both;
+}
+
+.confirm-modal.ios-closing .confirm-content {
+  animation: iosModalOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.confirm-icon {
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+.confirm-list {
+  border-radius: 18px;
+}
+
+.btn-confirm-cancel,
+.btn-confirm-action {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.btn-confirm-cancel {
+  border: 0;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.btn-confirm-cancel:hover {
+  background: rgba(118, 118, 128, 0.18);
+}
+
+.btn-confirm-cancel:active,
+.btn-confirm-action:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* --- 7. Notificaciones --- */
+.notification {
+  border-left: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.4rem 0.85rem 1.1rem;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  transform: translateX(calc(100% + 40px));
+  transition: transform 0.6s var(--ios-spring);
+}
+
+.notification.active {
+  transform: none;
+}
+
+/* --- Móvil --- */
+@media (max-width: 768px) {
+  .card-visual-section,
+  .saved-methods-section,
+  .form-card {
+    border-radius: 22px;
+  }
+}
+
+/* --- Movimiento reducido --- */
+@media (prefers-reduced-motion: reduce) {
+  .ios-in,
+  .methods-list > .ios-row,
+  .field-brand-badge,
+  .cvc-hint,
+  .no-card-state,
+  .btn-cancel-form,
+  .field-input.error,
+  .ios-select-trigger.error,
+  .confirm-modal.active .confirm-content,
+  .confirm-icon {
+    animation: none;
+  }
+
+  .credit-card {
+    transition-duration: 0.01s;
+  }
+}
