@@ -3038,7 +3038,7 @@ function setText(id, val) {
     }
 
     function enhanceSegments(root = document) {
-        root.querySelectorAll('.price-type-toggle, .promo-period-type-toggle').forEach(segmentFor);
+        root.querySelectorAll('.price-type-toggle, .promo-period-type-toggle, .page-tabs-bar, .acct-subtabs').forEach(segmentFor);
     }
 
     // Chips de días: rebote al activar o desactivar

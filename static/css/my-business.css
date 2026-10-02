@@ -3047,3 +3047,634 @@ input:checked + .toggle-slider:before {
     transition: none;
   }
 }
+
+/* ============================================================================
+   REDISEÑO iOS — Mi Negocio
+   Mismo lenguaje que el index y el CRM: todo en blanco, separaciones con
+   bordes finos y sombras suaves, títulos compactos, controles en cápsula,
+   listas agrupadas y acentos en el cian de Attomos.
+   ============================================================================ */
+:root {
+  --mb-label: #1d1d1f;
+  --mb-label-2: #6e6e73;
+  --mb-label-3: #8e8e93;
+  --mb-hair: rgba(0, 0, 0, 0.08);
+  --mb-hair-2: rgba(60, 60, 67, 0.18);
+  --mb-tint: rgba(6, 182, 212, 0.07);
+  --mb-tint-2: rgba(6, 182, 212, 0.12);
+  --mb-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.05);
+  --mb-shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.05), 0 24px 56px rgba(0, 0, 0, 0.14);
+}
+
+body {
+  color: var(--mb-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Encabezado --- */
+.page-header {
+  border-bottom: 1px solid var(--mb-hair);
+}
+
+.page-title {
+  font-size: 2.1rem;
+  letter-spacing: -0.03em;
+  color: var(--mb-label);
+}
+
+.page-subtitle {
+  color: var(--mb-label-2);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Avisos de Ninda (estilos en línea: se necesita !important) */
+#nindaBannerNoPay,
+#nindaBannerActive {
+  border-radius: 22px !important;
+}
+
+#nindaBanner a {
+  border-radius: 999px !important;
+}
+
+/* --- Sucursal --- */
+.branch-dropdown-btn {
+  border: 1px solid var(--mb-hair-2);
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.branch-dropdown-btn:active {
+  transform: scale(0.97);
+}
+
+.branch-dropdown-wrapper.active .branch-dropdown-btn {
+  box-shadow: 0 0 0 4px var(--mb-tint-2);
+}
+
+.branch-badge {
+  background: var(--mb-tint-2);
+  color: #0891b2;
+}
+
+.btn-add-branch {
+  border: 1.5px dashed rgba(6, 182, 212, 0.55);
+  border-radius: 999px;
+  justify-content: center;
+}
+
+/* --- Selectores segmentados (fondo blanco, cápsula cian) --- */
+.ios-seg {
+  border: 1px solid var(--mb-hair) !important;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.promo-period-type-toggle.ios-seg {
+  border-color: #fde68a !important;
+  background: #ffffff;
+}
+
+/* Mi Negocio / Inventario / Contabilidad */
+.page-tabs-bar.ios-seg {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.page-tabs-bar.ios-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.page-tabs-bar.ios-seg .ios-seg-thumb,
+.acct-subtabs.ios-seg .ios-seg-thumb {
+  top: 3px;
+  bottom: 3px;
+}
+
+.page-tabs-bar .page-tab {
+  border: 0;
+  padding: 0.6rem 1.2rem;
+  color: var(--mb-label-2);
+  flex-shrink: 0;
+}
+
+.page-tabs-bar .page-tab:hover:not(.active) {
+  color: #0891b2;
+}
+
+.page-tabs-bar .page-tab.active {
+  color: #ffffff;
+}
+
+.acct-subtabs.ios-seg {
+  padding: 3px;
+  gap: 2px;
+}
+
+.acct-subtab {
+  border-radius: 999px;
+  color: var(--mb-label-2);
+}
+
+.acct-subtab.active {
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* --- Tarjetas --- */
+.profile-grid {
+  gap: 1.5rem;
+}
+
+.profile-card {
+  border: 1px solid var(--mb-hair);
+  border-radius: 28px;
+  box-shadow: var(--mb-shadow);
+  padding: 1.75rem;
+}
+
+.profile-card:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 16px 40px rgba(0, 0, 0, 0.07);
+}
+
+.card-header {
+  border-bottom: 1px solid var(--mb-hair);
+  margin-bottom: 1.25rem;
+}
+
+.card-title h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: var(--mb-label);
+}
+
+/* Ícono del título en círculo con tinte */
+.card-title > i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--mb-tint-2);
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+/* --- Campos --- */
+.info-label {
+  font-size: 0.82rem;
+  color: var(--mb-label-2);
+  letter-spacing: -0.005em;
+}
+
+.info-example {
+  color: var(--mb-label-3);
+}
+
+.info-input,
+.holiday-name-input,
+.select-search,
+.acct-input,
+.acct-select {
+  border: 1px solid var(--mb-hair-2);
+  border-radius: 999px;
+  background: #ffffff;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+
+.info-textarea,
+textarea.info-input,
+textarea.acct-input {
+  border: 1px solid var(--mb-hair-2);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.info-input:focus,
+.info-textarea:focus,
+.holiday-name-input:focus,
+.select-search:focus,
+.acct-input:focus,
+.acct-select:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px var(--mb-tint-2);
+  transform: none;
+}
+
+.form-select {
+  padding-right: 2.6rem;
+}
+
+.select-arrow {
+  right: 1.1rem;
+}
+
+.time-input-display {
+  border: 1px solid var(--mb-hair-2);
+  border-radius: 999px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.service-stock-qty {
+  border-radius: 999px !important;
+}
+
+/* --- Horario: lista agrupada con separadores finos --- */
+.schedule-list {
+  gap: 0;
+  border: 1px solid var(--mb-hair);
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+.schedule-day {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--mb-hair);
+  background: transparent;
+  transition: background 0.2s ease, opacity 0.3s ease;
+}
+
+.schedule-day:first-child {
+  border-radius: 21px 21px 0 0;
+}
+
+.schedule-day:last-child {
+  border-bottom: 0;
+  border-radius: 0 0 21px 21px;
+}
+
+.schedule-day:hover {
+  background: var(--mb-tint);
+}
+
+.day-name {
+  letter-spacing: -0.01em;
+}
+
+/* --- Elementos de lista: productos, trabajadores y días festivos --- */
+.service-item,
+.worker-item,
+.holiday-item {
+  background: #ffffff;
+  border: 1px solid var(--mb-hair);
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.3s ease;
+}
+
+.service-item:hover,
+.worker-item:hover,
+.holiday-item:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+  box-shadow: 0 8px 24px -12px rgba(6, 182, 212, 0.35);
+}
+
+.service-item.service-from-inventory {
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.empty-list-hint {
+  background: #ffffff;
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 20px;
+  color: var(--mb-label-3);
+}
+
+.day-chip {
+  border: 1px solid var(--mb-hair-2);
+  background: #ffffff;
+  color: var(--mb-label-2);
+}
+
+.day-chip.active {
+  border-color: #06b6d4;
+}
+
+/* Fotos */
+.service-images-grid {
+  background: #ffffff;
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 20px;
+}
+
+.service-images-grid:hover {
+  background: rgba(6, 182, 212, 0.04);
+  border-color: rgba(6, 182, 212, 0.5);
+}
+
+.service-img-thumb,
+.service-img-add-btn {
+  border-radius: 16px;
+}
+
+.service-img-add-btn {
+  border: 1.5px dashed var(--mb-hair-2);
+}
+
+.service-img-add-btn:hover,
+.service-images-grid:hover .service-img-add-btn {
+  background: #ffffff;
+}
+
+/* Imágenes de marca (estilos en <style> del HTML: se usa body para ganarles) */
+body .brand-upload-wrap {
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+body .brand-upload-wrap:hover {
+  border-color: rgba(6, 182, 212, 0.55);
+}
+
+body .brand-banner-preview img {
+  border-radius: 20px;
+}
+
+body .brand-logo-area {
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+body .btn-brand-upload {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mb-tint-2);
+  color: #0891b2;
+}
+
+body .btn-brand-upload:hover {
+  background: #06b6d4;
+  color: #ffffff;
+}
+
+body .menu-upload-area {
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 22px;
+}
+
+body .menu-upload-placeholder:hover {
+  background: var(--mb-tint);
+}
+
+.menu-file-viewer {
+  border: 1px solid var(--mb-hair);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.menu-file-viewer img {
+  background: #ffffff;
+}
+
+/* --- Botones --- */
+.btn-save {
+  border-radius: 999px;
+  padding: 0.95rem 1.6rem;
+  box-shadow: 0 12px 30px -10px rgba(6, 182, 212, 0.65);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring);
+}
+
+.btn-save:hover {
+  background: #0891b2;
+  transform: scale(1.03);
+}
+
+.btn-save:active {
+  transform: scale(0.95);
+  transition-duration: 0.12s;
+}
+
+/* Botones "tinted": fondo suave del mismo color, sin borde */
+.btn-card-add,
+.btn-add-holiday,
+.acct-btn-sm {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mb-tint-2);
+  color: #0891b2;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.btn-add-holiday {
+  align-self: flex-start;
+  width: auto;
+  padding: 0.65rem 1.25rem;
+}
+
+.btn-card-add:hover,
+.btn-add-holiday:hover,
+.acct-btn-sm:hover {
+  background: #06b6d4;
+  color: #ffffff;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-card-add:active,
+.btn-add-holiday:active,
+.acct-btn-sm:active {
+  transform: scale(0.95);
+}
+
+.btn-remove-holiday,
+.btn-remove-item,
+.acct-er-row-del,
+.btn-delete-branch {
+  border-radius: 50%;
+}
+
+/* --- Contabilidad --- */
+.acct-period-bar {
+  border: 1px solid var(--mb-hair);
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.acct-btn-load,
+.acct-btn-export,
+.acct-btn-submit,
+.acct-mov-type {
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.acct-btn-load:active,
+.acct-btn-export:active,
+.acct-btn-submit:active,
+.acct-mov-type:active {
+  transform: scale(0.96);
+}
+
+.acct-btn-export {
+  border: 1px solid var(--mb-hair-2);
+  color: var(--mb-label-2);
+}
+
+.acct-kpi-card {
+  border: 1px solid var(--mb-hair);
+  border-radius: 22px;
+  box-shadow: var(--mb-shadow);
+}
+
+.acct-kpi-card:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 16px 40px rgba(0, 0, 0, 0.07);
+}
+
+.acct-kpi-icon {
+  border-radius: 50%;
+}
+
+.acct-kpi-value {
+  letter-spacing: -0.03em;
+  color: var(--mb-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.acct-kpi-label {
+  color: var(--mb-label-2);
+}
+
+.acct-er-header {
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+}
+
+/* Renglones como lista agrupada */
+.acct-er-rows {
+  gap: 0;
+  border: 1px solid var(--mb-hair);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.acct-er-row {
+  background: #ffffff;
+  border-radius: 0;
+  border-bottom: 1px solid var(--mb-hair);
+}
+
+.acct-er-row:last-child {
+  border-bottom: 0;
+}
+
+.acct-er-row:hover {
+  background: var(--mb-tint);
+}
+
+.acct-er-row-cat {
+  background: var(--mb-tint-2);
+  color: #0891b2;
+}
+
+.acct-er-total-row,
+.acct-flujo-neto {
+  background: #06b6d4;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px -12px rgba(6, 182, 212, 0.7);
+}
+
+.acct-concil-box,
+.acct-flujo-section {
+  background: #ffffff;
+  border: 1px solid var(--mb-hair);
+  border-radius: 20px;
+}
+
+.acct-concil-box-label {
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-size: 0.82rem;
+  color: var(--mb-label-2);
+}
+
+.acct-bank-upload {
+  border: 1.5px dashed var(--mb-hair-2);
+  border-radius: 20px;
+}
+
+.acct-bank-upload:hover {
+  background: var(--mb-tint);
+  border-color: rgba(6, 182, 212, 0.55);
+}
+
+.acct-table tbody tr:hover td {
+  background: var(--mb-tint);
+}
+
+.acct-table td {
+  border-bottom: 1px solid var(--mb-hair);
+}
+
+/* Modal de movimiento */
+.acct-modal-overlay {
+  background: rgba(15, 23, 42, 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+.acct-modal-content {
+  border-radius: 28px;
+  box-shadow: var(--mb-shadow-pop);
+  animation: iosRiseMove 0.6s var(--ios-spring) both;
+}
+
+.acct-modal-header {
+  border-bottom: 1px solid var(--mb-hair);
+}
+
+.acct-modal-header h3 {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+/* --- Móvil --- */
+@media (max-width: 768px) {
+  .profile-card {
+    border-radius: 22px;
+    padding: 1.25rem;
+  }
+
+  .page-title {
+    font-size: 1.7rem;
+  }
+
+  .page-tabs-bar.ios-seg {
+    display: flex;
+    overflow-x: auto !important;
+  }
+
+  .page-tabs-bar .page-tab {
+    gap: 0.35rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.82rem;
+  }
+
+  /* Los menús ocultos (selector de hora) no deben empujar la página de lado */
+  body {
+    overflow-x: clip;
+  }
+
+  .btn-save {
+    right: 1rem;
+    bottom: 1rem;
+  }
+}

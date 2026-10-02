@@ -511,3 +511,1034 @@
   .drop-overlay.active{display:flex;}
   .drop-overlay i{font-size:36px;color:var(--accent-dark);}
   .drop-overlay span{font-size:14px;font-weight:700;color:var(--accent-dark);}
+
+/* ============================================================================
+   REDISEÑO iOS — CRM
+   Inspirado en Mensajes/Mail de iPadOS sin copiarlos: barra lateral gris con
+   selección en cápsula cian, lista con avatares tipo monograma, burbujas
+   redondas, controles segmentados, panel de detalle como listas agrupadas y
+   menús/modales de vidrio. Misma paleta y misma estructura de Attomos.
+   ============================================================================ */
+:root {
+  --at-label: #1d1d1f;
+  --at-label-2: #6e6e73;
+  --at-label-3: #8e8e93;
+  --at-fill: rgba(118, 118, 128, 0.12);
+  --at-fill-2: rgba(118, 118, 128, 0.18);
+  --at-sep: rgba(60, 60, 67, 0.12);
+  --at-bg-grouped: #ffffff;
+  --at-hairline: rgba(0, 0, 0, 0.08);
+  --at-glass: rgba(255, 255, 255, 0.78);
+  --at-bubble-in: #e9e9eb;
+  --at-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --at-shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.06), 0 24px 56px rgba(0, 0, 0, 0.16);
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--at-label);
+  background: var(--at-bg-grouped);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  transition: grid-template-columns 0.45s var(--ios-spring);
+}
+
+::-webkit-scrollbar-thumb { background: rgba(60, 60, 67, 0.22); }
+
+/* --- Botones redondos genéricos --- */
+.circle-btn,
+.icon-btn {
+  border: 0;
+  border-radius: 50%;
+  background: var(--at-fill);
+  color: var(--at-label-2);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.circle-btn:hover,
+.icon-btn:hover {
+  background: var(--at-fill-2);
+  color: var(--at-label);
+}
+
+.circle-btn:active,
+.icon-btn:active {
+  transform: scale(0.88);
+}
+
+.circle-btn.accent {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ============ COLUMNA 1: barra lateral ============ */
+.nav-rail {
+  background: var(--at-bg-grouped);
+  border-right: 1px solid var(--at-sep);
+  padding: 18px 12px;
+}
+
+.brand-name {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--at-label);
+}
+
+.nav-section {
+  margin-bottom: 20px;
+}
+
+/* Encabezados de sección como en la barra lateral de iPadOS */
+.nav-section-title {
+  padding: 0 12px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--at-label-3);
+}
+
+.nav-item {
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: var(--at-label);
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.nav-item i {
+  color: var(--accent);
+  font-size: 17px;
+}
+
+.nav-item:hover {
+  background: rgba(6, 182, 212, 0.07);
+}
+
+.nav-item:active {
+  transform: scale(0.97);
+}
+
+/* Selección: cápsula rellena con el cian de la marca */
+.nav-item.active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 16px -8px rgba(6, 182, 212, 0.7);
+}
+
+.nav-item.active i,
+.nav-item.active .chevron {
+  color: #ffffff !important;
+}
+
+.nav-item.active .chan-icon {
+  background: #ffffff;
+  border-radius: 6px;
+}
+
+.nav-item .count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--at-label-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-item.active .count {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tag-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.nav-item.active .tag-dot {
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.nav-submenu {
+  border-left: 0;
+  margin-left: 14px;
+  transition: max-height 0.45s var(--ios-spring);
+}
+
+.nav-subitem {
+  border-radius: 999px;
+  color: var(--at-label);
+}
+
+.nav-subitem i {
+  color: var(--accent);
+}
+
+.nav-subitem:hover {
+  background: rgba(6, 182, 212, 0.07);
+}
+
+.nav-item .chevron {
+  transition: transform 0.45s var(--ios-spring);
+}
+
+/* ============ COLUMNA 2: lista ============ */
+.list-col {
+  border-right: 1px solid var(--at-sep);
+}
+
+.list-header {
+  padding: 18px 16px 10px;
+  border-bottom: 0;
+}
+
+/* Título grande al estilo "Large Title" */
+.list-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--at-label);
+}
+
+.list-header h2 .filter-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.search-box {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--at-fill);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-box:focus-within {
+  background: #ffffff;
+  box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 5px rgba(6, 182, 212, 0.14);
+}
+
+.search-box i {
+  color: var(--at-label-3);
+}
+
+.search-box input {
+  font-size: 15px;
+  color: var(--at-label);
+}
+
+.search-box input::placeholder {
+  color: var(--at-label-3);
+}
+
+/* Mías / Sin asignar / Todos como control segmentado (cápsula en crm.js) */
+.tabs {
+  position: relative;
+  isolation: isolate;
+  gap: 2px;
+  margin: 4px 16px 6px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--at-fill);
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  gap: 5px;
+  white-space: nowrap;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--at-label-2);
+  font-size: 13px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease, opacity 0.2s ease;
+}
+
+.tab.active {
+  color: var(--at-label);
+  border-bottom-color: transparent;
+}
+
+.tab:not(.active):active {
+  opacity: 0.55;
+}
+
+.tab .badge {
+  padding: 1px 5px;
+  background: transparent;
+  color: var(--at-label-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tab.active .badge {
+  background: rgba(6, 182, 212, 0.14);
+  color: var(--accent-dark);
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+/* Sin JS, la pestaña activa sigue viéndose como seleccionada */
+.tabs:not(.ios-seg) .tab.active {
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.conv-list {
+  padding: 4px 8px 12px;
+}
+
+/* Filas tipo Mensajes: separador fino que empieza después del avatar */
+.conv-item {
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 18px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.18s ease, transform 0.35s var(--ios-spring);
+}
+
+.conv-item + .conv-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 64px;
+  right: 12px;
+  height: 1px;
+  background: var(--at-sep);
+}
+
+.conv-item:hover {
+  background: rgba(6, 182, 212, 0.06);
+}
+
+.conv-item:active {
+  transform: scale(0.985);
+}
+
+.conv-item.active::before,
+.conv-item:hover::before,
+.conv-item.active + .conv-item::before,
+.conv-item:hover + .conv-item::before {
+  opacity: 0;
+}
+
+.conv-item.active {
+  background: var(--accent);
+  box-shadow: 0 8px 20px -10px rgba(6, 182, 212, 0.7);
+}
+
+.conv-item.active .conv-name,
+.conv-item.active .conv-time,
+.conv-item.active .conv-snippet {
+  color: #ffffff;
+}
+
+.conv-item.active .conv-snippet,
+.conv-item.active .conv-time {
+  opacity: 0.85;
+}
+
+.conv-item.active .mini-tag {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.conv-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--at-label);
+}
+
+.conv-time {
+  font-size: 12.5px;
+  color: var(--at-label-3);
+}
+
+.conv-snippet {
+  font-size: 13.5px;
+  color: var(--at-label-2);
+}
+
+/* Avatares con monograma y degradado gris, como en Contactos */
+.avatar,
+.detail-avatar {
+  background: linear-gradient(180deg, #a5abb6 0%, #858b96 100%);
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+}
+
+.conv-item.active .avatar {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+.avatar .ch-badge {
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.empty-list {
+  color: var(--at-label-3);
+  font-size: 14px;
+}
+
+/* ============ COLUMNA 3: conversación ============ */
+.chat-col {
+  background: #ffffff;
+}
+
+.chat-header {
+  padding: 12px 20px;
+  background: var(--at-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--at-sep);
+  position: relative;
+  z-index: 5;
+}
+
+.chat-header .avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.chat-header-name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--at-label);
+}
+
+.chat-header-sub {
+  color: var(--at-label-2);
+}
+
+.btn-resolve {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.btn-resolve:hover {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.btn-resolve:active {
+  transform: scale(0.95);
+}
+
+/* Menús contextuales de vidrio */
+.dropdown-menu {
+  min-width: 210px;
+  padding: 6px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), var(--at-shadow-pop);
+  transform-origin: top right;
+  transform: scale(0.6);
+  transition: opacity 0.18s ease, transform 0.45s var(--ios-spring);
+}
+
+.dropdown-menu.open {
+  transform: none;
+}
+
+.composer-toolbar .dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+  transform-origin: bottom left;
+}
+
+.dropdown-item {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  color: var(--at-label);
+}
+
+.dropdown-item i {
+  color: var(--accent);
+}
+
+.dropdown-item:hover {
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.window-banner {
+  margin: 12px 20px 0;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+/* Burbujas redondas tipo Mensajes */
+.messages {
+  padding: 18px 20px;
+  gap: 2px;
+}
+
+.msg-row {
+  max-width: 66%;
+  margin-bottom: 6px;
+}
+
+.msg-row.sending {
+  animation: messageIn 0.5s var(--ios-spring);
+}
+
+.bubble {
+  padding: 9px 14px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.msg-row.in .bubble {
+  background: var(--at-bubble-in);
+  border: 0;
+  color: var(--at-label);
+  border-bottom-left-radius: 6px;
+}
+
+.msg-row.out .bubble {
+  background: var(--accent);
+  border-bottom-right-radius: 6px;
+}
+
+.msg-time {
+  font-size: 11px;
+  color: var(--at-label-3);
+}
+
+.sys-note {
+  background: transparent;
+  color: var(--at-label-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bubble .att-media {
+  border-radius: 14px;
+}
+
+/* Barra de redacción */
+.composer {
+  padding: 10px 20px 16px;
+  border-top: 1px solid var(--at-sep);
+  background: var(--at-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.ai-control-bar {
+  padding: 6px 6px 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  transition: background 0.3s ease;
+}
+
+.ai-control-bar.human {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.ai-status {
+  font-size: 13px;
+}
+
+/* Punto "en vivo" que late */
+.ai-status-dot {
+  position: relative;
+}
+
+.ai-status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: atLive 1.8s ease-out infinite;
+}
+
+@keyframes atLive {
+  from { transform: scale(1); opacity: 0.7; }
+  to   { transform: scale(2.8); opacity: 0; }
+}
+
+.ai-control-btn {
+  padding: 7px 14px;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s ease, transform 0.4s var(--ios-spring);
+}
+
+.ai-control-btn:active {
+  transform: scale(0.95);
+}
+
+/* Responder / Nota privada también como segmentado */
+.composer-tabs {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--at-fill);
+}
+
+.composer-tab {
+  position: relative;
+  z-index: 1;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--at-label-2);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease;
+}
+
+.composer-tab.active {
+  color: var(--at-label);
+  border-bottom-color: transparent;
+}
+
+.composer-tabs:not(.ios-seg) .composer-tab.active {
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.composer-box {
+  padding: 8px 8px 8px 16px;
+  border: 1px solid rgba(60, 60, 67, 0.18);
+  border-radius: 24px;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.composer-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+}
+
+.composer-box textarea {
+  font-size: 15px;
+  padding-top: 4px;
+  background: transparent;
+}
+
+.composer-box textarea::placeholder {
+  color: var(--at-label-3);
+}
+
+.composer-toolbar {
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.composer-toolbar .icon-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--at-label-3);
+}
+
+.composer-toolbar .icon-btn:hover {
+  background: var(--at-fill);
+  color: var(--accent-dark);
+}
+
+.composer-toolbar .icon-btn.recording {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.send-btn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.send-btn:active {
+  transform: scale(0.94);
+}
+
+.attachment-preview {
+  border: 0;
+  border-radius: 16px;
+  background: var(--at-fill);
+  animation: atPop 0.45s var(--ios-spring);
+}
+
+.attachment-preview img,
+.attachment-preview video,
+.attachment-preview .att-icon {
+  border-radius: 10px;
+}
+
+@keyframes atPop {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: none; }
+}
+
+.drop-overlay {
+  margin: 10px;
+  border: 2px dashed var(--accent);
+  border-radius: 28px;
+  background: rgba(6, 182, 212, 0.08);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* ============ COLUMNA 4: detalle como listas agrupadas ============ */
+.detail-col {
+  background: var(--at-bg-grouped);
+  border-left: 1px solid var(--at-sep);
+  padding: 14px 14px 20px;
+}
+
+.detail-profile {
+  padding-bottom: 18px;
+  margin-bottom: 14px;
+  border-bottom: 0;
+}
+
+.detail-avatar {
+  width: 84px;
+  height: 84px;
+  font-size: 30px;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.4);
+}
+
+.detail-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--at-label);
+}
+
+.detail-status {
+  font-size: 13px;
+  color: var(--success);
+}
+
+/* Acciones rápidas como en la ficha de Contactos */
+.detail-quick-actions {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.detail-quick-actions .icon-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid var(--at-hairline);
+  color: var(--accent);
+  font-size: 18px;
+  box-shadow: var(--at-shadow);
+}
+
+.detail-quick-actions .icon-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.detail-quick-actions .icon-btn:last-child {
+  color: var(--danger);
+}
+
+.detail-quick-actions .icon-btn:last-child:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.detail-row {
+  margin: 0;
+  padding: 11px 14px;
+  background: #ffffff;
+  border: 1px solid var(--at-hairline);
+  font-size: 14px;
+  color: var(--at-label);
+}
+
+.detail-row i {
+  color: var(--accent);
+}
+
+.detail-row + .detail-row {
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+}
+
+.detail-profile + .detail-row {
+  border-radius: 16px 16px 0 0;
+}
+
+.section {
+  margin-top: 18px;
+  margin-bottom: 0;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--at-hairline);
+  border-radius: 18px;
+}
+
+.section-title {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--at-label-3);
+}
+
+.field label {
+  font-size: 12.5px;
+  color: var(--at-label-2);
+}
+
+.select-like {
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--at-fill);
+  font-size: 14px;
+  color: var(--at-label);
+  transition: background 0.2s ease, transform 0.35s var(--ios-spring);
+}
+
+.select-like:hover {
+  background: var(--at-fill-2);
+}
+
+.select-like:active {
+  transform: scale(0.98);
+}
+
+.tag-chip {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+
+.add-tag-box {
+  padding: 8px 14px;
+  border: 1px dashed rgba(60, 60, 67, 0.25);
+  border-radius: 999px;
+  color: var(--at-label-3);
+  font-size: 13px;
+}
+
+.note-box {
+  border: 1px dashed rgba(60, 60, 67, 0.22);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--at-label-3);
+  font-size: 13px;
+}
+
+/* ============ Vista de contactos ============ */
+.contacts-view {
+  background: var(--at-bg-grouped);
+}
+
+.contacts-header {
+  padding: 22px 28px 14px;
+  border-bottom: 0;
+}
+
+.contacts-header h2 {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+  color: var(--at-label);
+}
+
+.contacts-view .search-box {
+  background: #ffffff;
+  border: 1px solid var(--at-hairline);
+}
+
+.contacts-grid {
+  padding: 8px 28px 28px;
+  gap: 12px;
+}
+
+.contact-card {
+  padding: 14px 16px;
+  border: 1px solid var(--at-hairline);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: var(--at-shadow);
+  transition: box-shadow 0.3s ease, transform 0.45s var(--ios-spring);
+}
+
+.contact-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 14px 32px rgba(0, 0, 0, 0.09);
+}
+
+.contact-card:active {
+  transform: scale(0.98);
+}
+
+.contact-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--at-label);
+}
+
+/* ============ Modales tipo hoja ============ */
+@keyframes atBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes atBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes atSheetIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes atSheetOut {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(16px) scale(0.95); }
+}
+
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+.modal-overlay.open {
+  animation: atBackdropIn 0.3s ease both;
+}
+
+.modal-overlay.open .modal-box {
+  animation: atSheetIn 0.6s var(--ios-spring) both;
+}
+
+.modal-overlay.ios-closing {
+  pointer-events: none;
+  animation: atBackdropOut 0.22s ease both;
+}
+
+.modal-overlay.ios-closing .modal-box {
+  animation: atSheetOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.modal-box {
+  padding: 22px;
+  border-radius: 30px;
+  background: var(--at-bg-grouped);
+  box-shadow: var(--at-shadow-pop);
+}
+
+.modal-header h3 {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--at-label);
+}
+
+.export-section {
+  border: 1px solid var(--at-hairline);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.export-section h4 {
+  font-size: 15px;
+  color: var(--at-label);
+}
+
+.export-section p {
+  font-size: 13px;
+  color: var(--at-label-2);
+}
+
+.format-btn {
+  border: 0;
+  border-radius: 18px;
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--accent-dark);
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.format-btn:hover {
+  border-color: transparent;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.format-btn:active {
+  transform: scale(0.95);
+}
+
+.export-status.show {
+  animation: atPop 0.45s var(--ios-spring);
+}
+
+.video-record-stage {
+  border-radius: 22px;
+}
+
+.video-record-actions .ai-control-btn {
+  padding: 12px 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app,
+  .nav-item,
+  .conv-item,
+  .dropdown-menu,
+  .msg-row.sending,
+  .modal-overlay.open .modal-box,
+  .ai-status-dot::after {
+    transition-duration: 0.01s;
+    animation: none;
+  }
+}

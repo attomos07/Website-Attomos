@@ -827,3 +827,111 @@ updateCounts();
 renderList();
 renderChat();
 applyGrid();
+
+// ============================================================================
+// REDISEÑO iOS — CRM
+// Controles segmentados (Mías/Sin asignar/Todos y Responder/Nota) con cápsula
+// que se desliza y modales que salen con animación. No cambia la lógica:
+// los clics siguen llegando a selectFilter() / selectComposerTab().
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    function segmented(box, itemSelector) {
+        if (!box || box.classList.contains('ios-seg')) return;
+        box.classList.add('ios-seg');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        box.prepend(thumb);
+
+        const S = { x: 0, w: 0, h: 0, y: 0 };
+        const V = { x: 0, w: 0, h: 0, y: 0 };
+        const T = { x: 0, w: 0, h: 0, y: 0 };
+        let raf = null, last = 0, ready = false, press = 1, pressT = 1, pressV = 0;
+
+        function render() {
+            const st = Math.min(Math.abs(V.x) / 2600, 0.14);
+            thumb.style.opacity = ready ? 1 : 0;
+            thumb.style.width = `${S.w}px`;
+            thumb.style.height = `${S.h}px`;
+            thumb.style.transform = `translate(${S.x}px, ${S.y}px) scale(${press * (1 + st)}, ${press * (1 - st * 0.4)})`;
+        }
+        function tick(now) {
+            const dt = Math.min((now - last) / 1000, 1 / 30);
+            last = now;
+            let moving = false;
+            ['x', 'w', 'h', 'y'].forEach((k) => {
+                if (reduce.matches) { S[k] = T[k]; V[k] = 0; return; }
+                V[k] += (-440 * (S[k] - T[k]) - 30 * V[k]) * dt;
+                S[k] += V[k] * dt;
+                if (Math.abs(S[k] - T[k]) > 0.1 || Math.abs(V[k]) > 0.5) moving = true;
+            });
+            pressV += (-600 * (press - pressT) - 30 * pressV) * dt;
+            press += pressV * dt;
+            if (Math.abs(press - pressT) > 0.001 || Math.abs(pressV) > 0.01) moving = true;
+            render();
+            if (!moving) {
+                Object.assign(S, T); press = pressT;
+                ['x', 'w', 'h', 'y'].forEach((k) => { V[k] = 0; });
+                pressV = 0; render(); raf = null; return;
+            }
+            raf = requestAnimationFrame(tick);
+        }
+        function kick() {
+            if (raf) return;
+            last = performance.now();
+            raf = requestAnimationFrame(tick);
+        }
+        function place(snap) {
+            const a = box.querySelector(`${itemSelector}.active`);
+            if (!a || !a.offsetWidth) return;
+            T.x = a.offsetLeft; T.y = a.offsetTop; T.w = a.offsetWidth; T.h = a.offsetHeight;
+            if (snap || !ready) { Object.assign(S, T); ['x', 'w', 'h', 'y'].forEach((k) => { V[k] = 0; }); }
+            ready = true;
+            render();
+            kick();
+        }
+        // selectFilter()/selectComposerTab() cambian la clase .active: se sigue
+        new MutationObserver(() => place(false)).observe(box, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        box.addEventListener('pointerdown', (e) => {
+            if (e.target.closest(`${itemSelector}.active`)) { pressT = 0.95; kick(); }
+        });
+        const release = () => { pressT = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => box.addEventListener(ev, release));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(box);
+        place(true);
+    }
+
+    // Modales: salida animada antes de que la lógica original los oculte
+    function wrapClose(name, id) {
+        const orig = window[name];
+        if (typeof orig !== 'function' || orig.__ios) return;
+        const wrapped = function () {
+            const args = arguments, self = this;
+            const modal = document.getElementById(id);
+            if (!modal || !modal.classList.contains('open') || modal.classList.contains('ios-closing') || reduce.matches) {
+                if (!modal || !modal.classList.contains('ios-closing')) orig.apply(self, args);
+                return;
+            }
+            modal.classList.add('ios-closing');
+            setTimeout(() => {
+                modal.classList.remove('ios-closing');
+                orig.apply(self, args);
+            }, 220);
+        };
+        wrapped.__ios = true;
+        window[name] = wrapped;
+    }
+
+    segmented(document.querySelector('.tabs'), '.tab');
+    segmented(document.querySelector('.composer-tabs'), '.composer-tab');
+    wrapClose('closeExportModal', 'exportModal');
+    wrapClose('closeVideoRecordModal', 'videoRecordModal');
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.querySelector('#exportModal.open')) window.closeExportModal();
+        else if (document.querySelector('#videoRecordModal.open')) window.closeVideoRecordModal();
+    });
+})();

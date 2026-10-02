@@ -1291,3 +1291,176 @@ if (typeof module !== 'undefined' && module.exports) {
         isMobileDevice
     };
 }
+
+// ============================================================================
+// REDISEÑO iOS — Index
+// Mensual/Anual como control segmentado, precios que ruedan al cambiar e
+// indicador de página en el carrusel. El checkbox #billingToggle sigue siendo
+// la fuente de verdad: aquí solo se le cambia el valor y se dispara "change".
+// ============================================================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+
+    // --- Resorte para la cápsula del selector ---
+    function springValue(v, k = 440, d = 30) {
+        return { v, t: v, vel: 0, k, d };
+    }
+
+    // ====================================================================
+    // 1. MENSUAL / ANUAL
+    // ====================================================================
+    function billingSegment() {
+        const box = document.querySelector('.billing-toggle');
+        const input = document.getElementById('billingToggle');
+        if (!box || !input || box.classList.contains('ios-billing')) return;
+        const labels = box.querySelectorAll('.toggle-label');
+        if (labels.length < 2) return;
+
+        const seg = document.createElement('div');
+        seg.className = 'ios-billing-seg';
+        seg.setAttribute('role', 'radiogroup');
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-billing-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        const monthly = document.createElement('button');
+        const annual = document.createElement('button');
+        [monthly, annual].forEach((b, i) => {
+            b.type = 'button';
+            b.className = 'ios-billing-opt';
+            b.setAttribute('role', 'radio');
+            b.appendChild(labels[i]);   // se mueven: data-translate sigue funcionando
+        });
+        seg.append(thumb, monthly, annual);
+        box.appendChild(seg);
+        box.classList.add('ios-billing');
+
+        const X = springValue(0), W = springValue(0);
+        let raf = null, last = 0, ready = false;
+        function render() {
+            const st = Math.min(Math.abs(X.vel) / 2600, 0.16);
+            thumb.style.opacity = ready ? 1 : 0;
+            thumb.style.width = `${W.v}px`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${1 + st}, ${1 - st * 0.4})`;
+        }
+        function tick(now) {
+            const dt = Math.min((now - last) / 1000, 1 / 30);
+            last = now;
+            [X, W].forEach((s) => {
+                if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+                s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+                s.v += s.vel * dt;
+            });
+            render();
+            const rest = [X, W].every((s) => Math.abs(s.v - s.t) < 0.1 && Math.abs(s.vel) < 0.5);
+            if (rest) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; render(); raf = null; return; }
+            raf = requestAnimationFrame(tick);
+        }
+        function place(snap) {
+            const a = input.checked ? annual : monthly;
+            monthly.classList.toggle('active', !input.checked);
+            annual.classList.toggle('active', input.checked);
+            monthly.setAttribute('aria-checked', !input.checked);
+            annual.setAttribute('aria-checked', input.checked);
+            if (!a.offsetWidth) return;
+            X.t = a.offsetLeft; W.t = a.offsetWidth;
+            if (snap || !ready) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+            ready = true;
+            render();
+            if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
+        }
+        function choose(isAnnual) {
+            if (input.checked === isAnnual) return;
+            input.checked = isAnnual;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            place(false);
+        }
+        monthly.addEventListener('click', () => choose(false));
+        annual.addEventListener('click', () => choose(true));
+        input.addEventListener('change', () => place(false));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(seg);
+        place(true);
+    }
+
+    // ====================================================================
+    // 2. PRECIOS: el número rueda del valor anterior al nuevo
+    // ====================================================================
+    const rolling = new WeakSet();
+    const parsePrice = (text) => {
+        const m = /\$\s*([\d,]+(?:\.(\d+))?)/.exec(text || '');
+        return m ? { n: parseFloat(m[1].replace(/,/g, '')), decimals: m[2] ? m[2].length : 0 } : null;
+    };
+    function watchPrices() {
+        document.querySelectorAll('.price-amount').forEach((el) => {
+            let shown = parsePrice(el.textContent);
+            new MutationObserver(() => {
+                if (rolling.has(el)) return;
+                const next = parsePrice(el.textContent);
+                if (!next || !shown || next.n === shown.n) { shown = next; return; }
+                const from = shown.n, to = next.n;
+                shown = next;
+                if (reduce.matches) return;
+                rolling.add(el);
+                const start = performance.now(), dur = 650;
+                (function frame(now) {
+                    const t = clamp((now - start) / dur);
+                    const e = 1 - Math.pow(1 - t, 3);
+                    el.textContent = '$' + (from + (to - from) * e).toFixed(next.decimals);
+                    if (t < 1) requestAnimationFrame(frame);
+                    else {
+                        el.textContent = '$' + to.toFixed(next.decimals);
+                        requestAnimationFrame(() => rolling.delete(el));
+                    }
+                })(start);
+                if (el.animate) {
+                    el.animate(
+                        [
+                            { transform: `translateY(${to > from ? 10 : -10}px)`, filter: 'blur(4px)', opacity: 0.4 },
+                            { transform: 'none', filter: 'blur(0)', opacity: 1 },
+                        ],
+                        { duration: 600, easing: 'cubic-bezier(0.34, 1.35, 0.64, 1)' }
+                    );
+                }
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    // ====================================================================
+    // 3. CARRUSEL: puntos de página como en iOS
+    // ====================================================================
+    function pageDots() {
+        const container = document.querySelector('.platforms-carousel-container');
+        const slides = document.querySelectorAll('#platformsCarousel .platform-slide');
+        if (!container || slides.length < 2) return;
+        const dots = document.createElement('div');
+        dots.className = 'ios-page-dots';
+        dots.setAttribute('role', 'tablist');
+        slides.forEach((slide, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'ios-page-dot';
+            b.setAttribute('aria-label', String(i + 1));
+            b.addEventListener('click', () => { if (window.goToSlide) window.goToSlide(i); });
+            dots.appendChild(b);
+        });
+        container.appendChild(dots);
+        const sync = () => {
+            slides.forEach((s, i) => {
+                const on = s.classList.contains('active');
+                const d = dots.children[i];
+                if (d.classList.contains('active') !== on) d.classList.toggle('active', on);
+            });
+        };
+        slides.forEach((s) => new MutationObserver(sync).observe(s, { attributes: true, attributeFilter: ['class'] }));
+        sync();
+    }
+
+    function init() {
+        billingSegment();
+        watchPrices();
+        pageDots();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

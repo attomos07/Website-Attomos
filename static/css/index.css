@@ -1762,3 +1762,672 @@ body {
         height: 415px;
     }
 }
+
+/* ============================================================================
+   REDISEÑO iOS — Index
+   Inspirado en iOS sin copiarlo: misma paleta cian de Attomos, misma
+   estructura y animaciones propias (partículas, texto pixel). Cambia el
+   lenguaje visual: tipografía más cerrada, secciones agrupadas sobre gris,
+   tarjetas sin borde, controles en cápsula y materiales translúcidos.
+   ============================================================================ */
+:root {
+  --at-cyan: #06b6d4;
+  --at-cyan-dark: #0891b2;
+  --at-cyan-tint: rgba(6, 182, 212, 0.12);
+  --at-label: #1d1d1f;
+  --at-label-2: #6e6e73;
+  --at-label-3: #86868b;
+  --at-bg: #ffffff;
+  --at-bg-grouped: #ffffff;
+  --at-hairline: rgba(0, 0, 0, 0.07);
+  --at-tint: rgba(6, 182, 212, 0.06);
+  --at-sep: rgba(60, 60, 67, 0.12);
+  --at-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.06);
+  --at-shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.04), 0 24px 60px rgba(0, 0, 0, 0.1);
+  --at-glass: rgba(255, 255, 255, 0.72);
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--at-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* --- Hero --- */
+.hero-section {
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(6, 182, 212, 0.09), transparent 70%),
+    var(--at-bg);
+}
+
+.hero-title,
+.hero-title .title-line-1 {
+  color: var(--at-label);
+  letter-spacing: -0.035em;
+}
+
+.hero-title .title-line-1 {
+  font-size: clamp(38px, 6vw, 72px);
+  line-height: 1.05;
+}
+
+.hero-subtitle {
+  font-size: clamp(17px, 1.6vw, 21px);
+  font-weight: 400;
+  color: var(--at-label-2);
+  letter-spacing: -0.012em;
+  line-height: 1.5;
+}
+
+.hero-btn {
+  border-radius: 999px;
+  padding: 16px 30px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring);
+}
+
+.hero-btn-primary {
+  background: var(--at-cyan);
+  box-shadow: 0 12px 30px -10px rgba(6, 182, 212, 0.6);
+}
+
+.hero-btn-primary:hover {
+  background: var(--at-cyan-dark);
+  transform: scale(1.03);
+  box-shadow: 0 16px 36px -10px rgba(6, 182, 212, 0.65);
+}
+
+.hero-btn:active {
+  transform: scale(0.96) !important;
+  transition-duration: 0.12s;
+}
+
+/* --- Títulos de sección: grandes, cerrados y sin degradado --- */
+.social-platforms-title,
+.section-title,
+.tutorial-title,
+.pricing-title,
+.faq-title {
+  color: var(--at-label);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  line-height: 1.1;
+}
+
+.social-platforms-title { font-size: clamp(28px, 3.4vw, 40px); }
+.section-title,
+.pricing-title,
+.faq-title { font-size: clamp(32px, 4.2vw, 52px); }
+.tutorial-title { font-size: clamp(30px, 3.8vw, 46px); }
+
+.section-subtitle,
+.tutorial-subtitle,
+.pricing-subtitle,
+.faq-subtitle {
+  color: var(--at-label-2);
+  font-size: clamp(17px, 1.5vw, 20px);
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+/* --- Plataformas: íconos tipo pantalla de inicio dentro de un grupo --- */
+.social-platforms-section {
+  background: var(--at-bg-grouped);
+  padding: 96px 20px;
+}
+
+.social-platforms-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 1040px;
+  padding: 28px 24px;
+  background: var(--at-bg);
+  border: 1px solid var(--at-hairline);
+  border-radius: 36px;
+  box-shadow: var(--at-shadow);
+}
+
+.social-platform-item {
+  width: auto;
+  height: auto;
+  padding: 18px 6px 16px;
+  gap: 12px;
+  border: 0;
+  border-radius: 28px;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s ease, transform 0.45s var(--ios-spring);
+}
+
+.social-platform-item::before,
+.social-platform-name::after {
+  display: none;
+}
+
+.social-platform-item:hover {
+  background: var(--at-tint);
+  box-shadow: none;
+  transform: none;
+}
+
+.social-platform-item:active {
+  transform: scale(0.94);
+}
+
+.social-icon-wrapper {
+  width: 72px;
+  height: 72px;
+  border-width: 1.5px;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.5s var(--ios-spring), box-shadow 0.3s ease;
+}
+
+.social-platform-item:hover .social-icon-wrapper {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 12px 22px -8px rgba(0, 0, 0, 0.25);
+}
+
+.social-icon-wrapper i {
+  font-size: 32px;
+}
+
+.social-platform-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--at-label-2);
+  letter-spacing: -0.005em;
+}
+
+.social-platform-item:hover .social-platform-name {
+  color: var(--at-label);
+}
+
+/* --- Carrusel: un solo panel gris con flechas de vidrio --- */
+.platforms-section {
+  margin: 0 auto;
+  padding: 110px 20px 90px;
+}
+
+.platforms-carousel-container {
+  background: var(--at-bg);
+  border: 1px solid var(--at-hairline);
+  box-shadow: var(--at-shadow);
+  border-radius: 44px;
+  padding: 40px 64px 28px;
+}
+
+.mockup-container {
+  flex: 0 0 440px;
+}
+
+.carousel-arrow {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--at-hairline);
+  color: var(--at-label);
+  font-size: 20px;
+  background: var(--at-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.carousel-arrow-left { left: 14px; }
+.carousel-arrow-right { right: 14px; }
+
+.carousel-arrow:hover {
+  background: var(--at-bg);
+  color: var(--at-cyan);
+  border-color: var(--at-hairline);
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.carousel-arrow:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.platform-slide {
+  transition: opacity 0.5s ease, transform 0.7s var(--ios-spring), visibility 0.5s;
+}
+
+.platform-name {
+  font-size: clamp(26px, 2.6vw, 34px);
+  letter-spacing: -0.03em;
+  color: var(--at-label);
+}
+
+.platform-icon {
+  width: 60px;
+  height: 60px;
+  border-width: 2px;
+  box-shadow: 0 8px 20px -10px rgba(6, 182, 212, 0.5);
+}
+
+.platform-description {
+  font-size: 17px;
+  color: var(--at-label-2);
+  text-align: left;
+  letter-spacing: -0.01em;
+}
+
+.platform-features li {
+  font-size: 16px;
+  color: var(--at-label);
+  margin-bottom: 14px;
+}
+
+/* Palomita estilo "checkmark.circle.fill" */
+.check-icon,
+.platform-features li .check-icon {
+  width: 22px;
+  height: 22px;
+  background: var(--at-cyan);
+}
+
+.check-icon i,
+.platform-features li .check-icon i {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Indicador de página (lo crea index.js) */
+.ios-page-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ios-page-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(60, 60, 67, 0.25);
+  cursor: pointer;
+  transition: width 0.5s var(--ios-spring), background 0.25s ease;
+}
+
+.ios-page-dot.active {
+  width: 24px;
+  background: var(--at-cyan);
+}
+
+/* --- Tutorial: video y pasos como lista agrupada --- */
+.tutorial-section {
+  background: var(--at-bg-grouped);
+  padding: 110px 20px;
+}
+
+.tutorial-video-container {
+  border: 0;
+  border-radius: 32px;
+  box-shadow: var(--at-shadow-lg);
+}
+
+.tutorial-steps {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 18px 22px;
+  background: var(--at-bg);
+  border: 1px solid var(--at-hairline);
+  border-radius: 28px;
+  box-shadow: var(--at-shadow);
+  flex-wrap: nowrap;
+}
+
+.tutorial-step {
+  max-width: none;
+  min-width: 0;
+  gap: 12px;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--at-cyan);
+  box-shadow: none;
+}
+
+.step-content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--at-label);
+}
+
+.step-content p {
+  color: var(--at-label-2);
+}
+
+.tutorial-step-divider {
+  flex: 0 0 1px;
+  width: 1px;
+  min-width: 1px;
+  max-width: 1px;
+  height: 40px;
+  margin: 0 16px;
+  background: var(--at-sep);
+  opacity: 1;
+}
+
+/* --- Precios --- */
+.pricing-section {
+  padding: 110px 20px;
+}
+
+/* Mensual / Anual como control segmentado (lo arma index.js) */
+.billing-toggle.ios-billing .toggle-switch {
+  display: none;
+}
+
+.ios-billing-seg {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.ios-billing-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.05);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.ios-billing-opt {
+  position: relative;
+  z-index: 1;
+  padding: 10px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease;
+}
+
+.ios-billing-opt .toggle-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--at-label-2);
+  transition: color 0.25s ease;
+}
+
+.ios-billing-opt.active .toggle-label {
+  color: var(--at-label);
+}
+
+.ios-billing-opt:not(.active):active {
+  opacity: 0.55;
+}
+
+/* Si el JS no corre, el interruptor original se ve como uno de iOS */
+.toggle-switch { width: 51px; height: 31px; }
+.toggle-slider { background: rgba(120, 120, 128, 0.22); }
+.toggle-slider:before {
+  width: 27px;
+  height: 27px;
+  left: 2px;
+  bottom: 2px;
+  transition: transform 0.5s var(--ios-spring);
+}
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+.pricing-grid {
+  gap: 24px;
+  max-width: 1280px;
+}
+
+.pricing-card {
+  padding: 44px 34px 34px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 32px;
+  box-shadow: var(--at-shadow);
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: var(--at-shadow-lg);
+}
+
+.pricing-card.featured {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--at-cyan), 0 24px 60px -20px rgba(6, 182, 212, 0.45);
+}
+
+.popular-badge {
+  top: -14px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 20px -6px rgba(6, 182, 212, 0.55);
+}
+
+.plan-name {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--at-label);
+}
+
+.price-amount {
+  display: inline-block;
+  font-size: 54px;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-period,
+.plan-description {
+  color: var(--at-label-2);
+}
+
+/* Lista de beneficios con separadores finos, como una lista agrupada */
+.plan-features li {
+  padding: 11px 0;
+  color: var(--at-label);
+  border-bottom: 1px solid var(--at-sep);
+}
+
+.plan-features li:last-child {
+  border-bottom: 0;
+}
+
+.plan-button {
+  border-radius: 999px;
+  padding: 15px 28px;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring);
+}
+
+.plan-button.primary {
+  box-shadow: 0 10px 24px -10px rgba(6, 182, 212, 0.6);
+}
+
+.plan-button.primary:hover {
+  background: var(--at-cyan-dark);
+  transform: none;
+}
+
+/* Botón secundario "tinted": fondo suave del mismo color */
+.plan-button.secondary {
+  border: 0;
+  background: var(--at-cyan-tint);
+  color: var(--at-cyan-dark);
+}
+
+.plan-button.secondary:hover {
+  background: rgba(6, 182, 212, 0.18);
+  transform: none;
+}
+
+.plan-button:active {
+  transform: scale(0.96) !important;
+  transition-duration: 0.12s;
+}
+
+/* --- Preguntas frecuentes (si existe la sección) --- */
+.faq-item {
+  border-radius: 24px;
+  box-shadow: var(--at-shadow);
+}
+
+.faq-answer {
+  background: transparent;
+}
+
+/* --- WhatsApp flotante --- */
+.whatsapp-float {
+  transition: transform 0.5s var(--ios-spring), box-shadow 0.3s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+}
+
+.whatsapp-float:active {
+  transform: scale(0.92);
+}
+
+.whatsapp-tooltip {
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(29, 29, 31, 0.86);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.whatsapp-tooltip::after {
+  display: none;
+}
+
+/* --- Tablet --- */
+@media (max-width: 1100px) {
+  .social-platforms-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 640px;
+  }
+
+  .mockup-container {
+    flex-basis: 360px;
+  }
+}
+
+/* --- Móvil --- */
+@media (max-width: 768px) {
+  .social-platforms-section,
+  .tutorial-section,
+  .pricing-section {
+    padding: 64px 16px;
+  }
+
+  .platforms-section {
+    padding: 72px 12px 56px;
+  }
+
+  .social-platforms-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 440px;
+    gap: 2px;
+    padding: 18px 10px;
+    border-radius: 28px;
+  }
+
+  .social-platform-item {
+    width: auto;
+    padding: 12px 2px;
+    gap: 8px;
+    border-radius: 22px;
+  }
+
+  .social-icon-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .social-icon-wrapper i {
+    font-size: 26px;
+  }
+
+  .social-platform-name {
+    font-size: 11.5px;
+  }
+
+  .platforms-carousel-container {
+    padding: 24px 8px 20px;
+    border-radius: 32px;
+  }
+
+  .platform-description {
+    text-align: center;
+  }
+
+  .tutorial-steps {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0;
+    row-gap: 0;
+    max-width: 420px;
+    padding: 6px 18px;
+  }
+
+  .tutorial-step {
+    padding: 12px 0;
+  }
+
+  /* Separador "inset" que empieza donde termina el número */
+  .tutorial-step-divider {
+    width: auto;
+    max-width: none;
+    height: 1px;
+    flex: 0 0 1px;
+    margin: 0 0 0 52px;
+    background: var(--at-sep);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-slide,
+  .ios-page-dot,
+  .hero-btn,
+  .plan-button,
+  .social-platform-item,
+  .social-icon-wrapper {
+    transition-duration: 0.01s;
+  }
+}
