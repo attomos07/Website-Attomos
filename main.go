@@ -181,6 +181,15 @@ func main() {
 	log.Println("✅ Webhook Proxy configurado en: /webhook/meta/:agent_id")
 
 	// ============================================
+	// 🌐 WEBHOOK APP DE META - Attomos Tech Provider (PÚBLICO)
+	// ============================================
+	// Webhook único a nivel app (el que se configura en developers.facebook.com).
+	// Recibe eventos de todas las WABA conectadas a la app de Attomos.
+	router.GET("/webhook/meta-app", handlers.VerifyMetaAppWebhook)
+	router.POST("/webhook/meta-app", handlers.ReceiveMetaAppWebhook)
+	log.Println("✅ Webhook de la app de Meta configurado en: /webhook/meta-app")
+
+	// ============================================
 	// 🔔 WEBHOOK - Notificaciones push de Drive (inventario, PÚBLICO)
 	// ============================================
 	if googleIntegrationHandler != nil {
