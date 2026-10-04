@@ -29,9 +29,11 @@ import (
 //
 //	META_APP_WEBHOOK_VERIFY_TOKEN — texto que tú inventas y pones IGUAL
 //	    en el campo "Token de verificación" del panel de Meta.
-//	META_APP_SECRET — (opcional) "Clave secreta de la app" en
-//	    Configuración > Básica. Si está definida, se valida la firma
-//	    X-Hub-Signature-256 de cada POST; si no, se omite la validación.
+//	META_TECH_APP_SECRET — (opcional) "Clave secreta de la app" de la app
+//	    Tech Provider de Attomos (Configuración > Básica). Si está
+//	    definida, se valida la firma X-Hub-Signature-256 de cada POST; si
+//	    no, se omite la validación. Es DISTINTA de META_APP_SECRET, que
+//	    pertenece a la otra app de Meta que usa el OAuth de meta_whatsapp.go.
 
 // VerifyMetaAppWebhook responde al handshake que Meta hace al presionar
 // "Verificar y guardar": GET con hub.mode, hub.verify_token y
@@ -67,7 +69,7 @@ func ReceiveMetaAppWebhook(c *gin.Context) {
 		return
 	}
 
-	if secret := os.Getenv("META_APP_SECRET"); secret != "" {
+	if secret := os.Getenv("META_TECH_APP_SECRET"); secret != "" {
 		if !validMetaSignature(body, c.GetHeader("X-Hub-Signature-256"), secret) {
 			log.Println("[meta-webhook] firma inválida, evento descartado")
 			c.Status(http.StatusUnauthorized)
