@@ -534,3 +534,463 @@ body {
         font-size: 14px;
     }
 }
+
+/* ============================================================================
+   REDISEÑO iOS 27 — Agentes
+   Todo blanco con la paleta cian de Attomos: tarjetas con línea fina y
+   sombra suave, formas de píldora y círculo, controles segmentados con
+   indicador de resorte y entradas con resorte.
+   ============================================================================ */
+:root {
+  --io-label: #1d1d1f;
+  --io-label-2: #6e6e73;
+  --io-label-3: #8e8e93;
+  --io-hair: rgba(0, 0, 0, 0.07);
+  --io-hair-2: rgba(60, 60, 67, 0.14);
+  --io-tint: rgba(6, 182, 212, 0.08);
+  --io-tint-2: rgba(6, 182, 212, 0.14);
+  --io-cyan: #06b6d4;
+  --io-cyan-d: #0891b2;
+  --io-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.05);
+  --io-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.04), 0 22px 44px -12px rgba(6, 182, 212, 0.28);
+  --io-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --io-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  background: #ffffff;
+  color: var(--io-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+/* --- Hero --- */
+.hero-title {
+  font-size: clamp(36px, 6vw, 62px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--io-label);
+  margin-bottom: 18px;
+  animation: ioRise 0.8s var(--io-spring) both;
+}
+
+.hero-title .highlight {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #0891b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 20px);
+  letter-spacing: -0.01em;
+  color: var(--io-label-2);
+  animation: ioRise 0.8s var(--io-spring) 0.07s both;
+}
+
+@keyframes ioRise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Títulos de sección --- */
+.section-title,
+.cta-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--io-label);
+}
+
+.cta-subtitle {
+  color: var(--io-label-2);
+  letter-spacing: -0.005em;
+}
+
+/* --- Control segmentado (lo activa el JS con .ios-seg) --- */
+.ios-seg {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.ios-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  box-shadow: 0 6px 16px -6px rgba(6, 182, 212, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.55s var(--io-spring), width 0.55s var(--io-spring), height 0.3s ease, opacity 0.2s ease;
+}
+
+.ios-seg > button {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--io-label-2);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: none;
+  transform: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease, background 0.2s ease, transform 0.4s var(--io-spring);
+}
+
+.ios-seg > button i {
+  font-size: 16px;
+}
+
+.ios-seg > button:hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--io-cyan-d);
+  background: var(--io-tint);
+}
+
+.ios-seg > button:active {
+  transform: scale(0.94);
+}
+
+.ios-seg > button.active,
+.ios-seg > button.active:hover {
+  color: #ffffff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* --- Botón flotante de WhatsApp --- */
+.whatsapp-float {
+  width: 58px;
+  height: 58px;
+  background: #25d366;
+  box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: ioWaRing 2.6s ease-out infinite;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  box-shadow: 0 16px 34px -10px rgba(37, 211, 102, 0.85);
+}
+
+.whatsapp-float:active {
+  transform: scale(0.92);
+}
+
+@keyframes ioWaRing {
+  0% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0.45); }
+  70% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+/* Etiqueta de cristal */
+.whatsapp-tooltip {
+  right: 70px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  color: var(--io-label);
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid var(--io-hair);
+  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) translateX(8px) scale(0.92);
+  transform-origin: right center;
+  transition: opacity 0.2s ease, visibility 0.2s, transform 0.45s var(--io-spring);
+}
+
+.whatsapp-tooltip::after {
+  display: none;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+/* --- Botón CTA de WhatsApp (verde de la marca, en píldora) --- */
+.cta-btn {
+  padding: 17px 32px;
+  border-radius: 999px;
+  background: #25d366;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 14px 30px -12px rgba(37, 211, 102, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.cta-btn:hover {
+  background: #22c55e;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 18px 36px -12px rgba(37, 211, 102, 0.85);
+}
+
+.cta-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 768px) {
+  .ios-seg {
+    margin: 0;
+    width: auto;
+  }
+
+  .ios-seg > button {
+    padding: 9px 15px;
+    font-size: 14px;
+  }
+
+  .whatsapp-float {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title,
+  .hero-subtitle,
+  .whatsapp-float {
+    animation: none;
+  }
+
+  .ios-seg-thumb {
+    transition: none;
+  }
+}
+
+/* --- Hero --- */
+.agents-hero {
+  padding: 120px 20px 48px;
+  min-height: 0;
+}
+
+/* --- Filtros --- */
+.agents-filter-section {
+  padding: 8px 20px 8px;
+}
+
+/* --- Tarjetas de agentes --- */
+.agents-grid-section {
+  padding: 40px 20px 72px;
+}
+
+.agents-grid {
+  gap: 20px;
+}
+
+.agent-card {
+  display: flex;
+  flex-direction: column;
+  padding: 30px 28px 26px;
+  border-radius: 28px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  /* Visible al terminar la entrada, para que el filtro pueda animarla con estilos en línea */
+  opacity: 1;
+  transform: none;
+  transition: transform 0.55s var(--io-spring), box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+  animation: ioCardIn 0.8s var(--io-spring) backwards;
+}
+
+@keyframes ioCardIn {
+  from { opacity: 0; transform: translateY(26px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--io-shadow-hover);
+  border-color: rgba(6, 182, 212, 0.22);
+}
+
+/* Ícono en un círculo con tinte, que rebota al pasar el cursor */
+.agent-icon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 18px;
+  border: 0;
+  background: var(--io-tint-2);
+  box-shadow: none;
+  transition: transform 0.55s var(--io-spring), background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.agent-icon i {
+  font-size: 26px;
+  color: var(--io-cyan-d);
+  transition: color 0.25s ease;
+}
+
+.agent-card:hover .agent-icon {
+  transform: scale(1.08) rotate(-6deg);
+  background: var(--io-cyan);
+  box-shadow: 0 10px 22px -8px rgba(6, 182, 212, 0.7);
+}
+
+.agent-card:hover .agent-icon i {
+  color: #ffffff;
+}
+
+.agent-name {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--io-label);
+  margin-bottom: 8px;
+}
+
+.agent-description {
+  font-size: 15px;
+  color: var(--io-label-2);
+  margin-bottom: 18px;
+  flex: 1;
+}
+
+.agent-features {
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+.feature-tag {
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: var(--io-tint);
+  color: var(--io-cyan-d);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.agent-card:hover .feature-tag {
+  background: var(--io-tint-2);
+}
+
+.agent-btn {
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 22px -10px rgba(6, 182, 212, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.agent-btn:hover {
+  background: var(--io-cyan-d);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -10px rgba(6, 182, 212, 0.85);
+}
+
+.agent-btn:active {
+  transform: scale(0.96) !important;
+}
+
+/* --- Próximamente --- */
+.agent-card.agent-coming-soon .agent-icon {
+  background: rgba(142, 142, 147, 0.12);
+}
+
+.coming-soon-badge {
+  top: 18px;
+  right: 18px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #af52de;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 6px 14px -6px rgba(175, 82, 222, 0.7);
+}
+
+/* --- CTA --- */
+.agents-cta-section {
+  padding: 40px 20px 110px;
+}
+
+.cta-content {
+  max-width: 760px;
+  padding: 52px 32px;
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background:
+    radial-gradient(90% 80% at 50% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 70%),
+    #ffffff;
+}
+
+.cta-title {
+  font-size: clamp(28px, 4vw, 38px);
+  margin-bottom: 14px;
+}
+
+.cta-subtitle {
+  font-size: 17px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .agents-hero {
+    padding: 100px 20px 32px;
+    min-height: 0;
+  }
+
+  .agents-filter-section {
+    padding: 4px 16px;
+  }
+
+  .agents-grid-section {
+    padding: 24px 16px 56px;
+  }
+
+  .agents-grid {
+    gap: 14px;
+  }
+
+  .agent-card {
+    padding: 24px 22px 22px;
+    border-radius: 24px;
+  }
+
+  .agents-cta-section {
+    padding: 24px 16px 96px;
+  }
+
+  .cta-content {
+    padding: 36px 22px;
+    border-radius: 26px;
+  }
+}

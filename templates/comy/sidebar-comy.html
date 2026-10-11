@@ -258,6 +258,114 @@
     .comy-sidebar { display: none; }
     .comy-mobile-nav { display: flex; }
   }
+
+  /* ==========================================================================
+     COMY · iOS 27 "Gelatina"
+     Lenguaje de movimiento propio de Comy: resortes con más rebote, botones que
+     se aplastan al presionar, indicadores que se estiran como gelatina al
+     moverse y menús que brotan desde su origen.
+     ========================================================================== */
+  :root {
+    --cm-jelly: linear(0, 0.059, 0.204, 0.392, 0.591, 0.773, 0.925, 1.039, 1.114, 1.153, 1.163, 1.152, 1.128, 1.097, 1.064, 1.035, 1.011, 0.992, 0.981, 0.975, 0.973, 0.975, 0.98, 0.985, 0.99, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.002, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 0.999, 0.999, 1, 1);
+    --cm-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --cm-glass: rgba(255, 255, 255, 0.78);
+  }
+  @supports not (animation-timing-function: linear(0, 1)) {
+    :root { --cm-jelly: cubic-bezier(0.34, 1.56, 0.64, 1); }
+  }
+
+  /* Estiramiento de gelatina (usa la propiedad scale, que se suma al transform) */
+  @keyframes cmSquishH {
+    0% { scale: 1 1; } 28% { scale: 1.24 0.84; } 52% { scale: 0.92 1.08; } 74% { scale: 1.04 0.97; } 100% { scale: 1 1; }
+  }
+  @keyframes cmSquishV {
+    0% { scale: 1 1; } 28% { scale: 0.84 1.24; } 52% { scale: 1.08 0.92; } 74% { scale: 0.97 1.04; } 100% { scale: 1 1; }
+  }
+  @keyframes cmPop {
+    0% { opacity: 0; scale: 0.6; } 60% { opacity: 1; } 100% { opacity: 1; scale: 1; }
+  }
+  @keyframes cmBounce {
+    0% { translate: 0 0; } 35% { translate: 0 -5px; scale: 1.08 0.94; } 65% { translate: 0 1px; scale: 0.96 1.04; } 100% { translate: 0 0; scale: 1 1; }
+  }
+  @keyframes cmWiggle {
+    0%, 100% { rotate: 0deg; } 25% { rotate: -10deg; } 50% { rotate: 8deg; } 75% { rotate: -4deg; }
+  }
+  .cm-sq-h { animation: cmSquishH 0.6s var(--cm-soft); }
+  .cm-sq-v { animation: cmSquishV 0.6s var(--cm-soft); }
+
+  /* Logo: la C gira como una moneda al pasar el cursor */
+  .comy-logo-mark {
+    border-radius: 14px;
+    box-shadow: 0 8px 18px -8px rgba(245, 149, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: transform 0.6s var(--cm-jelly), border-radius 0.4s var(--cm-soft);
+  }
+  .comy-logo:hover .comy-logo-mark { transform: rotateY(180deg) scale(1.06); border-radius: 50%; }
+  .comy-logo:active .comy-logo-mark { transform: scale(0.88); }
+  .comy-beta { border-radius: 999px; padding: 1px 6px; }
+
+  /* Menú lateral: el círculo viaja con rebote y se estira en el camino */
+  .comy-side-indicator {
+    transition: top 0.55s var(--cm-jelly), opacity 0.2s;
+    box-shadow: 0 8px 20px -6px rgba(245, 149, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .comy-side-link { -webkit-tap-highlight-color: transparent; transition: color 0.2s, transform 0.45s var(--cm-jelly); }
+  .comy-side-link svg { transition: transform 0.45s var(--cm-jelly); }
+  .comy-side-link:hover svg { animation: cmWiggle 0.5s ease; }
+  .comy-side-link:active { transform: scale(0.86); }
+
+  /* Tooltip: píldora de cristal que sale con resorte */
+  .comy-side-tooltip {
+    padding: 0.42rem 0.8rem; border-radius: 999px;
+    background: rgba(26, 26, 26, 0.88);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.45);
+    transform: translate(-8px, -50%) scale(0.85); transform-origin: left center;
+    transition: opacity 0.18s, transform 0.5s var(--cm-jelly);
+  }
+  .comy-side-link:hover .comy-side-tooltip { transform: translate(0, -50%) scale(1); }
+
+  /* Botones de invitado */
+  .comy-icon-btn { border-radius: 50%; transition: transform 0.45s var(--cm-jelly), background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+  .comy-icon-btn:hover { transform: translateY(-2px); }
+  .comy-icon-btn:active { transform: scale(0.86); }
+
+  /* Avatar y menú: el menú brota desde el avatar */
+  .comy-avatar { transition: transform 0.45s var(--cm-jelly), box-shadow 0.2s; }
+  .comy-avatar:hover { transform: scale(1.06); }
+  .comy-avatar:active { transform: scale(0.9); }
+  .comy-user-dropdown {
+    padding: 6px; border-radius: 22px;
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+    box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.28);
+    transform-origin: bottom left;
+  }
+  .comy-avatar-wrap:hover .comy-user-dropdown,
+  .comy-avatar-wrap.open .comy-user-dropdown { animation: cmPop 0.5s var(--cm-jelly) both; }
+  .cd-header { padding: 0.75rem 0.9rem 0.6rem; }
+  .cd-divider { margin: 4px 8px; }
+  .cd-item { border-radius: 14px; padding: 0.62rem 0.9rem; transition: background 0.15s, transform 0.4s var(--cm-jelly); }
+  .cd-item:active { transform: scale(0.96); }
+
+  /* Barra inferior móvil: cristal, la píldora se estira y el ícono rebota */
+  .comy-mobile-nav {
+    background: rgba(255, 255, 255, 0.82);
+    -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .cmn-indicator {
+    transition: left 0.55s var(--cm-jelly), opacity 0.2s;
+    box-shadow: 0 8px 18px -8px rgba(245, 149, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .cmn-icon { transition: transform 0.4s var(--cm-jelly); }
+  .cmn-link:active .cmn-icon { transform: scale(0.82); }
+  .cmn-link.active .cmn-icon svg { animation: cmBounce 0.6s var(--cm-soft) 0.12s; }
+  .cmn-label { transition: color 0.2s, transform 0.4s var(--cm-jelly); }
+  .cmn-link.active .cmn-label { transform: translateY(-1px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm-sq-h, .cm-sq-v, .cmn-link.active .cmn-icon svg, .comy-side-link:hover svg { animation: none; }
+  }
 </style>
 
 <script>
@@ -351,6 +459,32 @@
     localStorage.removeItem('comyUser');
     window.location.href = '/comy';
   });
+
+  // ── Comy · iOS 27 "Gelatina" ─────────────────────────────────────────────
+  // Cada vez que un indicador cambia de lugar se estira como gelatina.
+  // Se expone para que las páginas de Comy lo usen con sus propios indicadores.
+  window.cmSquishOn = function (el, axis) {
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const prop = axis === 'v' ? 'top' : axis === 't' ? 'transform' : 'left';
+    const cls = axis === 'v' ? 'cm-sq-v' : 'cm-sq-h';
+    let last = el.style[prop];
+    new MutationObserver(() => {
+      const v = el.style[prop];
+      if (v === last) return;
+      last = v;
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+    }).observe(el, { attributes: true, attributeFilter: ['style'] });
+    el.addEventListener('animationend', () => el.classList.remove(cls));
+  };
+  cmSquishOn(document.getElementById('comySideIndicator'), 'v');
+  cmSquishOn(document.getElementById('comyMobileIndicator'), 'h');
+
+  // Toque en la barra móvil: pequeño golpe háptico donde exista
+  document.querySelectorAll('.cmn-link').forEach(l => l.addEventListener('click', () => {
+    if (navigator.vibrate) navigator.vibrate(6);
+  }));
 })();
 </script>
 {{end}}

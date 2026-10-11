@@ -527,6 +527,143 @@
     .comy-grid { gap: .55rem; }
     .comy-food-card { padding: .7rem .5rem; }
   }
+
+  /* ==========================================================================
+     COMY · iOS 27 "Gelatina" — Directorio
+     ========================================================================== */
+  /* Buscador: se infla con rebote al enfocarlo */
+  .comy-search { transition: background .2s, border-color .2s, box-shadow .25s, transform .55s var(--cm-jelly); }
+  .comy-search:focus-within { transform: scale(1.02); }
+  .comy-bell, .comy-btn-ghost, .comy-btn-primary, .comy-hero-btn, .comy-checkout-btn, .comy-food-add {
+    -webkit-tap-highlight-color: transparent;
+    transition: background .2s, color .2s, border-color .2s, box-shadow .25s, transform .45s var(--cm-jelly);
+  }
+  .comy-bell { border-radius: 50%; }
+  .comy-bell:active, .comy-btn-ghost:active, .comy-btn-primary:active, .comy-hero-btn:active, .comy-food-add:active { transform: scale(.88, .84); }
+  .comy-btn-primary:hover, .comy-hero-btn:hover { transform: translateY(-1px); }
+  .comy-top-avatar { border-radius: 50%; }
+
+  /* Hero: las burbujas flotan y la moto va rodando */
+  .comy-hero { border-radius: 26px; isolation: isolate; }
+  .comy-hero-circle { animation: cmBob 6s ease-in-out infinite; }
+  .comy-hero-circle:nth-child(2) { animation-duration: 7.5s; animation-delay: -2s; }
+  .comy-hero-circle:nth-child(3) { animation-duration: 5.5s; animation-delay: -4s; }
+  @keyframes cmBob { 0%, 100% { translate: 0 0; } 50% { translate: -6px -10px; } }
+  .comy-hero-illustration { animation: cmRide 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
+  @keyframes cmRide {
+    0%, 100% { translate: 0 0; rotate: 0deg; }
+    25% { translate: 4px -3px; rotate: -3deg; }
+    50% { translate: 8px 0; rotate: 0deg; }
+    75% { translate: 4px -2px; rotate: 2deg; }
+  }
+  .comy-hero-btn { border-radius: 999px; padding: .6rem 1.3rem; box-shadow: 0 10px 22px -10px rgba(230,191,0,.9); }
+
+  /* Ver todo: la flecha se asoma */
+  .comy-viewall svg { transition: transform .45s var(--cm-jelly); }
+  .comy-viewall:hover svg { transform: translateX(3px); }
+
+  /* Categorías: el chip se levanta y su ícono se inclina */
+  .comy-cat { transition: background .18s, color .18s, transform .5s var(--cm-jelly); -webkit-tap-highlight-color: transparent; }
+  .comy-cat:hover { transform: translateY(-3px); }
+  .comy-cat:active { transform: scale(.9, .86); }
+  .comy-cat-icon { transition: background .18s, transform .5s var(--cm-jelly); }
+  .comy-cat:hover .comy-cat-icon { transform: rotate(-8deg) scale(1.08); }
+  .comy-cat.active .comy-cat-icon { animation: cmBounce .6s var(--cm-soft); }
+  .comy-cat-chev { transition: background .18s, color .18s, transform .45s var(--cm-jelly); }
+  .comy-cat:hover .comy-cat-chev { transform: translateX(2px); }
+  .comy-cat-indicator {
+    transition: left .55s var(--cm-jelly), width .55s var(--cm-jelly);
+    box-shadow: 0 10px 22px -8px rgba(230,191,0,.85), inset 0 1px 0 rgba(255,255,255,.45);
+  }
+
+  /* Empresas / Platillos: el pulgar salta con gelatina */
+  .comy-toggle { background: #F2F2F4; }
+  .comy-toggle-opt { -webkit-tap-highlight-color: transparent; transition: color .2s, transform .45s var(--cm-jelly); }
+  .comy-toggle-opt:active { transform: scale(.94); }
+  .comy-toggle-thumb {
+    transition: transform .6s var(--cm-jelly);
+    box-shadow: 0 8px 18px -8px rgba(230,191,0,.9), inset 0 1px 0 rgba(255,255,255,.45);
+  }
+
+  /* Tarjetas: entran en cascada, se inclinan siguiendo el cursor */
+  .comy-grid { perspective: 900px; }
+  .comy-food-card {
+    border-radius: 26px;
+    border: 1px solid rgba(0,0,0,.05);
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 26px -14px rgba(0,0,0,.12);
+    transform-style: preserve-3d;
+    transition: transform .6s var(--cm-jelly), box-shadow .3s;
+    --rx: 0deg; --ry: 0deg;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .comy-food-card.cm-tilting { transition: transform .12s linear, box-shadow .3s; }
+  .comy-food-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.04), 0 24px 44px -18px rgba(180,110,0,.38); }
+  .comy-food-card:active { transform: scale(.96); }
+  .comy-food-photo { transition: transform .6s var(--cm-jelly), box-shadow .3s; }
+  .comy-food-card:hover .comy-food-photo { transform: translateZ(30px) scale(1.06) rotate(-4deg); box-shadow: 0 18px 30px -16px rgba(0,0,0,.35); }
+  .comy-food-name { transition: transform .5s var(--cm-jelly); }
+  .comy-food-card:hover .comy-food-name { transform: translateZ(16px); }
+  .comy-food-badge { animation: cmFlame 1.6s ease-in-out infinite; }
+  @keyframes cmFlame { 0%, 100% { scale: 1; rotate: 0deg; } 50% { scale: 1.15; rotate: -8deg; } }
+
+  .cm-in > * { animation: cmCardIn .7s var(--cm-jelly) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+  @keyframes cmCardIn { from { opacity: 0; transform: translateY(22px) scale(.92); } to { opacity: 1; transform: none; } }
+  .comy-panel-loading { animation: cmPulseText 1.2s ease-in-out infinite; }
+  @keyframes cmPulseText { 50% { opacity: .45; } }
+
+  /* Tarjeta de débito: brillo holográfico que sigue al cursor */
+  .comy-card-balance {
+    --mx: 50%; --my: 0%;
+    transition: transform .6s var(--cm-jelly), box-shadow .3s;
+    box-shadow: 0 18px 40px -18px rgba(230,191,0,.85);
+  }
+  .comy-card-balance::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,.55), transparent 60%);
+    opacity: 0; transition: opacity .3s;
+  }
+  .comy-card-balance:hover::after { opacity: 1; }
+  .comy-card-balance:hover { transform: translateY(-3px) rotate(-1deg); }
+  .comy-card-amount { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+
+  /* Pedido */
+  .comy-order-item { transition: transform .45s var(--cm-jelly), background .2s; border-radius: 14px; }
+  .comy-order-item:hover { transform: translateX(3px); }
+  .comy-order-thumb { border-radius: 50%; transition: transform .5s var(--cm-jelly); }
+  .comy-order-item:hover .comy-order-thumb { transform: rotate(-12deg) scale(1.08); }
+  .comy-checkout-btn {
+    position: relative; overflow: hidden; border-radius: 999px;
+    box-shadow: 0 12px 24px -12px rgba(230,191,0,.95);
+  }
+  .comy-checkout-btn::after {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.65), transparent);
+    transform: skewX(-14deg); animation: cmShine 3.2s ease-in-out infinite;
+  }
+  @keyframes cmShine { 0%, 60% { left: -40%; } 100% { left: 130%; } }
+  .comy-checkout-btn:active { transform: scale(.95, .9); }
+
+  @media (max-width: 700px) {
+    /* Hoja inferior con rebote y arrastre para cerrar */
+    .comy-side { transition: transform .6s var(--cm-jelly); border-radius: 28px 28px 0 0; touch-action: pan-y; }
+    .comy-side.cm-dragging { transition: none; }
+    .comy-m-sheet-handle { width: 44px; height: 5px; background: #D9D9DE; }
+    .comy-m-backdrop { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+    .comy-m-cartbar {
+      border-radius: 999px;
+      animation: cmBarIn .7s var(--cm-jelly) both;
+      transition: transform .45s var(--cm-jelly);
+    }
+    .comy-m-cartbar:active { transform: scale(.95, .9); }
+    @keyframes cmBarIn { from { opacity: 0; transform: translateY(40px) scale(.9); } to { opacity: 1; transform: none; } }
+    .comy-m-cartbar-count { animation: cmPop .6s var(--cm-jelly) .25s both; }
+    .comy-food-card:hover .comy-food-photo { transform: none; box-shadow: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .comy-hero-circle, .comy-hero-illustration, .comy-food-badge, .comy-checkout-btn::after, .cm-in > * { animation: none; }
+  }
 </style>
 
 <script>
@@ -769,6 +906,79 @@
   mobileMQ.addEventListener('change', e => { if (!e.matches) closeSheet(); });
 
   updateCartBar();
+
+  // ── Comy · iOS 27 "Gelatina" ─────────────────────────────────────────────
+  const cmReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cmFine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  // Indicadores que se estiran al moverse
+  if (window.cmSquishOn) {
+    cmSquishOn(document.querySelector('.comy-cat-indicator'), 'h');
+    // El pulgar del selector se mueve con transform: no se le aplica el estiramiento
+    // (scale multiplicaría su desplazamiento); conserva su transición con rebote.
+  }
+
+  // Las tarjetas entran en cascada cada vez que se pintan o se cambia de panel
+  function cmStagger(grid) {
+    if (!grid || cmReduce) return;
+    Array.from(grid.children).forEach((c, i) => c.style.setProperty('--i', Math.min(i, 12)));
+    grid.classList.remove('cm-in'); void grid.offsetWidth; grid.classList.add('cm-in');
+  }
+  ['comyEmpresasGrid', 'comyPlatillosGrid'].forEach(id => {
+    const g = document.getElementById(id);
+    if (g) new MutationObserver(() => cmStagger(g)).observe(g, { childList: true });
+  });
+  [panelEmpresas, panelPlatillos].forEach(p => new MutationObserver(() => {
+    if (p.style.display !== 'none') cmStagger(p.querySelector('.comy-grid'));
+  }).observe(p, { attributes: true, attributeFilter: ['style'] }));
+
+  // Inclinación 3D de las tarjetas siguiendo el cursor (solo con mouse)
+  if (cmFine && !cmReduce) {
+    document.addEventListener('pointermove', e => {
+      const card = e.target.closest && e.target.closest('.comy-food-card');
+      document.querySelectorAll('.comy-food-card.cm-tilting').forEach(c => {
+        if (c !== card) { c.classList.remove('cm-tilting'); c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); }
+      });
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+      card.classList.add('cm-tilting');
+      card.style.setProperty('--ry', (px * 12).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', (-py * 10).toFixed(2) + 'deg');
+    }, { passive: true });
+  }
+
+  // Brillo holográfico de la tarjeta de débito
+  const cmCard = document.querySelector('.comy-card-balance');
+  if (cmCard) cmCard.addEventListener('pointermove', e => {
+    const r = cmCard.getBoundingClientRect();
+    cmCard.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    cmCard.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  });
+
+  // Hoja inferior: se puede arrastrar hacia abajo para cerrarla (con resistencia de goma)
+  (function () {
+    let y0 = null, dy = 0;
+    side.addEventListener('touchstart', e => {
+      if (!mobileMQ.matches || !side.classList.contains('open')) return;
+      if (side.scrollTop > 0 && !e.target.closest('.comy-m-sheet-handle')) return;
+      y0 = e.touches[0].clientY; dy = 0;
+      side.classList.add('cm-dragging');
+    }, { passive: true });
+    side.addEventListener('touchmove', e => {
+      if (y0 === null) return;
+      const d = e.touches[0].clientY - y0;
+      dy = d > 0 ? d : d / 4; // hacia arriba resiste como goma
+      side.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    side.addEventListener('touchend', () => {
+      if (y0 === null) return;
+      side.classList.remove('cm-dragging');
+      side.style.transform = '';
+      if (dy > 90) closeSheet();
+      y0 = null;
+    });
+  })();
 })();
 </script>
 {{end}}

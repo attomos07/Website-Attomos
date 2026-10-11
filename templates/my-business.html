@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/my-business.css?v=6">
+    <link rel="stylesheet" href="/static/css/my-business.css?v=7">
     <link rel="stylesheet" href="/static/css/sidebar.css">
 
     <!-- Sileo toast system -->
@@ -282,7 +282,7 @@
                     </div>
 
                     <!-- =============================================
-                         BANNER NINDA — estado de visibilidad
+                         BANNER COMY — estado de visibilidad
                          ============================================= -->
                     <div id="nindaBanner" style="display:none; margin-bottom:1.25rem;">
 
@@ -291,21 +291,17 @@
                             background:linear-gradient(135deg,#fefce8,#fef9c3);
                             border:1.5px solid #fde047; border-radius:14px;
                             padding:1rem 1.25rem; align-items:flex-start; gap:1rem;">
-                            <span style="font-size:1.5rem;flex-shrink:0">⚠️</span>
+                            <span class="biz-warn-icon" aria-hidden="true">&#9888;&#xFE0E;</span>
                             <div style="flex:1">
                                 <strong style="font-size:.95rem;color:#713f12;display:block;margin-bottom:.25rem" data-translate="biz_ninda_no_pay_title">
-                                    Esta sucursal no aparece en Ninda
+                                    Esta sucursal no aparece en Comy
                                 </strong>
                                 <span style="font-size:.85rem;color:#92400e;line-height:1.55" data-translate="biz_ninda_no_pay_desc">
                                     Para que tus clientes puedan encontrarte y pagar en línea,
                                     configura al menos un método de pago (SPEI o Stripe).
                                 </span>
                                 <div style="margin-top:.75rem">
-                                    <a href="/integrations" style="
-                                        display:inline-flex;align-items:center;gap:.4rem;
-                                        background:#0f0f0f;color:#fff;text-decoration:none;
-                                        border-radius:8px;padding:.5rem 1rem;
-                                        font-size:.82rem;font-weight:600;">
+                                    <a href="/integrations" class="biz-pay-cta">
                                         <i class="lni lni-plug"></i>
                                         <span data-translate="biz_ninda_configure_link">Configurar pagos en Integraciones</span>
                                     </a>
@@ -325,17 +321,13 @@
                             </svg>
                             <div style="flex:1">
                                 <strong style="font-size:.95rem;color:#14532d;display:block;margin-bottom:.25rem" data-translate="biz_ninda_active_title">
-                                    Esta sucursal está visible en Ninda
+                                    Esta sucursal está visible en Comy
                                 </strong>
                                 <span style="font-size:.85rem;color:#166534;line-height:1.55" data-translate="biz_ninda_active_desc">
                                     Tus clientes pueden encontrar tu negocio y pagar en línea.
                                 </span>
                             </div>
-                            <a id="nindaStoreLink" href="/ninda" target="_blank" style="
-                                flex-shrink:0;display:inline-flex;align-items:center;gap:.4rem;
-                                background:#16a34a;color:#fff;text-decoration:none;
-                                border-radius:8px;padding:.5rem 1rem;
-                                font-size:.82rem;font-weight:600;white-space:nowrap;">
+                            <a id="nindaStoreLink" href="/comy" target="_blank" class="biz-store-cta">
                                 <i class="lni lni-arrow-right"></i>
                                 <span data-translate="biz_ninda_view_store">Ver mi tienda</span>
                             </a>
@@ -426,7 +418,7 @@
                                         <!-- Placeholder -->
                                         <div class="brand-placeholder" id="bannerPlaceholder">
                                             <i class="lni lni-image" style="font-size:2rem;color:#aaa"></i>
-                                            <span data-translate="mybiz_banner_ninda">Imagen de portada para Ninda</span>
+                                            <span data-translate="mybiz_banner_ninda">Imagen de portada para Comy</span>
                                             <small data-translate="mybiz_banner_size">Recomendado: 1200×400 px · JPG o PNG</small>
                                             <button type="button" class="btn-brand-upload" id="bannerUploadBtn">
                                                 <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_banner">Subir banner</span>
@@ -438,7 +430,7 @@
                                             <div class="brand-spinner"></div><span>Subiendo...</span>
                                         </div>
                                     </div>
-                                    <div class="info-example" data-translate="mybiz_banner_hint">Se muestra como fondo de tu card en el directorio de Ninda</div>
+                                    <div class="info-example" data-translate="mybiz_banner_hint">Se muestra como fondo de tu card en el directorio de Comy</div>
                                 </div>
 
                                 <!-- LOGO -->
@@ -465,7 +457,7 @@
                                             <button type="button" class="btn-brand-upload" id="logoUploadBtn">
                                                 <i class="lni lni-upload"></i> <span data-translate="mybiz_upload_logo">Subir logo</span>
                                             </button>
-                                            <div class="info-example" style="margin-top:.5rem" data-translate="mybiz_logo_hint">Se muestra como foto de perfil circular en Ninda · PNG cuadrado recomendado</div>
+                                            <div class="info-example" style="margin-top:.5rem" data-translate="mybiz_logo_hint">Se muestra como foto de perfil circular en Comy · PNG cuadrado recomendado</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1268,6 +1260,6 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
     <script src="/static/js/sileo.js"></script>
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/sidebar.js"></script>
-    <script src="/static/js/my-business.js?v=6"></script>
+    <script src="/static/js/my-business.js?v=7"></script>
 </body>
 </html>

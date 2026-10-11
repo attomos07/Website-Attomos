@@ -1542,3 +1542,174 @@ body {
     animation: none;
   }
 }
+
+/* ============================================================================
+   SIDEBAR DEL CRM — logo de Attomos y animaciones iOS 27
+   Una sola cápsula cian viaja con resorte entre las opciones (se estira al
+   moverse), los íconos responden al cursor, los contadores laten al cambiar
+   y la barra entra en cascada al abrirse.
+   ============================================================================ */
+/* Logo en círculo blanco, como en el userbar */
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.12);
+  overflow: hidden;
+  transition: transform 0.6s var(--ios-spring), box-shadow 0.25s ease;
+}
+
+.brand-mark img {
+  width: 34px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+.brand:hover .brand-mark {
+  transform: rotate(-10deg) scale(1.08);
+  box-shadow: 0 8px 18px rgba(6, 182, 212, 0.38), 0 0 0 1px rgba(6, 182, 212, 0.18);
+}
+
+.brand-mark {
+  animation: crmLogoIn 0.8s var(--ios-spring) backwards;
+}
+
+@keyframes crmLogoIn {
+  from { opacity: 0; transform: scale(0.4) rotate(-40deg); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Cápsula deslizante (la crea crm.js) */
+.rail-content {
+  position: relative;
+}
+
+.rail-lens {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 6px 16px -8px rgba(6, 182, 212, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: translate 0.55s var(--ios-spring), width 0.4s var(--ios-spring), height 0.4s var(--ios-spring), opacity 0.2s ease;
+}
+
+.rail-lens.squish {
+  animation: crmSquish 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes crmSquish {
+  0% { scale: 1 1; }
+  30% { scale: 0.96 1.25; }
+  55% { scale: 1.02 0.92; }
+  100% { scale: 1 1; }
+}
+
+.has-lens .nav-item {
+  position: relative;
+  z-index: 1;
+}
+
+/* Con la cápsula, el elemento activo ya no pinta su propio fondo */
+.has-lens .nav-item.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+.nav-item i,
+.nav-item .chan-icon,
+.nav-item .tag-dot {
+  transition: transform 0.45s var(--ios-spring), color 0.2s ease;
+}
+
+.nav-item:hover i:not(.chevron),
+.nav-item:hover .chan-icon,
+.nav-item:hover .tag-dot {
+  transform: scale(1.15) rotate(-6deg);
+}
+
+.nav-item.active i:not(.chevron),
+.nav-item.active .chan-icon {
+  animation: crmIconPop 0.55s var(--ios-spring);
+}
+
+@keyframes crmIconPop {
+  0% { transform: scale(0.6); }
+  100% { transform: none; }
+}
+
+.nav-item .count {
+  display: inline-block;
+  transition: color 0.2s ease;
+}
+
+.nav-item .count.bump {
+  animation: crmCount 0.5s var(--ios-spring);
+}
+
+@keyframes crmCount {
+  0% { transform: scale(1.6); color: var(--accent); }
+  100% { transform: none; }
+}
+
+/* Entrada en cascada al cargar o al volver a abrir la barra */
+.nav-rail:not(.collapsed) .rail-topbar,
+.nav-rail:not(.collapsed) .nav-section {
+  animation: crmRailIn 0.55s var(--ios-spring) backwards;
+}
+
+.nav-rail:not(.collapsed) .nav-section:nth-of-type(2) { animation-delay: 0.04s; }
+.nav-rail:not(.collapsed) .nav-section:nth-of-type(3) { animation-delay: 0.08s; }
+.nav-rail:not(.collapsed) .nav-section:nth-of-type(4) { animation-delay: 0.12s; }
+.nav-rail:not(.collapsed) .nav-section:nth-of-type(5) { animation-delay: 0.16s; }
+
+@keyframes crmRailIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Botón para mostrar la barra cuando está oculta */
+.rail-collapsed-btn .circle-btn {
+  animation: crmLogoIn 0.6s var(--ios-spring) both;
+}
+
+.circle-btn i {
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.rail-topbar .circle-btn:hover i {
+  transform: translateX(-2px);
+}
+
+.rail-collapsed-btn .circle-btn:hover i {
+  transform: translateX(2px);
+}
+
+/* Submenú de Configuración: las opciones bajan una a una */
+.nav-submenu.open .nav-subitem {
+  animation: crmSubIn 0.45s var(--ios-spring) backwards;
+}
+
+@keyframes crmSubIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark,
+  .rail-lens,
+  .nav-item.active i,
+  .nav-rail:not(.collapsed) .rail-topbar,
+  .nav-rail:not(.collapsed) .nav-section,
+  .nav-submenu.open .nav-subitem,
+  .nav-item .count.bump {
+    animation: none !important;
+    transition: none;
+  }
+}

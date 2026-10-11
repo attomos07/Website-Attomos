@@ -403,7 +403,7 @@ body {
     flex-wrap: wrap;
 }
 
-.social-link {
+.social-card .social-link {
     width: 52px;
     height: 52px;
     background: #ffffff;
@@ -419,7 +419,7 @@ body {
     box-shadow: 0 2px 10px rgba(34, 211, 238, 0.1);
 }
 
-.social-link:hover {
+.social-card .social-link:hover {
     transform: translateY(-4px) scale(1.08);
     box-shadow: 0 8px 25px rgba(34, 211, 238, 0.3);
     background: linear-gradient(135deg, #22d3ee, #06b6d4);
@@ -672,4 +672,1008 @@ body {
     .form-title {
         font-size: 28px;
     }
+}
+
+/* ============================================================================
+   REDISEÑO iOS 27 — Contacto
+   Todo blanco con la paleta cian de Attomos: tarjetas con línea fina y
+   sombra suave, formas de píldora y círculo, controles segmentados con
+   indicador de resorte y entradas con resorte.
+   ============================================================================ */
+:root {
+  --io-label: #1d1d1f;
+  --io-label-2: #6e6e73;
+  --io-label-3: #8e8e93;
+  --io-hair: rgba(0, 0, 0, 0.07);
+  --io-hair-2: rgba(60, 60, 67, 0.14);
+  --io-tint: rgba(6, 182, 212, 0.08);
+  --io-tint-2: rgba(6, 182, 212, 0.14);
+  --io-cyan: #06b6d4;
+  --io-cyan-d: #0891b2;
+  --io-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.05);
+  --io-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.04), 0 22px 44px -12px rgba(6, 182, 212, 0.28);
+  --io-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --io-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  background: #ffffff;
+  color: var(--io-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+/* --- Hero --- */
+.hero-title {
+  font-size: clamp(36px, 6vw, 62px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--io-label);
+  margin-bottom: 18px;
+  animation: ioRise 0.8s var(--io-spring) both;
+}
+
+.hero-title .highlight {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #0891b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 20px);
+  letter-spacing: -0.01em;
+  color: var(--io-label-2);
+  animation: ioRise 0.8s var(--io-spring) 0.07s both;
+}
+
+@keyframes ioRise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Títulos de sección --- */
+.section-title,
+.cta-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--io-label);
+}
+
+.cta-subtitle {
+  color: var(--io-label-2);
+  letter-spacing: -0.005em;
+}
+
+/* --- Control segmentado (lo activa el JS con .ios-seg) --- */
+.ios-seg {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.ios-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  box-shadow: 0 6px 16px -6px rgba(6, 182, 212, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.55s var(--io-spring), width 0.55s var(--io-spring), height 0.3s ease, opacity 0.2s ease;
+}
+
+.ios-seg > button {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--io-label-2);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: none;
+  transform: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease, background 0.2s ease, transform 0.4s var(--io-spring);
+}
+
+.ios-seg > button i {
+  font-size: 16px;
+}
+
+.ios-seg > button:hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--io-cyan-d);
+  background: var(--io-tint);
+}
+
+.ios-seg > button:active {
+  transform: scale(0.94);
+}
+
+.ios-seg > button.active,
+.ios-seg > button.active:hover {
+  color: #ffffff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* --- Botón flotante de WhatsApp --- */
+.whatsapp-float {
+  width: 58px;
+  height: 58px;
+  background: #25d366;
+  box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: ioWaRing 2.6s ease-out infinite;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  box-shadow: 0 16px 34px -10px rgba(37, 211, 102, 0.85);
+}
+
+.whatsapp-float:active {
+  transform: scale(0.92);
+}
+
+@keyframes ioWaRing {
+  0% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0.45); }
+  70% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+/* Etiqueta de cristal */
+.whatsapp-tooltip {
+  right: 70px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  color: var(--io-label);
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid var(--io-hair);
+  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) translateX(8px) scale(0.92);
+  transform-origin: right center;
+  transition: opacity 0.2s ease, visibility 0.2s, transform 0.45s var(--io-spring);
+}
+
+.whatsapp-tooltip::after {
+  display: none;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+/* --- Botón CTA de WhatsApp (verde de la marca, en píldora) --- */
+.cta-btn {
+  padding: 17px 32px;
+  border-radius: 999px;
+  background: #25d366;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 14px 30px -12px rgba(37, 211, 102, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.cta-btn:hover {
+  background: #22c55e;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 18px 36px -12px rgba(37, 211, 102, 0.85);
+}
+
+.cta-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 768px) {
+  .ios-seg {
+    margin: 0;
+    width: auto;
+  }
+
+  .ios-seg > button {
+    padding: 9px 15px;
+    font-size: 14px;
+  }
+
+  .whatsapp-float {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title,
+  .hero-subtitle,
+  .whatsapp-float {
+    animation: none;
+  }
+
+  .ios-seg-thumb {
+    transition: none;
+  }
+}
+
+/* --- Hero --- */
+.contact-hero {
+  padding: 120px 20px 48px;
+  min-height: 0;
+}
+
+/* --- Métodos de contacto --- */
+.contact-methods-section {
+  padding: 8px 20px 40px;
+}
+
+.contact-methods-grid {
+  gap: 20px;
+}
+
+.contact-method-card {
+  padding: 32px 26px 28px;
+  border-radius: 28px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  transition: transform 0.55s var(--io-spring), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.contact-method-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--io-shadow-hover);
+  border-color: rgba(6, 182, 212, 0.22);
+}
+
+.method-icon {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 18px;
+  border: 0;
+  background: var(--io-tint-2);
+  box-shadow: none;
+  transition: transform 0.55s var(--io-spring), background 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.method-icon i {
+  font-size: 27px;
+  color: var(--io-cyan-d);
+  transition: color 0.25s ease;
+}
+
+.contact-method-card:hover .method-icon {
+  background: var(--io-cyan);
+  box-shadow: 0 10px 22px -8px rgba(6, 182, 212, 0.7);
+}
+
+.contact-method-card:hover .method-icon i {
+  color: #ffffff;
+}
+
+.method-title {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--io-label);
+  margin-bottom: 6px;
+}
+
+.method-description {
+  color: var(--io-label-2);
+  margin-bottom: 20px;
+}
+
+.method-link {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 22px -10px rgba(6, 182, 212, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.method-link:hover {
+  background: var(--io-cyan-d);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -10px rgba(6, 182, 212, 0.85);
+}
+
+/* --- Formulario --- */
+.contact-form-section {
+  padding: 40px 20px 60px;
+}
+
+.contact-grid {
+  gap: 24px;
+  align-items: start;
+}
+
+.form-container {
+  padding: 36px;
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background: #ffffff;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--io-label);
+  margin-bottom: 6px;
+}
+
+.form-subtitle {
+  color: var(--io-label-2);
+  margin-bottom: 26px;
+}
+
+.contact-form {
+  gap: 16px;
+}
+
+.form-row {
+  gap: 14px;
+}
+
+.form-group label {
+  margin: 0 0 7px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--io-label-2);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 14px 18px;
+  border: 1px solid var(--io-hair-2);
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--io-label);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.form-group textarea {
+  border-radius: 22px;
+  resize: vertical;
+  min-height: 130px;
+}
+
+/* Flecha propia para el select */
+.form-group select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  cursor: pointer;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--io-cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: #ff3b30;
+  box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.12);
+  animation: ioShake 0.45s var(--io-spring);
+}
+
+@keyframes ioShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+
+.field-error {
+  margin: 7px 0 0 8px;
+  color: #ff3b30;
+  font-size: 12.5px;
+}
+
+.field-error::before {
+  animation: none;
+}
+
+.submit-btn {
+  align-self: flex-start;
+  padding: 15px 28px;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 26px -10px rgba(6, 182, 212, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.submit-btn:hover {
+  background: var(--io-cyan-d);
+  transform: translateY(-1px);
+}
+
+.submit-btn:active {
+  transform: scale(0.96);
+}
+
+.submit-btn .lni-spinner-arrow {
+  animation: ioSpin 0.9s linear infinite;
+}
+
+@keyframes ioSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Información: lista agrupada --- */
+.info-card {
+  padding: 24px 22px;
+  margin-bottom: 16px;
+  border-radius: 28px;
+  background: #ffffff;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+}
+
+.info-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--io-label-3);
+  margin: 0 0 6px 4px;
+}
+
+.info-item {
+  gap: 14px;
+  align-items: center;
+  margin: 0;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--io-hair);
+}
+
+.info-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+.info-icon {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--io-tint-2);
+  box-shadow: none;
+}
+
+.info-icon i {
+  font-size: 20px;
+  color: var(--io-cyan-d);
+}
+
+.info-content h4 {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--io-label);
+  margin-bottom: 2px;
+}
+
+.info-content p {
+  color: var(--io-label-2);
+}
+
+/* --- Redes (solo dentro de la tarjeta, sin afectar al footer) --- */
+.social-card {
+  padding: 24px 22px;
+  border-radius: 28px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+}
+
+.social-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--io-label-3);
+  margin-bottom: 16px;
+}
+
+.social-card .social-link {
+  width: 50px;
+  height: 50px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--io-tint-2);
+  color: var(--io-cyan-d);
+  font-size: 22px;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.social-card .social-link:hover {
+  transform: translateY(-3px) scale(1.06);
+  background: var(--io-cyan);
+  color: #ffffff;
+  box-shadow: 0 10px 22px -8px rgba(6, 182, 212, 0.75);
+}
+
+.social-card .social-link:active {
+  transform: scale(0.92);
+}
+
+/* --- Aviso de éxito: notificación que baja desde arriba --- */
+.success-message {
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  right: auto;
+  padding: 12px 20px 12px 12px;
+  border: 1px solid var(--io-hair);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.28);
+  transform: translate(-50%, -140%) scale(0.9);
+  transition: opacity 0.3s ease, transform 0.6s var(--io-spring);
+}
+
+.success-message.show {
+  transform: translate(-50%, 0) scale(1);
+}
+
+.success-content {
+  gap: 12px;
+}
+
+.success-content i {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: #ffffff;
+  background: #34c759;
+}
+
+.success-content h3 {
+  font-size: 15px;
+  font-weight: 650;
+  margin-bottom: 0;
+  color: var(--io-label);
+}
+
+.success-content p {
+  font-size: 13px;
+  color: var(--io-label-2);
+}
+
+/* --- Banner digital --- */
+.map-section {
+  padding: 20px 20px 110px;
+}
+
+.digital-banner {
+  gap: 28px;
+  padding: 36px 40px;
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background:
+    radial-gradient(70% 120% at 0% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 70%),
+    #ffffff;
+}
+
+.digital-banner-icon {
+  width: 76px;
+  height: 76px;
+  border: 0;
+  background: var(--io-cyan);
+  box-shadow: 0 14px 28px -10px rgba(6, 182, 212, 0.75);
+  animation: ioSpinSlow 18s linear infinite;
+}
+
+.digital-banner-icon i {
+  font-size: 34px;
+  color: #ffffff;
+}
+
+@keyframes ioSpinSlow {
+  to { transform: rotate(360deg); }
+}
+
+.digital-banner-content h3 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--io-label);
+  margin-bottom: 6px;
+}
+
+.digital-banner-content p {
+  color: var(--io-label-2);
+}
+
+@media (max-width: 968px) {
+  .contact-methods-grid {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-hero {
+    padding: 100px 20px 32px;
+  }
+
+  .contact-methods-section {
+    padding: 4px 16px 24px;
+  }
+
+  .contact-method-card {
+    border-radius: 24px;
+    padding: 26px 22px 22px;
+  }
+
+  .contact-form-section {
+    padding: 24px 16px 40px;
+  }
+
+  .form-container {
+    padding: 26px 20px;
+    border-radius: 26px;
+  }
+
+  .submit-btn {
+    align-self: stretch;
+  }
+
+  .success-message {
+    left: 50%;
+    right: auto;
+    width: max-content;
+    max-width: calc(100% - 24px);
+  }
+
+  .map-section {
+    padding: 8px 16px 96px;
+  }
+
+  .digital-banner {
+    padding: 30px 22px;
+    border-radius: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .digital-banner-icon {
+    animation: none;
+  }
+}
+
+/* ============================================================================
+   MENÚ iOS 27 — Asunto y lada (mismo estilo que el selector de idioma del
+   userbar): brota desde el campo con resorte, una lente cian sigue al cursor
+   y la opción elegida lleva palomita.
+   ============================================================================ */
+.ios-pick-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden;
+}
+
+.ios-pick-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 44px 0 18px;
+  border: 1px solid rgba(60, 60, 67, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d1d1f;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, transform 0.45s var(--io-spring, cubic-bezier(0.34, 1.35, 0.64, 1));
+}
+
+.ios-pick-trigger:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+.ios-pick-trigger:active {
+  transform: scale(0.98);
+}
+
+.ios-pick-trigger:focus-visible,
+.ios-pick-trigger.is-open {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+
+.ios-pick-trigger.is-placeholder .ios-pick-label {
+  color: #8e8e93;
+}
+
+.ios-pick-trigger.error {
+  border-color: #ff3b30;
+  box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.12);
+  animation: iosPickShake 0.45s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes iosPickShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+
+.ios-pick-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ios-pick-label.swap {
+  animation: iosPickSwap 0.45s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes iosPickSwap {
+  from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.ios-pick-chev {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  color: #8e8e93;
+  transition: transform 0.5s cubic-bezier(0.34, 1.35, 0.64, 1), color 0.2s ease;
+}
+
+.ios-pick-trigger.is-open .ios-pick-chev {
+  transform: rotate(180deg);
+  color: #06b6d4;
+}
+
+/* Lada: bandera + código */
+.ios-lada-trigger {
+  gap: 8px;
+  padding: 0 32px 0 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ios-lada-trigger .ios-pick-chev {
+  right: 12px;
+}
+
+.ios-flag {
+  display: inline-flex;
+  flex: none;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  transition: transform 0.55s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+.ios-flag svg {
+  display: block;
+}
+
+.ios-lada-trigger .ios-flag.flip {
+  animation: iosFlagFlip 0.55s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes iosFlagFlip {
+  0% { transform: rotateY(90deg) scale(0.7); }
+  100% { transform: none; }
+}
+
+/* Menú flotante */
+.ios-pick-menu {
+  position: fixed;
+  z-index: 7000;
+  min-width: 220px;
+  max-height: min(340px, 60vh);
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 26px 56px -18px rgba(0, 0, 0, 0.3);
+  transform-origin: var(--ox, 30px) var(--oy, 0%);
+  animation: iosPickIn 0.5s cubic-bezier(0.34, 1.35, 0.64, 1) both;
+  scrollbar-width: thin;
+}
+
+.ios-pick-menu.is-closing {
+  animation: iosPickOut 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@keyframes iosPickIn {
+  from { opacity: 0; transform: scale(0.55); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes iosPickOut {
+  to { opacity: 0; transform: scale(0.88); filter: blur(3px); }
+}
+
+.ios-pick-lens {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 0;
+  height: 0;
+  border-radius: 16px;
+  background: rgba(6, 182, 212, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.34, 1.35, 0.64, 1), height 0.3s ease, opacity 0.15s ease;
+}
+
+.ios-pick-opt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 38px 11px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #1d1d1f;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: iosPickOpt 0.45s cubic-bezier(0.34, 1.35, 0.64, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+  transition: transform 0.35s cubic-bezier(0.34, 1.35, 0.64, 1), color 0.15s ease;
+}
+
+@keyframes iosPickOpt {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ios-pick-opt:active {
+  transform: scale(0.97);
+}
+
+.ios-pick-opt.is-placeholder {
+  color: #8e8e93;
+}
+
+.ios-pick-opt .ios-pick-code {
+  margin-left: auto;
+  color: #8e8e93;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.ios-pick-opt.is-selected {
+  color: #0891b2;
+  font-weight: 600;
+}
+
+.ios-pick-opt.is-selected::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 6px;
+  height: 11px;
+  margin-top: -7px;
+  border-right: 2.2px solid #06b6d4;
+  border-bottom: 2.2px solid #06b6d4;
+  transform: rotate(45deg);
+  animation: iosPickCheck 0.45s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes iosPickCheck {
+  from { transform: rotate(45deg) scale(0); }
+  to { transform: rotate(45deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-pick-menu,
+  .ios-pick-opt,
+  .ios-pick-label.swap,
+  .ios-flag.flip {
+    animation: none !important;
+  }
+}
+
+/* Contacto: lada a la izquierda del teléfono */
+.phone-lada-row {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-lada-row .ios-lada-trigger {
+  order: -1;
+  flex: none;
+  width: auto;
+}
+
+.phone-lada-row input[type="tel"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group .ios-pick-trigger {
+  min-height: 51px;
 }

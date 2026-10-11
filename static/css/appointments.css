@@ -2851,3 +2851,343 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     animation: none;
   }
 }
+
+/* ============================================================================
+   CORRECCIÓN — el modal debe cubrir el sidebar y la barra superior
+   (los tres usaban z-index 1000 y el sidebar quedaba por encima del fondo)
+   ============================================================================ */
+.modal {
+  z-index: 4000;
+}
+
+/* ============================================================================
+   CALENDARIO iOS 27 — reemplaza el selector nativo de los campos de fecha
+   Se abre desde el campo con resorte, el mes cambia deslizándose y el día
+   elegido "brota" en un círculo cian. El valor sigue siendo AAAA-MM-DD.
+   ============================================================================ */
+input[type="date"].ios-date {
+  cursor: pointer;
+}
+
+input[type="date"].ios-date::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ios-date-wrap {
+  position: relative;
+  display: block;
+}
+
+.ios-date-wrap .ios-date-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 18px;
+  height: 18px;
+  color: #8e8e93;
+  pointer-events: none;
+  transition: color 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.ios-date-wrap.is-open input[type="date"] {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+
+.ios-date-wrap.is-open .ios-date-icon {
+  color: #06b6d4;
+  transform: scale(1.12);
+}
+
+.ios-cal {
+  position: fixed;
+  z-index: 6000;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  padding: 14px 14px 12px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 28px 60px -18px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  color: #1d1d1f;
+  transform-origin: var(--ox, 50%) var(--oy, 0%);
+  animation: iosCalIn 0.55s var(--ios-spring) both;
+  user-select: none;
+}
+
+.ios-cal.is-closing {
+  animation: iosCalOut 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@keyframes iosCalIn {
+  from { opacity: 0; transform: scale(0.6); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes iosCalOut {
+  to { opacity: 0; transform: scale(0.85); filter: blur(4px); }
+}
+
+.ios-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 10px;
+}
+
+.ios-cal-title {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  height: 22px;
+  position: relative;
+  flex: 1;
+}
+
+.ios-cal-title span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+}
+
+.ios-cal-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.ios-cal-nav button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #06b6d4;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, transform 0.4s var(--ios-spring), opacity 0.2s ease;
+}
+
+.ios-cal-nav button:hover {
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.ios-cal-nav button:active {
+  transform: scale(0.82);
+}
+
+.ios-cal-nav button:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.ios-cal-nav svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ios-cal-week,
+.ios-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.ios-cal-week {
+  padding-bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+}
+
+.ios-cal-body {
+  position: relative;
+  overflow: hidden;
+}
+
+.ios-cal-grid {
+  row-gap: 2px;
+}
+
+.ios-cal-grid.slide-next { animation: iosCalSlideNext 0.5s var(--ios-spring); }
+.ios-cal-grid.slide-prev { animation: iosCalSlidePrev 0.5s var(--ios-spring); }
+
+@keyframes iosCalSlideNext {
+  from { opacity: 0; transform: translateX(36%); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes iosCalSlidePrev {
+  from { opacity: 0; transform: translateX(-36%); }
+  to { opacity: 1; transform: none; }
+}
+
+.ios-cal-title span.slide-next { animation: iosCalTitleNext 0.45s var(--ios-spring); }
+.ios-cal-title span.slide-prev { animation: iosCalTitlePrev 0.45s var(--ios-spring); }
+
+@keyframes iosCalTitleNext {
+  from { opacity: 0; transform: translateY(70%); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes iosCalTitlePrev {
+  from { opacity: 0; transform: translateY(-70%); }
+  to { opacity: 1; transform: none; }
+}
+
+.ios-cal-day {
+  position: relative;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #1d1d1f;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-cal-day::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: transparent;
+  scale: 0.6;
+  transition: background 0.2s ease, scale 0.45s var(--ios-spring);
+  z-index: -1;
+}
+
+.ios-cal-day > span {
+  position: relative;
+  display: inline-block;
+  transition: transform 0.4s var(--ios-spring), color 0.2s ease;
+}
+
+.ios-cal-day:hover::before {
+  background: rgba(6, 182, 212, 0.1);
+  scale: 1;
+}
+
+.ios-cal-day:active > span {
+  transform: scale(0.8);
+}
+
+.ios-cal-day.is-out {
+  color: #c7c7cc;
+}
+
+.ios-cal-day.is-today {
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+.ios-cal-day.is-disabled {
+  color: #d1d1d6;
+  cursor: default;
+  pointer-events: none;
+}
+
+.ios-cal-day.is-selected {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.ios-cal-day.is-selected::before {
+  background: #06b6d4;
+  scale: 1;
+  box-shadow: 0 8px 18px -8px rgba(6, 182, 212, 0.85);
+  animation: iosCalPick 0.5s var(--ios-spring);
+}
+
+@keyframes iosCalPick {
+  0% { scale: 0.4; }
+  100% { scale: 1; }
+}
+
+.ios-cal-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 2px 0;
+  margin-top: 6px;
+  border-top: 1px solid rgba(60, 60, 67, 0.1);
+}
+
+.ios-cal-foot button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.4s var(--ios-spring);
+}
+
+.ios-cal-foot button:active {
+  transform: scale(0.92);
+}
+
+.ios-cal-clear {
+  background: rgba(118, 118, 128, 0.12);
+  color: #6e6e73;
+}
+
+.ios-cal-today {
+  background: rgba(6, 182, 212, 0.12);
+  color: #0891b2;
+}
+
+.ios-cal-today:hover {
+  background: #06b6d4;
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  /* En el teléfono el calendario sale como hoja desde abajo */
+  .ios-cal.is-sheet {
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
+    border-radius: 30px;
+    transform-origin: 50% 100%;
+    animation: iosCalSheet 0.55s var(--ios-spring) both;
+  }
+
+  .ios-cal.is-sheet.is-closing {
+    animation: iosCalSheetOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
+  @keyframes iosCalSheet { from { transform: translateY(110%); } to { transform: none; } }
+  @keyframes iosCalSheetOut { to { transform: translateY(110%); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-cal,
+  .ios-cal-grid,
+  .ios-cal-title span,
+  .ios-cal-day.is-selected::before {
+    animation: none !important;
+  }
+}

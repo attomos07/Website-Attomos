@@ -1957,7 +1957,7 @@ async function updateNindaBanner(branchId) {
             noPay.style.display  = 'none';
             active.style.display = 'flex';
             if (storeLink) {
-                storeLink.href = `/ninda/${branchId}`;
+                storeLink.href = `/comy/${branchId}`;
             }
         } else {
             noPay.style.display  = 'flex';
@@ -3449,4 +3449,19 @@ function setText(id, val) {
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
+})();
+
+// ============================================================================
+// Ninda ahora es Comy: los textos traducidos todavía pueden traer "Ninda",
+// así que se corrige al vuelo dentro del banner y en las ayudas de imágenes.
+// ============================================================================
+(function () {
+    const sel = '#nindaBanner [data-translate], [data-translate="mybiz_banner_ninda"], [data-translate="mybiz_banner_hint"], [data-translate="mybiz_logo_hint"]';
+    function fix(el) {
+        if (!el.children.length && /Ninda/.test(el.textContent)) el.textContent = el.textContent.replace(/Ninda/g, 'Comy');
+    }
+    document.querySelectorAll(sel).forEach((el) => {
+        fix(el);
+        new MutationObserver(() => fix(el)).observe(el, { childList: true, characterData: true, subtree: true });
+    });
 })();

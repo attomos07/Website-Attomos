@@ -366,7 +366,7 @@ function createWhatsAppMessage(data) {
     message += `*Información de Contacto:*\n`;
     message += `• Nombre: ${data.name}\n`;
     message += `• Email: ${data.email}\n`;
-    if (data.phone) message += `• Teléfono: ${data.phone}\n`;
+    if (data.phone) message += `• Teléfono: ${data.phoneCode ? data.phoneCode + ' ' : ''}${data.phone}\n`;
     if (data.company) message += `• Empresa: ${data.company}\n`;
     if (data.subject) message += `• Asunto: ${data.subject}\n`;
     
@@ -524,3 +524,248 @@ function initSectionFadeIn(selector) {
     sections.forEach(s => observer.observe(s));
     console.log('✅ Section fade-in inicializado');
 }
+
+// ============================================================================
+// MENÚ iOS 27 — motor común para el selector de Asunto y el de lada
+// ============================================================================
+const IOSPick = (function () {
+    const CHEV = '<svg class="ios-pick-chev" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    let current = null;
+
+    function close(instant) {
+        if (!current) return;
+        const { menu, trigger } = current;
+        current = null;
+        trigger.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (instant) { menu.remove(); return; }
+        menu.classList.add('is-closing');
+        setTimeout(() => menu.remove(), 180);
+    }
+
+    function open(trigger, items, onPick) {
+        if (current && current.trigger === trigger) { close(); return; }
+        close(true);
+        const menu = document.createElement('div');
+        menu.className = 'ios-pick-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.innerHTML = '<div class="ios-pick-lens" aria-hidden="true"></div>' + items.map((it, i) =>
+            `<button type="button" role="option" class="ios-pick-opt${it.selected ? ' is-selected' : ''}${it.placeholder ? ' is-placeholder' : ''}" data-i="${i}" style="--i:${i}" aria-selected="${!!it.selected}">${it.html}</button>`
+        ).join('');
+        document.body.appendChild(menu);
+
+        const r = trigger.getBoundingClientRect();
+        menu.style.minWidth = `${Math.max(220, r.width)}px`;
+        const w = menu.offsetWidth, h = menu.offsetHeight;
+        const left = Math.min(Math.max(12, r.left), window.innerWidth - w - 12);
+        let top = r.bottom + 8, oy = '0%';
+        if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; oy = '100%'; }
+        menu.style.left = `${left}px`;
+        menu.style.top = `${Math.max(12, top)}px`;
+        menu.style.setProperty('--ox', `${Math.min(Math.max(r.left + 30 - left, 0), w)}px`);
+        menu.style.setProperty('--oy', oy);
+
+        const lens = menu.querySelector('.ios-pick-lens');
+        const opts = [...menu.querySelectorAll('.ios-pick-opt')];
+        let hi = Math.max(0, items.findIndex((it) => it.selected));
+        function light(i, scroll) {
+            hi = i;
+            const o = opts[i];
+            if (!o) return;
+            lens.style.height = `${o.offsetHeight}px`;
+            lens.style.transform = `translateY(${o.offsetTop}px)`;
+            lens.style.opacity = '1';
+            if (scroll) o.scrollIntoView({ block: 'nearest' });
+        }
+        lens.style.transition = 'none';
+        light(hi, true);
+        requestAnimationFrame(() => { lens.style.transition = ''; });
+
+        menu.addEventListener('pointermove', (e) => {
+            const o = e.target.closest('.ios-pick-opt');
+            if (o) light(+o.dataset.i);
+        });
+        menu.addEventListener('click', (e) => {
+            const o = e.target.closest('.ios-pick-opt');
+            if (!o) return;
+            o.classList.add('is-selected');
+            if (navigator.vibrate) navigator.vibrate(6);
+            onPick(+o.dataset.i);
+            setTimeout(() => close(), 120);
+        });
+
+        trigger.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+        current = { menu, trigger, opts, light: (d) => light(Math.min(opts.length - 1, Math.max(0, hi + d)), true), pick: () => opts[hi] && opts[hi].click() };
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        if (current && !current.menu.contains(e.target) && !current.trigger.contains(e.target)) close();
+    }, true);
+    document.addEventListener('keydown', (e) => {
+        if (!current) return;
+        if (e.key === 'Escape') { e.preventDefault(); const t = current.trigger; close(); t.focus(); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); current.light(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); current.light(-1); }
+        else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); current.pick(); }
+        else if (e.key === 'Tab') close();
+    }, true);
+    window.addEventListener('resize', () => close(true));
+    document.addEventListener('scroll', (e) => { if (current && !current.menu.contains(e.target)) close(true); }, true);
+
+    function bump(el, cls) {
+        el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    }
+
+    // Convierte un <select> en el menú iOS sin quitarlo del formulario
+    function select(sel, opts = {}) {
+        if (!sel || sel.dataset.iosPick) return;
+        sel.dataset.iosPick = '1';
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ios-pick-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (sel.id) {
+            const lbl = document.querySelector(`label[for="${sel.id}"]`);
+            if (lbl) { lbl.addEventListener('click', (e) => { e.preventDefault(); trigger.focus(); }); trigger.setAttribute('aria-label', lbl.textContent.trim()); }
+        }
+        trigger.innerHTML = `<span class="ios-pick-label"></span>${CHEV}`;
+        sel.classList.add('ios-pick-native');
+        sel.tabIndex = -1;
+        sel.setAttribute('aria-hidden', 'true');
+        sel.after(trigger);
+        const label = trigger.querySelector('.ios-pick-label');
+
+        function sync(animate) {
+            const o = sel.options[sel.selectedIndex];
+            const text = o ? o.textContent.trim() : '';
+            if (animate && label.textContent !== text) bump(label, 'swap');
+            label.textContent = text;
+            trigger.classList.toggle('is-placeholder', !sel.value);
+        }
+        trigger.addEventListener('click', () => {
+            const items = [...sel.options].map((o) => ({ html: `<span>${o.textContent.trim()}</span>`, selected: o.selected && !!o.value, placeholder: !o.value }));
+            open(trigger, items, (i) => {
+                sel.selectedIndex = i;
+                sel.dispatchEvent(new Event('input', { bubbles: true }));
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                trigger.classList.remove('error');
+                trigger.parentNode.querySelector('.field-error.ios-pick-error')?.remove();
+                sync(true);
+            });
+        });
+        trigger.addEventListener('keydown', (e) => {
+            if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !trigger.classList.contains('is-open')) { e.preventDefault(); trigger.click(); }
+        });
+        // Si el campo es obligatorio y está vacío, el aviso sale en el botón visible
+        sel.addEventListener('invalid', (e) => {
+            e.preventDefault();
+            bump(trigger, 'error');
+            if (opts.errorText && !trigger.parentNode.querySelector('.ios-pick-error')) {
+                const err = document.createElement('div');
+                err.className = 'field-error ios-pick-error';
+                err.textContent = opts.errorText;
+                trigger.after(err);
+            }
+            trigger.focus();
+        });
+        sel.addEventListener('change', () => sync(false));
+        // Las traducciones cambian el texto de las opciones
+        new MutationObserver(() => sync(false)).observe(sel, { subtree: true, childList: true, characterData: true });
+        sel.form?.addEventListener('reset', () => setTimeout(() => sync(false)));
+        sync(false);
+        return trigger;
+    }
+
+    return { open, close, select, bump, CHEV };
+})();
+
+// ============================================================================
+// LADA — selector de código de país con las banderas del userbar
+// ============================================================================
+const IOSLada = (function () {
+    const F = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14" width="22" height="15">${body}</svg>`;
+    const COUNTRIES = [
+        { iso: 'MX', name: 'México', code: '+52', flag: F('<rect width="20" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#006847"/><rect x="13.33" width="6.67" height="14" fill="#CE1126"/><circle cx="10" cy="7" r="1.8" fill="#8B4513" opacity="0.6"/>') },
+        { iso: 'GB', name: 'Reino Unido', code: '+44', flag: F('<rect width="20" height="14" fill="#012169"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#fff" stroke-width="2.8"/><path d="M0,0 L20,14 M20,0 L0,14" stroke="#C8102E" stroke-width="1.6"/><path d="M10,0 V14 M0,7 H20" stroke="#fff" stroke-width="4"/><path d="M10,0 V14 M0,7 H20" stroke="#C8102E" stroke-width="2.4"/>') },
+        { iso: 'RU', name: 'Rusia', code: '+7', flag: F('<rect width="20" height="14" fill="#fff"/><rect y="4.67" width="20" height="4.66" fill="#0035A9"/><rect y="9.33" width="20" height="4.67" fill="#D52B1E"/>') },
+        { iso: 'UZ', name: 'Uzbekistán', code: '+998', flag: F('<rect width="20" height="14" fill="#1EB53A"/><rect width="20" height="4.67" fill="#009FCA"/><rect y="9.33" width="20" height="4.67" fill="#009FCA"/><rect y="4.67" width="20" height="4.66" fill="#fff"/>') },
+        { iso: 'JP', name: 'Japón', code: '+81', flag: F('<rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="4" fill="#BC002D"/>') },
+        { iso: 'CN', name: 'China', code: '+86', flag: F('<rect width="20" height="14" fill="#DE2910"/><polygon points="3,1 3.6,2.9 5.6,2.9 4,4 4.6,5.9 3,4.8 1.4,5.9 2,4 0.4,2.9 2.4,2.9" transform="translate(0.5,0.5) scale(0.95)" fill="#FFDE00"/>') },
+        { iso: 'FR', name: 'Francia', code: '+33', flag: F('<rect width="20" height="14" fill="#ED2939"/><rect width="13.33" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#002395"/>') },
+        { iso: 'BR', name: 'Brasil', code: '+55', flag: F('<rect width="20" height="14" fill="#009C3B"/><polygon points="10,2 19,7 10,12 1,7" fill="#FEDD00"/><circle cx="10" cy="7" r="3" fill="#003087"/><path d="M7,7.8 Q10,6 13,7.8" stroke="#fff" stroke-width="0.9" fill="none"/>') },
+        { iso: 'DE', name: 'Alemania', code: '+49', flag: F('<rect width="20" height="14" fill="#FFCE00"/><rect width="20" height="9.33" fill="#DD0000"/><rect width="20" height="4.67" fill="#000"/>') },
+        { iso: 'KR', name: 'Corea del Sur', code: '+82', flag: F('<rect width="20" height="14" fill="#fff"/><circle cx="10" cy="7" r="3.5" fill="#C60C30"/><path d="M10,3.5 A3.5,3.5 0 0,1 10,10.5" fill="#003478"/>') },
+    ];
+
+    // input: el campo que guarda el código (+52); mount: dónde va el botón
+    function attach(input, mount) {
+        if (!input || input.dataset.iosLada) return;
+        input.dataset.iosLada = '1';
+        if (!input.value) input.value = '+52';
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ios-pick-trigger ios-lada-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-label', 'Código de país');
+        trigger.innerHTML = `<span class="ios-flag"></span><span class="ios-pick-label"></span>${IOSPick.CHEV}`;
+        if (input.type !== 'hidden') { input.classList.add('ios-pick-native'); input.tabIndex = -1; input.setAttribute('aria-hidden', 'true'); }
+        mount.appendChild(trigger);
+        const flag = trigger.querySelector('.ios-flag');
+        const label = trigger.querySelector('.ios-pick-label');
+
+        const find = () => COUNTRIES.find((c) => c.code === input.value.replace(/\s/g, '')) || null;
+        function sync(animate) {
+            const c = find();
+            flag.innerHTML = c ? c.flag : '';
+            flag.style.display = c ? '' : 'none';
+            if (animate) { IOSPick.bump(flag, 'flip'); IOSPick.bump(label, 'swap'); }
+            label.textContent = input.value || '+52';
+        }
+        trigger.addEventListener('click', () => {
+            const cur = find();
+            IOSPick.open(trigger, COUNTRIES.map((c) => ({
+                html: `<span class="ios-flag">${c.flag}</span><span>${c.name}</span><span class="ios-pick-code">${c.code}</span>`,
+                selected: c === cur,
+            })), (i) => {
+                input.value = COUNTRIES[i].code;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.dispatchEvent(new Event('blur'));
+                sync(true);
+            });
+        });
+        trigger.addEventListener('keydown', (e) => {
+            if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !trigger.classList.contains('is-open')) { e.preventDefault(); trigger.click(); }
+        });
+        input.addEventListener('change', () => sync(false));
+        input.form?.addEventListener('reset', () => setTimeout(() => { input.value = '+52'; sync(false); }));
+        sync(false);
+        return trigger;
+    }
+
+    return { attach, COUNTRIES };
+})();
+
+// Asunto y lada con el menú iOS
+document.addEventListener('DOMContentLoaded', function () {
+    IOSPick.select(document.getElementById('subject'), { errorText: 'Selecciona un asunto' });
+    const code = document.getElementById('phoneCode');
+    const phone = document.getElementById('phone');
+    if (code && phone) IOSLada.attach(code, phone.parentElement);
+});
+
+// Las traducciones de la tarjeta de información traen saltos "<br>" que se
+// insertan como texto: se convierten en saltos de línea reales (con el texto escapado)
+(function () {
+    const esc = (s) => s.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    function fix(p) {
+        if (p.children.length || !/<br\s*\/?>/i.test(p.textContent)) return;
+        p.innerHTML = p.textContent.split(/<br\s*\/?>/i).map(esc).join('<br>');
+    }
+    document.querySelectorAll('.info-content p').forEach((p) => {
+        fix(p);
+        new MutationObserver(() => fix(p)).observe(p, { childList: true, characterData: true, subtree: true });
+    });
+})();

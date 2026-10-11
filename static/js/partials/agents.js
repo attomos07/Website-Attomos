@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar todas las funcionalidades
     initParticles();
     initFilterButtons();
+    initIOSSegments('.filter-controls', '.filter-btn');
     initSectionFadeIn('.agents-filter-section, .agents-grid-section, .agents-cta-section');
     initAgentCards();
     
@@ -271,4 +272,46 @@ function initSectionFadeIn(selector) {
 
     sections.forEach(s => observer.observe(s));
     console.log('✅ Section fade-in inicializado');
+}
+
+// ============================================
+// CONTROL SEGMENTADO iOS 27
+// Convierte una fila de botones en un control segmentado: una píldora
+// cian se desliza con resorte hasta el botón activo. Observa la clase
+// .active, así que funciona con la lógica de filtros que ya existe.
+// ============================================
+function initIOSSegments(containerSelector, itemSelector) {
+    document.querySelectorAll(containerSelector).forEach((bar) => {
+        if (bar.classList.contains('ios-seg')) return;
+        bar.classList.add('ios-seg');
+
+        const thumb = document.createElement('span');
+        thumb.className = 'ios-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        bar.prepend(thumb);
+
+        function place(instant = false) {
+            const active = bar.querySelector(`${itemSelector}.active`);
+            if (!active) { thumb.style.opacity = '0'; return; }
+            if (instant) thumb.style.transition = 'none';
+            thumb.style.width = `${active.offsetWidth}px`;
+            thumb.style.height = `${active.offsetHeight}px`;
+            thumb.style.transform = `translate(${active.offsetLeft}px, ${active.offsetTop}px)`;
+            thumb.style.opacity = '1';
+            if (instant) {
+                void thumb.offsetWidth;
+                thumb.style.transition = '';
+            }
+            // En móvil la fila se desplaza para dejar visible la opción activa
+            if (bar.scrollWidth > bar.clientWidth + 1) {
+                const left = active.offsetLeft - (bar.clientWidth - active.offsetWidth) / 2;
+                bar.scrollTo({ left, behavior: instant ? 'auto' : 'smooth' });
+            }
+        }
+
+        new MutationObserver(() => place()).observe(bar, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        if ('ResizeObserver' in window) new ResizeObserver(() => place(true)).observe(bar);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => place(true));
+        place(true);
+    });
 }

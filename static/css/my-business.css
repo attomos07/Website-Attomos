@@ -3678,3 +3678,138 @@ body .menu-upload-placeholder:hover {
     bottom: 1rem;
   }
 }
+
+/* ============================================================================
+   BANNER COMY — ícono de advertencia y botones con animación iOS
+   ============================================================================ */
+/* Mismo ícono de advertencia que usa Contacto */
+.biz-warn-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  font-size: 1.2rem;
+  line-height: 1;
+  animation: bizWarnPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes bizWarnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
+  50% { box-shadow: 0 0 0 7px rgba(245, 158, 11, 0); }
+}
+
+/* "Configurar pagos en Integraciones" */
+.biz-pay-cta,
+.biz-store-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--ios-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.biz-pay-cta {
+  background: #1d1d1f;
+  box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Destello que cruza el botón cada pocos segundos */
+.biz-pay-cta::after,
+.biz-store-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -40%;
+  width: 32%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-14deg);
+  animation: bizShine 3.6s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes bizShine {
+  0%, 62% { left: -40%; }
+  100% { left: 130%; }
+}
+
+/* El enchufe "se conecta": empuja hacia adelante y regresa */
+.biz-pay-cta i {
+  display: inline-block;
+  transition: transform 0.5s var(--ios-spring);
+}
+
+.biz-pay-cta:hover {
+  background: #06b6d4;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -12px rgba(6, 182, 212, 0.85);
+}
+
+.biz-pay-cta:hover i {
+  animation: bizPlug 0.9s var(--ios-spring) infinite;
+}
+
+@keyframes bizPlug {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  35% { transform: translateX(3px) rotate(-12deg); }
+  60% { transform: translateX(-1px) rotate(6deg); }
+}
+
+.biz-pay-cta:active,
+.biz-store-cta:active {
+  transform: scale(0.94);
+}
+
+/* "Ver mi tienda" */
+.biz-store-cta {
+  flex-shrink: 0;
+  background: #16a34a;
+  box-shadow: 0 10px 22px -12px rgba(22, 163, 74, 0.8);
+}
+
+.biz-store-cta i {
+  transition: transform 0.45s var(--ios-spring);
+}
+
+.biz-store-cta:hover {
+  transform: translateY(-2px);
+}
+
+.biz-store-cta:hover i {
+  transform: translateX(3px);
+}
+
+#nindaBannerNoPay,
+#nindaBannerActive {
+  border-radius: 22px !important;
+  animation: bizBannerIn 0.6s var(--ios-spring) both;
+}
+
+@keyframes bizBannerIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biz-warn-icon,
+  .biz-pay-cta::after,
+  .biz-store-cta::after,
+  .biz-pay-cta:hover i,
+  #nindaBannerNoPay,
+  #nindaBannerActive {
+    animation: none;
+  }
+}

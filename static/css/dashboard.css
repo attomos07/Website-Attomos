@@ -4512,3 +4512,203 @@ body {
     transition: none;
   }
 }
+
+/* ============================================================================
+   TUTORIAL — animaciones iOS 27
+   El recuadro de enfoque viaja con resorte y "late" al llegar, la tarjeta
+   se desliza a su nuevo lugar, el contenido entra hacia el lado del avance,
+   y todos los botones responden con resorte.
+   ============================================================================ */
+.tut-mask {
+  background: rgba(15, 23, 42, 0.5);
+  transition: top 0.6s var(--ios-spring), left 0.6s var(--ios-spring), width 0.6s var(--ios-spring), height 0.6s var(--ios-spring), opacity 0.3s ease;
+  animation: tutFadeIn 0.35s ease both;
+}
+
+@keyframes tutFadeIn { from { opacity: 0; } }
+
+.tut-closing .tut-mask {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.tutorial-spotlight {
+  border-radius: 20px;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.9), 0 0 0 8px rgba(6, 182, 212, 0.18), 0 0 30px rgba(6, 182, 212, 0.35);
+  transition: top 0.6s var(--ios-spring), left 0.6s var(--ios-spring), width 0.6s var(--ios-spring), height 0.6s var(--ios-spring), opacity 0.25s ease;
+}
+
+/* Al llegar al nuevo elemento el aro late una vez y luego respira */
+.tutorial-spotlight.tut-land {
+  animation: tutLand 0.9s var(--ios-spring), tutBreath 2.6s ease-in-out 0.9s infinite;
+}
+
+@keyframes tutLand {
+  0% { scale: 1.08; opacity: 0.4; }
+  100% { scale: 1; opacity: 1; }
+}
+
+@keyframes tutBreath {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.9), 0 0 0 8px rgba(6, 182, 212, 0.18), 0 0 30px rgba(6, 182, 212, 0.35); }
+  50% { box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.9), 0 0 0 14px rgba(6, 182, 212, 0.06), 0 0 40px rgba(6, 182, 212, 0.25); }
+}
+
+.tutorial-spotlight.tut-out {
+  opacity: 0;
+}
+
+/* Tarjeta: se desliza con resorte de un elemento al siguiente */
+.tutorial-card {
+  transition: left 0.6s var(--ios-spring), top 0.6s var(--ios-spring), box-shadow 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 28px 60px -18px rgba(0, 0, 0, 0.35);
+}
+
+.tutorial-card.tut-out {
+  animation: tutCardOut 0.25s cubic-bezier(0.4, 0, 1, 1) both !important;
+}
+
+@keyframes tutCardOut {
+  to { opacity: 0; transform: scale(0.9) translateY(10px); filter: blur(4px); }
+}
+
+/* Contenido del paso */
+.tutorial-card-body.tut-swap-next h3,
+.tutorial-card-body.tut-swap-next p { animation: tutSwapNext 0.5s var(--ios-spring) backwards; }
+.tutorial-card-body.tut-swap-prev h3,
+.tutorial-card-body.tut-swap-prev p { animation: tutSwapPrev 0.5s var(--ios-spring) backwards; }
+.tutorial-card-body.tut-swap-in h3,
+.tutorial-card-body.tut-swap-in p { animation: tutSwapIn 0.55s var(--ios-spring) backwards; }
+.tutorial-card-body p { animation-delay: 0.05s !important; }
+
+@keyframes tutSwapNext { from { opacity: 0; transform: translateX(22px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes tutSwapPrev { from { opacity: 0; transform: translateX(-22px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes tutSwapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Ícono del encabezado: brota en cada paso */
+.tutorial-card-header .tut-icon.tut-pop {
+  animation: tutIconPop 0.6s var(--ios-spring);
+}
+
+@keyframes tutIconPop {
+  0% { transform: scale(0.5) rotate(-25deg); }
+  100% { transform: none; }
+}
+
+/* Botón cerrar */
+.tutorial-card-header .tut-close {
+  transition: background 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.tutorial-card-header .tut-close:hover {
+  transform: rotate(90deg);
+}
+
+.tutorial-card-header .tut-close:active {
+  transform: rotate(90deg) scale(0.82);
+}
+
+/* Anterior / Siguiente */
+.tut-btn-prev,
+.tut-btn-next {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--ios-spring), box-shadow 0.25s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.tut-btn-prev:hover:not(:disabled) {
+  transform: translateX(-2px);
+}
+
+.tut-btn-next:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.tut-btn-prev:active:not(:disabled),
+.tut-btn-next:active {
+  transform: scale(0.9);
+}
+
+/* Destello que invita a avanzar */
+.tut-btn-next::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 35%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-14deg);
+  animation: tutShine 3s ease-in-out infinite;
+}
+
+@keyframes tutShine {
+  0%, 60% { left: -45%; }
+  100% { left: 130%; }
+}
+
+/* Último paso: el botón verde brota y late */
+.tut-btn-next.is-final {
+  animation: tutFinalIn 0.6s var(--ios-spring), tutFinalPulse 1.8s ease-in-out 0.6s infinite;
+}
+
+@keyframes tutFinalIn {
+  0% { transform: scale(0.7); }
+  100% { transform: none; }
+}
+
+@keyframes tutFinalPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35), 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  50% { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35), 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+
+/* Botón flotante para relanzar: flota, late y se menea al pasar el cursor */
+.tutorial-launch-btn {
+  opacity: 1;
+  animation: tutLaunchIn 0.7s var(--ios-spring) both, tutLaunchRing 2.8s ease-out 1s infinite;
+  transition: transform 0.5s var(--ios-spring), box-shadow 0.25s ease;
+}
+
+@keyframes tutLaunchIn {
+  from { opacity: 0; transform: scale(0.4) translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tutLaunchRing {
+  0% { box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4), 0 0 0 0 rgba(6, 182, 212, 0.45); }
+  70% { box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4), 0 0 0 14px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4), 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.tutorial-launch-btn:hover {
+  transform: scale(1.1);
+}
+
+.tutorial-launch-btn:hover i {
+  display: inline-block;
+  animation: tutWiggle 0.55s ease;
+}
+
+@keyframes tutWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-14deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); }
+}
+
+.tutorial-launch-btn:active {
+  transform: scale(0.88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-spotlight.tut-land,
+  .tutorial-card-body h3,
+  .tutorial-card-body p,
+  .tut-icon.tut-pop,
+  .tut-btn-next::after,
+  .tut-btn-next.is-final,
+  .tutorial-launch-btn {
+    animation: none !important;
+  }
+}

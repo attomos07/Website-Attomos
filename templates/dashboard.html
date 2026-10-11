@@ -247,7 +247,7 @@
 .tutorial-active .tutorial-launch-btn { display: none; }
 
 </style>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=2">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=3">
 </head>
 
     <!-- Decorative Rings -->
@@ -752,9 +752,13 @@
   }
 
   // ── Renderizar paso ───────────────────────────
+  let lastRendered = -1;
   function renderStep(index) {
     const step  = STEPS[index];
     const total = STEPS.length;
+    const dir = lastRendered < 0 ? 0 : (index > lastRendered ? 1 : -1);
+    lastRendered = index;
+    animateStep(dir);
 
     document.getElementById('tutTitle').textContent    = step.title;
     document.getElementById('tutBody').textContent     = step.body;
@@ -775,6 +779,7 @@
     // Botones
     document.getElementById('tutPrev').disabled = index === 0;
     const nextBtn = document.getElementById('tutNext');
+    nextBtn.classList.toggle('is-final', index === total - 1);
     if (index === total - 1) {
       nextBtn.textContent = 'Finalizar ✓';
       nextBtn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
@@ -786,8 +791,29 @@
     highlightElement(step.selector, step.position);
   }
 
+  // ── Animación iOS entre pasos ─────────────────
+  function restart(el, cls) {
+    if (!el) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  }
+  function animateStep(dir) {
+    const body = document.querySelector('#tutCard .tutorial-card-body');
+    if (body) {
+      body.classList.remove('tut-swap-next', 'tut-swap-prev', 'tut-swap-in');
+      void body.offsetWidth;
+      body.classList.add(dir > 0 ? 'tut-swap-next' : dir < 0 ? 'tut-swap-prev' : 'tut-swap-in');
+    }
+    restart(document.querySelector('#tutCard .tut-icon'), 'tut-pop');
+    restart(document.getElementById('tutSpotlight'), 'tut-land');
+  }
+
   // ── Iniciar / cerrar ──────────────────────────
   function startTutorial() {
+    lastRendered = -1;
+    closing = false;
+    document.getElementById('tutCard').classList.remove('tut-out');
+    document.getElementById('tutSpotlight').classList.remove('tut-out');
+    document.body.classList.remove('tut-closing');
     document.body.classList.add('tutorial-active');
     document.getElementById('tutBackdrop').style.display = 'block';
     document.getElementById('tutCard').style.display     = 'block';
@@ -795,7 +821,22 @@
     renderStep(currentStep);
   }
 
+  let closing = false;
   function closeTutorial() {
+    if (closing) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finishClose(); return; }
+    closing = true;
+    document.body.classList.add('tut-closing');
+    document.getElementById('tutCard').classList.add('tut-out');
+    document.getElementById('tutSpotlight').classList.add('tut-out');
+    setTimeout(finishClose, 260);
+  }
+
+  function finishClose() {
+    closing = false;
+    document.body.classList.remove('tut-closing');
+    document.getElementById('tutCard').classList.remove('tut-out');
+    document.getElementById('tutSpotlight').classList.remove('tut-out');
     document.body.classList.remove('tutorial-active');
     document.getElementById('tutBackdrop').style.display  = 'none';
     document.getElementById('tutCard').style.display      = 'none';

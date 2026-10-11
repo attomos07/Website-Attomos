@@ -13,9 +13,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     
     <!-- CSS Files -->
-    <link rel="stylesheet" href="/static/css/partials/navbar.css">
-    <link rel="stylesheet" href="/static/css/partials/footer.css">
-    <link rel="stylesheet" href="/static/css/partials/contact.css">
+    <link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
+    <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
+    <link rel="stylesheet" href="/static/css/partials/contact.css?v=3">
 </head>
 <body>
     <!-- Navbar -->
@@ -101,7 +101,10 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="phone" data-translate="contact_label_phone">Teléfono</label>
-                                <input type="tel" id="phone" name="phone">
+                                <div class="phone-lada-row">
+                                    <input type="hidden" id="phoneCode" name="phoneCode" value="+52">
+                                    <input type="tel" id="phone" name="phone">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="company" data-translate="contact_label_company">Empresa</label>
@@ -215,7 +218,7 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="/static/js/partials/contact.js"></script>
+    <script src="/static/js/partials/contact.js?v=3"></script>
 </body>
 </html>
 {{end}}

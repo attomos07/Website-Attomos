@@ -1553,3 +1553,225 @@ function showNotification(message, type = 'info') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 })();
+
+// ============================================================================
+// CORRECCIÓN DEL SIDEBAR — los modales viven dentro de .main-content, que
+// crea su propio nivel de apilamiento (z-index: 1); por eso el sidebar quedaba
+// encima del fondo oscuro. Se mueven a <body> para que cubran todo.
+// ============================================================================
+(function () {
+    function lift() {
+        document.querySelectorAll('.app-container .modal, .app-container .confirm-modal').forEach((m) => document.body.appendChild(m));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lift);
+    else lift();
+})();
+
+// ============================================================================
+// CALENDARIO iOS 27
+// Sustituye el calendario nativo de cualquier <input type="date"> de la
+// página (el del modal de Mis Citas y el del POS). El input sigue siendo
+// el mismo: su valor es AAAA-MM-DD, respeta min/max y dispara input/change.
+// ============================================================================
+(function () {
+    const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const WEEK = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const pad = (n) => String(n).padStart(2, '0');
+    const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parse = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+        return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    };
+    const ICON = '<svg class="ios-date-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    const CHEV = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+
+    let pop = null, input = null, view = null;
+
+    function enhance(el) {
+        if (el.classList.contains('ios-date')) return;
+        el.classList.add('ios-date');
+        if (!el.parentElement.classList.contains('ios-date-wrap')) {
+            const wrap = document.createElement('span');
+            wrap.className = 'ios-date-wrap';
+            if (el.style.flex) wrap.style.flex = el.style.flex;
+            el.parentNode.insertBefore(wrap, el);
+            wrap.appendChild(el);
+            wrap.insertAdjacentHTML('beforeend', ICON);
+        }
+    }
+
+    function scan(root) {
+        (root.querySelectorAll ? root : document).querySelectorAll('input[type="date"]').forEach(enhance);
+    }
+
+    function build() {
+        pop = document.createElement('div');
+        pop.className = 'ios-cal';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', 'Elegir fecha');
+        pop.innerHTML = `
+            <div class="ios-cal-head">
+                <div class="ios-cal-title"><span></span></div>
+                <div class="ios-cal-nav">
+                    <button type="button" class="ios-cal-prev" aria-label="Mes anterior">${CHEV('m15 18-6-6 6-6')}</button>
+                    <button type="button" class="ios-cal-next" aria-label="Mes siguiente">${CHEV('m9 18 6-6-6-6')}</button>
+                </div>
+            </div>
+            <div class="ios-cal-week">${WEEK.map((w) => `<span>${w}</span>`).join('')}</div>
+            <div class="ios-cal-body"><div class="ios-cal-grid"></div></div>
+            <div class="ios-cal-foot">
+                <button type="button" class="ios-cal-clear">Borrar</button>
+                <button type="button" class="ios-cal-today">Hoy</button>
+            </div>`;
+        pop.querySelector('.ios-cal-prev').addEventListener('click', () => go(-1));
+        pop.querySelector('.ios-cal-next').addEventListener('click', () => go(1));
+        pop.querySelector('.ios-cal-today').addEventListener('click', () => pick(new Date()));
+        pop.querySelector('.ios-cal-clear').addEventListener('click', () => { if (!input.required) commit(''); else close(); });
+        pop.querySelector('.ios-cal-grid').addEventListener('click', (e) => {
+            const b = e.target.closest('.ios-cal-day');
+            if (b) pick(parse(b.dataset.date));
+        });
+        // Deslizar con el dedo para cambiar de mes
+        let x0 = null;
+        pop.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+        pop.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+            x0 = null;
+        });
+        document.body.appendChild(pop);
+    }
+
+    function bounds() {
+        return { min: parse(input.min), max: parse(input.max) };
+    }
+
+    function render(dir) {
+        const { min, max } = bounds();
+        const sel = parse(input.value);
+        const today = toISO(new Date());
+        const y = view.getFullYear(), m = view.getMonth();
+        const first = new Date(y, m, 1);
+        const offset = (first.getDay() + 6) % 7; // lunes primero
+        const start = new Date(y, m, 1 - offset);
+        let html = '';
+        for (let i = 0; i < 42; i++) {
+            const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+            const iso = toISO(d);
+            const cls = ['ios-cal-day'];
+            if (d.getMonth() !== m) cls.push('is-out');
+            if (iso === today) cls.push('is-today');
+            if (sel && iso === toISO(sel)) cls.push('is-selected');
+            if ((min && d < min) || (max && d > max)) cls.push('is-disabled');
+            html += `<button type="button" class="${cls.join(' ')}" data-date="${iso}" aria-label="${d.getDate()} de ${MONTHS[d.getMonth()]}"><span>${d.getDate()}</span></button>`;
+        }
+        const grid = pop.querySelector('.ios-cal-grid');
+        grid.innerHTML = html;
+        const title = pop.querySelector('.ios-cal-title span');
+        title.textContent = `${MONTHS[m][0].toUpperCase()}${MONTHS[m].slice(1)} de ${y}`;
+        [grid, title].forEach((el) => {
+            el.classList.remove('slide-next', 'slide-prev');
+            if (dir) { void el.offsetWidth; el.classList.add(dir > 0 ? 'slide-next' : 'slide-prev'); }
+        });
+        pop.querySelector('.ios-cal-prev').disabled = !!(min && new Date(y, m, 0) < min);
+        pop.querySelector('.ios-cal-next').disabled = !!(max && new Date(y, m + 1, 1) > max);
+    }
+
+    function go(dir) {
+        view = new Date(view.getFullYear(), view.getMonth() + dir, 1);
+        render(dir);
+    }
+
+    function place() {
+        const r = input.getBoundingClientRect();
+        const sheet = window.innerWidth <= 480;
+        pop.classList.toggle('is-sheet', sheet);
+        if (sheet) return;
+        const w = pop.offsetWidth, h = pop.offsetHeight;
+        let left = Math.min(Math.max(12, r.left), window.innerWidth - w - 12);
+        let top = r.bottom + 8;
+        let oy = '0%';
+        if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; oy = '100%'; }
+        pop.style.left = `${left}px`;
+        pop.style.top = `${Math.max(12, top)}px`;
+        pop.style.setProperty('--ox', `${Math.min(Math.max(r.left + 30 - left, 0), w)}px`);
+        pop.style.setProperty('--oy', oy);
+    }
+
+    function open(el) {
+        if (input === el && pop && !pop.classList.contains('is-closing')) return;
+        if (pop) pop.remove();
+        input = el;
+        build();
+        const sel = parse(input.value) || bounds().min || new Date();
+        view = new Date(sel.getFullYear(), sel.getMonth(), 1);
+        render(0);
+        place();
+        input.closest('.ios-date-wrap')?.classList.add('is-open');
+    }
+
+    function close() {
+        if (!pop) return;
+        const p = pop, el = input;
+        pop = null; input = null;
+        el?.closest('.ios-date-wrap')?.classList.remove('is-open');
+        p.classList.add('is-closing');
+        setTimeout(() => p.remove(), 220);
+    }
+
+    function commit(value) {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        close();
+    }
+
+    function pick(d) {
+        if (!d) return;
+        const { min, max } = bounds();
+        if ((min && d < min) || (max && d > max)) return;
+        if (view.getMonth() !== d.getMonth() || view.getFullYear() !== d.getFullYear()) {
+            const dir = d > view ? 1 : -1;
+            view = new Date(d.getFullYear(), d.getMonth(), 1);
+            const prev = input.value;
+            input.value = toISO(d);
+            render(dir);
+            input.value = prev;
+        } else {
+            pop.querySelectorAll('.ios-cal-day.is-selected').forEach((b) => b.classList.remove('is-selected'));
+            pop.querySelector(`.ios-cal-day[data-date="${toISO(d)}"]`)?.classList.add('is-selected');
+        }
+        if (navigator.vibrate) navigator.vibrate(6);
+        const v = toISO(d);
+        setTimeout(() => { if (input) commit(v); }, 160);
+    }
+
+    // Abrir con clic (evita el calendario nativo) o con Enter/Espacio/Alt+↓
+    document.addEventListener('mousedown', (e) => {
+        const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
+        if (el) { e.preventDefault(); open(el); return; }
+        if (pop && !pop.contains(e.target)) close();
+    }, true);
+    document.addEventListener('touchstart', (e) => {
+        const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
+        if (el) return;
+        if (pop && !pop.contains(e.target)) close();
+    }, { passive: true, capture: true });
+    document.addEventListener('click', (e) => {
+        const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
+        if (el) { e.preventDefault(); open(el); }
+    }, true);
+    document.addEventListener('keydown', (e) => {
+        if (pop && e.key === 'Escape') { e.stopPropagation(); close(); return; }
+        const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
+        if (el && (e.key === 'Enter' || e.key === ' ' || (e.altKey && e.key === 'ArrowDown'))) { e.preventDefault(); open(el); }
+    }, true);
+    window.addEventListener('resize', () => { if (pop) place(); });
+    document.addEventListener('scroll', (e) => { if (pop && !pop.contains(e.target)) place(); }, true);
+
+    // Los campos de fecha del modal se crean por JS: se detectan al aparecer
+    scan(document);
+    new MutationObserver((muts) => muts.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) scan(n); })))
+        .observe(document.body, { childList: true, subtree: true });
+})();

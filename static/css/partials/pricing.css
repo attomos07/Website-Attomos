@@ -1085,3 +1085,930 @@ body {
 .breakdown-out .breakdown-label { color: rgba(255,255,255,0.75); }
 .breakdown-out .breakdown-label::before { content: "← "; }
 .breakdown-total { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 10px; margin-top: 2px; }
+
+/* ============================================================================
+   REDISEÑO iOS 27 — Precios
+   Todo blanco con la paleta cian de Attomos: tarjetas con línea fina y
+   sombra suave, formas de píldora y círculo, controles segmentados con
+   indicador de resorte y entradas con resorte.
+   ============================================================================ */
+:root {
+  --io-label: #1d1d1f;
+  --io-label-2: #6e6e73;
+  --io-label-3: #8e8e93;
+  --io-hair: rgba(0, 0, 0, 0.07);
+  --io-hair-2: rgba(60, 60, 67, 0.14);
+  --io-tint: rgba(6, 182, 212, 0.08);
+  --io-tint-2: rgba(6, 182, 212, 0.14);
+  --io-cyan: #06b6d4;
+  --io-cyan-d: #0891b2;
+  --io-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.05);
+  --io-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.04), 0 22px 44px -12px rgba(6, 182, 212, 0.28);
+  --io-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --io-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+body {
+  background: #ffffff;
+  color: var(--io-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+/* --- Hero --- */
+.hero-title {
+  font-size: clamp(36px, 6vw, 62px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--io-label);
+  margin-bottom: 18px;
+  animation: ioRise 0.8s var(--io-spring) both;
+}
+
+.hero-title .highlight {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #0891b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 20px);
+  letter-spacing: -0.01em;
+  color: var(--io-label-2);
+  animation: ioRise 0.8s var(--io-spring) 0.07s both;
+}
+
+@keyframes ioRise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Títulos de sección --- */
+.section-title,
+.cta-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--io-label);
+}
+
+.cta-subtitle {
+  color: var(--io-label-2);
+  letter-spacing: -0.005em;
+}
+
+/* --- Control segmentado (lo activa el JS con .ios-seg) --- */
+.ios-seg {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.ios-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--io-cyan);
+  box-shadow: 0 6px 16px -6px rgba(6, 182, 212, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.55s var(--io-spring), width 0.55s var(--io-spring), height 0.3s ease, opacity 0.2s ease;
+}
+
+.ios-seg > button {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--io-label-2);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: none;
+  transform: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease, background 0.2s ease, transform 0.4s var(--io-spring);
+}
+
+.ios-seg > button i {
+  font-size: 16px;
+}
+
+.ios-seg > button:hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--io-cyan-d);
+  background: var(--io-tint);
+}
+
+.ios-seg > button:active {
+  transform: scale(0.94);
+}
+
+.ios-seg > button.active,
+.ios-seg > button.active:hover {
+  color: #ffffff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* --- Botón flotante de WhatsApp --- */
+.whatsapp-float {
+  width: 58px;
+  height: 58px;
+  background: #25d366;
+  box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: ioWaRing 2.6s ease-out infinite;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  box-shadow: 0 16px 34px -10px rgba(37, 211, 102, 0.85);
+}
+
+.whatsapp-float:active {
+  transform: scale(0.92);
+}
+
+@keyframes ioWaRing {
+  0% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0.45); }
+  70% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 12px 28px -10px rgba(37, 211, 102, 0.75), 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+/* Etiqueta de cristal */
+.whatsapp-tooltip {
+  right: 70px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  color: var(--io-label);
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid var(--io-hair);
+  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) translateX(8px) scale(0.92);
+  transform-origin: right center;
+  transition: opacity 0.2s ease, visibility 0.2s, transform 0.45s var(--io-spring);
+}
+
+.whatsapp-tooltip::after {
+  display: none;
+}
+
+.whatsapp-float:hover .whatsapp-tooltip {
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+/* --- Botón CTA de WhatsApp (verde de la marca, en píldora) --- */
+.cta-btn {
+  padding: 17px 32px;
+  border-radius: 999px;
+  background: #25d366;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 14px 30px -12px rgba(37, 211, 102, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease;
+}
+
+.cta-btn:hover {
+  background: #22c55e;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 18px 36px -12px rgba(37, 211, 102, 0.85);
+}
+
+.cta-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 768px) {
+  .ios-seg {
+    margin: 0;
+    width: auto;
+  }
+
+  .ios-seg > button {
+    padding: 9px 15px;
+    font-size: 14px;
+  }
+
+  .whatsapp-float {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title,
+  .hero-subtitle,
+  .whatsapp-float {
+    animation: none;
+  }
+
+  .ios-seg-thumb {
+    transition: none;
+  }
+}
+
+/* --- Hero --- */
+.pricing-hero {
+  padding: 120px 20px 40px;
+  min-height: 0;
+}
+
+/* --- Mensual / Anual: interruptor iOS en una cápsula --- */
+.comparison-section {
+  padding: 4px 20px 8px;
+}
+
+.billing-toggle {
+  width: max-content;
+  margin: 0 auto;
+  gap: 14px;
+  padding: 8px 10px 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background: #ffffff;
+}
+
+.toggle-label {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.toggle-label.annual {
+  padding-right: 10px;
+}
+
+.toggle-switch {
+  width: 51px;
+  height: 31px;
+}
+
+.toggle-slider {
+  background: rgba(120, 120, 128, 0.16);
+  border-radius: 999px;
+  transition: background 0.25s ease;
+}
+
+/* La perilla se estira al presionar, como en iOS */
+.toggle-slider:before {
+  width: 27px;
+  height: 27px;
+  left: 2px;
+  bottom: 2px;
+  border-radius: 999px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
+  transition: transform 0.5s var(--io-spring), width 0.3s var(--io-spring);
+}
+
+.toggle-switch:active .toggle-slider:before {
+  width: 33px;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--io-cyan);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-switch:active input:checked + .toggle-slider:before {
+  transform: translateX(14px);
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+}
+
+/* --- Tarjetas de planes --- */
+.pricing-cards-section {
+  padding: 40px 20px 60px;
+}
+
+.pricing-grid {
+  gap: 20px;
+  align-items: stretch;
+}
+
+.pricing-card {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 30px 30px;
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  transition: transform 0.6s var(--io-spring), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--io-shadow-hover);
+  border-color: rgba(6, 182, 212, 0.22);
+}
+
+/* El plan popular lleva un anillo cian y un brillo suave */
+.pricing-card.featured {
+  border: 2px solid var(--io-cyan);
+  background:
+    radial-gradient(100% 60% at 50% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 70%),
+    #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 24px 50px -18px rgba(6, 182, 212, 0.45);
+}
+
+.popular-badge {
+  top: -14px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 18px -8px rgba(6, 182, 212, 0.8);
+  white-space: nowrap;
+}
+
+.plan-name {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--io-label);
+  margin-bottom: 10px;
+}
+
+.plan-price {
+  margin-bottom: 16px;
+}
+
+.price-amount {
+  display: inline-block;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--io-label);
+  transition: transform 0.45s var(--io-spring), opacity 0.2s ease, filter 0.2s ease;
+}
+
+.pricing-card.featured .price-amount {
+  color: var(--io-cyan-d);
+}
+
+.price-period {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--io-label-3);
+}
+
+.plan-description {
+  font-size: 14.5px;
+  color: var(--io-label-2);
+  margin-bottom: 18px;
+  min-height: 0;
+}
+
+.plan-features {
+  flex: 1;
+  margin-bottom: 24px;
+  border-top: 1px solid var(--io-hair);
+}
+
+.plan-features li {
+  gap: 10px;
+  padding: 11px 0;
+  font-size: 14.5px;
+  color: #3a3a3c;
+  border-bottom: 1px solid var(--io-hair);
+}
+
+.plan-features li:last-child {
+  border-bottom: 0;
+}
+
+.check-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+  background: var(--io-tint-2);
+}
+
+.check-icon i {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--io-cyan-d);
+}
+
+.pricing-card.featured .check-icon {
+  background: var(--io-cyan);
+}
+
+.pricing-card.featured .check-icon i {
+  color: #ffffff;
+}
+
+.plan-button {
+  padding: 15px 24px;
+  border-radius: 999px;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--io-spring), box-shadow 0.25s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.plan-button.primary {
+  background: var(--io-cyan);
+  box-shadow: 0 12px 24px -10px rgba(6, 182, 212, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.plan-button.primary:hover {
+  background: var(--io-cyan-d);
+  transform: translateY(-1px);
+}
+
+.plan-button.secondary {
+  border: 0;
+  background: var(--io-tint);
+  color: var(--io-cyan-d);
+}
+
+.plan-button.secondary:hover {
+  background: var(--io-tint-2);
+  transform: translateY(-1px);
+}
+
+.plan-button:active {
+  transform: scale(0.96) !important;
+}
+
+/* --- Tabla comparativa: lista agrupada --- */
+.comparison-table-section {
+  padding: 60px 20px;
+}
+
+.section-title {
+  font-size: clamp(28px, 4vw, 40px);
+  margin-bottom: 28px;
+}
+
+.comparison-table-wrapper {
+  margin-top: 0;
+  border-radius: 28px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background: #ffffff;
+  scrollbar-width: thin;
+}
+
+.comparison-table {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.comparison-table thead {
+  border-bottom: 1px solid var(--io-hair);
+  background: #ffffff;
+}
+
+.comparison-table th {
+  padding: 20px 18px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--io-label);
+}
+
+.comparison-table th.feature-column {
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--io-label-3);
+}
+
+.comparison-table th.highlight-column {
+  color: var(--io-cyan-d);
+  background: rgba(6, 182, 212, 0.06);
+}
+
+.comparison-table td {
+  padding: 16px 18px;
+  font-size: 14.5px;
+  color: #3a3a3c;
+  border-bottom: 1px solid var(--io-hair);
+}
+
+.comparison-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.comparison-table td.feature-name {
+  font-weight: 600;
+  color: var(--io-label);
+}
+
+.comparison-table td.feature-name i {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  font-size: 15px;
+  background: var(--io-tint);
+  color: var(--io-cyan-d);
+}
+
+.comparison-table td.highlight-cell {
+  background: rgba(6, 182, 212, 0.06);
+  color: var(--io-cyan-d);
+}
+
+.comparison-table tbody tr.highlighted,
+.comparison-table tbody tr:hover {
+  background: rgba(6, 182, 212, 0.035);
+}
+
+.comparison-table td.column-highlighted,
+.comparison-table th.column-highlighted {
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.comparison-table i.check {
+  color: #34c759;
+  font-size: 22px;
+}
+
+.comparison-table i.lni-close {
+  color: rgba(60, 60, 67, 0.3);
+  font-size: 16px;
+}
+
+.scroll-indicator {
+  bottom: 14px;
+  padding: 7px 14px;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  color: var(--io-cyan-d);
+  border: 1px solid var(--io-hair);
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Calculadora --- */
+.calculator-section {
+  padding: 60px 20px;
+  background: #ffffff;
+}
+
+.section-subtitle {
+  margin-top: -16px;
+  margin-bottom: 32px;
+  font-size: 17px;
+  color: var(--io-label-2);
+}
+
+.calculator-card {
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  padding: 8px;
+  gap: 8px;
+}
+
+.calculator-inputs {
+  padding: 30px 28px;
+  gap: 30px;
+}
+
+.calc-label {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--io-label);
+}
+
+.calc-label i {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  background: var(--io-tint);
+  color: var(--io-cyan-d);
+}
+
+.calc-hint {
+  color: var(--io-label-3);
+}
+
+/* Slider con pista redonda y perilla blanca, como en iOS */
+.calc-slider {
+  height: 6px;
+  border-radius: 999px;
+}
+
+.calc-slider::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  transition: transform 0.35s var(--io-spring), box-shadow 0.2s ease;
+}
+
+.calc-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+}
+
+.calc-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.45), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.calc-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
+.calc-number-input {
+  width: 96px;
+  padding: 8px 12px;
+  border: 1px solid var(--io-hair-2);
+  border-radius: 999px;
+  font-size: 15px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--io-label);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.calc-number-input:focus {
+  border-color: var(--io-cyan);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+
+.calc-scale {
+  color: var(--io-label-3);
+}
+
+/* Resultado en el cian claro de Attomos */
+.calculator-result {
+  border-radius: 26px;
+  padding: 30px 26px;
+  gap: 18px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.18) 0%, transparent 55%),
+    linear-gradient(160deg, #3fd3ea 0%, #22c4e0 50%, #12b5d4 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 2px rgba(8, 145, 178, 0.25);
+}
+
+.result-usd {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-mxn {
+  font-variant-numeric: tabular-nums;
+}
+
+.result-breakdown {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.breakdown-total {
+  border-top-color: rgba(255, 255, 255, 0.3);
+}
+
+.result-tier {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.result-tier.paid {
+  background: rgba(255, 149, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.result-note {
+  opacity: 0.85;
+}
+
+/* --- Preguntas frecuentes --- */
+.faq-section {
+  padding: 60px 20px;
+}
+
+.faq-grid {
+  gap: 14px;
+  margin-top: 0;
+  align-items: start;
+}
+
+.faq-item {
+  border-radius: 24px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  transition: border-color 0.25s ease, box-shadow 0.3s ease;
+}
+
+.faq-item:hover {
+  border-color: rgba(6, 182, 212, 0.22);
+  box-shadow: var(--io-shadow);
+}
+
+.faq-item.active {
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.faq-question {
+  padding: 18px 20px 18px 22px;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+  color: var(--io-label);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faq-question:hover {
+  color: var(--io-cyan-d);
+}
+
+.faq-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 19px;
+  font-weight: 500;
+  background: var(--io-tint-2);
+  color: var(--io-cyan-d);
+  transition: transform 0.5s var(--io-spring), background 0.2s ease, color 0.2s ease;
+}
+
+.faq-item.active .faq-icon {
+  background: var(--io-cyan);
+  color: #ffffff;
+  transform: rotate(135deg);
+}
+
+.faq-answer {
+  transition: max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.faq-answer-content {
+  padding: 0 22px 20px;
+  color: var(--io-label-2);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.25s ease, transform 0.45s var(--io-spring);
+}
+
+.faq-item.active .faq-answer-content {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- CTA --- */
+.cta-section {
+  padding: 40px 20px 110px;
+}
+
+.cta-content {
+  max-width: 760px;
+  padding: 52px 32px;
+  border-radius: 32px;
+  border: 1px solid var(--io-hair);
+  box-shadow: var(--io-shadow);
+  background:
+    radial-gradient(90% 80% at 50% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 70%),
+    #ffffff;
+}
+
+.cta-title {
+  font-size: clamp(28px, 4vw, 38px);
+  margin-bottom: 14px;
+}
+
+.cta-subtitle {
+  font-size: 17px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .pricing-hero {
+    padding: 100px 20px 28px;
+    min-height: 0;
+  }
+
+  .pricing-cards-section {
+    padding: 32px 16px 40px;
+  }
+
+  .pricing-card {
+    padding: 30px 22px 22px;
+    border-radius: 28px;
+  }
+
+  .comparison-table-section,
+  .calculator-section,
+  .faq-section {
+    padding: 40px 16px;
+  }
+
+  .comparison-table-wrapper {
+    border-radius: 24px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 13px 12px;
+    font-size: 13.5px;
+  }
+
+  .calculator-card {
+    border-radius: 28px;
+  }
+
+  .calculator-inputs {
+    padding: 22px 16px;
+  }
+
+  /* La etiqueta fluye como texto en vez de partirse en columnas */
+  .calc-label {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    line-height: 1.35;
+  }
+
+  .calc-label i {
+    margin-right: 2px;
+  }
+
+  .calc-hint {
+    flex-basis: 100%;
+    margin-left: 36px;
+  }
+
+  .calculator-result {
+    border-radius: 22px;
+    padding: 24px 20px;
+  }
+
+  .cta-section {
+    padding: 24px 16px 96px;
+  }
+
+  .cta-content {
+    padding: 36px 22px;
+    border-radius: 26px;
+  }
+}

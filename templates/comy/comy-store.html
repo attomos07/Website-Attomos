@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -342,6 +343,164 @@
     @keyframes popIn  { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
     @keyframes slideUp{ from { transform:translateY(100%); } to { transform:translateY(0); } }
     @keyframes spin   { to { transform:rotate(360deg); } }
+
+    /* ==========================================================================
+       COMY · iOS 27 "Gelatina" — Tienda
+       ========================================================================== */
+    :root { --radius: 26px; }
+
+    /* Portada con parallax y logo que flota sobre ella */
+    .store-cover { height: 240px; border-radius: 30px; isolation: isolate; }
+    .store-cover img { transform: translateY(var(--cm-par, 0px)) scale(1.08); will-change: transform; }
+    .store-meta { margin-top: -44px; padding: 0 1.25rem; position: relative; z-index: 1; }
+    .store-logo {
+      width: 88px; height: 88px; border: 4px solid #fff;
+      box-shadow: 0 14px 30px -12px rgba(0,0,0,.35);
+      animation: cmPop .8s var(--cm-jelly) .15s both;
+      transition: transform .5s var(--cm-jelly);
+    }
+    .store-logo:hover { transform: rotate(-8deg) scale(1.05); }
+    .store-info { padding-top: 3rem; }
+    .store-type-badge { background: #FFF8D6; border-color: transparent; color: var(--accent-text); padding: 4px 12px; }
+    .store-name { letter-spacing: -.025em; }
+    .store-chip { padding: 5px 11px; border-radius: 999px; background: #fff; border: 1px solid rgba(0,0,0,.06); color: #6b6b6b; }
+    .social-link { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid rgba(0,0,0,.06); transition: background .2s, color .2s, transform .45s var(--cm-jelly); }
+    .social-link:hover { background: var(--accent); color: var(--ink); transform: translateY(-2px); }
+
+    /* Productos: cascada, inclinación 3D y foto que se acerca */
+    .products-grid { perspective: 1000px; }
+    .product-card {
+      border-radius: 26px; border-color: rgba(0,0,0,.06);
+      box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 26px -16px rgba(0,0,0,.14);
+      animation: cmCardIn .7s var(--cm-jelly) backwards;
+      --rx: 0deg; --ry: 0deg;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      transition: transform .6s var(--cm-jelly), box-shadow .3s;
+    }
+    .product-card.cm-tilting { transition: transform .12s linear, box-shadow .3s; }
+    .product-card:hover { transform: rotateX(var(--rx)) rotateY(var(--ry)) translateY(-4px); box-shadow: 0 2px 4px rgba(0,0,0,.04), 0 26px 46px -20px rgba(180,110,0,.4); }
+    @keyframes cmCardIn { from { opacity: 0; transform: translateY(24px) scale(.92); } to { opacity: 1; transform: none; } }
+    .product-img { margin: 8px 8px 0; height: 168px; border-radius: 20px; }
+    .product-img img { transition: transform .9s var(--cm-soft); }
+    .product-card:hover .product-img img { transform: scale(1.08); }
+    .product-img-placeholder { transition: transform .6s var(--cm-jelly); }
+    .product-card:hover .product-img-placeholder { animation: cmWiggle .6s ease; }
+    .promo-tag { top: 10px; right: 10px; padding: 4px 10px; color: var(--ink); box-shadow: 0 6px 14px -6px rgba(230,191,0,.9); animation: cmFlame 1.8s ease-in-out infinite; }
+    @keyframes cmFlame { 0%, 100% { scale: 1; rotate: 0deg; } 50% { scale: 1.08; rotate: -4deg; } }
+    .product-body { padding: 1rem 1.1rem 1.1rem; }
+    .product-title { letter-spacing: -.01em; }
+
+    /* Agregar y cantidad: se aplastan como gelatina */
+    .add-btn {
+      padding: 8px 15px; -webkit-tap-highlight-color: transparent;
+      transition: background .2s, color .2s, transform .45s var(--cm-jelly), box-shadow .25s;
+    }
+    .add-btn:hover { box-shadow: 0 10px 20px -10px rgba(230,191,0,.95); transform: translateY(-1px); }
+    .add-btn:active { transform: scale(.86, .8); }
+    .qty-ctrl { background: var(--accent); padding: 4px 6px; animation: cmPop .5s var(--cm-jelly) both; box-shadow: 0 10px 20px -12px rgba(230,191,0,.95); }
+    .qty-btn { width: 26px; height: 26px; background: rgba(255,255,255,.55); transition: background .15s, transform .4s var(--cm-jelly); }
+    .qty-btn:hover { background: #fff; }
+    .qty-btn:active { transform: scale(.8); }
+    .qty-val { display: inline-block; animation: cmNum .45s var(--cm-jelly); }
+    @keyframes cmNum { from { transform: translateY(-60%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* Punto que vuela al carrito */
+    .cm-fly {
+      position: fixed; z-index: 2000; width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent) center / cover no-repeat; pointer-events: none;
+      box-shadow: 0 10px 22px -8px rgba(0,0,0,.35); border: 3px solid #fff;
+    }
+    .cm-bump { animation: cmBump .55s var(--cm-jelly); }
+    @keyframes cmBump { 0% { scale: 1; } 35% { scale: 1.12 .9; } 70% { scale: .97 1.04; } 100% { scale: 1; } }
+
+    /* Carrito */
+    .cart-panel { border-radius: 28px; border-color: rgba(0,0,0,.06); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 16px 40px -20px rgba(0,0,0,.18); }
+    .cart-clear { border-radius: 999px; padding: 4px 10px; transition: background .2s, color .2s; }
+    .cart-clear:hover { background: #FFF8D6; }
+    .cart-empty-icon { display: inline-block; animation: cmBob 3s ease-in-out infinite; }
+    @keyframes cmBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+    .cart-item { animation: cmRowIn .5s var(--cm-jelly) backwards; }
+    .cart-item:nth-child(2) { animation-delay: .04s; } .cart-item:nth-child(3) { animation-delay: .08s; } .cart-item:nth-child(n+4) { animation-delay: .12s; }
+    @keyframes cmRowIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+    .ci-remove { width: 26px; height: 26px; border-radius: 50%; transition: background .2s, color .2s, transform .4s var(--cm-jelly); }
+    .ci-remove:hover { background: #FFF1F0; color: #e5484d; transform: rotate(90deg); }
+    .total-amount { display: inline-block; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .total-amount.cm-bump { color: var(--accent-text); }
+
+    /* Formulario y pago */
+    .form-input { border-radius: 14px; padding: 11px 14px; background: #F7F7F8; border-color: transparent; transition: border-color .2s, box-shadow .25s, background .2s; }
+    .form-input:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,212,0,.22); }
+    .pay-opt { border-radius: 18px; transition: background .2s, color .2s, border-color .2s, transform .45s var(--cm-jelly); -webkit-tap-highlight-color: transparent; }
+    .pay-opt:active { transform: scale(.92, .88); }
+    .pay-opt.selected { background: var(--accent); border-color: var(--accent); color: var(--ink); animation: cmBump .5s var(--cm-jelly); }
+    .pay-opt.selected .pay-opt-icon { filter: none; }
+    .spei-info { border-radius: 18px; background: #FFF8D6; animation: cmPop .5s var(--cm-jelly) both; }
+    .spei-copy-btn { border-radius: 999px; }
+    .checkout-btn {
+      position: relative; overflow: hidden; border-radius: 999px; background: var(--accent); color: var(--ink);
+      box-shadow: 0 14px 26px -14px rgba(230,191,0,1);
+      transition: background .2s, transform .45s var(--cm-jelly);
+    }
+    .checkout-btn::before {
+      content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,.7), transparent);
+      transform: skewX(-14deg); animation: cmShine 3.2s ease-in-out infinite;
+    }
+    @keyframes cmShine { 0%, 60% { left: -40%; } 100% { left: 130%; } }
+    .checkout-btn:hover:not(:disabled) { background: var(--accent2); }
+    .checkout-btn:active:not(:disabled) { transform: scale(.95, .9); }
+    .checkout-btn.loading::after { border-color: rgba(26,26,26,.25); border-top-color: var(--ink); }
+
+    /* Modal de éxito: brota con gelatina y lanza confeti */
+    .modal-overlay { background: rgba(0,0,0,.35); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .modal { border-radius: 32px; animation: cmModal .7s var(--cm-jelly) both; box-shadow: 0 30px 70px -20px rgba(0,0,0,.35); }
+    @keyframes cmModal { from { opacity: 0; transform: scale(.6) translateY(30px); } to { opacity: 1; transform: none; } }
+    .modal-icon { color: #34c759; display: inline-block; animation: cmPop .7s var(--cm-jelly) .2s both; }
+    .modal-order-box { border-radius: 18px; }
+    .wa-btn { border-radius: 999px; transition: background .2s, transform .45s var(--cm-jelly); }
+    .wa-btn:active { transform: scale(.95, .9); }
+    .cm-confetti { position: fixed; z-index: 3000; top: 0; left: 0; width: 9px; height: 14px; border-radius: 3px; pointer-events: none; }
+
+    /* Móvil: barra flotante y hoja con arrastre */
+    .mob-cart {
+      border-radius: 999px; padding: 15px 1.4rem;
+      background: rgba(26,26,26,.9); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+      box-shadow: 0 18px 36px -14px rgba(0,0,0,.5);
+      animation: cmBarIn .7s var(--cm-jelly) both;
+      transition: transform .45s var(--cm-jelly);
+    }
+    .mob-cart:active { transform: scale(.95, .9); }
+    @keyframes cmBarIn { from { opacity: 0; transform: translateY(40px) scale(.9); } to { opacity: 1; transform: none; } }
+    .cart-drawer-overlay { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: cmFade .3s ease both; }
+    @keyframes cmFade { from { opacity: 0; } }
+    .cart-drawer-panel { border-radius: 28px 28px 0 0; animation: cmSheetUp .65s var(--cm-jelly) both; touch-action: pan-y; }
+    .cart-drawer-panel.cm-dragging { animation: none; transition: none; }
+    .cart-drawer-panel.cm-closing { animation: none; transition: transform .28s var(--cm-soft); transform: translateY(105%); }
+    @keyframes cmSheetUp { from { transform: translateY(100%); } to { transform: none; } }
+    .drawer-handle { width: 44px; height: 5px; background: #D9D9DE; border-radius: 999px; }
+
+    /* La barra flotante es solo para móvil (la regla original la mostraba también en escritorio) */
+    @media (min-width: 901px) { .mob-cart { display: none !important; } }
+
+    /* En móvil la barra de navegación de Comy ocupa el borde inferior:
+       la barra del pedido va encima de ella y la hoja del carrito por delante */
+    @media (max-width: 700px) {
+      .mob-cart { bottom: calc(var(--c-mobile-nav-h, 64px) + .75rem + env(safe-area-inset-bottom, 0px)); left: 1rem; right: 1rem; }
+      .cart-drawer { z-index: 1100; }
+    }
+
+    @media (max-width: 900px) {
+      .store-cover { height: 190px; border-radius: 24px; }
+      .store-meta { margin-top: -38px; padding: 0 .75rem; }
+      .store-logo { width: 76px; height: 76px; }
+      .store-info { padding-top: 2.6rem; }
+      .layout { padding-left: 1rem; padding-right: 1rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .product-card, .promo-tag, .checkout-btn::before, .cart-empty-icon, .store-logo, .modal, .cart-drawer-panel, .mob-cart { animation: none !important; }
+      .store-cover img { transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -952,6 +1111,157 @@
       if (btn) { btn.textContent = '¡Copiado!'; setTimeout(() => btn.textContent = 'Copiar', 2000); }
     });
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  COMY · iOS 27 "Gelatina" — Tienda
+  // ════════════════════════════════════════════════════════════════════════
+  const cmReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cmFine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  // El carrito se vuelve a pintar entero en cada cambio: conservamos lo que
+  // el cliente ya escribió (nombre, teléfono…) y animamos el total si cambió.
+  let cmLastTotal = null;
+  const cmRenderCartBase = renderCart;
+  renderCart = function () {
+    const keep = {};
+    ['custName', 'custPhone', 'custEmail', 'custNotes'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.value) keep[id] = el.value;
+    });
+    cmRenderCartBase();
+    Object.entries(keep).forEach(([id, v]) => {
+      document.querySelectorAll('#' + id).forEach(el => { el.value = v; });
+    });
+    const t = cartTotal();
+    if (cmLastTotal !== null && t !== cmLastTotal) {
+      document.querySelectorAll('.total-amount, #mobCartBtn').forEach(cmBumpEl);
+    }
+    cmLastTotal = t;
+  };
+
+  function cmBumpEl(el) {
+    if (!el || cmReduce) return;
+    el.classList.remove('cm-bump'); void el.offsetWidth; el.classList.add('cm-bump');
+    el.addEventListener('animationend', () => el.classList.remove('cm-bump'), { once: true });
+  }
+
+  // Al agregar, un círculo con la foto del producto vuela en arco hasta el carrito
+  function cmFlyToCart(card) {
+    if (cmReduce || !card) return;
+    const fab = document.getElementById('mobCartBtn');
+    const target = window.innerWidth <= 900
+      ? (fab && !fab.classList.contains('hidden') ? fab : null)
+      : document.querySelector('.cart-panel .cart-title');
+    const from = card.querySelector('.product-img').getBoundingClientRect();
+    const to = (target || card).getBoundingClientRect();
+    const img = card.querySelector('.product-img img');
+    const dot = document.createElement('div');
+    dot.className = 'cm-fly';
+    if (img) dot.style.backgroundImage = `url("${img.src}")`;
+    document.body.appendChild(dot);
+    const x0 = from.left + from.width / 2 - 22, y0 = from.top + from.height / 2 - 22;
+    const x1 = target ? to.left + to.width / 2 - 22 : x0, y1 = target ? to.top + to.height / 2 - 22 : y0 - 120;
+    const lift = Math.min(160, Math.abs(x1 - x0) * 0.3 + 80);
+    dot.animate([
+      { transform: `translate(${x0}px, ${y0}px) scale(.4)`, opacity: 0 },
+      { transform: `translate(${x0}px, ${y0 - 20}px) scale(1.15)`, opacity: 1, offset: .18 },
+      { transform: `translate(${(x0 + x1) / 2}px, ${Math.min(y0, y1) - lift}px) scale(.9)`, offset: .55 },
+      { transform: `translate(${x1}px, ${y1}px) scale(.3)`, opacity: .2 }
+    ], { duration: 780, easing: 'cubic-bezier(.45,.05,.4,1)' }).onfinish = () => {
+      dot.remove();
+      cmBumpEl(window.innerWidth <= 900 ? fab : document.querySelector('.cart-panel'));
+    };
+  }
+
+  // Escucha antes que el onclick del botón (fase de captura) para medir la tarjeta
+  document.getElementById('productsGrid').addEventListener('click', e => {
+    const btn = e.target.closest('.add-btn, .qty-btn');
+    if (!btn) return;
+    const card = btn.closest('.product-card');
+    if (btn.classList.contains('add-btn') || btn.textContent.trim() === '+') {
+      requestAnimationFrame(() => cmFlyToCart(card));
+    }
+    if (navigator.vibrate) navigator.vibrate(8);
+  }, true);
+
+  // Inclinación 3D de las tarjetas con el mouse
+  if (cmFine && !cmReduce) {
+    document.addEventListener('pointermove', e => {
+      const card = e.target.closest && e.target.closest('.product-card');
+      document.querySelectorAll('.product-card.cm-tilting').forEach(c => {
+        if (c !== card) { c.classList.remove('cm-tilting'); c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); }
+      });
+      if (!card || card.style.pointerEvents === 'none') return;
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+      card.classList.add('cm-tilting');
+      card.style.setProperty('--ry', (px * 8).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', (-py * 7).toFixed(2) + 'deg');
+    }, { passive: true });
+  }
+
+  // Parallax suave de la portada
+  if (!cmReduce) {
+    const cover = document.querySelector('.store-cover');
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        if (cover) cover.style.setProperty('--cm-par', Math.min(60, window.scrollY * 0.25) + 'px');
+      });
+    }, { passive: true });
+  }
+
+  // Confeti amarillo y naranja al completar el pago
+  function cmConfetti() {
+    if (cmReduce) return;
+    const colors = ['#FFD400', '#F59500', '#FFE55C', '#34c759', '#ff6b6b', '#1A1A1A'];
+    const cx = window.innerWidth / 2, cy = window.innerHeight * 0.38;
+    for (let i = 0; i < 70; i++) {
+      const p = document.createElement('div');
+      p.className = 'cm-confetti';
+      p.style.background = colors[i % colors.length];
+      document.body.appendChild(p);
+      const a = Math.random() * Math.PI * 2, v = 160 + Math.random() * 260;
+      const dx = Math.cos(a) * v, dy = Math.sin(a) * v - 180;
+      p.animate([
+        { transform: `translate(${cx}px, ${cy}px) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(${cx + dx}px, ${cy + dy + 420}px) rotate(${Math.random() * 720 - 360}deg)`, opacity: 0 }
+      ], { duration: 1400 + Math.random() * 900, easing: 'cubic-bezier(.15,.6,.4,1)' }).onfinish = () => p.remove();
+    }
+  }
+  const cmShowSuccessBase = showSuccess;
+  showSuccess = function (data) { cmShowSuccessBase(data); setTimeout(cmConfetti, 250); };
+
+  // Hoja del carrito: arrástrala hacia abajo para cerrarla
+  (function () {
+    const panel = document.getElementById('drawerPanel');
+    let y0 = null, dy = 0;
+    panel.addEventListener('touchstart', e => {
+      if (panel.scrollTop > 0 && !e.target.closest('.drawer-handle')) return;
+      y0 = e.touches[0].clientY; dy = 0; panel.classList.add('cm-dragging');
+    }, { passive: true });
+    panel.addEventListener('touchmove', e => {
+      if (y0 === null) return;
+      const d = e.touches[0].clientY - y0;
+      dy = d > 0 ? d : d / 4;
+      panel.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    panel.addEventListener('touchend', () => {
+      if (y0 === null) return;
+      panel.classList.remove('cm-dragging');
+      y0 = null;
+      if (dy > 90) {
+        panel.classList.add('cm-closing');
+        setTimeout(() => { closeDrawer(); panel.classList.remove('cm-closing'); panel.style.transform = ''; }, 260);
+      } else {
+        panel.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+        panel.style.transform = '';
+      }
+    });
+    panel.querySelector('.drawer-handle').addEventListener('click', closeDrawer);
+  })();
 </script>
 </body>
 </html>

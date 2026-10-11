@@ -935,3 +935,55 @@ applyGrid();
         else if (document.querySelector('#videoRecordModal.open')) window.closeVideoRecordModal();
     });
 })();
+
+// ============================================================================
+// SIDEBAR DEL CRM — cápsula deslizante con resorte
+// Sigue a la opción .active que ya ponen selectScope/selectChannel/selectTag,
+// así que no cambia la lógica de navegación.
+// ============================================================================
+(function () {
+    const rail = document.querySelector('.rail-content');
+    if (!rail) return;
+    const lens = document.createElement('div');
+    lens.className = 'rail-lens';
+    lens.setAttribute('aria-hidden', 'true');
+    rail.prepend(lens);
+    rail.classList.add('has-lens');
+
+    let lastTop = null;
+    function place(snap) {
+        const a = rail.querySelector('.nav-item.active');
+        if (!a || !a.offsetParent) { lens.style.opacity = '0'; return; }
+        // Se suma hasta .rail-content: durante la animación de entrada el navegador
+        // toma la sección (que tiene transform) como referencia del offset
+        let top = 0, left = 0, el = a;
+        while (el && el !== rail) { top += el.offsetTop; left += el.offsetLeft; el = el.offsetParent; }
+        if (snap) lens.style.transition = 'none';
+        lens.style.width = a.offsetWidth + 'px';
+        lens.style.height = a.offsetHeight + 'px';
+        // Con la propiedad translate el estiramiento (scale) no desplaza la cápsula
+        lens.style.translate = `${left}px ${top}px`;
+        lens.style.opacity = '1';
+        if (snap) { void lens.offsetWidth; lens.style.transition = ''; }
+        else if (lastTop !== null && Math.abs(top - lastTop) > 4) {
+            lens.classList.remove('squish'); void lens.offsetWidth; lens.classList.add('squish');
+        }
+        lastTop = top;
+    }
+
+    new MutationObserver(() => place(false)).observe(rail, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(rail);
+    // Solo cuando termina de abrirse/cerrarse la barra (no por transiciones de sus hijos)
+    document.querySelector('.app')?.addEventListener('transitionend', (e) => { if (e.target === e.currentTarget) place(true); });
+    place(true);
+
+    // Los contadores laten cuando su número cambia
+    rail.querySelectorAll('.nav-item .count').forEach((el) => {
+        let last = el.textContent;
+        new MutationObserver(() => {
+            if (el.textContent === last) return;
+            last = el.textContent;
+            el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+})();
