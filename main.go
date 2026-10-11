@@ -215,6 +215,25 @@ func main() {
 	log.Println("✅ Comy Marketplace configurado en: /comy")
 
 	// ============================================
+	// 🎓 ATTOMOS ACADEMY — Cursos de idiomas (público)
+	// ============================================
+	router.GET("/academy", func(c *gin.Context) {
+		c.HTML(200, "academy.html", nil)
+	})
+	router.GET("/academy/:course", func(c *gin.Context) {
+		c.HTML(200, "academy.html", nil)
+	})
+	log.Println("✅ Attomos Academy configurado en: /academy")
+
+	// ============================================
+	// 💰 ATTOMOS FINANCE — Rendimientos SOFIPOs, bancos y CETES (público)
+	// ============================================
+	router.GET("/finance", func(c *gin.Context) {
+		c.HTML(200, "finance.html", nil)
+	})
+	log.Println("✅ Attomos Finance configurado en: /finance")
+
+	// ============================================
 	// RUTAS PROTEGIDAS (API)
 	// ============================================
 
@@ -664,6 +683,8 @@ func main() {
 	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
 	log.Println("║    • 🛒 Comy Marketplace en: /comy                      ║")
 	log.Println("║    • 🍕 Orders en: /orders (giros de comida)            ║")
+	log.Println("║    • 🎓 Academy en: /academy                            ║")
+	log.Println("║    • 💰 Finance en: /finance                            ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	// 🔔 Renovación periódica de las suscripciones push de Drive (inventario)

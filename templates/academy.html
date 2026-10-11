@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Attomos Academy</title>
+  <meta name="description" content="Aprende idiomas con videos cortos seleccionados para cada curso.">
+  <link rel="stylesheet" href="/static/css/academy.css">
+</head>
+<body>
+
+  <!-- Barra compacta: aparece al hacer scroll (colapso de título grande estilo iOS) -->
+  <header class="compact-bar" id="compactBar">
+    <button type="button" class="compact-back" id="compactBack" hidden>
+      <span aria-hidden="true">‹</span> Cursos
+    </button>
+    <span class="compact-title" id="compactTitle">Attomos Academy</span>
+  </header>
+
+  <main class="page">
+    <!-- Vista 1: cursos -->
+    <section class="view" id="coursesView">
+      <div class="hero">
+        <p class="eyebrow">Aprende idiomas</p>
+        <h1 class="large-title">Attomos <span>Academy</span></h1>
+        <p class="lede">Lecciones en video cortas y directas. Elige un curso y mira las clases cuando quieras.</p>
+      </div>
+
+      <div class="course-grid" id="courseGrid" role="list"></div>
+    </section>
+
+    <!-- Vista 2: videos de un curso -->
+    <section class="view" id="courseView" hidden>
+      <button type="button" class="back-btn glass" id="backBtn">
+        <span aria-hidden="true">‹</span> Cursos
+      </button>
+
+      <div class="course-header">
+        <img class="course-header-img" id="courseHeaderImg" alt="">
+        <div>
+          <p class="eyebrow" id="courseEyebrow"></p>
+          <h1 class="large-title course-title" id="courseTitle"></h1>
+          <p class="course-meta" id="courseMeta"></p>
+        </div>
+      </div>
+
+      <div class="video-grid" id="videoGrid"></div>
+    </section>
+  </main>
+
+  <script src="/static/js/academy.js"></script>
+</body>
+</html>

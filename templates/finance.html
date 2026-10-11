@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Attomos Finance</title>
+  <meta name="description" content="Compara rendimientos de SOFIPOs, bancos y CETES en México con sus requisitos reales, leídos directo de las páginas oficiales.">
+  <link rel="stylesheet" href="/static/css/finance.css">
+</head>
+<body>
+
+  <!-- Barra compacta: aparece al hacer scroll (colapso de título grande estilo iOS) -->
+  <header class="compact-bar" id="compactBar" aria-hidden="true">
+    <span class="compact-title">Attomos Finance</span>
+  </header>
+
+  <main class="page">
+    <section class="hero" id="hero">
+      <p class="eyebrow">Rendimientos en México</p>
+      <h1 class="large-title" id="largeTitle">Attomos <span>Finance</span></h1>
+      <p class="lede">Tasas de SOFIPOs, bancos y CETES tomadas de sus páginas oficiales, con los requisitos que de verdad piden.</p>
+      <div class="meta-row" id="metaRow">
+        <span class="meta-pill skeleton-text">Cargando tasas…</span>
+      </div>
+    </section>
+
+    <section class="amount-card glass" aria-labelledby="amountLabel">
+      <div class="amount-main">
+        <label id="amountLabel" for="amountInput">¿Cuánto quieres invertir?</label>
+        <div class="amount-input">
+          <span class="amount-currency">$</span>
+          <input id="amountInput" type="text" inputmode="numeric" autocomplete="off" value="25,000" aria-describedby="amountHint">
+          <span class="amount-suffix">MXN</span>
+        </div>
+        <p class="amount-hint" id="amountHint">Calculamos cuánto ganarías en un año en cada opción, respetando sus topes por tramo.</p>
+      </div>
+      <div class="chips" id="amountChips">
+        <button type="button" class="chip" data-value="10000">$10 mil</button>
+        <button type="button" class="chip is-active" data-value="25000">$25 mil</button>
+        <button type="button" class="chip" data-value="50000">$50 mil</button>
+        <button type="button" class="chip" data-value="100000">$100 mil</button>
+        <button type="button" class="chip" data-value="500000">$500 mil</button>
+      </div>
+    </section>
+
+    <!-- Control segmentado flotante: se minimiza al bajar y se expande al subir -->
+    <div class="segmented-dock" id="segmentedDock">
+      <div class="segmented glass" id="segmented" role="tablist" aria-label="Filtrar por tipo">
+        <span class="segmented-indicator" id="segIndicator" aria-hidden="true"></span>
+        <button type="button" role="tab" class="seg-btn is-active" aria-selected="true" data-filter="all">Todos</button>
+        <button type="button" role="tab" class="seg-btn" aria-selected="false" data-filter="sofipo">SOFIPOs</button>
+        <button type="button" role="tab" class="seg-btn" aria-selected="false" data-filter="banco">Bancos</button>
+        <button type="button" role="tab" class="seg-btn" aria-selected="false" data-filter="gobierno">CETES</button>
+      </div>
+    </div>
+
+    <section class="table-card" aria-live="polite">
+      <table class="rates" id="ratesTable">
+        <thead>
+          <tr>
+            <th scope="col">Institución</th>
+            <th scope="col">Tasa máxima</th>
+            <th scope="col">Para tu monto</th>
+            <th scope="col">Tramos</th>
+            <th scope="col">Requisitos</th>
+            <th scope="col">Fuente</th>
+          </tr>
+        </thead>
+        <tbody id="ratesBody">
+          <tr class="skeleton-row"><td colspan="6"><div class="skeleton-bar"></div></td></tr>
+          <tr class="skeleton-row"><td colspan="6"><div class="skeleton-bar"></div></td></tr>
+          <tr class="skeleton-row"><td colspan="6"><div class="skeleton-bar"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="footnote">
+      <p>Tasas anuales antes de impuestos. La ganancia estimada asume que el saldo se mantiene un año a la tasa actual y que cumples los requisitos de la tasa máxima; las tasas pueden cambiar en cualquier momento.</p>
+      <p>Cada opción indica la fecha en que verificamos su información. Confirma siempre en la página oficial antes de invertir.</p>
+    </footer>
+  </main>
+
+  <script src="/static/js/finance.js"></script>
+</body>
+</html>
