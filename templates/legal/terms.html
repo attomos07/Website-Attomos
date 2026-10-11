@@ -12,9 +12,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     
     <!-- CSS Files -->
-    <link rel="stylesheet" href="/static/css/partials/navbar.css">
-    <link rel="stylesheet" href="/static/css/partials/footer.css">
-    <link rel="stylesheet" href="/static/css/legal/legal.css">
+    <link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
+    <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
+    <link rel="stylesheet" href="/static/css/legal/legal.css?v=2">
 </head>
 <body>
     <!-- Navbar -->
@@ -709,12 +709,12 @@
     {{template "partials/footer.html" .}}
 
     <!-- Back to top button -->
-    <button class="back-to-top" id="backToTop">
+    <button class="back-to-top" id="backToTop" aria-label="Volver arriba">
         <i class="lni lni-chevron-up"></i>
     </button>
 
     <!-- JavaScript -->
-    <script src="/static/js/legal/legal.js"></script>
+    <script src="/static/js/legal/legal.js?v=2"></script>
 </body>
 </html>
 {{end}}

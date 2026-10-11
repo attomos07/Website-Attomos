@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- 2. MENÚ MÓVIL CON RESORTE ---
     initMobileMenu(navbar, navMenu, mobileMenuBtn);
 
+    // --- 2b. PÍLDORA LÍQUIDA DE ESCRITORIO ---
+    initDesktopGlide(navMenu);
+
     // --- 3. EFECTO SCROLL (sombra) ---
     window.addEventListener('scroll', () => {
         if (navbar) {
@@ -342,6 +345,175 @@ function initMobileMenu(navbar, navMenu, mobileMenuBtn) {
     if ('ResizeObserver' in window) new ResizeObserver(() => { if (isOpen()) retarget(); }).observe(navMenu);
 
     render();
+}
+
+// ============================================
+// PÍLDORA LÍQUIDA (escritorio) — estilo iOS 27
+// Una gota de cristal cian sigue al cursor entre los enlaces con
+// resorte: se estira según su velocidad, se aplasta al presionar y
+// al llegar a su destino un destello cruza el cristal. Al hacer clic
+// el texto da un pequeño rebote y la gota se queda en la nueva sección.
+// Sustituye la línea bajo el texto.
+// ============================================
+function initDesktopGlide(navMenu) {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    const glide = document.createElement('li');
+    glide.className = 'nav-glide';
+    glide.setAttribute('aria-hidden', 'true');
+    glide.innerHTML = '<span class="nav-glide-shine"></span>';
+    navMenu.appendChild(glide);
+    navMenu.classList.add('has-glide');
+
+    const links = () => [...navMenu.querySelectorAll('.nav-item:not(.mobile-only):not(.mobile-lang-item) > .nav-link')];
+
+    // ---------- Resortes ----------
+    const springs = [];
+    const spring = (v = 0, k = 420, d = 32, eps = 0.1) => {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.push(s);
+        return s;
+    };
+    const X = spring(), Y = spring(), W = spring(), H = spring();
+    const O = spring(0, 520, 40, 0.002);         // opacidad
+    const S = spring(1, 650, 26, 0.0005);        // presión
+
+    function step(s, dt) {
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+
+    let raf = null, last = 0, travelling = false;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => step(s, dt));
+        render();
+        if (travelling && Math.abs(X.v - X.t) < 1.5 && Math.abs(X.vel) < 60) {
+            travelling = false;
+            shine();
+        }
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            render();
+            raf = null;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    function render() {
+        if (!mq.matches) { glide.style.opacity = '0'; return; }
+        // Estiramiento líquido según la velocidad horizontal
+        const stretch = clamp(Math.abs(X.vel) / 5000, 0, 0.22);
+        glide.style.width = `${Math.max(0, W.v)}px`;
+        glide.style.height = `${Math.max(0, H.v)}px`;
+        glide.style.opacity = clamp(O.v, 0, 1);
+        glide.style.transform =
+            `translate(${X.v}px, ${Y.v}px) scale(${(1 + stretch) * S.v}, ${(1 - stretch * 0.45) * S.v})`;
+    }
+
+    function shine() {
+        if (reduce.matches) return;
+        glide.classList.remove('shine');
+        void glide.offsetWidth;
+        glide.classList.add('shine');
+    }
+
+    let hover = null;
+    const activeLink = () => links().find((a) => a.classList.contains('active')) || null;
+
+    function retarget(snap = false) {
+        const target = hover || activeLink();
+        navMenu.classList.toggle('is-hovering', !!hover && hover !== activeLink());
+        if (!target) { O.t = 0; kick(); return; }
+        const wasHidden = O.v < 0.05;
+        const nx = target.offsetLeft, ny = target.offsetTop;
+        const nw = target.offsetWidth, nh = target.offsetHeight;
+        // Si estaba oculta, aparece directamente en su sitio
+        const jump = snap || wasHidden;
+        [[X, nx], [Y, ny], [W, nw], [H, nh]].forEach(([s, v]) => {
+            s.t = v;
+            if (jump) { s.v = v; s.vel = 0; }
+        });
+        if (!jump && Math.abs(X.v - nx) > 2) travelling = true;
+        O.t = 1;
+        kick();
+    }
+
+    // ---------- Cursor ----------
+    navMenu.addEventListener('pointerover', (e) => {
+        if (!mq.matches || e.pointerType === 'touch') return;
+        const link = e.target.closest('.nav-link');
+        if (!link || !links().includes(link) || link === hover) return;
+        hover = link;
+        retarget();
+    });
+    navMenu.addEventListener('pointerleave', () => {
+        if (!mq.matches) return;
+        hover = null;
+        S.t = 1;
+        retarget();
+    });
+
+    // ---------- Presionar: la gota se aplasta ----------
+    navMenu.addEventListener('pointerdown', (e) => {
+        if (!mq.matches || e.button > 0) return;
+        const link = e.target.closest('.nav-link');
+        if (!link || !links().includes(link)) return;
+        hover = link;
+        retarget();
+        S.t = 0.9;
+        kick();
+    });
+    const release = () => { if (S.t !== 1) { S.t = 1; kick(); } };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+
+    // ---------- Seleccionar: rebote del texto y luego navegar ----------
+    navMenu.addEventListener('click', (e) => {
+        if (!mq.matches) return;
+        const link = e.target.closest('.nav-link');
+        if (!link || !links().includes(link)) return;
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0) return;
+        if (link.target && link.target !== '_self') return;
+        const isCurrent = link.classList.contains('active');
+        links().forEach((a) => a.classList.toggle('active', a === link));
+        hover = null;
+        retarget();
+        shine();
+        link.classList.remove('is-selecting');
+        void link.offsetWidth;
+        link.classList.add('is-selecting');
+        if (isCurrent || reduce.matches) return;
+        e.preventDefault();
+        const href = link.href;
+        setTimeout(() => { window.location.href = href; }, 260);
+    });
+    navMenu.addEventListener('animationend', (e) => {
+        if (e.animationName === 'navGlideJelly') e.target.closest('.nav-link')?.classList.remove('is-selecting');
+    });
+
+    // ---------- Cambios de tamaño (idioma, fuentes, ventana) ----------
+    if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => retarget(true));
+        links().forEach((a) => ro.observe(a));
+    } else {
+        window.addEventListener('resize', () => retarget(true));
+    }
+    mq.addEventListener?.('change', () => retarget(true));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => retarget(true));
+
+    retarget(true);
 }
 
 function setActiveNavLink() {

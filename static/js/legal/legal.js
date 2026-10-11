@@ -5,8 +5,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 Legal page cargada correctamente');
     
+    initTables();
     initBackToTop();
     initSmoothScroll();
+    initReveal();
+    initReader();
     initParticles();
     
     console.log('✅ Legal page inicializada');
@@ -52,7 +55,7 @@ function initSmoothScroll() {
             const targetElement = document.querySelector(targetId);
             if (!targetElement) return;
             
-            const offsetTop = targetElement.offsetTop - 100;
+            const offsetTop = targetElement.getBoundingClientRect().top + window.scrollY - 100;
             
             window.scrollTo({
                 top: offsetTop,
@@ -60,6 +63,137 @@ function initSmoothScroll() {
             });
         });
     });
+}
+
+// ============================================
+// TABLAS — envoltura para bordes redondeados y scroll lateral en móvil
+// ============================================
+function initTables() {
+    document.querySelectorAll('.data-table').forEach((table) => {
+        if (table.parentElement.classList.contains('lg-table-scroll')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'lg-table-scroll';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+    });
+}
+
+// ============================================
+// ENTRADA AL HACER SCROLL — las tarjetas suben con resorte
+// ============================================
+function initReveal() {
+    const items = document.querySelectorAll('.table-of-contents, .legal-section, .contact-section, .legal-container > .highlight-box');
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('lg-in');
+            io.unobserve(entry.target);
+        });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.04 });
+
+    items.forEach((el) => {
+        // Lo que ya está en pantalla al cargar no se oculta
+        if (el.getBoundingClientRect().top < window.innerHeight * 0.92) return;
+        el.classList.add('lg-reveal');
+        io.observe(el);
+    });
+}
+
+// ============================================
+// CÁPSULA DE LECTURA — estilo iOS 27
+// Cristal flotante con anillo de progreso, número y título de la
+// sección actual, y botón para volver arriba. También marca la
+// sección actual en la tabla de contenidos.
+// ============================================
+function initReader() {
+    const sections = [...document.querySelectorAll('.legal-section[id]')];
+    if (!sections.length) return;
+
+    const R = 16, C = 2 * Math.PI * R;
+    const reader = document.createElement('div');
+    reader.className = 'lg-reader';
+    reader.setAttribute('role', 'status');
+    reader.innerHTML = `
+        <span class="lg-reader-ring" aria-hidden="true">
+            <svg viewBox="0 0 38 38"><circle class="track" cx="19" cy="19" r="${R}"/><circle class="bar" cx="19" cy="19" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
+            <span class="lg-reader-num"></span>
+        </span>
+        <span class="lg-reader-title"></span>
+        <button class="lg-reader-btn" type="button" aria-label="Volver arriba">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+        </button>`;
+    document.body.appendChild(reader);
+
+    const bar = reader.querySelector('.bar');
+    const num = reader.querySelector('.lg-reader-num');
+    const title = reader.querySelector('.lg-reader-title');
+    reader.querySelector('.lg-reader-btn').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // La cápsula sustituye al botón flotante original
+    const backToTop = document.getElementById('backToTop');
+    if (backToTop) backToTop.classList.add('lg-hidden');
+
+    const tocLinks = new Map();
+    document.querySelectorAll('.toc-list a[href^="#"]').forEach((a) => tocLinks.set(a.getAttribute('href').slice(1), a));
+
+    const labelOf = (sec) => {
+        const h = sec.querySelector('.section-title');
+        const n = h?.querySelector('.section-number')?.textContent.trim() || '';
+        const text = h ? [...h.childNodes].filter((node) => node.nodeType === 3).map((node) => node.textContent).join(' ').trim() : '';
+        return { n, text };
+    };
+
+    let current = null, ticking = false;
+
+    function update() {
+        ticking = false;
+        const y = window.scrollY;
+        const content = document.querySelector('.legal-content-section');
+        const start = content ? content.offsetTop : 0;
+        const end = content ? start + content.offsetHeight - window.innerHeight : document.body.scrollHeight - window.innerHeight;
+        const progress = Math.min(1, Math.max(0, (y - start + window.innerHeight * 0.3) / Math.max(1, end - start + window.innerHeight * 0.3)));
+        bar.style.strokeDashoffset = C * (1 - progress);
+
+        // Sección actual: la última cuyo inicio ya pasó el tercio superior
+        const line = window.innerHeight * 0.35;
+        let sec = null;
+        for (const s of sections) {
+            if (s.getBoundingClientRect().top <= line) sec = s;
+            else break;
+        }
+
+        const footer = document.querySelector('.footer');
+        const nearFooter = footer && footer.getBoundingClientRect().top < window.innerHeight - 40;
+        reader.classList.toggle('visible', !!sec && !nearFooter);
+
+        if (sec !== current) {
+            if (current) {
+                current.classList.remove('is-current');
+                tocLinks.get(current.id)?.classList.remove('is-current');
+            }
+            current = sec;
+            if (sec) {
+                sec.classList.add('is-current');
+                tocLinks.get(sec.id)?.classList.add('is-current');
+                const { n, text } = labelOf(sec);
+                num.textContent = n;
+                title.textContent = text;
+                title.classList.remove('swap');
+                void title.offsetWidth;
+                title.classList.add('swap');
+            }
+        }
+    }
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
 }
 
 // ============================================

@@ -7,43 +7,9 @@
     <title>Política de Privacidad - Attomos</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
-    <link rel="stylesheet" href="/static/css/partials/navbar.css">
-    <link rel="stylesheet" href="/static/css/partials/footer.css">
-    <link rel="stylesheet" href="/static/css/legal/legal.css">
-    <style>
-        /* Estilos adicionales para tablas */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 24px 0;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        .data-table thead {
-            background: linear-gradient(135deg, #06b6d4, #0891b2);
-            color: white;
-        }
-        .data-table th {
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 15px;
-        }
-        .data-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f3f4f6;
-            font-size: 15px;
-            color: #4b5563;
-        }
-        .data-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        .data-table tbody tr:hover {
-            background: rgba(6, 182, 212, 0.03);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
+    <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
+    <link rel="stylesheet" href="/static/css/legal/legal.css?v=2">
 </head>
 <body>
     {{template "partials/navbar.html" .}}
@@ -524,11 +490,11 @@
 
     {{template "partials/footer.html" .}}
 
-    <button class="back-to-top" id="backToTop">
+    <button class="back-to-top" id="backToTop" aria-label="Volver arriba">
         <i class="lni lni-chevron-up"></i>
     </button>
 
-    <script src="/static/js/legal/legal.js"></script>
+    <script src="/static/js/legal/legal.js?v=2"></script>
 </body>
 </html>
 {{end}}

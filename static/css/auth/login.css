@@ -729,6 +729,21 @@ body {
   background: #ffffff;
 }
 
+/* Fondo blanco puro: sin círculos de tinte cian detrás del formulario */
+.auth-background {
+  display: none;
+}
+
+body,
+html {
+  background: #ffffff;
+}
+
+#animated-blob,
+#animated-blob:hover {
+  filter: none;
+}
+
 /* --- Tarjeta del formulario --- */
 .auth-form-container {
   padding: 2.75rem;
