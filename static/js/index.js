@@ -360,7 +360,7 @@ function initTypewriterEffect() {
 // ============================================
 function initSectionFadeIn() {
     // Seleccionar todas las secciones principales excepto el hero
-    const sections = document.querySelectorAll('.social-platforms-section, .platforms-section, .pricing-section, .faq-section');
+    const sections = document.querySelectorAll('.social-platforms-section, .platforms-section, .pricing-section, .faq-section, .index-contact-section');
     
     if (sections.length === 0) {
         console.log('⚠️ No se encontraron secciones para animar');
@@ -1459,6 +1459,107 @@ if (typeof module !== 'undefined' && module.exports) {
         billingSegment();
         watchPrices();
         pageDots();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+// ============================================================================
+// SECCIÓN DE CONTACTO — Index
+// Valida el formulario y abre WhatsApp con el mensaje armado
+// ============================================================================
+(function () {
+    const PHONE = '526623710899';
+    const MSG = {
+        required: 'Este campo es obligatorio',
+        email: 'Por favor ingrese un email válido',
+        subject: 'Selecciona un asunto',
+    };
+
+    function clearError(field) {
+        field.classList.remove('error');
+        const err = field.parentNode.querySelector('.index-field-error');
+        if (err) err.remove();
+    }
+
+    function setError(field, text) {
+        clearError(field);
+        void field.offsetWidth; // reinicia la animación de sacudida
+        field.classList.add('error');
+        const err = document.createElement('div');
+        err.className = 'index-field-error';
+        err.textContent = text;
+        field.after(err);
+    }
+
+    function validate(field) {
+        const value = field.value.trim();
+        if (field.required && !value) {
+            setError(field, field.tagName === 'SELECT' ? MSG.subject : MSG.required);
+            return false;
+        }
+        if (field.type === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            setError(field, MSG.email);
+            return false;
+        }
+        clearError(field);
+        return true;
+    }
+
+    function buildMessage(form) {
+        const d = Object.fromEntries(new FormData(form));
+        const sel = form.querySelector('select[name="subject"]');
+        const subject = sel && sel.value ? sel.options[sel.selectedIndex].textContent.trim() : '';
+        let m = '¡Hola! Me interesa información sobre sus chatbots.\n\n*Información de Contacto:*\n';
+        m += `• Nombre: ${d.name}\n• Email: ${d.email}\n`;
+        if (d.phone) m += `• Teléfono: ${d.phone}\n`;
+        if (subject) m += `• Asunto: ${subject}\n`;
+        m += `\n*Mensaje:*\n${d.message}`;
+        return m;
+    }
+
+    function track(name, params) {
+        if (typeof gtag !== 'undefined') gtag('event', name, params);
+    }
+
+    function init() {
+        const form = document.getElementById('indexContactForm');
+        if (!form) return;
+        const fields = form.querySelectorAll('input[required], select[required], textarea[required]');
+
+        fields.forEach((f) => {
+            f.addEventListener('blur', () => { if (f.value.trim()) validate(f); });
+            f.addEventListener(f.tagName === 'SELECT' ? 'change' : 'input', () => {
+                if (f.classList.contains('error')) validate(f);
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let ok = true;
+            fields.forEach((f) => { if (!validate(f)) ok = false; });
+            if (!ok) {
+                const first = form.querySelector('.error');
+                if (first) first.focus();
+                return;
+            }
+            track('form_submission', {
+                form_type: 'index_contact',
+                subject: form.querySelector('select[name="subject"]').value || 'not_specified',
+                event_category: 'conversion',
+                event_label: 'index_contact_form',
+            });
+            window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(buildMessage(form))}`, '_blank');
+            form.reset();
+        });
+
+        document.querySelectorAll('.index-contact-method').forEach((a) => {
+            a.addEventListener('click', () => track('contact_action', {
+                action_type: a.dataset.method,
+                action_name: 'index_button_click',
+                event_category: 'contact',
+            }));
+        });
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

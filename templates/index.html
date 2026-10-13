@@ -285,6 +285,88 @@
             {{end}}
         </div>
 </section>
+<!-- Sección de Contacto -->
+<section class="index-contact-section" id="contacto">
+    <div class="container">
+        <div class="index-contact-header">
+            <h2 class="section-title"><span data-translate="contact_hero_pre">¿Tienes alguna</span> <span class="highlight" data-translate="contact_hero_hi">pregunta?</span></h2>
+            <p class="section-subtitle" data-translate="contact_hero_subtitle">Estamos aquí para ayudarte. Contáctanos y te responderemos en menos de 24 horas.</p>
+        </div>
+        <div class="index-contact-grid">
+            <!-- Métodos de contacto -->
+            <div class="index-contact-methods">
+                <a href="https://wa.me/526623710899" target="_blank" rel="noopener" class="index-contact-method" data-method="whatsapp">
+                    <div class="index-method-icon"><i class="lni lni-whatsapp"></i></div>
+                    <div class="index-method-text">
+                        <h4 data-translate="contact_method_wa">WhatsApp</h4>
+                        <p data-translate="contact_method_wa_desc">Chatea con nosotros directamente</p>
+                    </div>
+                    <i class="lni lni-chevron-right index-method-chev"></i>
+                </a>
+                <a href="mailto:attomos07@gmail.com" class="index-contact-method" data-method="email">
+                    <div class="index-method-icon"><i class="lni lni-envelope"></i></div>
+                    <div class="index-method-text">
+                        <h4 data-translate="contact_method_email">Email</h4>
+                        <p>contact@attomos.com</p>
+                    </div>
+                    <i class="lni lni-chevron-right index-method-chev"></i>
+                </a>
+                <a href="tel:+526623710899" class="index-contact-method" data-method="phone">
+                    <div class="index-method-icon"><i class="lni lni-phone"></i></div>
+                    <div class="index-method-text">
+                        <h4 data-translate="contact_method_phone">Teléfono</h4>
+                        <p>+52 662 371 0899</p>
+                    </div>
+                    <i class="lni lni-chevron-right index-method-chev"></i>
+                </a>
+                <div class="index-contact-hours">
+                    <i class="lni lni-timer"></i>
+                    <span data-translate="contact_method_phone_desc">Llámanos de Lun - Vie, 9am - 6pm</span>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <form class="index-contact-form" id="indexContactForm" novalidate>
+                <h3 class="index-form-title" data-translate="contact_form_title">Envíanos un mensaje</h3>
+                <p class="index-form-subtitle" data-translate="contact_form_subtitle">Completa el formulario y te contactaremos lo antes posible.</p>
+                <div class="index-form-row">
+                    <div class="index-form-group">
+                        <label for="icName" data-translate="contact_label_name">Nombre completo</label>
+                        <input type="text" id="icName" name="name" required>
+                    </div>
+                    <div class="index-form-group">
+                        <label for="icEmail" data-translate="contact_label_email">Email</label>
+                        <input type="email" id="icEmail" name="email" required>
+                    </div>
+                </div>
+                <div class="index-form-row">
+                    <div class="index-form-group">
+                        <label for="icPhone" data-translate="contact_label_phone">Teléfono</label>
+                        <input type="tel" id="icPhone" name="phone" placeholder="+52">
+                    </div>
+                    <div class="index-form-group">
+                        <label for="icSubject" data-translate="contact_label_subject">Asunto</label>
+                        <select id="icSubject" name="subject" required>
+                            <option value="" data-translate="contact_subject_placeholder">Selecciona un asunto</option>
+                            <option value="sales" data-translate="contact_subject_sales">Ventas</option>
+                            <option value="support" data-translate="contact_subject_support">Soporte Técnico</option>
+                            <option value="partnership" data-translate="contact_subject_partnership">Alianzas</option>
+                            <option value="other" data-translate="contact_subject_other">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="index-form-group">
+                    <label for="icMessage" data-translate="contact_label_message">Mensaje</label>
+                    <textarea id="icMessage" name="message" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="index-submit-btn">
+                    <i class="lni lni-whatsapp"></i>
+                    <span data-translate="contact_submit">Enviar Mensaje</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
 <!-- Footer -->
     {{template "partials/footer.html" .}}
 
