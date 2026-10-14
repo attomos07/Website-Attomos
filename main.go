@@ -516,6 +516,13 @@ func main() {
 		})
 	})
 
+	// Detalle de cada artículo — el slug lo lee blog-detail.js desde la URL
+	router.GET("/blog/:slug", func(c *gin.Context) {
+		c.HTML(200, "blog-detail.html", gin.H{
+			"title": "Blog - Attomos",
+		})
+	})
+
 	router.GET("/pricing", func(c *gin.Context) {
 		c.HTML(200, "pricing.html", gin.H{
 			"title": "Precios - Attomos",
