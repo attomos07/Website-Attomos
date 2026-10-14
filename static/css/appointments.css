@@ -2891,7 +2891,8 @@ input[type="date"].ios-date::-webkit-calendar-picker-indicator {
   transition: color 0.2s ease, transform 0.45s var(--ios-spring);
 }
 
-.ios-date-wrap.is-open input[type="date"] {
+.ios-date-wrap.is-open input[type="date"],
+.ios-date-wrap.is-open input[type="time"] {
   border-color: #06b6d4;
   box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
 }
@@ -3190,4 +3191,119 @@ input[type="date"].ios-date::-webkit-calendar-picker-indicator {
   .ios-cal-day.is-selected::before {
     animation: none !important;
   }
+}
+
+/* ============================================================================
+   SELECTOR DE HORA iOS 27 — ruedas de horas y minutos con lente central
+   ============================================================================ */
+input[type="time"].ios-time::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ios-timepick {
+  width: 248px;
+}
+
+.ios-wheels {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 200px;
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+}
+
+.ios-wheel-lens {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 40px;
+  margin-top: -20px;
+  border-radius: 14px;
+  background: rgba(6, 182, 212, 0.12);
+  pointer-events: none;
+}
+
+.ios-wheel {
+  position: relative;
+  width: 72px;
+  height: 200px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  outline: none;
+  overscroll-behavior: contain;
+}
+
+.ios-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.ios-wheel-pad {
+  height: 80px;
+}
+
+.ios-wheel-item {
+  height: 40px;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  font-size: 21px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.ios-wheel-item.is-on {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.ios-wheel-sep {
+  position: relative;
+  z-index: 1;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0891b2;
+}
+
+/* ============================================================================
+   X de "Cobro de servicio": gira con resorte y se aplasta al presionarla
+   ============================================================================ */
+.pos-clear-btn {
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.5s var(--ios-spring) !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pos-clear-btn svg {
+  transition: transform 0.5s var(--ios-spring);
+}
+
+.pos-clear-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 18px -8px rgba(239, 68, 68, 0.6);
+}
+
+.pos-clear-btn:hover svg {
+  transform: rotate(90deg);
+}
+
+.pos-clear-btn:active {
+  transform: scale(0.84);
+}
+
+.pos-clear-btn.is-clearing svg {
+  animation: posClearSpin 0.6s var(--ios-spring);
+}
+
+@keyframes posClearSpin {
+  0% { transform: rotate(90deg) scale(1); }
+  40% { transform: rotate(270deg) scale(0.6); }
+  100% { transform: rotate(450deg) scale(1); }
 }

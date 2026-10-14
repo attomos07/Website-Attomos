@@ -1,0 +1,54 @@
+{{define "blog-detail.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - {{.title}}</title>
+    <meta name="description" content="Artículos sobre chatbots, inteligencia artificial y automatización para negocios.">
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
+    <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
+    <link rel="stylesheet" href="/static/css/partials/blog-detail.css?v=1">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Barra de progreso de lectura -->
+    <div class="bd-progress" id="bdProgress" aria-hidden="true">
+        <div class="bd-progress-bar" id="bdProgressBar"></div>
+    </div>
+
+    <!-- Contenido del artículo (lo pinta blog-detail.js) -->
+    <main class="bd-page" id="blogDetail" aria-live="polite">
+        <div class="bd-loading" aria-hidden="true">
+            <div class="bd-skel bd-skel-pill"></div>
+            <div class="bd-skel bd-skel-title"></div>
+            <div class="bd-skel bd-skel-title short"></div>
+            <div class="bd-skel bd-skel-cover"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/partials/blog-posts.js?v=1"></script>
+    <script src="/static/js/partials/blog-detail.js?v=1"></script>
+</body>
+</html>
+{{end}}

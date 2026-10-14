@@ -1713,3 +1713,37 @@ body {
     transition: none;
   }
 }
+
+/* Lente suave que sigue al cursor por las opciones del sidebar */
+.rail-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.09);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  scale: 0.96;
+  transition: translate 0.45s var(--ios-spring), width 0.35s var(--ios-spring), height 0.35s var(--ios-spring), opacity 0.2s ease, scale 0.35s var(--ios-spring);
+}
+
+.rail-hover.is-on {
+  opacity: 1;
+  scale: 1;
+}
+
+.has-lens .nav-item:hover,
+.has-lens .nav-subitem:hover {
+  background: transparent;
+}
+
+.has-lens .nav-item:hover:not(.active) {
+  color: var(--accent-dark);
+}
+
+.has-lens .nav-item:not(.active):hover .count {
+  color: var(--accent-dark);
+}

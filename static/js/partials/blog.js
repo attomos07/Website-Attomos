@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSectionFadeIn('.featured-post-section, .blog-categories-section, .blog-grid-section, .newsletter-section');
     initPagination();
     initNewsletter();
+    initPostLinks();
     
     console.log('✅ Todas las funcionalidades de blog inicializadas');
 });
@@ -51,6 +52,71 @@ function initCategoryFilters() {
             });
             
             console.log(`🔍 Categoría filtrada: ${category}`);
+        });
+    });
+}
+
+// ============================================
+// POST LINKS → /blog/<slug>
+// Tarjetas, destacado y sus botones abren el detalle del artículo.
+// ============================================
+function initPostLinks() {
+    const items = document.querySelectorAll('.featured-post[data-slug], .blog-card[data-slug]');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    items.forEach(item => {
+        const slug = item.getAttribute('data-slug');
+        if (!slug) return;
+        const url = `/blog/${encodeURIComponent(slug)}`;
+        const titleEl = item.querySelector('.featured-title, .blog-title');
+
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('role', 'link');
+        if (titleEl) item.setAttribute('aria-label', titleEl.textContent.trim());
+
+        item.addEventListener('click', (e) => {
+            // Ctrl/Cmd + clic abre en otra pestaña, como un enlace normal
+            if (e.metaKey || e.ctrlKey || e.shiftKey) {
+                window.open(url, '_blank');
+                return;
+            }
+            openPost(item, url);
+        });
+
+        item.addEventListener('auxclick', (e) => {
+            if (e.button === 1) window.open(url, '_blank');
+        });
+
+        item.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' || e.target !== item) return;
+            e.preventDefault();
+            openPost(item, url);
+        });
+    });
+
+    function openPost(item, url) {
+        if (item.dataset.opening) return;
+        item.dataset.opening = '1';
+
+        if (reduceMotion || typeof item.animate !== 'function') {
+            window.location.href = url;
+            return;
+        }
+
+        // Pequeña animación de presión antes de navegar
+        item.animate(
+            [{ transform: 'translateY(-4px) scale(1)' }, { transform: 'translateY(0) scale(0.975)' }],
+            { duration: 150, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' }
+        );
+        setTimeout(() => { window.location.href = url; }, 150);
+    }
+
+    // Al volver con el botón "atrás" (bfcache) la tarjeta regresa a su estado normal
+    window.addEventListener('pageshow', (e) => {
+        if (!e.persisted) return;
+        items.forEach(item => {
+            delete item.dataset.opening;
+            if (item.getAnimations) item.getAnimations().forEach(a => a.cancel());
         });
     });
 }

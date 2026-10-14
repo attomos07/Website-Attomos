@@ -1399,3 +1399,17 @@ body {
     display: none;
   }
 }
+
+/* --- Tarjetas clicables (abren /blog/<slug>) --- */
+.featured-post[data-slug],
+.blog-card[data-slug] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.featured-post[data-slug]:focus-visible,
+.blog-card[data-slug]:focus-visible {
+  outline: none;
+  border-color: rgba(6, 182, 212, 0.45);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.18), var(--io-shadow-hover);
+}

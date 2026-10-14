@@ -93,6 +93,205 @@
       margin-bottom: 1rem; display: none;
     }
     .error-msg.show { display: block; }
+
+    /* ==========================================================================
+       COMY 2.0 · "Mercado cálido" — Acceso
+       Cartel amarillo con stickers a la izquierda, libreta de papel a la derecha.
+       ========================================================================== */
+    :root {
+      --accent: #FFD400; --accent2: #E6BF00; --accent-text: #8A6D00;
+      --ink: #1A1A1A; --ink-2: #4A4136; --muted: #8C8273; --orange: #F59500;
+      --border: rgba(74,52,18,.12); --bg: #FFF8EC; --panel: #FFFDF8; --field: #FFF6DC;
+      --cm-jelly: linear(0, 0.059, 0.204, 0.392, 0.591, 0.773, 0.925, 1.039, 1.114, 1.153, 1.163, 1.152, 1.128, 1.097, 1.064, 1.035, 1.011, 0.992, 0.981, 0.975, 0.973, 0.975, 0.98, 0.985, 0.99, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.002, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 0.999, 0.999, 1, 1);
+      --cm-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    @supports not (animation-timing-function: linear(0, 1)) { :root { --cm-jelly: cubic-bezier(0.34, 1.56, 0.64, 1); } }
+    @keyframes cmPop { 0% { opacity: 0; scale: .6; } 60% { opacity: 1; } 100% { opacity: 1; scale: 1; } }
+    @keyframes cmRise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+    @keyframes cmSquish { 0% { scale: 1; } 30% { scale: 1.06 .92; } 60% { scale: .98 1.03; } 100% { scale: 1; } }
+    @keyframes cmShake { 0%, 100% { translate: 0 0; } 18% { translate: -10px 0; } 36% { translate: 9px 0; } 54% { translate: -6px 0; } 72% { translate: 4px 0; } }
+    @keyframes cmFloat { 0%, 100% { translate: 0 0; rotate: var(--r, 0deg); } 50% { translate: 0 -10px; rotate: calc(var(--r, 0deg) + 5deg); } }
+    @keyframes cmSpin { to { rotate: 360deg; } }
+
+    html { background: var(--bg); }
+    body {
+      font-family: var(--font); color: var(--ink); min-height: 100vh; min-height: 100dvh;
+      display: grid; grid-template-columns: minmax(380px, 46%) minmax(0, 1fr); grid-template-rows: 1fr;
+      background:
+        radial-gradient(60% 50% at 100% 0%, rgba(255,212,0,.16), transparent 70%),
+        radial-gradient(50% 40% at 70% 100%, rgba(245,149,0,.10), transparent 70%),
+        var(--bg);
+    }
+
+    /* Logo: cápsula de tinta sobre el cartel */
+    .top {
+      position: fixed; z-index: 20; top: 18px; left: 18px; height: 52px; padding: 0 1rem 0 .45rem; gap: .5rem;
+      background: var(--ink); border: none; border-radius: 999px; box-shadow: 0 16px 30px -16px rgba(0,0,0,.6);
+      animation: cmRise .7s var(--cm-jelly) backwards;
+    }
+    .top-logo { color: #fff; font-size: 1.15rem; font-weight: 900; letter-spacing: -.04em; display: flex; align-items: center; }
+    .top-logo::before { margin-right: .5rem;
+      content: 'c'; width: 38px; height: 38px; border-radius: 14px; rotate: -6deg; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: var(--ink); font-size: 1.35rem; font-weight: 900; line-height: 1; transition: rotate .5s var(--cm-jelly);
+    }
+    .top-logo:hover::before { rotate: 8deg; }
+    .top-logo span { color: var(--accent); }
+    .top-beta { background: rgba(255,212,0,.16); color: var(--accent); border-radius: 999px; padding: 2px 8px; letter-spacing: .1em; }
+
+    /* Cartel */
+    .cm2-poster {
+      position: sticky; top: 12px; overflow: hidden; isolation: isolate;
+      margin: 12px 0 12px 12px; height: calc(100vh - 24px); height: calc(100dvh - 24px); border-radius: 40px;
+      background:
+        radial-gradient(120% 80% at 0% 0%, #FFE55C 0%, transparent 55%),
+        radial-gradient(90% 70% at 100% 100%, #FFB800 0%, transparent 60%),
+        #FFD400;
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 2.6rem 2.6rem 2.4rem;
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,.06);
+    }
+    .cm2-rays {
+      position: absolute; z-index: -1; width: 1100px; height: 1100px; left: 50%; top: 38%; margin: -550px 0 0 -550px; border-radius: 50%;
+      background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.26) 0 7deg, transparent 7deg 18deg);
+      -webkit-mask: radial-gradient(circle, #000 18%, transparent 64%); mask: radial-gradient(circle, #000 18%, transparent 64%);
+      animation: cmSpin 60s linear infinite;
+    }
+    .cm2-plate {
+      position: absolute; z-index: -1; left: 50%; top: 38%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%;
+      background: #FFFDF8; box-shadow: 0 0 0 16px rgba(255,255,255,.35), 0 40px 60px -30px rgba(120,72,0,.7);
+      display: flex; align-items: center; justify-content: center; font-size: 6.5rem;
+      animation: cmPop 1s var(--cm-jelly) .15s backwards;
+    }
+    .cm2-plate > span { display: inline-block; animation: cmFloat 4.5s ease-in-out infinite; }
+    .cm2-sticker {
+      position: absolute; z-index: -1; width: 74px; height: 74px; border-radius: 50%; background: #FFFDF8;
+      display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.4), 0 18px 26px -14px rgba(120,72,0,.7);
+      animation: cmPop .8s var(--cm-jelly) backwards, cmFloat 5s ease-in-out infinite;
+      transition: scale .5s var(--cm-jelly);
+    }
+    .cm2-sticker:hover { scale: 1.15; }
+    .cm2-s1 { left: 12%; top: 16%; --r: -10deg; animation-delay: .35s, 0s; }
+    .cm2-s2 { right: 11%; top: 14%; --r: 12deg; width: 62px; height: 62px; font-size: 1.8rem; animation-delay: .45s, -1.2s; }
+    .cm2-s3 { left: 9%; top: 50%; --r: 8deg; width: 58px; height: 58px; font-size: 1.7rem; animation-delay: .55s, -2.4s; }
+    .cm2-s4 { right: 10%; top: 48%; --r: -8deg; animation-delay: .65s, -3.1s; }
+    .cm2-poster-copy { animation: cmRise .9s var(--cm-jelly) .3s backwards; }
+    .cm2-eyebrow { display: inline-flex; align-items: center; gap: .45rem; font-size: .7rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); margin-bottom: .7rem; }
+    .cm2-eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px rgba(26,26,26,.12); }
+    .cm2-poster h1 { font-size: clamp(2.2rem, 3.6vw, 3.3rem); font-weight: 900; letter-spacing: -.055em; line-height: .95; color: var(--ink); max-width: 13ch; }
+    .cm2-poster h1 em { font-style: normal; background: var(--ink); color: var(--accent); padding: 0 .18em; border-radius: .2em; display: inline-block; rotate: -2deg; }
+    .cm2-poster p { margin-top: .9rem; font-size: .98rem; font-weight: 600; color: rgba(26,26,26,.72); max-width: 36ch; line-height: 1.5; }
+    .cm2-ticks { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.2rem; }
+    .cm2-ticks span { padding: .45rem .8rem; border-radius: 999px; background: rgba(255,255,255,.55); font-size: .78rem; font-weight: 800; color: var(--ink); }
+
+    @media (max-height: 800px) and (min-width: 901px) {
+      .cm2-plate { top: 32%; width: 200px; height: 200px; margin: -100px 0 0 -100px; font-size: 4.8rem; }
+      .cm2-rays { top: 32%; }
+      .cm2-s1 { top: 12%; } .cm2-s2 { top: 10%; }
+      .cm2-s3 { top: 36%; left: 6%; } .cm2-s4 { top: 34%; right: 6%; }
+      .cm2-poster p { display: none; }
+    }
+
+    /* Libreta */
+    .page { padding: 5.5rem 2rem 3rem; align-items: center; min-width: 0; }
+    .card {
+      position: relative; background: var(--panel); border: none; border-radius: 34px; padding: 2.4rem 2.3rem 2.2rem;
+      box-shadow: 0 0 0 1px var(--border), 0 40px 70px -40px rgba(120,72,0,.55);
+      animation: cmRise .8s var(--cm-jelly) .15s backwards;
+    }
+    .card.cm-shake { animation: cmRise .8s var(--cm-jelly) .15s backwards, cmShake .5s var(--cm-soft); }
+
+    /* Campos: etiqueta que salta y caja que se aplasta como gelatina */
+    .field label { font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); transition: color .2s, translate .45s var(--cm-jelly); }
+    .field:focus-within > label { color: var(--ink); translate: 4px 0; }
+    .field input, .field select, .field textarea {
+      background: var(--field); border: 2px solid transparent; border-radius: 16px; padding: .8rem 1rem; font-weight: 600; font-size: .92rem;
+      transition: border-color .2s, box-shadow .25s, background .2s;
+    }
+    .field input::placeholder, .field textarea::placeholder { color: #B8AC97; font-weight: 500; }
+    .field input:focus, .field select:focus, .field textarea:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 5px rgba(255,212,0,.35); }
+    .field input.cm-jelly-in, .field-row.cm-jelly-in { animation: cmSquish .55s var(--cm-soft); }
+
+    .login-link, .register-link { color: var(--muted); font-weight: 600; }
+    .login-link a, .register-link a { color: var(--ink); font-weight: 800; text-decoration: none; background: linear-gradient(var(--accent), var(--accent)) 0 92% / 100% 40% no-repeat; padding: 0 .1em; transition: background-size .35s var(--cm-jelly); }
+    .login-link a:hover, .register-link a:hover { text-decoration: none; background-size: 100% 100%; }
+
+    .cm-confetti { position: fixed; z-index: 3000; top: 0; left: 0; width: 9px; height: 14px; border-radius: 3px; pointer-events: none; }
+
+    /* Móvil: el cartel se vuelve un encabezado corto */
+    @media (max-width: 900px) {
+      body { display: flex; flex-direction: column; }
+      .top { position: absolute; top: 16px; left: 16px; }
+      .cm2-poster { position: relative; height: 290px; margin: 10px 10px 0; border-radius: 32px; padding: 1.4rem 1.4rem 4.2rem; justify-content: flex-end; flex-shrink: 0; }
+      .cm2-plate { width: 112px; height: 112px; margin: 0; left: auto; right: 18px; top: 74px; font-size: 3rem; box-shadow: 0 0 0 10px rgba(255,255,255,.35), 0 30px 40px -24px rgba(120,72,0,.7); }
+      .cm2-rays { left: auto; right: -470px; top: -300px; margin: 0; }
+      .cm2-sticker, .cm2-ticks, .cm2-poster p { display: none; }
+      .cm2-poster h1 { font-size: 1.95rem; max-width: 10ch; }
+      .cm2-eyebrow { font-size: .62rem; }
+      .page { padding: 0 12px 2.5rem; margin-top: -2.8rem; position: relative; z-index: 2; }
+      .card { padding: 1.7rem 1.3rem 1.6rem; border-radius: 30px; }
+    }
+    @media (max-width: 360px) { .cm2-plate { display: none; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cm2-rays, .cm2-plate, .cm2-plate > span, .cm2-sticker, .card, .top, .cm2-poster-copy { animation: none !important; }
+    }
+
+    /* ── Inicio de sesión ── */
+    .card { max-width: 440px; }
+    .card-title { font-size: 2rem; font-weight: 900; letter-spacing: -.05em; line-height: 1; margin-bottom: .5rem; }
+    .card-sub { color: var(--muted); font-weight: 600; margin-bottom: 1.6rem; }
+
+    /* Selector comprador / repartidor con cápsula que se desliza */
+    .role-tabs { position: relative; background: var(--field); border-radius: 18px; padding: 5px; margin-bottom: 1.4rem; isolation: isolate; }
+    .role-thumb {
+      position: absolute; z-index: -1; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); border-radius: 14px;
+      background: var(--ink); box-shadow: 0 10px 18px -10px rgba(0,0,0,.6);
+      transition: translate .6s var(--cm-jelly);
+    }
+    .role-tabs[data-role="driver"] .role-thumb { translate: 100% 0; }
+    .role-thumb.cm-go { animation: cmSquish .6s var(--cm-soft); }
+    .role-tab { position: relative; padding: .7rem .5rem; border-radius: 14px; font-weight: 800; color: var(--ink-2); transition: color .25s, scale .45s var(--cm-jelly); -webkit-tap-highlight-color: transparent; }
+    .role-tab:active { scale: .94; }
+    .role-tab.active { background: transparent; color: var(--accent); box-shadow: none; }
+    .role-tab i { transition: rotate .5s var(--cm-jelly); }
+    .role-tab.active i { rotate: -12deg; }
+
+    .field { margin-bottom: 1rem; gap: .4rem; }
+    .toggle-pass { right: .55rem; width: 36px; height: 36px; border-radius: 12px; color: var(--ink-2); transition: background .2s, rotate .5s var(--cm-jelly); display: flex; align-items: center; justify-content: center; }
+    .toggle-pass:hover { background: rgba(255,212,0,.35); }
+    .toggle-pass.cm-flip { rotate: 180deg; }
+    #loginPass { padding-right: 3.2rem; }
+
+    .forgot { margin: -.35rem 0 1.15rem; }
+    .forgot a { color: var(--ink-2); font-weight: 700; }
+
+    .btn-login {
+      padding: 1rem; border-radius: 20px; font-size: 1rem; font-weight: 900; color: var(--ink); background: var(--accent);
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6), 0 16px 26px -14px rgba(200,140,0,.95);
+      position: relative; overflow: hidden; transition: background .2s, scale .45s var(--cm-jelly);
+    }
+    .btn-login::after {
+      content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,.7), transparent); transform: skewX(-14deg);
+      animation: cm2Shine 3.4s ease-in-out infinite;
+    }
+    @keyframes cm2Shine { 0%, 60% { left: -40%; } 100% { left: 130%; } }
+    .btn-login:hover { background: #FFDD2E; }
+    .btn-login:active { scale: .95 .9; }
+    .btn-login i { transition: translate .45s var(--cm-jelly); }
+    .btn-login:hover i { translate: 4px 0; }
+
+    .divider { margin: 1.3rem 0; font-weight: 700; }
+    .divider::before, .divider::after { height: 0; border-top: 2px dashed var(--border); background: none; }
+    .btn-attomos { padding: .85rem; border-radius: 18px; border: 2px solid var(--border); background: transparent; font-weight: 800; transition: border-color .2s, color .2s, background .2s, scale .45s var(--cm-jelly); }
+    .btn-attomos:hover { border-color: #06b6d4; color: #0891b2; background: #ECFEFF; }
+    .btn-attomos:active { scale: .96; }
+    .btn-attomos svg { transition: rotate .5s var(--cm-jelly); }
+    .btn-attomos:hover svg { rotate: -10deg; }
+
+    .error-msg { border: none; border-radius: 16px; background: #FFE9E5; color: #B42318; font-weight: 700; padding: .75rem 1rem; }
+    .error-msg.show { display: flex; align-items: center; gap: .45rem; animation: cmPop .5s var(--cm-jelly); }
+    .register-link { margin-top: 1.4rem; }
   </style>
 </head>
 <body>
@@ -102,13 +301,29 @@
   <span class="top-beta">Beta</span>
 </div>
 
+<aside class="cm2-poster" aria-hidden="true">
+  <div class="cm2-rays"></div>
+  <div class="cm2-plate"><span>🌮</span></div>
+  <span class="cm2-sticker cm2-s1">🍕</span>
+  <span class="cm2-sticker cm2-s2">🥤</span>
+  <span class="cm2-sticker cm2-s3">🍩</span>
+  <span class="cm2-sticker cm2-s4">🍔</span>
+  <div class="cm2-poster-copy">
+    <div class="cm2-eyebrow">Comy · Mercado local</div>
+    <h1>Qué gusto <em>verte</em> de nuevo</h1>
+    <p>Tus antojos, tus pedidos y tus repartos te están esperando.</p>
+    <div class="cm2-ticks"><span>🛵 Rastreo en vivo</span><span>💳 Tarjeta o SPEI</span><span>💬 WhatsApp</span></div>
+  </div>
+</aside>
+
 <div class="page">
   <div class="card">
     <div class="card-title">Bienvenido de nuevo</div>
     <div class="card-sub">Inicia sesión en tu cuenta de Comy.</div>
 
     <!-- Tabs comprador / repartidor -->
-    <div class="role-tabs">
+    <div class="role-tabs" id="roleTabs" data-role="buyer">
+      <span class="role-thumb" id="roleThumb" aria-hidden="true"></span>
       <button class="role-tab active" id="tabBuyer"  onclick="setRole('buyer')"><i class="lni lni-shopping-basket"></i> Comprador</button>
       <button class="role-tab"        id="tabDriver" onclick="setRole('driver')"><i class="lni lni-delivery"></i> Repartidor</button>
     </div>
@@ -207,6 +422,41 @@ function loginWithAttomos() {
 document.getElementById('loginPass')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ── COMY 2.0 · Mercado cálido ────────────────────────────────────────────────
+const cmReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function cmReplay(el, cls) {
+  if (!el || cmReduce) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+}
+// Los campos rebotan como gelatina al enfocarlos
+document.querySelectorAll('.field input, .field select, .field textarea').forEach(inp => {
+  if (inp.type === 'file') return;
+  inp.addEventListener('focus', () => cmReplay(inp.closest('.field-row') || inp, 'cm-jelly-in'));
+});
+
+// La cápsula del selector se desliza y se aplasta al llegar
+const cmSetRoleBase = setRole;
+setRole = function (role) {
+  const changed = role !== currentRole;
+  cmSetRoleBase(role);
+  document.getElementById('roleTabs').dataset.role = role;
+  if (changed) cmReplay(document.getElementById('roleThumb'), 'cm-go');
+};
+// El ojo de la contraseña da media vuelta
+const cmTogglePassBase = togglePass;
+togglePass = function () {
+  cmTogglePassBase();
+  document.getElementById('togglePassBtn').classList.toggle('cm-flip', document.getElementById('loginPass').type === 'text');
+};
+// La tarjeta tiembla cuando algo falta
+const cmShowErrorBase = showError;
+showError = function (msg) {
+  cmShowErrorBase(msg);
+  cmReplay(document.querySelector('.card'), 'cm-shake');
+  if (navigator.vibrate) navigator.vibrate([10, 40, 10]);
+};
 </script>
 </body>
 </html>

@@ -420,6 +420,232 @@
     @media (prefers-reduced-motion: reduce) {
       .search-panel, .status-bar, .section, .sim-bar, .d-av, .btn-sim.running::after, .mk-store, .mk-home { animation: none; }
     }
+
+    /* ==========================================================================
+       COMY 2.0 · "Mercado cálido" — Rastreo
+       El mapa ocupa toda la pantalla; el seguimiento flota encima como una
+       libreta de pedido: ETA en grande, línea de tiempo, repartidor y ticket.
+       ========================================================================== */
+    :root {
+      --ink: #1A1A1A; --paper: #FFF8EC; --muted: #8C8273; --border: rgba(74,52,18,.11);
+      --surface: #FFFDF8; --surface-2: #FFF8EC; --surface-3: #FFF3DA;
+      --hover-accent: #FFF3CC; --hover-accent-2: #FFE99A; --placeholder: #B8AC97;
+      --orange: #F59500; --ink-2: #4A4136;
+      --glass: rgba(255,253,248,.82);
+      --cm2-shadow: 0 0 0 1px rgba(74,52,18,.08), 0 30px 60px -30px rgba(90,55,0,.55);
+    }
+    html.dark {
+      --ink: #F5EFE4; --paper: #14120E; --muted: #A39883; --border: rgba(255,236,200,.10);
+      --surface: #1E1B16; --surface-2: #17150F; --surface-3: #27231B; --ink-2: #D9CFBD;
+      --hover-accent: #2E2810; --hover-accent-2: #463A0A; --placeholder: #6E6656;
+      --glass: rgba(30,27,22,.82);
+      --cm2-shadow: 0 0 0 1px rgba(255,236,200,.07), 0 30px 60px -30px rgba(0,0,0,.9);
+    }
+    html, body { background: var(--paper); color: var(--ink); }
+
+    /* Lienzo: el mapa a pantalla completa con un toque cálido */
+    .app { display: block; position: relative; height: 100vh; height: 100dvh; padding-top: 0; }
+    #map { position: absolute; inset: 0; }
+    html:not(.dark) #map .maplibregl-canvas { filter: sepia(.22) saturate(1.15) hue-rotate(-6deg) brightness(1.02); }
+
+    /* Barra superior: cápsula de tinta flotante */
+    .topbar {
+      top: 14px; left: 16px; right: auto; width: 392px; height: 58px; padding: 0 .55rem 0 .7rem;
+      background: #1A1A1A; border: none; border-radius: 999px; color: #fff;
+      -webkit-backdrop-filter: none; backdrop-filter: none;
+      box-shadow: 0 20px 40px -20px rgba(0,0,0,.6);
+      animation: cmIn .7s var(--cm-jelly) backwards;
+    }
+    .logo { color: #fff; font-size: 1.2rem; font-weight: 900; letter-spacing: -.04em; display: flex; align-items: center; }
+    .logo::before {
+      content: 'c'; width: 38px; height: 38px; margin-right: .5rem; border-radius: 14px; rotate: -6deg;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #FFD400; color: #1A1A1A; font-size: 1.35rem; font-weight: 900; line-height: 1;
+    }
+    .logo span { color: #FFD400; }
+    .logo .badge-top { background: rgba(255,212,0,.16); color: #FFD400; margin-left: .55rem; letter-spacing: .1em; }
+    .topbar-right > span { color: rgba(255,255,255,.62) !important; font-weight: 700; }
+    .theme-toggle { width: 42px; height: 42px; background: rgba(255,255,255,.1); border: none; font-size: 1.05rem; }
+    .theme-toggle:hover { background: rgba(255,255,255,.18); }
+
+    html.dark .topbar, html.dark .status-bar, html.dark .section:has(.driver-row) { box-shadow: 0 0 0 1px rgba(255,236,200,.12), 0 18px 30px -18px rgba(0,0,0,.8); }
+    /* Panel flotante */
+    .sidebar {
+      position: absolute; z-index: 10; top: 84px; left: 16px; bottom: 16px; width: 392px;
+      background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+      border: none; border-radius: 34px; box-shadow: var(--cm2-shadow);
+      padding: .7rem 0 0; scrollbar-width: none;
+      animation: cm2PanelIn .9s var(--cm-jelly) .08s backwards;
+    }
+    .sidebar::-webkit-scrollbar { display: none; }
+    .sidebar > * { flex-shrink: 0; }
+    @keyframes cm2PanelIn { from { opacity: 0; transform: translateX(-30px) scale(.96); } }
+
+    /* Orden de lectura: estado → ETA → línea de tiempo → repartidor → pedido → probar ruta */
+    .status-bar { order: 1; }
+    .section:has(.eta-row) { order: 2; }
+    .section:has(.steps) { order: 3; }
+    .section:has(.driver-row) { order: 4; }
+    .section:has(.order-card) { order: 5; }
+    .search-panel { order: 6; }
+    .sim-bar { order: 7; }
+
+    .section { margin: 0 .7rem .6rem; border: none; border-radius: 26px; background: var(--surface); box-shadow: 0 0 0 1px var(--border); padding: 1rem 1.05rem; }
+    .sec-label, .panel-label { color: var(--orange); font-size: .66rem; font-weight: 800; letter-spacing: .16em; }
+
+    /* Estado en vivo */
+    .status-bar {
+      align-self: flex-start; margin: 0 .7rem .6rem; padding: .5rem .95rem .5rem .75rem; border: none; border-radius: 999px;
+      background: #1A1A1A; box-shadow: 0 10px 20px -12px rgba(0,0,0,.6);
+    }
+    .s-dot { background: #FFD400; box-shadow: 0 0 0 4px rgba(255,212,0,.22); }
+    .s-text { color: #fff; font-weight: 800; letter-spacing: -.01em; }
+
+    /* ETA: tarjeta amarilla con número gigante */
+    .section:has(.eta-row) {
+      position: relative; overflow: hidden; isolation: isolate; padding: 1.2rem 1.25rem 1.25rem;
+      background: radial-gradient(120% 100% at 0% 0%, #FFE55C 0%, transparent 60%), linear-gradient(135deg, #FFD400, #FFC400);
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.08), 0 18px 30px -18px rgba(200,140,0,.9);
+      color: #1A1A1A;
+    }
+    .section:has(.eta-row)::after {
+      content: ''; position: absolute; z-index: -1; right: -40px; top: -60px; width: 220px; height: 220px; border-radius: 50%;
+      background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.28) 0 8deg, transparent 8deg 20deg);
+      animation: cm2Spin 30s linear infinite;
+    }
+    @keyframes cm2Spin { to { transform: rotate(360deg); } }
+    .eta-row { align-items: flex-end; }
+    .eta-block { flex-direction: column; align-items: flex-start; gap: .55rem; }
+    .eta-block i { width: 38px; height: 38px; border-radius: 13px; background: #1A1A1A; color: #FFD400; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; rotate: -6deg; }
+    .eta-lbl { color: rgba(26,26,26,.68); font-weight: 800; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; }
+    .eta-val { color: #1A1A1A; font-weight: 900; letter-spacing: -.06em; }
+    .eta-block .eta-val { font-size: 3.4rem; line-height: .9; margin-top: .2rem; }
+    .eta-block .eta-unit { font-size: 1rem; letter-spacing: 0; color: rgba(26,26,26,.7); }
+    .eta-right { background: rgba(255,255,255,.55); padding: .6rem .8rem; border-radius: 18px; }
+    .eta-right .eta-val { font-size: 1.35rem; }
+    .eta-unit { color: rgba(26,26,26,.6); font-weight: 800; }
+    #etaMin { display: inline-block; }
+    #etaMin.cm2-tick { animation: cm2Tick .5s var(--cm-jelly); }
+    @keyframes cm2Tick { from { transform: translateY(-40%); opacity: .2; } }
+
+    /* Línea de tiempo con fichas */
+    .step { gap: .8rem; padding: .45rem 0; }
+    .step-ic { width: 30px; height: 30px; border-radius: 11px; font-size: .78rem; border: 2px solid var(--border); background: var(--surface-2); }
+    .step:not(:last-child)::after { left: 14px; top: 36px; width: 2px; height: calc(100% - 14px); background: repeating-linear-gradient(var(--border) 0 4px, transparent 4px 8px); }
+    .step.done::after { background: #1A1A1A; }
+    html.dark .step.done::after { background: #FFD400; }
+    .step.active::after { background: linear-gradient(#FFD400, var(--border)); }
+    .step.done .step-ic { background: #1A1A1A; border-color: #1A1A1A; color: #FFD400; }
+    html.dark .step.done .step-ic { background: #FFD400; border-color: #FFD400; color: #1A1A1A; }
+    .step.active .step-ic { background: #FFD400; border-color: #FFD400; color: #1A1A1A; rotate: -6deg; }
+    .step-name { font-weight: 800; font-size: .86rem; letter-spacing: -.01em; }
+    .step.done .step-name { color: var(--ink); }
+    .step.active .step-name { color: var(--ink); }
+    .step.active .step-time { color: var(--orange); font-weight: 800; }
+
+    /* Repartidor: tarjeta de tinta */
+    .section:has(.driver-row) { background: #1A1A1A; box-shadow: 0 18px 30px -18px rgba(0,0,0,.65); }
+    .section:has(.driver-row) .sec-label { color: #FFD400; }
+    .driver-row { background: transparent; padding: 0; }
+    .d-av { width: 50px; height: 50px; border-radius: 18px; rotate: -5deg; font-size: 1.05rem; font-weight: 900; box-shadow: 0 0 0 3px #1A1A1A, 0 0 0 5px rgba(255,212,0,.5); }
+    @keyframes cmRing { 50% { box-shadow: 0 0 0 3px #1A1A1A, 0 0 0 9px rgba(255,212,0,0); } }
+    .d-name { color: #fff; font-weight: 900; font-size: .95rem; }
+    .d-meta { color: rgba(255,255,255,.6); font-weight: 600; }
+    .d-btn { width: 40px; height: 40px; border: none; background: rgba(255,255,255,.1); color: #FFD400; font-size: 1rem; }
+    .d-btn:hover { background: #FFD400; color: #1A1A1A; }
+
+    /* Pedido: ticket */
+    .section:has(.order-card) {
+      border-radius: 26px 26px 0 0; padding-bottom: 1.5rem; box-shadow: none;
+      -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 9px) no-repeat, radial-gradient(circle 9px at 50% 0, #000 96%, transparent 100%) bottom / 20px 9px repeat-x;
+              mask: linear-gradient(#000 0 0) top / 100% calc(100% - 9px) no-repeat, radial-gradient(circle 9px at 50% 0, #000 96%, transparent 100%) bottom / 20px 9px repeat-x;
+    }
+    .order-head { padding-bottom: .7rem; border-bottom: 2px dashed var(--border); }
+    .order-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--ink-2); }
+    .badge-st { font-weight: 800; padding: 4px 10px; }
+    .badge-st.camino { background: #FFF3CC; color: #8A6D00; }
+    html.dark .badge-st.camino { background: #463A0A; color: #FFD400; }
+    .o-item { font-weight: 600; color: var(--ink-2); padding: .3rem 0; }
+    .o-dot { width: 8px; height: 8px; border-radius: 3px; rotate: 45deg; }
+    .o-total { border-top: 2px dashed var(--border); font-weight: 800; color: var(--ink-2); align-items: baseline; }
+    .o-total strong { font-size: 1.3rem; font-weight: 900; letter-spacing: -.04em; color: var(--ink); }
+
+    /* Probar ruta */
+    .search-panel { margin: 0 .7rem .6rem; padding: 1rem 1.05rem; background: var(--surface); border-radius: 26px; box-shadow: 0 0 0 1px var(--border); }
+    .search-row { background: var(--surface-3); border-color: transparent; padding: .65rem .85rem; }
+    .search-row:focus-within { background: var(--surface); border-color: var(--ink); box-shadow: 0 0 0 4px rgba(255,212,0,.32); }
+    .dot.o { background: #FFD400; box-shadow: 0 0 0 3px rgba(255,212,0,.3); }
+    .dot.d { background: var(--orange); border-radius: 3px; rotate: 45deg; box-shadow: 0 0 0 3px rgba(245,149,0,.22); }
+    .search-input { font-weight: 600; }
+    .dropdown { background: var(--surface); border: none; box-shadow: var(--cm2-shadow); }
+    .dd-item:hover { background: var(--hover-accent); }
+    .loc-btn { background: transparent; border: 2px dashed var(--border); font-weight: 700; justify-content: center; color: var(--ink-2); }
+    .loc-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--hover-accent); }
+    .loc-btn.active { border-style: solid; border-color: #1A1A1A; background: #1A1A1A; color: #FFD400; }
+    .loc-pill { background: var(--hover-accent); border: none; color: var(--ink-2); }
+    .loc-pill .loc-use { color: var(--ink); }
+    .btn-start {
+      background: #1A1A1A; color: #FFD400; border-radius: 18px; padding: .85rem; font-weight: 900;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,.4), 0 12px 22px -12px rgba(0,0,0,.6);
+    }
+    .btn-start:hover:not(:disabled) { background: #000; }
+    html.dark .btn-start:not(:disabled) { background: #FFD400; color: #1A1A1A; }
+
+    /* Simulación: barra pegada al fondo del panel */
+    .sim-bar { position: sticky; bottom: 0; z-index: 2; margin-top: auto; padding: .7rem; background: linear-gradient(transparent, var(--glass) 30%); }
+    .btn-sim {
+      background: #FFD400; color: #1A1A1A; border-radius: 20px; padding: .95rem; font-weight: 900; font-size: .95rem;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6), 0 16px 26px -14px rgba(200,140,0,.95);
+    }
+    .btn-sim:hover { background: #FFDD2E; }
+    .btn-sim.running { background: #1A1A1A; color: #FFD400; box-shadow: inset 0 -4px 0 rgba(0,0,0,.4), 0 16px 26px -14px rgba(0,0,0,.6); }
+
+    /* Marcadores: stickers del mercado */
+    .mk-store { width: 44px; height: 44px; border-radius: 16px; background: #FFD400; border: 3px solid #1A1A1A; box-shadow: 0 0 0 3px #fff, 0 10px 18px -6px rgba(0,0,0,.45); rotate: -8deg; }
+    .mk-store::before { content: ''; width: 20px; height: 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231A1A1A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM5 13v7h14v-7'/%3E%3C/svg%3E") center / contain no-repeat; }
+    .mk-home-label { background: #1A1A1A; color: #FFD400; font-weight: 900; padding: 5px 12px; box-shadow: 0 8px 16px -8px rgba(0,0,0,.6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .mk-home-pin { width: 22px; height: 22px; background: var(--orange); border: 3px solid #fff; }
+    .mk-driver-badge { width: 42px; height: 42px; background: #1A1A1A; color: #FFD400; border: 3px solid #FFD400; font-size: 1.1rem; animation: cm2Drv 1.3s ease-in-out infinite alternate; }
+    @keyframes cm2Drv { from { box-shadow: 0 0 0 0 rgba(255,212,0,.65); } to { box-shadow: 0 0 0 14px rgba(255,212,0,0); } }
+    .maplibregl-popup-content { border-radius: 18px !important; font-weight: 700; }
+    .maplibregl-ctrl-group { border-radius: 18px !important; box-shadow: var(--cm2-shadow) !important; }
+    .maplibregl-ctrl-group button { width: 38px !important; height: 38px !important; }
+
+    /* Modal de entrega */
+    .overlay { background: rgba(40,24,0,.38); }
+    .modal { background: var(--surface); border-radius: 36px; padding: 2.4rem 1.8rem 1.8rem; position: relative; overflow: hidden; }
+    .modal::before { content: ''; position: absolute; inset: 0 0 auto; height: 130px; background: radial-gradient(120% 100% at 50% 0%, rgba(255,212,0,.55), transparent 70%); pointer-events: none; }
+    .modal > * { position: relative; }
+    .m-emoji { width: 88px; height: 88px; margin: 0 auto 1rem; border-radius: 30px; background: #1A1A1A; display: flex; align-items: center; justify-content: center; font-size: 2.7rem; rotate: -6deg; box-shadow: 0 0 0 6px var(--surface), 0 18px 30px -14px rgba(0,0,0,.5); }
+    .m-title { font-weight: 900; letter-spacing: -.04em; font-size: 1.6rem; }
+    .stars { gap: .45rem; font-size: 1.7rem; }
+    .stars span { filter: grayscale(.85) opacity(.55); }
+    .stars span.cm-hit { filter: none; }
+    .btn-close { background: #1A1A1A; color: #FFD400; border-radius: 20px; font-weight: 900; }
+    .btn-close:hover { background: #FFD400; color: #1A1A1A; }
+
+    /* Móvil: cápsula arriba y hoja de seguimiento abajo */
+    @media (max-width: 680px) {
+      .topbar { left: 12px; right: 12px; width: auto; top: 10px; height: 54px; }
+      .topbar-right > span { display: none; }
+      .app { display: block; }
+      #map { position: absolute; inset: 0 0 auto; height: 52%; }
+      .sidebar {
+        top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: none; height: 54%; margin: 0;
+        border-radius: 32px 32px 0 0; padding-top: .3rem; background: var(--surface-2);
+        -webkit-backdrop-filter: none; backdrop-filter: none;
+        box-shadow: 0 -18px 40px -16px rgba(90,55,0,.45);
+        animation: cm2SheetIn .9s var(--cm-jelly) .1s backwards;
+      }
+      @keyframes cm2SheetIn { from { transform: translateY(40%); opacity: 0; } }
+      .sidebar::before { background: rgba(74,52,18,.2); margin: 8px auto 10px; }
+      .sim-bar { background: linear-gradient(transparent, var(--surface-2) 30%); }
+      .eta-block .eta-val { font-size: 2.9rem; }
+      .maplibregl-ctrl-bottom-right { bottom: calc(54% + 12px) !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar, .topbar, .section:has(.eta-row)::after, .mk-driver-badge { animation: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -628,15 +854,18 @@ function addMarkers() {
 function setupRouteLayers() {
   if (!map.getSource('route')) {
     map.addSource('route', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates: lastRouteCoords } } });
+    map.addLayer({ id:'route-casing', type:'line', source:'route',
+      layout:{ 'line-cap':'round', 'line-join':'round' },
+      paint:{ 'line-color':'#1A1A1A', 'line-width':10, 'line-opacity':.85 } });
     map.addLayer({ id:'route', type:'line', source:'route',
       layout:{ 'line-cap':'round', 'line-join':'round' },
-      paint:{ 'line-color':'#FFD400', 'line-width':4, 'line-opacity':.6 } });
+      paint:{ 'line-color':'#FFD400', 'line-width':5, 'line-opacity':1 } });
   }
   if (!map.getSource('done')) {
     map.addSource('done', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates: lastDoneCoords } } });
     map.addLayer({ id:'done', type:'line', source:'done',
       layout:{ 'line-cap':'round', 'line-join':'round' },
-      paint:{ 'line-color':'#16a34a', 'line-width':4, 'line-opacity':.9 } });
+      paint:{ 'line-color':'#F59500', 'line-width':5, 'line-opacity':1 } });
   }
   if (myCoords && lastAccuracy) setAccCircle(myCoords, lastAccuracy);
 }
@@ -933,8 +1162,8 @@ function setAccCircle(coords, accuracy) {
   const src = map.getSource('acc-circle');
   if (src) { src.setData(data); return; }
   map.addSource('acc-circle', { type: 'geojson', data });
-  map.addLayer({ id:'acc-circle', type:'fill', source:'acc-circle', paint:{ 'fill-color':'#1d4ed8', 'fill-opacity':.08 } });
-  map.addLayer({ id:'acc-circle-line', type:'line', source:'acc-circle', paint:{ 'line-color':'#1d4ed8', 'line-width':1 } });
+  map.addLayer({ id:'acc-circle', type:'fill', source:'acc-circle', paint:{ 'fill-color':'#F59500', 'fill-opacity':.1 } });
+  map.addLayer({ id:'acc-circle-line', type:'line', source:'acc-circle', paint:{ 'line-color':'#F59500', 'line-width':1 } });
 }
 
 function detectLocation() {
@@ -1074,6 +1303,17 @@ document.getElementById('stars').addEventListener('click', e => {
   });
   if (navigator.vibrate) navigator.vibrate(8);
 });
+// ── COMY 2.0 · Mercado cálido: los minutos de llegada caen como fichas ──────
+(function () {
+  const el = document.getElementById('etaMin');
+  if (!el || cmReduce) return;
+  let last = el.textContent;
+  new MutationObserver(() => {
+    if (el.textContent === last) return;
+    last = el.textContent;
+    el.classList.remove('cm2-tick'); void el.offsetWidth; el.classList.add('cm2-tick');
+  }).observe(el, { childList: true, characterData: true, subtree: true });
+})();
 </script>
 </body>
 </html>

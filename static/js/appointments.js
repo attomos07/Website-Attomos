@@ -1692,7 +1692,13 @@ function showNotification(message, type = 'info') {
         let left = Math.min(Math.max(12, r.left), window.innerWidth - w - 12);
         let top = r.bottom + 8;
         let oy = '0%';
-        if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; oy = '100%'; }
+        // Abajo si cabe; si no, arriba; si no cabe en ninguno, del lado con más
+        // espacio y siempre dentro de la pantalla
+        if (top + h > window.innerHeight - 12) {
+            if (r.top - h - 8 > 12) { top = r.top - h - 8; oy = '100%'; }
+            else if (r.top > window.innerHeight - r.bottom) { top = 12; oy = '100%'; }
+            else top = window.innerHeight - h - 12;
+        }
         pop.style.left = `${left}px`;
         pop.style.top = `${Math.max(12, top)}px`;
         pop.style.setProperty('--ox', `${Math.min(Math.max(r.left + 30 - left, 0), w)}px`);
@@ -1750,7 +1756,8 @@ function showNotification(message, type = 'info') {
     // Abrir con clic (evita el calendario nativo) o con Enter/Espacio/Alt+↓
     document.addEventListener('mousedown', (e) => {
         const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
-        if (el) { e.preventDefault(); open(el); return; }
+        // Un segundo clic en el mismo campo cierra el calendario
+        if (el) { e.preventDefault(); if (pop && input === el) close(); else open(el); return; }
         if (pop && !pop.contains(e.target)) close();
     }, true);
     document.addEventListener('touchstart', (e) => {
@@ -1760,7 +1767,8 @@ function showNotification(message, type = 'info') {
     }, { passive: true, capture: true });
     document.addEventListener('click', (e) => {
         const el = e.target.closest && e.target.closest('input[type="date"].ios-date');
-        if (el) { e.preventDefault(); open(el); }
+        // El clic del mouse ya se atendió en mousedown; aquí solo el de teclado
+        if (el) { e.preventDefault(); if (e.detail === 0) open(el); }
     }, true);
     document.addEventListener('keydown', (e) => {
         if (pop && e.key === 'Escape') { e.stopPropagation(); close(); return; }
@@ -1775,3 +1783,184 @@ function showNotification(message, type = 'info') {
     new MutationObserver((muts) => muts.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) scan(n); })))
         .observe(document.body, { childList: true, subtree: true });
 })();
+
+// ============================================================================
+// SELECTOR DE HORA iOS 27
+// Sustituye el selector nativo de <input type="time"> (el del POS) por dos
+// ruedas de horas y minutos con lente central, como en iOS. El valor sigue
+// siendo HH:MM y se dispara input/change al cambiar.
+// ============================================================================
+(function () {
+    const ROW = 40;
+    const pad = (n) => String(n).padStart(2, '0');
+    const ICON = '<svg class="ios-date-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    let pop = null, input = null;
+
+    function enhance(el) {
+        if (el.classList.contains('ios-time')) return;
+        el.classList.add('ios-time', 'ios-date');
+        if (!el.parentElement.classList.contains('ios-date-wrap')) {
+            const wrap = document.createElement('span');
+            wrap.className = 'ios-date-wrap';
+            if (el.style.flex) wrap.style.flex = el.style.flex;
+            el.parentNode.insertBefore(wrap, el);
+            wrap.appendChild(el);
+            wrap.insertAdjacentHTML('beforeend', ICON);
+        }
+    }
+    function scan(root) {
+        (root.querySelectorAll ? root : document).querySelectorAll('input[type="time"]').forEach(enhance);
+    }
+
+    function column(count, step) {
+        let html = '';
+        for (let i = 0; i < count; i += step) html += `<div class="ios-wheel-item" data-v="${i}">${pad(i)}</div>`;
+        return `<div class="ios-wheel" tabindex="0"><div class="ios-wheel-pad"></div>${html}<div class="ios-wheel-pad"></div></div>`;
+    }
+
+    function current() {
+        const m = /^(\d{2}):(\d{2})/.exec(input.value || '');
+        if (m) return { h: +m[1], m: +m[2] };
+        const d = new Date();
+        return { h: d.getHours(), m: d.getMinutes() };
+    }
+
+    function wheelValue(w) {
+        return Math.round(w.scrollTop / ROW);
+    }
+
+    function highlight(w) {
+        const i = wheelValue(w);
+        w.querySelectorAll('.ios-wheel-item').forEach((it, j) => {
+            const d = Math.abs(j - w.scrollTop / ROW);
+            it.style.opacity = String(Math.max(0.25, 1 - d * 0.28));
+            it.style.transform = `perspective(300px) rotateX(${Math.max(-60, Math.min(60, (j - w.scrollTop / ROW) * -18))}deg) scale(${1 - Math.min(d, 3) * 0.06})`;
+            it.classList.toggle('is-on', j === i);
+        });
+    }
+
+    function commit() {
+        if (!pop || !input) return;
+        const [hw, mw] = pop.querySelectorAll('.ios-wheel');
+        const v = `${pad(wheelValue(hw))}:${pad(wheelValue(mw))}`;
+        if (input.value === v) return;
+        input.value = v;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        if (navigator.vibrate) navigator.vibrate(4);
+    }
+
+    function setWheel(w, i, smooth) {
+        w.scrollTo({ top: i * ROW, behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    function open(el) {
+        if (pop) pop.remove();
+        input = el;
+        pop = document.createElement('div');
+        pop.className = 'ios-cal ios-timepick';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', 'Elegir hora');
+        pop.innerHTML = `
+            <div class="ios-cal-head"><div class="ios-cal-title"><span>Hora</span></div></div>
+            <div class="ios-wheels">
+                <div class="ios-wheel-lens" aria-hidden="true"></div>
+                ${column(24, 1)}<span class="ios-wheel-sep">:</span>${column(60, 1)}
+            </div>
+            <div class="ios-cal-foot">
+                <button type="button" class="ios-cal-clear">Ahora</button>
+                <button type="button" class="ios-cal-today">Listo</button>
+            </div>`;
+        document.body.appendChild(pop);
+        const [hw, mw] = pop.querySelectorAll('.ios-wheel');
+        const { h, m } = current();
+        setWheel(hw, h, false);
+        setWheel(mw, m, false);
+        [hw, mw].forEach((w) => {
+            highlight(w);
+            let t = null;
+            w.addEventListener('scroll', () => {
+                highlight(w);
+                clearTimeout(t);
+                t = setTimeout(commit, 120);
+            }, { passive: true });
+            w.addEventListener('click', (e) => {
+                const it = e.target.closest('.ios-wheel-item');
+                if (it) setWheel(w, [...w.querySelectorAll('.ios-wheel-item')].indexOf(it), true);
+            });
+            w.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setWheel(w, wheelValue(w) + (e.key === 'ArrowDown' ? 1 : -1), true);
+                }
+            });
+        });
+        pop.querySelector('.ios-cal-clear').addEventListener('click', () => {
+            const d = new Date();
+            setWheel(hw, d.getHours(), true);
+            setWheel(mw, d.getMinutes(), true);
+        });
+        pop.querySelector('.ios-cal-today').addEventListener('click', () => { commit(); close(); });
+        place();
+        input.closest('.ios-date-wrap')?.classList.add('is-open');
+        hw.focus({ preventScroll: true });
+    }
+
+    function place() {
+        const r = input.getBoundingClientRect();
+        const sheet = window.innerWidth <= 480;
+        pop.classList.toggle('is-sheet', sheet);
+        if (sheet) return;
+        const w = pop.offsetWidth, h = pop.offsetHeight;
+        const left = Math.min(Math.max(12, r.right - w), window.innerWidth - w - 12);
+        let top = r.bottom + 8, oy = '0%';
+        if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; oy = '100%'; }
+        pop.style.left = `${left}px`;
+        pop.style.top = `${Math.max(12, top)}px`;
+        pop.style.setProperty('--ox', `${Math.min(Math.max(r.left + r.width / 2 - left, 0), w)}px`);
+        pop.style.setProperty('--oy', oy);
+    }
+
+    function close() {
+        if (!pop) return;
+        commit();
+        const p = pop, el = input;
+        pop = null; input = null;
+        el?.closest('.ios-date-wrap')?.classList.remove('is-open');
+        p.classList.add('is-closing');
+        setTimeout(() => p.remove(), 220);
+    }
+
+    document.addEventListener('mousedown', (e) => {
+        const el = e.target.closest && e.target.closest('input[type="time"].ios-time');
+        if (el) { e.preventDefault(); if (pop && input === el) close(); else open(el); return; }
+        if (pop && !pop.contains(e.target)) close();
+    }, true);
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.closest && e.target.closest('input[type="time"].ios-time')) return;
+        if (pop && !pop.contains(e.target)) close();
+    }, { passive: true, capture: true });
+    document.addEventListener('click', (e) => {
+        const el = e.target.closest && e.target.closest('input[type="time"].ios-time');
+        if (el) { e.preventDefault(); if (e.detail === 0) open(el); }
+    }, true);
+    document.addEventListener('keydown', (e) => {
+        if (pop && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); close(); return; }
+        const el = e.target.closest && e.target.closest('input[type="time"].ios-time');
+        if (el && (e.key === ' ' || e.key === 'Enter' || (e.altKey && e.key === 'ArrowDown'))) { e.preventDefault(); open(el); }
+    }, true);
+    window.addEventListener('resize', () => { if (pop) place(); });
+    document.addEventListener('scroll', (e) => { if (pop && !pop.contains(e.target)) place(); }, true);
+
+    scan(document);
+    new MutationObserver((muts) => muts.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) scan(n); })))
+        .observe(document.body, { childList: true, subtree: true });
+})();
+
+// La X de "Cobro de servicio" da un giro al limpiar
+document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('#posClearBtn');
+    if (!b) return;
+    b.classList.remove('is-clearing'); void b.offsetWidth; b.classList.add('is-clearing');
+    setTimeout(() => b.classList.remove('is-clearing'), 650);
+});

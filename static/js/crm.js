@@ -987,3 +987,33 @@ applyGrid();
         }).observe(el, { childList: true, characterData: true, subtree: true });
     });
 })();
+
+// Lente que sigue al cursor (hover) por las opciones del sidebar
+(function () {
+    const rail = document.querySelector('.rail-content');
+    if (!rail) return;
+    const hover = document.createElement('div');
+    hover.className = 'rail-hover';
+    hover.setAttribute('aria-hidden', 'true');
+    rail.prepend(hover);
+    let shown = false;
+    function offset(a) {
+        let top = 0, left = 0, el = a;
+        while (el && el !== rail) { top += el.offsetTop; left += el.offsetLeft; el = el.offsetParent; }
+        return { top, left };
+    }
+    rail.addEventListener('pointerover', (e) => {
+        if (e.pointerType === 'touch') return;
+        const it = e.target.closest('.nav-item, .nav-subitem');
+        if (!it || !rail.contains(it)) return;
+        const { top, left } = offset(it);
+        if (!shown) hover.style.transition = 'none';
+        hover.style.width = it.offsetWidth + 'px';
+        hover.style.height = it.offsetHeight + 'px';
+        hover.style.translate = `${left}px ${top}px`;
+        if (!shown) { void hover.offsetWidth; hover.style.transition = ''; }
+        hover.classList.add('is-on');
+        shown = true;
+    });
+    rail.addEventListener('pointerleave', () => { hover.classList.remove('is-on'); shown = false; });
+})();

@@ -15,7 +15,7 @@
     <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
     <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
-    <link rel="stylesheet" href="/static/css/partials/blog.css?v=2">
+    <link rel="stylesheet" href="/static/css/partials/blog.css?v=3">
 </head>
 <body>
     <!-- Navbar -->
@@ -37,7 +37,7 @@
     <!-- Featured Post -->
     <section class="featured-post-section">
         <div class="container">
-            <div class="featured-post">
+            <div class="featured-post" data-slug="ia-transformando-servicio-al-cliente-2025">
                 <div class="featured-image">
                     <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80" alt="IA transformando servicio al cliente">
                     <div class="featured-badge">
@@ -115,7 +115,7 @@
         <div class="container">
             <div class="blog-grid">
                 <!-- Blog Post 1 -->
-                <article class="blog-card" data-category="tutorials">
+                <article class="blog-card" data-category="tutorials" data-slug="guia-crea-tu-primer-chatbot-whatsapp">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1611746872915-64382b5c76da?w=600&q=80" alt="Tutorial chatbot WhatsApp">
                     </div>
@@ -150,7 +150,7 @@
                 </article>
 
                 <!-- Blog Post 2 -->
-                <article class="blog-card" data-category="business">
+                <article class="blog-card" data-category="business" data-slug="formas-de-calcular-el-roi-de-tu-chatbot">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80" alt="ROI chatbots">
                     </div>
@@ -185,7 +185,7 @@
                 </article>
 
                 <!-- Blog Post 3 -->
-                <article class="blog-card" data-category="ai">
+                <article class="blog-card" data-category="ai" data-slug="futuro-de-la-ia-conversacional-tendencias-2025">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&q=80" alt="IA conversacional">
                     </div>
@@ -220,7 +220,7 @@
                 </article>
 
                 <!-- Blog Post 4 -->
-                <article class="blog-card" data-category="automation">
+                <article class="blog-card" data-category="automation" data-slug="automatiza-tu-embudo-de-ventas-con-chatbots">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80" alt="Automatización ventas">
                     </div>
@@ -255,7 +255,7 @@
                 </article>
 
                 <!-- Blog Post 5 -->
-                <article class="blog-card" data-category="tutorials">
+                <article class="blog-card" data-category="tutorials" data-slug="integra-tu-chatbot-con-tu-crm">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80" alt="Integraciones chatbot">
                     </div>
@@ -290,7 +290,7 @@
                 </article>
 
                 <!-- Blog Post 6 -->
-                <article class="blog-card" data-category="business">
+                <article class="blog-card" data-category="business" data-slug="casos-de-exito-empresas-que-revolucionaron-su-atencion">
                     <div class="blog-image">
                         <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80" alt="Casos de éxito">
                     </div>
@@ -371,8 +371,9 @@
         <div class="whatsapp-tooltip"><span data-translate="whatsapp_tooltip">¡Contáctanos por WhatsApp!</span></div>
     </div>
 
-    <!-- JavaScript - CORREGIDO: Usar blog.js en lugar de agents.js -->
-    <script src="/static/js/partials/blog.js?v=2"></script>
+    <!-- JavaScript: datos de artículos antes de blog.js -->
+    <script src="/static/js/partials/blog-posts.js?v=1"></script>
+    <script src="/static/js/partials/blog.js?v=3"></script>
 </body>
 </html>
 {{end}}

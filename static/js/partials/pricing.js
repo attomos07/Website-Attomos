@@ -317,31 +317,24 @@ function initBillingToggle() {
         const isYearly = this.checked;
         const allPrices = document.querySelectorAll('.price-amount');
         
-        // Animar cambio de precios
+        // Se cambia el texto al instante: la animación (la misma de Planes)
+        // la hace watchPricesRoll() al detectar el nuevo precio
         allPrices.forEach(price => {
-            price.style.transform = 'scale(0.8)';
-            price.style.opacity = '0.5';
+            const monthly = price.getAttribute('data-monthly');
+            const annual = price.getAttribute('data-annual');
+            if (monthly && annual) {
+                price.textContent = isYearly ? `$${annual}` : `$${monthly}`;
+            }
         });
-        
-        setTimeout(() => {
-            allPrices.forEach(price => {
-                const monthly = price.getAttribute('data-monthly');
-                const annual = price.getAttribute('data-annual');
-                
-                if (monthly && annual) {
-                    price.textContent = isYearly ? `$${annual}` : `$${monthly}`;
-                }
-                
-                price.style.transform = 'scale(1)';
-                price.style.opacity = '1';
-            });
-            
-            // Actualizar texto del período
-            const periodElements = document.querySelectorAll('.price-period');
-            periodElements.forEach(period => {
-                period.textContent = isYearly ? 'por año' : 'por mes';
-            });
-        }, 200);
+
+        // Actualizar texto del período
+        const periodElements = document.querySelectorAll('.price-period');
+        periodElements.forEach(period => {
+            period.textContent = isYearly ? 'por año' : 'por mes';
+            if (period.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                period.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'ease-out' });
+            }
+        });
         
         // Actualizar labels
         const monthlyLabel = document.querySelector('.toggle-label.monthly');
@@ -728,3 +721,69 @@ function initCostCalculator() {
 
     calculate();
 }
+
+// ============================================================================
+// CAMBIO DE PRECIO — misma animación que Planes
+// Cuando el texto de un .price-amount cambia (mensual ↔ anual o al cargar los
+// precios de Stripe), la cifra cuenta hasta el nuevo valor mientras entra
+// deslizándose desde arriba o abajo con desenfoque y resorte.
+// ============================================================================
+(function watchPricesRoll() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const SPRING = (window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)'))
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+    const rolling = new WeakSet();
+
+    function parsePrice(text) {
+        const m = /\$?\s*([\d,]+(?:\.(\d+))?)/.exec(text || '');
+        if (!m) return null;
+        return { n: parseFloat(m[1].replace(/,/g, '')), decimals: m[2] ? m[2].length : 0, commas: m[1].includes(','), dollar: /\$/.test(text) };
+    }
+    function formatPrice(n, info) {
+        const s = info.commas
+            ? n.toLocaleString('es-MX', { minimumFractionDigits: info.decimals, maximumFractionDigits: info.decimals })
+            : n.toFixed(info.decimals);
+        return (info.dollar ? '$' : '') + s;
+    }
+    function watch(el) {
+        if (el.dataset.roll) return;
+        el.dataset.roll = '1';
+        let shown = parsePrice(el.textContent);
+        new MutationObserver(() => {
+            if (rolling.has(el)) return;
+            const next = parsePrice(el.textContent);
+            if (!next || !shown || next.n === shown.n) { shown = next; return; }
+            const from = shown.n, to = next.n;
+            shown = next;
+            if (reduce.matches) return;
+            rolling.add(el);
+            const start = performance.now(), dur = 650;
+            (function frame(now) {
+                const t = clamp((now - start) / dur);
+                const e = 1 - Math.pow(1 - t, 3);
+                el.textContent = formatPrice(from + (to - from) * e, next);
+                if (t < 1) requestAnimationFrame(frame);
+                else {
+                    el.textContent = formatPrice(to, next);
+                    requestAnimationFrame(() => rolling.delete(el));
+                }
+            })(start);
+            if (el.animate) {
+                el.animate(
+                    [
+                        { transform: `translateY(${to > from ? 10 : -10}px)`, filter: 'blur(4px)', opacity: 0.4 },
+                        { transform: 'none', filter: 'blur(0)', opacity: 1 },
+                    ],
+                    { duration: 600, easing: SPRING }
+                );
+            }
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+    }
+    function scan() { document.querySelectorAll('.price-amount').forEach(watch); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+    // Las tarjetas se pueden volver a pintar desde Stripe
+    const grid = () => document.querySelector('.pricing-grid');
+    document.addEventListener('DOMContentLoaded', () => { const g = grid(); if (g) new MutationObserver(scan).observe(g, { childList: true }); });
+})();

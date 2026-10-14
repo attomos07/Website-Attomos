@@ -4,15 +4,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..900;1,9..40,400..900&display=swap" rel="stylesheet">
 
 {{template "comy/sidebar-comy.html" .}}
 
-<div class="comy-content" style="background:#fff">
+<div class="comy-content" style="background:transparent">
   <div class="comy-page">
 
-    <!-- Barra superior -->
-    <div class="comy-topbar">
+    <!-- Barra superior: cápsula de cristal -->
+    <div class="comy-topbar" id="comyTopbar">
+      <a href="/comy" class="comy-top-brand" aria-label="Comy">
+        <span class="comy-top-brand-mark">c</span>
+        <span class="comy-top-brand-word">comy</span>
+      </a>
       <h1 class="comy-title">Buen provecho{{if .UserName}}, {{.UserName}}{{end}} 😋</h1>
 
       <div class="comy-search">
@@ -51,16 +55,40 @@
     <div class="comy-body">
       <div class="comy-main">
 
-        <!-- Hero -->
-        <div class="comy-hero">
-          <div class="comy-hero-circle" style="background:#4CAF50; top:-20px; right:6rem"></div>
-          <div class="comy-hero-circle" style="background:#9C27B0; top:16px; right:2rem; width:5rem; height:5rem"></div>
-          <div class="comy-hero-circle" style="background:#00BCD4; bottom:-10px; right:9rem"></div>
-          <div class="comy-hero-illustration">🛵</div>
-          <div class="comy-hero-text">
-            <h2>Hola{{if .UserName}} {{.UserName}}{{end}},</h2>
-            <p>Envío gratis en compras mayores a <strong>$200</strong></p>
-            <button class="comy-hero-btn" type="button">Conoce más</button>
+        <!-- Bento: hero + accesos -->
+        <div class="comy-bento">
+          <div class="comy-hero">
+            <div class="comy-hero-rays" aria-hidden="true"></div>
+            <div class="comy-hero-circle" aria-hidden="true">🌮</div>
+            <div class="comy-hero-circle" aria-hidden="true">🍕</div>
+            <div class="comy-hero-circle" aria-hidden="true">🥤</div>
+            <div class="comy-hero-plate" aria-hidden="true"><div class="comy-hero-illustration">🛵</div></div>
+            <div class="comy-hero-text">
+              <span class="comy-hero-eyebrow">Comy · Mercado local</span>
+              <h2>Hola{{if .UserName}} {{.UserName}}{{end}},</h2>
+              <div class="comy-hero-lead">¿qué se te antoja hoy?</div>
+              <p>Envío gratis en compras mayores a <strong>$200</strong></p>
+              <button class="comy-hero-btn" type="button">Conoce más
+                <svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 12h14m-6-6l6 6l-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <a href="/comy/map" class="comy-tile comy-tile-track">
+            <svg class="comy-tile-route" viewBox="0 0 160 70" aria-hidden="true">
+              <path id="comyRoutePath" d="M8 58 C 40 58, 40 18, 78 22 S 120 52, 150 14" fill="none" stroke="rgba(255,212,0,.55)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/>
+              <circle r="6" fill="#FFD400"><animateMotion dur="3.2s" repeatCount="indefinite" rotate="auto"><mpath href="#comyRoutePath"/></animateMotion></circle>
+              <circle cx="150" cy="14" r="4" fill="#F59500"/>
+            </svg>
+            <span class="comy-tile-kicker">En vivo</span>
+            <span class="comy-tile-title">Rastrea tu pedido</span>
+            <span class="comy-tile-go"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M7 17L17 7M8 7h9v9"/></svg></span>
+          </a>
+
+          <div class="comy-tile comy-tile-pay">
+            <div class="comy-tile-stickers" aria-hidden="true"><span>💳</span><span>🏦</span><span>💬</span></div>
+            <span class="comy-tile-kicker">Fácil y seguro</span>
+            <span class="comy-tile-title">Paga con tarjeta, SPEI o pide por WhatsApp</span>
           </div>
         </div>
 
@@ -88,10 +116,16 @@
           </div>
 
           <!-- Toggle Empresas / Platillos -->
-          <div class="comy-toggle" id="comyToggle" role="tablist">
-            <button class="comy-toggle-opt active" data-view="empresas" role="tab" aria-selected="true">Empresas</button>
-            <button class="comy-toggle-opt" data-view="platillos" role="tab" aria-selected="false">Platillos</button>
-            <div class="comy-toggle-thumb" id="comyToggleThumb"></div>
+          <div class="comy-browse-row">
+            <div class="comy-browse-title">
+              <span class="comy-browse-kicker">Hoy en Comy</span>
+              <span class="comy-browse-h">Lo mejor cerca de ti</span>
+            </div>
+            <div class="comy-toggle" id="comyToggle" role="tablist">
+              <button class="comy-toggle-opt active" data-view="empresas" role="tab" aria-selected="true">Empresas</button>
+              <button class="comy-toggle-opt" data-view="platillos" role="tab" aria-selected="false">Platillos</button>
+              <div class="comy-toggle-thumb" id="comyToggleThumb"></div>
+            </div>
           </div>
         </section>
 
@@ -104,7 +138,7 @@
 
         <!-- Panel: Platillos (de todas las empresas) -->
         <section class="comy-panel" id="comyPanelPlatillos" style="display:none">
-          <div class="comy-grid" id="comyPlatillosGrid">
+          <div class="comy-grid comy-grid-dishes" id="comyPlatillosGrid">
             <div class="comy-panel-loading">Cargando platillos…</div>
           </div>
         </section>
@@ -114,12 +148,13 @@
       <div class="comy-side" id="comySide">
         <div class="comy-m-sheet-handle" id="comyMSheetHandle"></div>
         <div class="comy-card-balance">
-          <div class="comy-card-circle" style="width:9rem;height:9rem;top:-2.5rem;right:-2.5rem;background:rgba(255,255,255,.15)"></div>
-          <div class="comy-card-circle" style="width:5rem;height:5rem;bottom:1rem;right:-1rem;background:rgba(255,255,255,.1)"></div>
+          <div class="comy-card-circle" style="width:11rem;height:11rem;top:-4rem;right:-3rem"></div>
+          <div class="comy-card-circle" style="width:6rem;height:6rem;bottom:-2rem;left:38%"></div>
           <div class="comy-card-top">
             <span>Tarjeta de débito</span>
             <span class="comy-card-brand">VISA</span>
           </div>
+          <div class="comy-card-chip" aria-hidden="true"></div>
           <div class="comy-card-amount">$ 1,560.00</div>
           <div class="comy-card-bottom">
             <span id="comyCardOwner">{{if .UserName}}{{.UserName}}{{else}}Invitado{{end}}</span>
@@ -127,6 +162,7 @@
           </div>
         </div>
 
+        <div class="comy-receipt">
         <div class="comy-order-box">
           <div class="comy-section-head">
             <h2>Mi pedido</h2>
@@ -138,7 +174,7 @@
           <div class="comy-order-list">
             <!-- {{range .PedidoActual}} -->
             <div class="comy-order-item">
-              <div class="comy-order-thumb" style="background:#FFF3DC">🍄</div>
+              <div class="comy-order-thumb" style="background:#FFF3B8">🍄</div>
               <div class="comy-order-info">
                 <div class="comy-order-name">Pizza de Champiñón</div>
                 <div class="comy-order-qty">x1</div>
@@ -146,7 +182,7 @@
               <div class="comy-order-price"><small>$</small>149</div>
             </div>
             <div class="comy-order-item">
-              <div class="comy-order-thumb" style="background:#E8F5F0">🍅</div>
+              <div class="comy-order-thumb" style="background:#FFE2D6">🍅</div>
               <div class="comy-order-info">
                 <div class="comy-order-name">Pizza Italiana</div>
                 <div class="comy-order-qty">x2</div>
@@ -154,7 +190,7 @@
               <div class="comy-order-price"><small>$</small>270</div>
             </div>
             <div class="comy-order-item">
-              <div class="comy-order-thumb" style="background:#E8F5F0">🍔</div>
+              <div class="comy-order-thumb" style="background:#FFE7C2">🍔</div>
               <div class="comy-order-info">
                 <div class="comy-order-name">Burger Clásica</div>
                 <div class="comy-order-qty">x1</div>
@@ -164,7 +200,13 @@
             <!-- {{end}} -->
           </div>
 
+          <div class="comy-order-total">
+            <span>Total</span>
+            <strong id="comyOrderTotal">$0</strong>
+          </div>
+
           <button class="comy-checkout-btn" type="button">Pagar</button>
+        </div>
         </div>
       </div>
     </div>
@@ -180,44 +222,57 @@
 </div>
 
 <style>
-  /* Amarillo puro brillante — sobreescribe --c-accent solo en esta página
-     (la variable original viene del sidebar/stylesheet global de Comy) */
+  /* Amarillo Comy como acento principal en esta página */
   :root {
     --c-accent: #FFD400;
     --c-accent-dark: #E6BF00;
   }
 
-  .comy-page { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; background: #fff; }
+  .comy-page { box-sizing: border-box; width: 100%; max-width: 1340px; margin: 0 auto; padding: 14px 1.75rem 4rem; }
+  .comy-page *, .comy-page *::before, .comy-page *::after { box-sizing: border-box; }
+  .comy-page h1, .comy-page h2, .comy-page p { margin: 0; }
 
-  /* Topbar */
-  .comy-topbar { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .comy-title { font-size: 1.3rem; font-weight: 800; color: var(--c-ink); flex-shrink: 0; font-family: var(--c-font); }
+  /* ── Topbar: cápsula de cristal pegajosa ── */
+  .comy-topbar {
+    position: sticky; top: 14px; z-index: 400;
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+    padding: 8px 8px 8px 1.4rem; border-radius: 999px;
+    background: var(--cm-glass, rgba(255,253,248,.74));
+    -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+    box-shadow: 0 0 0 1px rgba(74,52,18,.07), 0 14px 34px -24px rgba(120,72,0,.45);
+    transition: box-shadow .3s, background .3s;
+  }
+  .comy-topbar.cm-scrolled { box-shadow: 0 0 0 1px rgba(74,52,18,.08), 0 22px 44px -22px rgba(120,72,0,.5); background: rgba(255,253,248,.86); }
+  .comy-top-brand { display: none; }
+  .comy-title {
+    font-size: 1.12rem; font-weight: 800; color: var(--c-ink); flex-shrink: 0; font-family: var(--c-font);
+    letter-spacing: -.025em; white-space: nowrap;
+  }
   .comy-search {
-    flex: 1; min-width: 220px; max-width: 360px;
-    display: flex; align-items: center; gap: .6rem;
-    background: #F2F2F4; border: 2px solid transparent;
-    border-radius: 999px; padding: calc(.75rem - 2px) calc(1.25rem - 2px); color: var(--c-muted);
+    flex: 1; min-width: 220px; max-width: 520px; margin: 0 auto;
+    display: flex; align-items: center; gap: .6rem; flex-direction: row-reverse;
+    background: rgba(74,52,18,.06); border: 2px solid transparent;
+    border-radius: 999px; padding: calc(.7rem - 2px) calc(1.15rem - 2px); color: var(--c-muted);
     transition: background .2s, border-color .2s, box-shadow .2s, transform .2s;
   }
   .comy-search:focus-within {
     background: #fff; border-color: var(--c-accent);
-    box-shadow: 0 6px 18px rgba(255,212,0,.28);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 5px rgba(255,212,0,.22);
   }
   .comy-search svg { flex-shrink: 0; transition: color .2s; }
   .comy-search:focus-within svg { color: var(--c-ink); }
-  .comy-search input { border: none; background: none; outline: none; font-size: .85rem; width: 100%; color: var(--c-ink); font-family: var(--c-font); }
-  .comy-topbar-right { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
+  .comy-search input { border: none; background: none; outline: none; font-size: .9rem; width: 100%; color: var(--c-ink); font-family: var(--c-font); font-weight: 500; }
+  .comy-search input::placeholder { color: var(--c-muted); }
+  .comy-topbar-right { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
   .comy-bell {
-    position: relative; width: 40px; height: 40px; border-radius: 12px;
-    background: var(--c-muted-bg); color: var(--c-muted); border: none; cursor: pointer;
+    position: relative; width: 44px; height: 44px; border-radius: 50%;
+    background: #fff; color: var(--c-ink); border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: background .2s, color .2s;
+    box-shadow: 0 0 0 1px rgba(74,52,18,.08), 0 6px 14px -10px rgba(120,72,0,.5);
   }
-  .comy-bell:hover { background: var(--c-accent-soft); color: var(--c-ink); }
+  .comy-bell:hover { background: var(--c-accent-soft); }
   .comy-bell svg { transform-origin: top center; }
   .comy-bell:hover svg { animation: comyBellRing .5s ease; }
-  .comy-bell:active { transform: scale(.92); }
   @keyframes comyBellRing {
     0%, 100% { transform: rotate(0deg); }
     20% { transform: rotate(14deg); }
@@ -226,81 +281,161 @@
     80% { transform: rotate(-6deg); }
   }
   .comy-bell-dot {
-    position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 3px;
-    background: var(--c-accent); color: #2A2200; font-size: .6rem; font-weight: 700;
+    position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px;
+    background: var(--c-orange); color: #fff; font-size: .62rem; font-weight: 800;
     border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 2px #fff;
     animation: comyBellPulse 1.8s ease-in-out infinite;
   }
   @keyframes comyBellPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255,212,0,.55); }
-    50% { box-shadow: 0 0 0 5px rgba(255,212,0,0); }
+    0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 2px rgba(245,149,0,.55); }
+    50% { box-shadow: 0 0 0 2px #fff, 0 0 0 7px rgba(245,149,0,0); }
   }
-  .comy-guest-btns { display: flex; align-items: center; gap: .5rem; }
+  .comy-guest-btns { display: flex; align-items: center; gap: .35rem; }
   .comy-btn-ghost {
-    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
-    font-size: .82rem; font-weight: 600; color: var(--c-ink); border: 1.5px solid var(--c-border);
+    padding: .7rem 1.05rem; border-radius: 999px; text-decoration: none;
+    font-size: .85rem; font-weight: 700; color: var(--c-ink);
   }
-  .comy-btn-ghost:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .comy-btn-ghost:hover { background: rgba(74,52,18,.07); }
   .comy-btn-primary {
-    padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
-    font-size: .82rem; font-weight: 700; color: #2A2200; background: var(--c-accent);
-    box-shadow: 0 6px 16px rgba(255,212,0,.35);
+    padding: .7rem 1.25rem; border-radius: 999px; text-decoration: none;
+    font-size: .85rem; font-weight: 800; color: var(--c-ink); background: var(--c-accent);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6), 0 10px 20px -12px rgba(200,140,0,.95);
   }
-  .comy-btn-primary:hover { background: var(--c-accent-dark); }
-  .comy-top-user { display: flex; align-items: center; gap: .6rem; }
+  .comy-btn-primary:hover { background: #FFDD2E; }
+  .comy-top-user { display: flex; align-items: center; gap: .6rem; padding-right: .6rem; }
   .comy-top-avatar {
-    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #2A2200;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem;
-    overflow: hidden; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(140deg, #FFE45C, var(--c-accent) 45%, var(--c-orange)); color: var(--c-ink);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .95rem;
+    overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 3px #fff;
   }
   /* Foto de perfil real: descomentar junto con el <img> de arriba
   .comy-top-avatar img { width: 100%; height: 100%; object-fit: cover; }
   */
-  .comy-top-name { font-size: .85rem; font-weight: 700; color: var(--c-ink); }
-  .comy-top-role { font-size: .72rem; color: var(--c-muted); }
+  .comy-top-name { font-size: .88rem; font-weight: 800; color: var(--c-ink); letter-spacing: -.01em; }
+  .comy-top-role { font-size: .72rem; color: var(--c-muted); font-weight: 600; }
 
-  /* Layout de cuerpo */
-  .comy-body { display: flex; gap: 1.5rem; align-items: flex-start; }
-  .comy-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.25rem; }
+  /* ── Layout ── */
+  .comy-body { display: flex; gap: 1.75rem; align-items: flex-start; }
+  .comy-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.6rem; }
   .comy-side {
-    width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1.25rem;
-    background: #fff; border-radius: 24px; padding: 1.25rem;
+    width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1.1rem;
+    position: sticky; top: 100px;
   }
 
-  /* Hero */
+  /* ── Bento ── */
+  .comy-bento {
+    display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr; gap: 1rem; min-height: 290px;
+  }
   .comy-hero {
-    position: relative; overflow: hidden; border-radius: 20px; min-height: 150px;
-    background: linear-gradient(135deg, #FFF3DC 0%, #FDE8B8 100%);
-    display: flex; align-items: center; gap: 1.25rem; padding: 0 1.5rem;
+    grid-row: 1 / 3;
+    position: relative; overflow: hidden; border-radius: 34px; isolation: isolate;
+    background:
+      radial-gradient(120% 90% at 0% 0%, #FFE55C 0%, transparent 55%),
+      radial-gradient(90% 90% at 100% 100%, #FFB21A 0%, transparent 60%),
+      var(--c-accent);
+    display: flex; align-items: center; padding: 2rem 2.1rem;
+    box-shadow: inset 0 -5px 0 rgba(150,90,0,.12), 0 26px 50px -30px rgba(200,120,0,.9);
   }
-  .comy-hero-circle { position: absolute; border-radius: 50%; opacity: .4; }
-  .comy-hero-illustration { font-size: 4.5rem; z-index: 1; flex-shrink: 0; }
-  .comy-hero-text { z-index: 1; }
-  .comy-hero-text h2 { font-size: 1.15rem; font-weight: 800; color: var(--c-ink); font-family: var(--c-font); }
-  .comy-hero-text p { font-size: .85rem; color: var(--c-ink); margin-top: .25rem; }
-  .comy-hero-text strong { color: var(--c-accent); }
+  .comy-hero-rays {
+    position: absolute; z-index: -1; width: 900px; height: 900px; right: -330px; top: 50%; margin-top: -450px;
+    background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.22) 0 7deg, transparent 7deg 15deg);
+    -webkit-mask: radial-gradient(circle, #000 20%, transparent 62%); mask: radial-gradient(circle, #000 20%, transparent 62%);
+  }
+  .comy-hero-plate {
+    position: absolute; right: 2.2rem; top: 50%; margin-top: -92px; width: 184px; height: 184px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, #fff 0 54%, #FFF6DA 55% 62%, #fff 63%);
+    box-shadow: 0 30px 40px -26px rgba(120,60,0,.75), inset 0 -6px 12px rgba(160,100,0,.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .comy-hero-circle {
+    position: absolute; width: 58px; height: 58px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 1.7rem;
+    background: #fff; box-shadow: 0 12px 22px -12px rgba(120,60,0,.7), 0 0 0 4px rgba(255,255,255,.55);
+    z-index: 1;
+  }
+  .comy-hero-circle:nth-of-type(2) { right: 13.5rem; top: 1.3rem; --r: -12deg; rotate: -12deg; }
+  .comy-hero-circle:nth-of-type(3) { right: 1.1rem; top: 1.1rem; width: 50px; height: 50px; font-size: 1.4rem; --r: 10deg; rotate: 10deg; }
+  .comy-hero-circle:nth-of-type(4) { right: 12rem; bottom: 1.2rem; width: 46px; height: 46px; font-size: 1.25rem; --r: 8deg; rotate: 8deg; }
+  .comy-hero-illustration { font-size: 5.2rem; line-height: 1; }
+  .comy-hero-text { position: relative; z-index: 2; max-width: 58%; }
+  .comy-hero-eyebrow {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(26,26,26,.62);
+  }
+  .comy-hero-eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--c-ink); }
+  .comy-hero-text h2 {
+    font-size: clamp(2.3rem, 4.2vw, 3.6rem); font-weight: 900; color: var(--c-ink); font-family: var(--c-font);
+    letter-spacing: -.055em; line-height: .92; margin-top: .55rem;
+  }
+  .comy-hero-lead {
+    font-size: clamp(1.25rem, 2vw, 1.7rem); font-weight: 800; color: var(--c-ink); letter-spacing: -.04em; line-height: 1.05;
+    margin-top: .15rem; opacity: .82;
+  }
+  .comy-hero-text p {
+    display: inline-flex; align-items: center; gap: .3rem; flex-wrap: wrap;
+    font-size: .82rem; font-weight: 600; color: var(--c-ink); margin-top: 1rem;
+    padding: .45rem .8rem; border-radius: 12px; background: rgba(255,255,255,.55);
+    border: 1.5px dashed rgba(26,26,26,.28);
+  }
+  .comy-hero-text strong { color: var(--c-ink); font-weight: 900; }
   .comy-hero-btn {
-    margin-top: .8rem; background: var(--c-accent); color: #2A2200; border: none; cursor: pointer;
-    border-radius: 12px; padding: .55rem 1.2rem; font-size: .82rem; font-weight: 700; font-family: var(--c-font);
+    display: flex; align-items: center; gap: .45rem;
+    margin-top: 1rem; background: var(--c-ink); color: #FFF8EC; border: none; cursor: pointer;
+    border-radius: 999px; padding: .75rem 1.25rem; font-size: .86rem; font-weight: 800; font-family: var(--c-font);
+    box-shadow: inset 0 -3px 0 rgba(255,255,255,.08), 0 14px 24px -14px rgba(0,0,0,.8);
   }
-  .comy-hero-btn:hover { background: var(--c-accent-dark); }
+  .comy-hero-btn:hover { background: #000; }
 
-  .comy-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .comy-section-head h2 { font-size: 1.02rem; font-weight: 800; color: var(--c-ink); font-family: var(--c-font); }
-  .comy-viewall { color: var(--c-accent); font-size: .8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: .2rem; }
+  .comy-tile {
+    position: relative; overflow: hidden; border-radius: 30px; padding: 1.15rem 1.25rem;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: .2rem;
+    text-decoration: none; color: inherit; isolation: isolate;
+  }
+  .comy-tile-kicker { font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .comy-tile-title { font-size: 1.12rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.12; max-width: 15rem; }
+  .comy-tile-track { background: var(--c-ink); color: #FFF8EC; box-shadow: 0 22px 40px -26px rgba(0,0,0,.8); }
+  .comy-tile-track .comy-tile-kicker { color: var(--c-accent); display: inline-flex; align-items: center; gap: .4rem; }
+  .comy-tile-track .comy-tile-kicker::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #34C759; box-shadow: 0 0 0 0 rgba(52,199,89,.6); animation: cmLive 1.6s ease-out infinite; }
+  @keyframes cmLive { to { box-shadow: 0 0 0 8px rgba(52,199,89,0); } }
+  .comy-tile-route { position: absolute; top: .7rem; right: .6rem; width: 62%; height: auto; z-index: -1; }
+  .comy-tile-go {
+    position: absolute; right: 1rem; bottom: 1rem; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--c-accent); color: var(--c-ink); display: flex; align-items: center; justify-content: center;
+  }
+  .comy-tile-pay { background: var(--c-panel); box-shadow: var(--c-shadow-sm), 0 0 0 1px rgba(74,52,18,.06); }
+  .comy-tile-pay .comy-tile-kicker { color: #C26A00; }
+  .comy-tile-stickers { position: absolute; top: .9rem; right: .9rem; display: flex; }
+  .comy-tile-stickers span {
+    width: 42px; height: 42px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; margin-left: -10px; box-shadow: 0 0 0 3px var(--c-panel), 0 8px 16px -10px rgba(120,72,0,.6);
+  }
+  .comy-tile-stickers span:nth-child(1) { --r: -10deg; rotate: -10deg; background: #FFF3B8; }
+  .comy-tile-stickers span:nth-child(2) { --r: 6deg; rotate: 6deg; background: #FFE7C2; }
+  .comy-tile-stickers span:nth-child(3) { --r: -4deg; rotate: -4deg; background: #DDF6E4; }
 
-  /* Categorías — slider arrastrable */
-  /* contain: inline-size → el ancho del slider lo pone el contenedor, nunca sus chips.
-     Sin esto, los 9 chips empujaban el ancho de toda la página en mobile. */
+  /* ── Encabezados de sección ── */
+  .comy-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; gap: 1rem; }
+  .comy-section-head h2 { font-size: 1.45rem; font-weight: 900; color: var(--c-ink); font-family: var(--c-font); letter-spacing: -.04em; }
+  .comy-viewall {
+    color: var(--c-ink); font-size: .8rem; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: .25rem;
+    padding: .42rem .75rem; border-radius: 999px; background: rgba(74,52,18,.06);
+  }
+  .comy-viewall:hover { background: var(--c-accent-soft); }
+
+  /* ── Categorías: stickers arrastrables ── */
+  /* contain: inline-size → el ancho del slider lo pone el contenedor, nunca sus chips. */
   .comy-categories-wrap { position: relative; contain: inline-size; min-width: 0; }
   .comy-categories-wrap::after {
-    content: ''; position: absolute; top: 0; right: 0; bottom: .3rem; width: 40px;
-    background: linear-gradient(to right, rgba(255,255,255,0), #fff);
+    content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 56px;
+    background: linear-gradient(to right, rgba(255,248,236,0), var(--c-bg));
     pointer-events: none; transition: opacity .2s;
   }
   .comy-categories-wrap.at-end::after { opacity: 0; }
   .comy-categories {
-    display: flex; gap: .6rem; overflow-x: auto; padding-bottom: .3rem; position: relative;
+    display: flex; gap: .35rem; overflow-x: auto; padding: 6px 2px 12px; position: relative;
     scroll-snap-type: x proximity; cursor: grab; -webkit-overflow-scrolling: touch;
     scrollbar-width: none; -ms-overflow-style: none;
   }
@@ -308,111 +443,188 @@
   .comy-categories.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
   .comy-categories .comy-cat { scroll-snap-align: start; }
   .comy-cat-indicator {
-    position: absolute; top: 0; left: 0; height: 100%; border-radius: 18px;
-    background: var(--c-accent); box-shadow: 0 6px 16px rgba(255,212,0,.35);
+    position: absolute; top: 6px; left: 0; height: calc(100% - 18px); border-radius: 28px;
+    background: var(--c-accent);
     transition: left .32s cubic-bezier(.34,1.4,.5,1), width .32s cubic-bezier(.34,1.4,.5,1);
     z-index: 0; pointer-events: none;
   }
   .comy-cat {
-    position: relative; z-index: 1;
-    display: flex; flex-direction: column; align-items: center; gap: .45rem;
-    min-width: 82px; padding: .9rem .7rem; border-radius: 18px; border: none; cursor: pointer;
-    background: var(--c-panel); color: var(--c-ink); font-size: .78rem; font-weight: 700; font-family: var(--c-font);
+    position: relative; z-index: 1; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: .5rem;
+    width: 96px; padding: .8rem .4rem .85rem; border-radius: 28px; border: none; cursor: pointer;
+    background: transparent; color: var(--c-ink-2); font-size: .8rem; font-weight: 800; font-family: var(--c-font);
+    letter-spacing: -.01em;
     transition: background .18s, color .18s;
   }
   .comy-cat-icon {
-    width: 44px; height: 44px; border-radius: 12px; background: #F0F0F0;
-    display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+    width: 66px; height: 66px; border-radius: 50%; background: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
     overflow: hidden; transition: background .18s;
+    box-shadow: 0 0 0 4px #fff, 0 12px 20px -12px rgba(120,72,0,.7);
+    rotate: var(--tilt, 0deg);
   }
+  .comy-cat:nth-child(3n) .comy-cat-icon { --tilt: -6deg; }
+  .comy-cat:nth-child(3n+1) .comy-cat-icon { --tilt: 5deg; }
+  .comy-cat:nth-child(4n) .comy-cat-icon { --tilt: -3deg; }
   .comy-cat-icon img { width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
-  .comy-cat.active .comy-cat-icon { background: rgba(255,255,255,.25); }
   .comy-cat-chev {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--c-accent); color: #2A2200;
+    position: absolute; top: .45rem; right: .5rem;
+    width: 22px; height: 22px; border-radius: 50%; background: var(--c-ink); color: var(--c-accent);
     display: flex; align-items: center; justify-content: center; transition: background .18s, color .18s;
+    opacity: 0; scale: .4;
   }
-  .comy-cat.active { background: transparent; color: #2A2200; }
-  .comy-cat.active .comy-cat-chev { background: rgba(255,255,255,.3); color: #fff; }
-  .comy-cat:not(.active) .comy-cat-chev { color: #fff; }
+  .comy-cat-chev svg { width: 11px; height: 11px; }
+  .comy-cat.active { color: var(--c-ink); }
+  .comy-cat.active .comy-cat-chev { opacity: 1; scale: 1; }
 
-  /* Toggle Empresas / Platillos */
+  /* ── Fila de exploración + Toggle Empresas / Platillos ── */
+  .comy-browse-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; }
+  .comy-browse-title { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+  .comy-browse-kicker { font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #C26A00; }
+  .comy-browse-h { font-size: 1.45rem; font-weight: 900; letter-spacing: -.04em; color: var(--c-ink); line-height: 1.05; }
   .comy-toggle {
-    position: relative; display: inline-flex; margin-top: 1.1rem;
-    background: var(--c-panel); border-radius: 999px; padding: 4px; gap: 2px;
+    position: relative; display: inline-flex; flex-shrink: 0;
+    background: rgba(74,52,18,.07); border-radius: 999px; padding: 5px; gap: 0;
+    box-shadow: inset 0 1px 2px rgba(74,52,18,.08);
   }
   .comy-toggle-opt {
     position: relative; z-index: 1; border: none; background: none; cursor: pointer;
-    padding: .55rem 1.4rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
-    color: var(--c-muted); transition: color .2s; min-width: 130px; font-family: var(--c-font);
+    padding: .62rem 1.3rem; border-radius: 999px; font-size: .88rem; font-weight: 800;
+    color: var(--c-muted); transition: color .2s; min-width: 124px; font-family: var(--c-font);
   }
-  .comy-toggle-opt.active { color: #2A2200; }
+  .comy-toggle-opt.active { color: var(--c-ink); }
   .comy-toggle-thumb {
-    position: absolute; top: 4px; left: 4px; bottom: 4px; width: calc(50% - 4px);
-    background: var(--c-accent); border-radius: 999px; transition: transform .22s ease;
-    box-shadow: 0 6px 16px rgba(255,212,0,.35);
+    position: absolute; top: 5px; left: 5px; bottom: 5px; width: calc(50% - 5px);
+    border-radius: 999px; transition: transform .22s ease;
+  }
+  /* El pulgar se mueve con transform: el relleno vive en ::before para poder
+     estirarlo como gelatina sin multiplicar el desplazamiento. */
+  .comy-toggle-thumb::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--c-panel);
+    box-shadow: 0 1px 1px rgba(74,52,18,.08), 0 8px 18px -8px rgba(120,72,0,.55);
   }
 
-  .comy-panel { margin-top: .25rem; }
-  .comy-panel-loading, .comy-panel-empty { grid-column: 1 / -1; text-align: center; color: var(--c-muted); font-size: .85rem; padding: 2rem 0; }
-  .comy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-  @media (max-width: 1000px) { .comy-grid { grid-template-columns: repeat(2, 1fr); } }
+  .comy-panel { margin-top: -.4rem; }
+  .comy-panel-loading, .comy-panel-empty { grid-column: 1 / -1; text-align: center; color: var(--c-muted); font-size: .9rem; font-weight: 600; padding: 3rem 0; }
+  .comy-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+  @media (max-width: 1180px) { .comy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-  /* Tarjeta de platillo / empresa — igual al FoodCard del mockup */
+  /* ── Tarjeta base ── */
   .comy-food-card {
-    position: relative; background: var(--c-panel); border-radius: 20px; padding: 1rem;
+    position: relative; background: var(--c-panel); border-radius: 30px; padding: 1rem;
     display: flex; flex-direction: column; align-items: center; text-align: center;
     text-decoration: inherit; color: inherit; min-width: 0;
   }
-  .comy-food-badge { position: absolute; top: 1rem; right: 1rem; font-size: .95rem; }
+  .comy-food-badge {
+    position: absolute; top: .9rem; right: .9rem; font-size: 1rem; z-index: 2;
+    width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .comy-food-badge:not(:empty) { background: #fff; box-shadow: 0 6px 14px -8px rgba(200,60,0,.8); }
   .comy-food-photo {
-    width: 9rem; height: 9rem; border-radius: 50%; background: #FFF3DC;
-    display: flex; align-items: center; justify-content: center; font-size: 3.2rem; margin-bottom: .4rem;
+    width: 9.5rem; height: 9.5rem; border-radius: 50%; background: #FFF3B8;
+    display: flex; align-items: center; justify-content: center; font-size: 3.2rem; margin-bottom: .6rem;
     overflow: hidden;
   }
-  .comy-food-name { font-weight: 800; color: var(--c-ink); font-size: .95rem; font-family: var(--c-font); }
-  .comy-food-shop { color: var(--c-muted); font-size: .74rem; margin-top: .15rem; }
-  .comy-food-stars { color: var(--c-accent); font-size: .72rem; margin-top: .35rem; letter-spacing: 1px; }
-  .comy-food-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: .6rem; }
-  .comy-food-row-meta { color: var(--c-muted); font-size: .78rem; justify-content: center; }
-  .comy-food-price { font-weight: 800; color: var(--c-ink); font-size: .95rem; }
-  .comy-food-price small { color: var(--c-muted); font-weight: 600; font-size: .7rem; }
+  .comy-food-name { font-weight: 800; color: var(--c-ink); font-size: 1.02rem; font-family: var(--c-font); letter-spacing: -.025em; line-height: 1.2; }
+  .comy-food-shop { color: var(--c-muted); font-size: .76rem; margin-top: .2rem; font-weight: 600; }
+  .comy-food-stars { color: var(--c-orange); font-size: .72rem; margin-top: .35rem; letter-spacing: 1px; }
+  .comy-food-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: .75rem; gap: .5rem; }
+  .comy-food-row-meta { color: var(--c-muted); font-size: .76rem; justify-content: flex-start; }
+  .comy-food-price { font-weight: 900; color: var(--c-ink); font-size: 1.15rem; letter-spacing: -.03em; }
+  .comy-food-price small { color: var(--c-muted); font-weight: 700; font-size: .72rem; margin-right: 1px; }
   .comy-food-add {
-    width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
-    background: var(--c-accent); color: #2A2200; display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+    background: var(--c-accent); color: var(--c-ink); display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.12), 0 8px 16px -10px rgba(200,140,0,.95);
   }
-  .comy-food-add:hover { background: var(--c-accent-dark); }
+  .comy-food-add:hover { background: #FFDD2E; }
 
-  /* Tarjeta de débito */
+  /* Empresa: escaparate con portada */
+  .comy-empresa-card { padding: 8px 8px 1rem; align-items: stretch; text-align: left; }
+  .comy-empresa-card .comy-food-photo {
+    width: 100%; height: auto; aspect-ratio: 16 / 11; border-radius: 23px; margin-bottom: .85rem;
+    background-color: #FFE7C2;
+  }
+  .comy-empresa-card .comy-food-name { padding: 0 .55rem; font-size: 1.08rem; padding-right: 3rem; }
+  .comy-empresa-card .comy-food-row-meta { padding: 0 .55rem; margin-top: .35rem; }
+  .comy-empresa-card .comy-food-row-meta span {
+    display: inline-flex; padding: .25rem .6rem; border-radius: 999px; background: var(--c-muted-bg);
+    color: var(--c-ink-2); font-weight: 700; font-size: .72rem;
+  }
+  .comy-card-go {
+    position: absolute; right: 1rem; bottom: 1rem; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--c-ink); color: var(--c-accent); display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Platillo: plato que sobresale de la tarjeta */
+  .comy-grid-dishes { row-gap: 3.4rem; padding-top: 2.6rem; }
+  .comy-grid-dishes .comy-food-card { padding-top: 0; }
+  .comy-grid-dishes .comy-food-photo {
+    margin-top: -2.6rem; border: 7px solid #fff;
+    box-shadow: 0 0 0 1px rgba(74,52,18,.06), 0 22px 30px -20px rgba(120,72,0,.75), inset 0 0 0 2px rgba(255,255,255,.6);
+  }
+  .comy-grid-dishes .comy-food-row { padding-top: .75rem; border-top: 1.5px dashed rgba(74,52,18,.14); justify-content: flex-start; }
+  .comy-grid-dishes .comy-food-row .comy-food-add { margin-left: auto; }
+
+  /* ── Tarjeta de débito: tinta con brillo cálido ── */
   .comy-card-balance {
-    position: relative; overflow: hidden; border-radius: 24px; padding: 1.5rem; min-height: 150px;
-    background: linear-gradient(135deg, #FFD400 0%, #FFE55C 100%); color: #2A2200;
+    position: relative; overflow: hidden; border-radius: 28px; padding: 1.35rem 1.4rem; min-height: 190px;
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255,212,0,.55), transparent 55%),
+      radial-gradient(80% 80% at 0% 100%, rgba(245,149,0,.35), transparent 60%),
+      #1A1A1A;
+    color: #FFF8EC;
   }
-  .comy-card-circle { position: absolute; border-radius: 50%; }
-  .comy-card-top { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
-  .comy-card-brand { font-weight: 800; font-style: italic; }
-  .comy-card-amount { font-size: 1.65rem; font-weight: 800; margin-top: 1.25rem; position: relative; z-index: 1; font-family: var(--c-font); }
-  .comy-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; font-size: .82rem; opacity: .9; position: relative; z-index: 1; }
+  .comy-card-circle { position: absolute; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.14); }
+  .comy-card-top { display: flex; align-items: center; justify-content: space-between; font-size: .8rem; font-weight: 600; opacity: .85; position: relative; z-index: 1; }
+  .comy-card-brand { font-weight: 900; font-style: italic; font-size: 1.05rem; letter-spacing: -.02em; }
+  .comy-card-chip {
+    position: relative; z-index: 1; width: 40px; height: 30px; border-radius: 8px; margin-top: 1rem;
+    background: linear-gradient(135deg, #FFE98A, #E6BF00 55%, #B58E00);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+  }
+  .comy-card-chip::before, .comy-card-chip::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: rgba(0,0,0,.22); }
+  .comy-card-chip::before { top: 10px; } .comy-card-chip::after { bottom: 10px; }
+  .comy-card-amount { font-size: 1.9rem; font-weight: 900; margin-top: .6rem; position: relative; z-index: 1; font-family: var(--c-font); color: #fff; }
+  .comy-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: .5rem; font-size: .8rem; font-weight: 600; opacity: .85; position: relative; z-index: 1; }
 
-  /* Panel de pedido */
-  .comy-order-box { background: transparent; border-radius: 20px; padding: 1.25rem 0 0; }
+  /* ── Pedido: ticket de papel ── */
+  .comy-receipt { filter: drop-shadow(0 1px 1px rgba(74,52,18,.08)) drop-shadow(0 18px 24px rgba(120,72,0,.14)); }
+  .comy-order-box {
+    background: var(--c-panel); border-radius: 26px 26px 0 0; padding: 1.25rem 1.25rem 1.9rem;
+    -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 9px) no-repeat, radial-gradient(circle 9px at 50% 0, #000 96%, transparent 100%) bottom / 20px 9px repeat-x;
+            mask: linear-gradient(#000 0 0) top / 100% calc(100% - 9px) no-repeat, radial-gradient(circle 9px at 50% 0, #000 96%, transparent 100%) bottom / 20px 9px repeat-x;
+  }
+  .comy-order-box .comy-section-head { padding-bottom: .9rem; border-bottom: 2px dashed rgba(74,52,18,.14); margin-bottom: .3rem; }
+  .comy-order-box .comy-section-head h2 { font-size: 1.25rem; }
   .comy-order-list { display: flex; flex-direction: column; }
-  .comy-order-item { display: flex; align-items: center; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--c-border); }
-  .comy-order-item:last-child { border-bottom: none; }
-  .comy-order-thumb { width: 3.2rem; height: 3.2rem; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .comy-order-item { display: flex; align-items: center; gap: .8rem; padding: .7rem .2rem; }
+  .comy-order-thumb { width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 0 0 3px #fff, 0 8px 14px -10px rgba(120,72,0,.7); }
   .comy-order-info { flex: 1; min-width: 0; }
-  .comy-order-name { font-weight: 700; color: var(--c-ink); font-size: .85rem; font-family: var(--c-font); }
-  .comy-order-qty { color: var(--c-muted); font-size: .72rem; margin-top: .1rem; }
-  .comy-order-price { font-weight: 800; color: var(--c-ink); font-size: .85rem; }
-  .comy-order-price small { color: var(--c-muted); font-weight: 600; font-size: .68rem; }
-  .comy-checkout-btn {
-    width: 100%; margin-top: 1.1rem; background: var(--c-accent); color: #2A2200; border: none;
-    border-radius: 14px; padding: .85rem; font-size: .95rem; font-weight: 800; cursor: pointer; font-family: var(--c-font);
+  .comy-order-name { font-weight: 800; color: var(--c-ink); font-size: .88rem; font-family: var(--c-font); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .comy-order-qty { color: var(--c-muted); font-size: .74rem; margin-top: .1rem; font-weight: 700; }
+  .comy-order-price { font-weight: 900; color: var(--c-ink); font-size: .95rem; font-variant-numeric: tabular-nums; }
+  .comy-order-price small { color: var(--c-muted); font-weight: 700; font-size: .7rem; }
+  .comy-order-total {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-top: .4rem; padding-top: .9rem; border-top: 2px dashed rgba(74,52,18,.14);
+    font-size: .85rem; font-weight: 700; color: var(--c-ink-2);
   }
-  .comy-checkout-btn:hover { background: var(--c-accent-dark); }
+  .comy-order-total strong { font-size: 1.6rem; font-weight: 900; color: var(--c-ink); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .comy-checkout-btn {
+    width: 100%; margin-top: 1rem; background: var(--c-accent); color: var(--c-ink); border: none;
+    border-radius: 18px; padding: 1rem; font-size: 1rem; font-weight: 900; cursor: pointer; font-family: var(--c-font);
+    letter-spacing: -.01em;
+  }
+  .comy-checkout-btn:hover { background: #FFDD2E; }
 
-  @media (max-width: 960px) {
+  @media (max-width: 1020px) and (min-width: 701px) {
     .comy-body { flex-direction: column; }
-    .comy-side { width: 100%; }
+    .comy-side { width: 100%; position: static; flex-direction: row; align-items: flex-start; }
+    .comy-card-balance, .comy-receipt { flex: 1; min-width: 0; }
+    .comy-hero-plate { display: none; }
+    .comy-hero { overflow: hidden; }
+    .comy-hero-text { max-width: 100%; }
   }
 
   /* Elementos exclusivos de mobile — ocultos en PC */
@@ -422,110 +634,151 @@
   @media (max-width: 700px) {
     /* Nada puede ser más ancho que la pantalla */
     html, body { overflow-x: hidden; max-width: 100%; }
-    body { background: #fff; }
-    .comy-content, .comy-page, .comy-page *, .comy-page *::before, .comy-page *::after { box-sizing: border-box; }
-    .comy-content { width: 100%; max-width: 100vw; min-width: 0; overflow-x: hidden; }
-    .comy-page, .comy-body, .comy-main, .comy-section, .comy-panel, .comy-hero { width: 100%; max-width: 100%; min-width: 0; }
+    @supports (overflow: clip) { html, body { overflow-x: clip; } }
+    .comy-content { width: 100%; max-width: 100vw; min-width: 0; overflow-x: clip; }
+    .comy-page, .comy-body, .comy-main, .comy-section, .comy-panel, .comy-hero, .comy-bento { width: 100%; max-width: 100%; min-width: 0; }
     .comy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-    .comy-page { padding: 1rem 1rem 3rem; }
+    .comy-page { padding: .75rem 1rem 3rem; }
+    .comy-main { gap: 1.35rem; }
 
-    /* Topbar: título + acciones arriba, buscador en su propia fila */
-    .comy-topbar { gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .comy-title {
-      flex: 1 1 auto; min-width: 0; font-size: 1.1rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* Topbar: marca + acciones arriba, buscador en su propia fila */
+    .comy-topbar {
+      position: relative; top: 0; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.1rem;
+      padding: 0; border-radius: 0; background: none; box-shadow: none;
+      -webkit-backdrop-filter: none; backdrop-filter: none;
     }
-    /* Campana + login/registro en su propia fila, arriba del título */
-    .comy-topbar-right { order: -1; flex: 1 1 100%; margin-left: 0; gap: .5rem; justify-content: space-between; }
-    .comy-title { flex-basis: 100%; }
-    .comy-search { order: 3; flex: 1 1 100%; min-width: 0; max-width: none; }
+    .comy-topbar.cm-scrolled { background: none; box-shadow: none; }
+    .comy-top-brand { display: flex; align-items: center; gap: .45rem; text-decoration: none; color: var(--c-ink); margin-right: auto; }
+    .comy-top-brand-mark {
+      width: 38px; height: 38px; border-radius: 13px; background: var(--c-accent); color: var(--c-ink);
+      display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.35rem; padding-bottom: 3px;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,.12);
+      -webkit-mask: radial-gradient(circle 7px at calc(100% - 1px) 1px, transparent 97%, #000 100%);
+              mask: radial-gradient(circle 7px at calc(100% - 1px) 1px, transparent 97%, #000 100%);
+    }
+    .comy-top-brand-word { font-size: 1.4rem; font-weight: 900; letter-spacing: -.06em; }
+    .comy-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .comy-topbar-right { gap: .4rem; }
+    .comy-search { order: 3; flex: 1 1 100%; min-width: 0; max-width: none; background: var(--c-panel); box-shadow: 0 0 0 1px rgba(74,52,18,.08), 0 10px 22px -16px rgba(120,72,0,.5); padding: calc(.8rem - 2px) calc(1.1rem - 2px); }
     .comy-search input { font-size: 16px; } /* evita el zoom automático de iOS al enfocar */
-    .comy-bell { width: 36px; height: 36px; border-radius: 10px; }
-    .comy-guest-btns { gap: .35rem; }
-    .comy-btn-ghost, .comy-btn-primary { padding: .42rem .8rem; font-size: .75rem; }
-    .comy-top-avatar { width: 36px; height: 36px; border-radius: 10px; }
+    .comy-bell { width: 40px; height: 40px; }
+    .comy-btn-ghost, .comy-btn-primary { padding: .6rem .85rem; font-size: .78rem; }
+    .comy-btn-ghost { background: rgba(74,52,18,.06); }
+    .comy-top-avatar { width: 40px; height: 40px; }
     .comy-top-meta { display: none; }
+    .comy-top-user { padding-right: 0; }
 
-    /* Hero */
-    .comy-hero { min-height: 120px; padding: 1rem 1.1rem; gap: .9rem; border-radius: 18px; }
-    .comy-hero-illustration { font-size: 3rem; }
-    .comy-hero-circle { transform: scale(.7); }
-    .comy-hero-text h2 { font-size: 1rem; }
-    .comy-hero-text p { font-size: .8rem; }
-    .comy-hero-btn { margin-top: .6rem; padding: .5rem 1rem; font-size: .78rem; }
+    /* Bento: hero arriba, accesos en 2 columnas */
+    .comy-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: .7rem; min-height: 0; }
+    .comy-hero { grid-row: auto; grid-column: 1 / -1; min-height: 228px; padding: 1.35rem 1.25rem; border-radius: 30px; align-items: flex-start; }
+    .comy-hero-text { max-width: 64%; }
+    .comy-hero-text h2 { font-size: 2.35rem; margin-top: .45rem; }
+    .comy-hero-lead { font-size: 1.15rem; }
+    .comy-hero-text p { font-size: .74rem; margin-top: .75rem; padding: .38rem .6rem; }
+    .comy-hero-btn { margin-top: .75rem; padding: .62rem 1rem; font-size: .8rem; }
+    .comy-hero-plate { width: 128px; height: 128px; margin-top: -40px; right: 4px; top: 58%; }
+    .comy-hero-illustration { font-size: 3.6rem; }
+    .comy-hero-rays { right: -460px; }
+    .comy-hero-circle:nth-of-type(2) { right: 6.6rem; top: auto; bottom: .9rem; width: 44px; height: 44px; font-size: 1.25rem; }
+    .comy-hero-circle:nth-of-type(3) { right: .8rem; top: .8rem; width: 42px; height: 42px; font-size: 1.15rem; }
+    .comy-hero-circle:nth-of-type(4) { display: none; }
+    .comy-tile { min-height: 132px; border-radius: 26px; padding: 1rem; }
+    .comy-tile-title { font-size: .95rem; }
+    .comy-tile-route { width: 78%; }
+    .comy-tile-go { width: 30px; height: 30px; right: .8rem; bottom: .8rem; }
+    .comy-tile-track .comy-tile-title { padding-right: 2rem; }
+    .comy-tile-stickers span { width: 34px; height: 34px; font-size: 1rem; }
 
     /* Categorías: el slider llega de orilla a orilla */
-    .comy-section-head { margin-bottom: .75rem; }
+    .comy-section-head { margin-bottom: .55rem; }
+    .comy-section-head h2 { font-size: 1.25rem; }
     .comy-categories-wrap { margin: 0 -1rem; width: calc(100% + 2rem); max-width: none; }
-    .comy-categories { padding: 0 1rem .3rem; scroll-padding-left: 1rem; gap: .5rem; }
-    .comy-cat { min-width: 72px; padding: .7rem .55rem; gap: .35rem; border-radius: 16px; font-size: .74rem; }
-    .comy-cat-indicator { border-radius: 16px; }
-    .comy-cat-icon { width: 38px; height: 38px; border-radius: 10px; }
-    .comy-cat-chev { width: 22px; height: 22px; }
+    .comy-categories { padding: 6px 1rem 12px; scroll-padding-left: 1rem; gap: .2rem; }
+    .comy-cat { width: 82px; padding: .7rem .3rem .75rem; gap: .45rem; border-radius: 24px; font-size: .75rem; }
+    .comy-cat-indicator { border-radius: 24px; }
+    .comy-cat-icon { width: 56px; height: 56px; }
+    .comy-cat-chev { width: 20px; height: 20px; top: .35rem; right: .35rem; }
 
-    /* Toggle a todo el ancho */
-    .comy-toggle { display: flex; width: 100%; margin-top: .9rem; }
-    .comy-toggle-opt { flex: 1; min-width: 0; padding: .6rem .5rem; }
+    /* Fila de exploración */
+    .comy-browse-row { flex-direction: column; align-items: stretch; gap: .75rem; margin-top: .7rem; }
+    .comy-browse-h { font-size: 1.25rem; }
+    .comy-toggle { display: flex; width: 100%; }
+    .comy-toggle-opt { flex: 1; min-width: 0; padding: .7rem .5rem; }
 
     /* Grid 2 columnas con tarjetas compactas */
+    .comy-panel { margin-top: -.3rem; }
     .comy-grid { gap: .7rem; }
-    .comy-food-card { padding: .8rem .65rem; border-radius: 16px; }
-    .comy-food-badge { top: .6rem; right: .6rem; font-size: .85rem; }
-    .comy-food-photo { width: 100%; max-width: 7.5rem; height: auto; aspect-ratio: 1; font-size: 2.4rem; }
-    .comy-food-name { font-size: .85rem; line-height: 1.25; overflow-wrap: anywhere; }
+    .comy-food-card { padding: .8rem .65rem; border-radius: 24px; }
+    .comy-food-badge { top: .55rem; right: .55rem; width: 28px; height: 28px; font-size: .8rem; }
+    .comy-food-photo { width: 100%; max-width: 7.6rem; height: auto; aspect-ratio: 1; font-size: 2.4rem; }
+    .comy-food-name { font-size: .88rem; line-height: 1.22; overflow-wrap: anywhere; }
     .comy-food-shop { font-size: .7rem; }
-    .comy-food-row { margin-top: .45rem; gap: .35rem; flex-wrap: wrap; }
-    .comy-food-row-meta { font-size: .72rem; }
-    .comy-food-price { font-size: .88rem; }
+    .comy-food-row { margin-top: .5rem; gap: .35rem; }
+    .comy-food-price { font-size: 1rem; }
+    .comy-food-add { width: 32px; height: 32px; }
+    .comy-empresa-card { padding: 6px 6px .8rem; }
+    .comy-empresa-card .comy-food-photo { max-width: none; aspect-ratio: 1 / .82; border-radius: 19px; margin-bottom: .6rem; }
+    .comy-empresa-card .comy-food-name { padding: 0 .35rem; padding-right: 2.2rem; font-size: .9rem; }
+    .comy-empresa-card .comy-food-row-meta { padding: 0 2.3rem 0 .35rem; }
+    .comy-empresa-card .comy-food-row-meta span { font-size: .66rem; padding: .2rem .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+    .comy-card-go { width: 28px; height: 28px; right: .6rem; bottom: .7rem; }
+    .comy-card-go svg { width: 12px; height: 12px; }
+    .comy-grid-dishes { row-gap: 2.6rem; padding-top: 2.2rem; }
+    .comy-grid-dishes .comy-food-photo { margin-top: -2.2rem; border-width: 5px; max-width: 7rem; }
+    .comy-grid-dishes .comy-food-row { flex-wrap: wrap; padding-top: .55rem; }
+    .comy-grid-dishes .price-original { font-size: .7rem !important; }
 
     /* Espacio para que la barra flotante no tape la última fila */
-    /* El body ya reserva el alto de la barra inferior (sidebar-comy); aquí solo el de la barra de pedido */
-    .comy-page { padding-bottom: 5rem; }
+    /* El body ya reserva el alto de la cápsula inferior (sidebar-comy); aquí solo el de la barra de pedido */
+    .comy-page { padding-bottom: 5.25rem; }
 
     /* La columna derecha se vuelve un bottom sheet */
     .comy-card-balance { display: none; }
     .comy-side {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
-      width: 100%; max-height: 80vh; overflow-y: auto; gap: 0;
-      background: #fff; border-radius: 24px 24px 0 0;
-      padding: .6rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
-      box-shadow: 0 -12px 40px rgba(0,0,0,.18);
+      position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 1001;
+      width: 100%; max-height: 82vh; overflow-y: auto; gap: 0;
+      background: var(--c-panel); border-radius: 30px 30px 0 0;
+      padding: .6rem 1.1rem calc(1.25rem + env(safe-area-inset-bottom));
+      box-shadow: 0 -20px 50px -10px rgba(60,36,0,.35);
       transform: translateY(105%); transition: transform .32s cubic-bezier(.2,.8,.2,1);
     }
     .comy-side.open { transform: translateY(0); }
     .comy-m-sheet-handle {
-      display: block; width: 42px; height: 5px; border-radius: 999px;
-      background: var(--c-border); margin: 0 auto .9rem; cursor: pointer;
+      display: block; width: 44px; height: 5px; border-radius: 999px; flex-shrink: 0;
+      background: rgba(74,52,18,.18); margin: 0 auto .8rem; cursor: pointer;
     }
-    .comy-order-box { padding-top: 0; }
+    .comy-receipt { filter: none; }
+    .comy-order-box { padding: .4rem .1rem .4rem; -webkit-mask: none; mask: none; border-radius: 0; }
 
     .comy-m-backdrop {
       display: block; position: fixed; inset: 0; z-index: 1000;
-      background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s;
+      background: rgba(40,24,0,.38); opacity: 0; pointer-events: none; transition: opacity .25s;
     }
     .comy-m-backdrop.open { opacity: 1; pointer-events: auto; }
 
-    /* Barra flotante "Ver mi pedido" */
+    /* Barra flotante "Ver mi pedido": caramelo amarillo sobre la cápsula */
     .comy-m-cartbar {
-      display: flex; align-items: center; gap: .75rem;
-      position: fixed; left: 1rem; right: 1rem; bottom: calc(var(--c-mobile-nav-h, 64px) + .75rem + env(safe-area-inset-bottom)); z-index: 999;
-      padding: .85rem 1rem; border: none; border-radius: 16px; cursor: pointer;
-      background: var(--c-accent); color: #2A2200; font-family: var(--c-font);
-      font-size: .92rem; font-weight: 800; box-shadow: 0 10px 28px rgba(255,212,0,.45);
+      display: flex; align-items: center; gap: .7rem;
+      position: fixed; left: 12px; right: 12px; bottom: calc(var(--c-mobile-nav-h, 82px) + env(safe-area-inset-bottom)); z-index: 999;
+      padding: .55rem .6rem .55rem .55rem; border: none; border-radius: 999px; cursor: pointer;
+      background: var(--c-accent); color: var(--c-ink); font-family: var(--c-font);
+      font-size: .92rem; font-weight: 900; letter-spacing: -.01em;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6), 0 16px 30px -14px rgba(160,100,0,.85);
     }
-    .comy-m-cartbar:active { transform: scale(.98); }
     .comy-m-cartbar-count {
-      min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px;
-      background: rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; font-size: .8rem;
+      min-width: 36px; height: 36px; padding: 0 8px; border-radius: 999px;
+      background: var(--c-ink); color: var(--c-accent); display: flex; align-items: center; justify-content: center; font-size: .85rem;
     }
-    .comy-m-cartbar-total { margin-left: auto; }
+    .comy-m-cartbar-total { margin-left: auto; padding: .5rem .85rem; border-radius: 999px; background: rgba(255,255,255,.55); }
   }
 
   @media (max-width: 360px) {
     .comy-btn-ghost { display: none; } /* en pantallas muy angostas solo queda "Registrarse" */
     .comy-grid { gap: .55rem; }
     .comy-food-card { padding: .7rem .5rem; }
+    .comy-hero-text { max-width: 70%; }
+    .comy-hero-text h2 { font-size: 2.1rem; }
   }
 
   /* ==========================================================================
@@ -534,21 +787,20 @@
   /* Buscador: se infla con rebote al enfocarlo */
   .comy-search { transition: background .2s, border-color .2s, box-shadow .25s, transform .55s var(--cm-jelly); }
   .comy-search:focus-within { transform: scale(1.02); }
-  .comy-bell, .comy-btn-ghost, .comy-btn-primary, .comy-hero-btn, .comy-checkout-btn, .comy-food-add {
+  .comy-bell, .comy-btn-ghost, .comy-btn-primary, .comy-hero-btn, .comy-checkout-btn, .comy-food-add, .comy-viewall, .comy-tile-go, .comy-card-go {
     -webkit-tap-highlight-color: transparent;
     transition: background .2s, color .2s, border-color .2s, box-shadow .25s, transform .45s var(--cm-jelly);
   }
-  .comy-bell { border-radius: 50%; }
-  .comy-bell:active, .comy-btn-ghost:active, .comy-btn-primary:active, .comy-hero-btn:active, .comy-food-add:active { transform: scale(.88, .84); }
+  .comy-bell:active, .comy-btn-ghost:active, .comy-btn-primary:active, .comy-hero-btn:active, .comy-food-add:active, .comy-viewall:active { transform: scale(.88, .84); }
   .comy-btn-primary:hover, .comy-hero-btn:hover { transform: translateY(-1px); }
-  .comy-top-avatar { border-radius: 50%; }
 
-  /* Hero: las burbujas flotan y la moto va rodando */
-  .comy-hero { border-radius: 26px; isolation: isolate; }
-  .comy-hero-circle { animation: cmBob 6s ease-in-out infinite; }
-  .comy-hero-circle:nth-child(2) { animation-duration: 7.5s; animation-delay: -2s; }
-  .comy-hero-circle:nth-child(3) { animation-duration: 5.5s; animation-delay: -4s; }
-  @keyframes cmBob { 0%, 100% { translate: 0 0; } 50% { translate: -6px -10px; } }
+  /* Hero: rayos de sol que giran, stickers que flotan y la moto que rueda */
+  .comy-hero-rays { animation: cmSpin 60s linear infinite; }
+  @keyframes cmSpin { to { rotate: 360deg; } }
+  .comy-hero-circle { animation: cmFloat 6s ease-in-out infinite; }
+  .comy-hero-circle:nth-of-type(3) { animation-duration: 7.5s; animation-delay: -2s; }
+  .comy-hero-circle:nth-of-type(4) { animation-duration: 5.5s; animation-delay: -4s; }
+  .comy-hero-plate { animation: cmPop .9s var(--cm-jelly) .1s backwards; }
   .comy-hero-illustration { animation: cmRide 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
   @keyframes cmRide {
     0%, 100% { translate: 0 0; rotate: 0deg; }
@@ -556,41 +808,50 @@
     50% { translate: 8px 0; rotate: 0deg; }
     75% { translate: 4px -2px; rotate: 2deg; }
   }
-  .comy-hero-btn { border-radius: 999px; padding: .6rem 1.3rem; box-shadow: 0 10px 22px -10px rgba(230,191,0,.9); }
+  .comy-hero-text > * { animation: cmRise .8s var(--cm-jelly) backwards; }
+  .comy-hero-text > :nth-child(2) { animation-delay: .06s; } .comy-hero-text > :nth-child(3) { animation-delay: .12s; }
+  .comy-hero-text > :nth-child(4) { animation-delay: .18s; } .comy-hero-text > :nth-child(5) { animation-delay: .24s; }
+  @keyframes cmRise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+  .comy-hero-btn svg { transition: transform .45s var(--cm-jelly); }
+  .comy-hero-btn:hover svg { transform: translateX(3px); }
+
+  /* Tiles del bento: se levantan con resorte */
+  .comy-tile { transition: transform .6s var(--cm-jelly), box-shadow .3s; -webkit-tap-highlight-color: transparent; animation: cmCardIn .8s var(--cm-jelly) backwards; }
+  .comy-tile-track { animation-delay: .08s; } .comy-tile-pay { animation-delay: .16s; }
+  .comy-tile:hover { transform: translateY(-4px) rotate(-.6deg); }
+  .comy-tile:active { transform: scale(.96); }
+  .comy-tile:hover .comy-tile-go { transform: rotate(45deg) scale(1.1); }
+  .comy-tile-stickers span { animation: cmFloat 5s ease-in-out infinite; }
+  .comy-tile-stickers span:nth-child(2) { animation-delay: -1.6s; } .comy-tile-stickers span:nth-child(3) { animation-delay: -3.2s; }
 
   /* Ver todo: la flecha se asoma */
   .comy-viewall svg { transition: transform .45s var(--cm-jelly); }
   .comy-viewall:hover svg { transform: translateX(3px); }
 
-  /* Categorías: el chip se levanta y su ícono se inclina */
+  /* Categorías: el sticker se levanta y se inclina */
   .comy-cat { transition: background .18s, color .18s, transform .5s var(--cm-jelly); -webkit-tap-highlight-color: transparent; }
   .comy-cat:hover { transform: translateY(-3px); }
   .comy-cat:active { transform: scale(.9, .86); }
-  .comy-cat-icon { transition: background .18s, transform .5s var(--cm-jelly); }
+  .comy-cat-icon { transition: background .18s, transform .5s var(--cm-jelly), box-shadow .3s; }
   .comy-cat:hover .comy-cat-icon { transform: rotate(-8deg) scale(1.08); }
-  .comy-cat.active .comy-cat-icon { animation: cmBounce .6s var(--cm-soft); }
-  .comy-cat-chev { transition: background .18s, color .18s, transform .45s var(--cm-jelly); }
-  .comy-cat:hover .comy-cat-chev { transform: translateX(2px); }
+  .comy-cat.active .comy-cat-icon { animation: cmBounce .6s var(--cm-soft); box-shadow: 0 0 0 4px #fff, 0 14px 22px -12px rgba(140,90,0,.85); }
+  .comy-cat-chev { transition: background .18s, color .18s, opacity .2s, scale .5s var(--cm-jelly); }
   .comy-cat-indicator {
     transition: left .55s var(--cm-jelly), width .55s var(--cm-jelly);
-    box-shadow: 0 10px 22px -8px rgba(230,191,0,.85), inset 0 1px 0 rgba(255,255,255,.45);
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.6), 0 14px 24px -14px rgba(200,140,0,.95);
   }
 
-  /* Empresas / Platillos: el pulgar salta con gelatina */
-  .comy-toggle { background: #F2F2F4; }
+  /* Empresas / Platillos: el pulgar salta con gelatina (su relleno se estira) */
   .comy-toggle-opt { -webkit-tap-highlight-color: transparent; transition: color .2s, transform .45s var(--cm-jelly); }
   .comy-toggle-opt:active { transform: scale(.94); }
-  .comy-toggle-thumb {
-    transition: transform .6s var(--cm-jelly);
-    box-shadow: 0 8px 18px -8px rgba(230,191,0,.9), inset 0 1px 0 rgba(255,255,255,.45);
-  }
+  .comy-toggle-thumb { transition: transform .6s var(--cm-jelly); }
+  .comy-toggle-thumb.cm-jelly-go::before { animation: cmSquishH .6s var(--cm-soft); }
 
   /* Tarjetas: entran en cascada, se inclinan siguiendo el cursor */
   .comy-grid { perspective: 900px; }
   .comy-food-card {
-    border-radius: 26px;
-    border: 1px solid rgba(0,0,0,.05);
-    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 26px -14px rgba(0,0,0,.12);
+    border: 1px solid rgba(74,52,18,.06);
+    box-shadow: 0 1px 2px rgba(74,52,18,.05), 0 14px 30px -20px rgba(120,72,0,.4);
     transform-style: preserve-3d;
     transition: transform .6s var(--cm-jelly), box-shadow .3s;
     --rx: 0deg; --ry: 0deg;
@@ -598,12 +859,15 @@
     -webkit-tap-highlight-color: transparent;
   }
   .comy-food-card.cm-tilting { transition: transform .12s linear, box-shadow .3s; }
-  .comy-food-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.04), 0 24px 44px -18px rgba(180,110,0,.38); }
+  .comy-food-card:hover { box-shadow: 0 2px 4px rgba(74,52,18,.05), 0 30px 50px -24px rgba(180,110,0,.5); }
   .comy-food-card:active { transform: scale(.96); }
   .comy-food-photo { transition: transform .6s var(--cm-jelly), box-shadow .3s; }
-  .comy-food-card:hover .comy-food-photo { transform: translateZ(30px) scale(1.06) rotate(-4deg); box-shadow: 0 18px 30px -16px rgba(0,0,0,.35); }
+  .comy-food-card:hover .comy-food-photo { transform: translateZ(30px) scale(1.06) rotate(-4deg); }
+  .comy-empresa-card:hover .comy-food-photo { transform: translateZ(18px) scale(1.02); }
   .comy-food-name { transition: transform .5s var(--cm-jelly); }
   .comy-food-card:hover .comy-food-name { transform: translateZ(16px); }
+  .comy-food-card:hover .comy-food-add, .comy-food-card:hover .comy-card-go { transform: translateZ(22px) rotate(90deg); }
+  .comy-food-card:hover .comy-card-go { transform: translateZ(22px) rotate(-45deg); }
   .comy-food-badge { animation: cmFlame 1.6s ease-in-out infinite; }
   @keyframes cmFlame { 0%, 100% { scale: 1; rotate: 0deg; } 50% { scale: 1.15; rotate: -8deg; } }
 
@@ -616,29 +880,32 @@
   .comy-card-balance {
     --mx: 50%; --my: 0%;
     transition: transform .6s var(--cm-jelly), box-shadow .3s;
-    box-shadow: 0 18px 40px -18px rgba(230,191,0,.85);
+    box-shadow: 0 26px 44px -24px rgba(60,30,0,.75);
   }
   .comy-card-balance::after {
     content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
-    background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,.55), transparent 60%);
+    background:
+      radial-gradient(220px circle at var(--mx) var(--my), rgba(255,236,150,.45), transparent 60%),
+      linear-gradient(115deg, transparent 30%, rgba(255,255,255,.08) 45%, rgba(255,212,0,.12) 50%, transparent 65%);
     opacity: 0; transition: opacity .3s;
   }
   .comy-card-balance:hover::after { opacity: 1; }
   .comy-card-balance:hover { transform: translateY(-3px) rotate(-1deg); }
-  .comy-card-amount { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .comy-card-amount { font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
 
   /* Pedido */
-  .comy-order-item { transition: transform .45s var(--cm-jelly), background .2s; border-radius: 14px; }
+  .comy-order-item { transition: transform .45s var(--cm-jelly), background .2s; border-radius: 16px; }
   .comy-order-item:hover { transform: translateX(3px); }
-  .comy-order-thumb { border-radius: 50%; transition: transform .5s var(--cm-jelly); }
+  .comy-order-thumb { transition: transform .5s var(--cm-jelly); }
   .comy-order-item:hover .comy-order-thumb { transform: rotate(-12deg) scale(1.08); }
+  .comy-order-total strong { display: inline-block; }
   .comy-checkout-btn {
-    position: relative; overflow: hidden; border-radius: 999px;
-    box-shadow: 0 12px 24px -12px rgba(230,191,0,.95);
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6), 0 16px 26px -14px rgba(200,140,0,.95);
   }
   .comy-checkout-btn::after {
     content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
-    background: linear-gradient(100deg, transparent, rgba(255,255,255,.65), transparent);
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.7), transparent);
     transform: skewX(-14deg); animation: cmShine 3.2s ease-in-out infinite;
   }
   @keyframes cmShine { 0%, 60% { left: -40%; } 100% { left: 130%; } }
@@ -646,23 +913,23 @@
 
   @media (max-width: 700px) {
     /* Hoja inferior con rebote y arrastre para cerrar */
-    .comy-side { transition: transform .6s var(--cm-jelly); border-radius: 28px 28px 0 0; touch-action: pan-y; }
+    .comy-side { transition: transform .6s var(--cm-jelly); touch-action: pan-y; }
     .comy-side.cm-dragging { transition: none; }
-    .comy-m-sheet-handle { width: 44px; height: 5px; background: #D9D9DE; }
-    .comy-m-backdrop { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+    .comy-m-backdrop { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
     .comy-m-cartbar {
-      border-radius: 999px;
-      animation: cmBarIn .7s var(--cm-jelly) both;
+      animation: cmBarIn .7s var(--cm-jelly) backwards;
       transition: transform .45s var(--cm-jelly);
     }
     .comy-m-cartbar:active { transform: scale(.95, .9); }
     @keyframes cmBarIn { from { opacity: 0; transform: translateY(40px) scale(.9); } to { opacity: 1; transform: none; } }
-    .comy-m-cartbar-count { animation: cmPop .6s var(--cm-jelly) .25s both; }
-    .comy-food-card:hover .comy-food-photo { transform: none; box-shadow: none; }
+    .comy-m-cartbar-count { animation: cmPop .6s var(--cm-jelly) .25s backwards; }
+    .comy-food-card:hover .comy-food-photo, .comy-empresa-card:hover .comy-food-photo { transform: none; }
+    .comy-tile:hover { transform: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .comy-hero-circle, .comy-hero-illustration, .comy-food-badge, .comy-checkout-btn::after, .cm-in > * { animation: none; }
+    .comy-hero-rays, .comy-hero-circle, .comy-hero-illustration, .comy-hero-plate, .comy-hero-text > *, .comy-tile, .comy-tile-stickers span,
+    .comy-food-badge, .comy-checkout-btn::after, .cm-in > *, .comy-tile-track .comy-tile-kicker::before, .comy-toggle-thumb.cm-jelly-go::before { animation: none; }
   }
 </style>
 
@@ -802,6 +1069,7 @@
         <div class="comy-food-photo"${photoStyle}>${photoContent}</div>
         <div class="comy-food-name">${escapeHtml(store.name)}</div>
         ${meta ? `<div class="comy-food-row comy-food-row-meta"><span>${escapeHtml(meta)}</span></div>` : ''}
+        <span class="comy-card-go" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M7 17L17 7M8 7h9v9"/></svg></span>
       </a>`;
   }
 
@@ -842,6 +1110,7 @@
         <div class="comy-food-row">
           <span class="comy-food-price"><small>$</small>${escapeHtml(String(dish.price))}</span>
           ${dish.isPromo && dish.originalPrice ? `<span class="price-original" style="color:var(--c-muted);font-size:.78rem;text-decoration:line-through">$${escapeHtml(String(dish.originalPrice))}</span>` : ''}
+          <span class="comy-food-add" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3.2" d="M12 5v14M5 12h14"/></svg></span>
         </div>
       </a>`;
   }
@@ -886,6 +1155,9 @@
     document.getElementById('comyMCartCount').textContent = count;
     document.getElementById('comyMCartTotal').textContent = '$' + total.toLocaleString('es-MX');
     cartBar.style.display = count ? '' : 'none';
+    // Total del ticket (columna derecha / hoja inferior)
+    const orderTotal = document.getElementById('comyOrderTotal');
+    if (orderTotal) orderTotal.textContent = '$' + total.toLocaleString('es-MX');
   }
 
   function openSheet() {
@@ -916,6 +1188,23 @@
     cmSquishOn(document.querySelector('.comy-cat-indicator'), 'h');
     // El pulgar del selector se mueve con transform: no se le aplica el estiramiento
     // (scale multiplicaría su desplazamiento); conserva su transición con rebote.
+  }
+  // …en su lugar se estira su relleno (::before), que no tiene desplazamiento propio
+  if (thumb && !cmReduce) {
+    let lastT = thumb.style.transform;
+    new MutationObserver(() => {
+      if (thumb.style.transform === lastT) return;
+      lastT = thumb.style.transform;
+      thumb.classList.remove('cm-jelly-go'); void thumb.offsetWidth; thumb.classList.add('cm-jelly-go');
+    }).observe(thumb, { attributes: true, attributeFilter: ['style'] });
+    thumb.addEventListener('animationend', () => thumb.classList.remove('cm-jelly-go'));
+  }
+
+  // Topbar de cristal: se vuelve más densa al hacer scroll
+  const cmTopbar = document.getElementById('comyTopbar');
+  if (cmTopbar) {
+    const onScroll = () => cmTopbar.classList.toggle('cm-scrolled', window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
   // Las tarjetas entran en cascada cada vez que se pintan o se cambia de panel

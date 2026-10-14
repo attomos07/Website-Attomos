@@ -30,6 +30,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
         <span class="comy-side-tooltip">Configuración</span>
       </a>
+      <span class="comy-side-sep" aria-hidden="true"></span>
       <a href="/" class="comy-side-link comy-side-link-muted" data-match="/" title="Attomos">
         <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
         <span class="comy-side-tooltip">Attomos</span>
@@ -73,7 +74,7 @@
   </div>
 </aside>
 
-<!-- Barra de navegación inferior (solo mobile) -->
+<!-- Barra de navegación inferior (solo mobile): cápsula flotante -->
 <nav class="comy-mobile-nav" id="comyMobileNav">
   <div class="cmn-indicator" id="comyMobileIndicator"></div>
   <a href="/comy" class="cmn-link" data-match="/comy">
@@ -99,75 +100,114 @@
 </nav>
 
 <style>
+  /* ==========================================================================
+     COMY 2.0 · "Mercado cálido"
+     Lienzo crema con luz de sol, tinta cálida, amarillo Comy como protagonista
+     y naranja como acento. Barras de cristal flotantes, botones "caramelo"
+     con canto y tipografía display apretada.
+     ========================================================================== */
   :root {
-    --c-accent: #F59500;
-    --c-accent-dark: #C97800;
-    --c-accent-soft: #FFF3DC;
+    --c-accent: #FFD400;
+    --c-accent-dark: #E6BF00;
+    --c-accent-text: #8A6D00;
+    --c-accent-soft: #FFF3B8;
+    --c-orange: #F59500;
+    --c-orange-soft: #FFE7C2;
     --c-ink: #1A1A1A;
-    --c-muted: #9A9A9A;
-    --c-border: #EBEBEB;
-    --c-muted-bg: #F0F0F0;
-    --c-panel: #FFFFFF;
-    --c-bg: #F5F5F8;
-    --c-shadow: 0 14px 34px rgba(180,110,0,.12);
-    --c-sidebar-w: 76px;
-    /* Alto de la barra inferior en mobile (sin contar el safe-area del iPhone).
+    --c-ink-2: #4A4136;
+    --c-muted: #8C8273;
+    --c-border: rgba(74, 52, 18, .10);
+    --c-muted-bg: #F7EEDD;
+    --c-panel: #FFFDF8;
+    --c-bg: #FFF8EC;
+    --c-cream-2: #FDF0D6;
+    --c-shadow: 0 22px 44px -26px rgba(120, 72, 0, .45);
+    --c-shadow-sm: 0 1px 2px rgba(74, 52, 18, .06), 0 10px 24px -16px rgba(120, 72, 0, .32);
+    --c-sidebar-w: 98px;
+    /* Espacio que reserva la cápsula inferior en mobile (64px de barra + 10px de aire + holgura).
        Las páginas la usan para no quedar tapadas: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom)) */
-    --c-mobile-nav-h: 64px;
+    --c-mobile-nav-h: 82px;
     --c-font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
-  body { margin-left: var(--c-sidebar-w); background: var(--c-bg); font-family: var(--c-font); }
+  html { background: var(--c-bg); }
+  body {
+    margin-left: var(--c-sidebar-w); background: transparent; font-family: var(--c-font); color: var(--c-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Luz de sol + grano de papel, fijos detrás de todo */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 12% -8%, rgba(255, 212, 0, .30), transparent 62%),
+      radial-gradient(760px 480px at 105% 4%, rgba(245, 149, 0, .18), transparent 60%),
+      radial-gradient(900px 700px at 60% 120%, rgba(255, 228, 160, .45), transparent 60%),
+      var(--c-bg);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .32 0 0 0 0 .1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
   .comy-content { min-height: 100vh; }
 
+  /* ===== Riel lateral: cápsula de tinta flotante ===== */
   .comy-sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0; z-index: 500;
-    width: var(--c-sidebar-w);
-    background: var(--c-panel);
-    border-right: 1px solid var(--c-border);
+    position: fixed; top: 14px; left: 14px; bottom: 14px; z-index: 500;
+    width: 70px; border-radius: 36px;
+    background: rgba(26, 26, 26, .94);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 24px 50px -22px rgba(40, 24, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .08);
     display: flex; flex-direction: column; align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 0;
+    padding: 16px 0;
     font-family: var(--c-font);
   }
 
-  .comy-sidebar-top { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; width: 100%; }
-  .comy-logo { position: relative; display: flex; text-decoration: none; }
+  .comy-sidebar-top { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; width: 100%; }
+  .comy-logo { position: relative; display: flex; text-decoration: none; perspective: 400px; }
   .comy-logo-mark {
-    width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+    width: 44px; height: 44px; border-radius: 15px; background: var(--c-accent); color: var(--c-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.55rem; letter-spacing: -.06em; text-transform: lowercase; line-height: 1;
+    padding-bottom: 3px;
+    /* La mordida de Comy */
+    -webkit-mask: radial-gradient(circle 8px at calc(100% - 1px) 1px, transparent 97%, #000 100%);
+            mask: radial-gradient(circle 8px at calc(100% - 1px) 1px, transparent 97%, #000 100%);
   }
   .comy-beta {
-    position: absolute; top: -6px; right: -14px;
-    background: var(--c-ink); color: #fff; font-size: .5rem; font-weight: 700;
-    padding: 1px 4px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em;
+    position: absolute; bottom: -7px; left: 50%; translate: -50% 0;
+    background: var(--c-orange); color: #fff; font-size: .5rem; font-weight: 800;
+    padding: 1px 6px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em;
+    box-shadow: 0 0 0 2px rgba(26, 26, 26, .94);
   }
 
-  .comy-sidebar-nav { position: relative; display: flex; flex-direction: column; gap: .5rem; width: 100%; align-items: center; }
+  .comy-sidebar-nav { position: relative; display: flex; flex-direction: column; gap: .45rem; width: 100%; align-items: center; }
   .comy-side-indicator {
-    position: absolute; top: 0; left: 50%; width: 40px; height: 40px;
+    position: absolute; top: 0; left: 13px; width: 44px; height: 44px;
     border-radius: 50%; background: var(--c-accent);
-    box-shadow: 0 6px 16px rgba(245,149,0,.35);
-    transform: translate(-50%, 0); opacity: 0;
+    opacity: 0;
     transition: top .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
     z-index: 0; pointer-events: none;
   }
   .comy-side-link {
     position: relative; z-index: 1;
-    width: 40px; height: 40px; border-radius: 50%;
+    width: 44px; height: 44px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: var(--c-muted); text-decoration: none;
+    color: rgba(255, 248, 236, .52); text-decoration: none;
     transition: color .18s;
   }
-  .comy-side-link:hover { color: #fff; }
-  .comy-side-link.active { color: #fff; }
-  .comy-side-link-muted { color: #c7c1ba; }
-  .comy-side-link-muted:hover { color: #fff; }
-  .comy-side-link-muted.active { color: #fff; }
+  .comy-side-link:hover { color: var(--c-ink); }
+  .comy-side-link.active { color: var(--c-ink); }
+  /* Si el círculo se fue a otro ícono (hover), el activo no se pierde sobre la tinta */
+  .comy-sidebar-nav:hover .comy-side-link.active:not(:hover) { color: var(--c-accent); }
+  .comy-side-link-muted { color: rgba(255, 248, 236, .32); }
+  .comy-side-link-muted:hover { color: var(--c-ink); }
+  .comy-side-link-muted.active { color: var(--c-ink); }
+  .comy-side-sep { width: 22px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .1); margin: .2rem 0; }
 
   .comy-side-tooltip {
-    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
-    background: var(--c-ink); color: #fff; font-size: .72rem; font-weight: 600;
+    position: absolute; left: calc(100% + 16px); top: 50%; transform: translateY(-50%);
+    background: var(--c-panel); color: var(--c-ink); font-size: .74rem; font-weight: 700;
     padding: .35rem .6rem; border-radius: 8px; white-space: nowrap;
     opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 50;
   }
@@ -176,79 +216,79 @@
   .comy-sidebar-bottom { display: flex; flex-direction: column; align-items: center; gap: .6rem; width: 100%; }
   .comy-guest-stack { display: flex; flex-direction: column; gap: .5rem; }
   .comy-icon-btn {
-    width: 38px; height: 38px; border-radius: 11px;
+    width: 42px; height: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: var(--c-ink); border: 1.5px solid var(--c-border); text-decoration: none;
+    color: rgba(255, 248, 236, .8); background: rgba(255, 255, 255, .08); text-decoration: none;
     transition: all .2s;
   }
-  .comy-icon-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .comy-icon-btn:hover { background: rgba(255, 255, 255, .16); color: #fff; }
   .comy-icon-btn-primary {
-    background: var(--c-accent); color: #fff; border-color: var(--c-accent);
-    box-shadow: 0 6px 16px rgba(245,149,0,.3);
+    background: var(--c-accent); color: var(--c-ink);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .14), 0 8px 18px -8px rgba(255, 212, 0, .7);
   }
-  .comy-icon-btn-primary:hover { background: var(--c-accent-dark); border-color: var(--c-accent-dark); color: #fff; }
+  .comy-icon-btn-primary:hover { background: #FFE033; color: var(--c-ink); }
 
   .comy-user-area { position: relative; }
   .comy-avatar-wrap { position: relative; }
   .comy-avatar {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--c-accent); color: #fff; font-weight: 700; font-size: .85rem;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(140deg, #FFE45C, var(--c-accent) 45%, var(--c-orange));
+    color: var(--c-ink); font-weight: 900; font-size: .95rem;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
-    border: 2.5px solid #fff; box-shadow: 0 3px 10px rgba(245,149,0,.4);
+    box-shadow: 0 0 0 3px rgba(26, 26, 26, .94), 0 0 0 5px rgba(255, 212, 0, .45);
   }
-  .comy-avatar:hover { box-shadow: 0 0 0 4px rgba(245,149,0,.18); }
   .comy-user-dropdown {
-    position: absolute; bottom: 0; left: calc(100% + 14px);
+    position: absolute; bottom: 0; left: calc(100% + 18px);
     background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 18px;
-    box-shadow: 0 16px 40px rgba(0,0,0,.12); min-width: 200px;
+    min-width: 210px;
     display: none; z-index: 1000; overflow: hidden;
   }
   .comy-avatar-wrap:hover .comy-user-dropdown,
   .comy-avatar-wrap.open .comy-user-dropdown { display: block; }
   .cd-header { padding: .9rem 1.1rem; }
-  .cd-name  { font-size: .9rem; font-weight: 700; color: var(--c-ink); }
-  .cd-role  { font-size: .75rem; color: var(--c-muted); }
+  .cd-name  { font-size: .95rem; font-weight: 800; color: var(--c-ink); letter-spacing: -.01em; }
+  .cd-role  { font-size: .76rem; color: var(--c-muted); margin-top: 2px; }
   .cd-divider { height: 1px; background: var(--c-border); }
   .cd-item {
-    display: block; padding: .7rem 1.1rem; font-size: .85rem; color: #374151;
+    display: block; padding: .7rem 1.1rem; font-size: .86rem; font-weight: 600; color: var(--c-ink-2);
     text-decoration: none; transition: background .12s; width: 100%;
     background: none; border: none; cursor: pointer; font-family: inherit; text-align: left;
   }
-  .cd-item:hover { background: var(--c-accent-soft); }
-  .cd-logout { color: var(--c-accent); }
-  .cd-logout:hover { background: var(--c-accent-soft); }
+  .cd-item:hover { background: var(--c-accent-soft); color: var(--c-ink); }
+  .cd-logout { color: #C2410C; }
+  .cd-logout:hover { background: var(--c-orange-soft); color: #9A3412; }
 
-  /* ===== Barra inferior mobile ===== */
+  /* ===== Barra inferior mobile: cápsula de tinta flotante ===== */
   .comy-mobile-nav {
-    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-    height: calc(var(--c-mobile-nav-h) + env(safe-area-inset-bottom));
-    padding: 0 .35rem env(safe-area-inset-bottom);
-    background: rgba(255,255,255,.96);
-    -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
-    border-top: 1px solid var(--c-border);
+    display: none; position: fixed; left: 12px; right: 12px; z-index: 500;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    height: 64px; padding: 0 6px; border-radius: 26px;
+    background: rgba(26, 26, 26, .9);
+    -webkit-backdrop-filter: saturate(170%) blur(22px); backdrop-filter: saturate(170%) blur(22px);
+    box-shadow: 0 20px 40px -18px rgba(40, 24, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .08);
     font-family: var(--c-font);
   }
   .cmn-link {
     position: relative; z-index: 1; flex: 1; min-width: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem;
-    color: var(--c-muted); text-decoration: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .18rem;
+    color: rgba(255, 248, 236, .55); text-decoration: none;
     -webkit-tap-highlight-color: transparent;
     transition: color .2s;
   }
   .cmn-icon {
-    width: 52px; height: 30px; border-radius: 999px;
+    width: 50px; height: 30px; border-radius: 999px;
     display: flex; align-items: center; justify-content: center;
   }
-  .cmn-label { font-size: .66rem; font-weight: 700; white-space: nowrap; }
+  .cmn-label { font-size: .64rem; font-weight: 700; white-space: nowrap; letter-spacing: .01em; }
   .cmn-link:active .cmn-icon { transform: scale(.9); }
-  .cmn-link.active { color: var(--c-ink); }
-  .cmn-link.active .cmn-icon { color: #2A2200; }
+  .cmn-link.active { color: var(--c-accent); }
+  .cmn-link.active .cmn-icon { color: var(--c-ink); }
 
   /* Píldora deslizante detrás del ícono activo (mismo mecanismo que el círculo del sidebar) */
   .cmn-indicator {
-    position: absolute; top: calc((var(--c-mobile-nav-h) - 30px) / 2 - 9px); left: 0;
-    width: 52px; height: 30px; border-radius: 999px;
-    background: var(--c-accent); box-shadow: 0 4px 12px rgba(245,149,0,.3);
+    position: absolute; top: 9px; left: 0;
+    width: 50px; height: 30px; border-radius: 999px;
+    background: var(--c-accent);
     opacity: 0; pointer-events: none; z-index: 0;
     transition: left .32s cubic-bezier(.34,1.4,.5,1), opacity .2s;
   }
@@ -268,7 +308,7 @@
   :root {
     --cm-jelly: linear(0, 0.059, 0.204, 0.392, 0.591, 0.773, 0.925, 1.039, 1.114, 1.153, 1.163, 1.152, 1.128, 1.097, 1.064, 1.035, 1.011, 0.992, 0.981, 0.975, 0.973, 0.975, 0.98, 0.985, 0.99, 0.995, 0.999, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.002, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 0.999, 0.999, 1, 1);
     --cm-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --cm-glass: rgba(255, 255, 255, 0.78);
+    --cm-glass: rgba(255, 253, 248, 0.74);
   }
   @supports not (animation-timing-function: linear(0, 1)) {
     :root { --cm-jelly: cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -290,72 +330,70 @@
   @keyframes cmWiggle {
     0%, 100% { rotate: 0deg; } 25% { rotate: -10deg; } 50% { rotate: 8deg; } 75% { rotate: -4deg; }
   }
+  @keyframes cmShake {
+    0%, 100% { translate: 0 0; } 15% { translate: -9px 0; } 30% { translate: 8px 0; } 45% { translate: -6px 0; } 60% { translate: 4px 0; } 75% { translate: -2px 0; }
+  }
+  @keyframes cmFloat { 0%, 100% { translate: 0 0; rotate: var(--r, 0deg); } 50% { translate: 0 -8px; rotate: calc(var(--r, 0deg) + 4deg); } }
   .cm-sq-h { animation: cmSquishH 0.6s var(--cm-soft); }
   .cm-sq-v { animation: cmSquishV 0.6s var(--cm-soft); }
+  .cm-shake { animation: cmShake .5s var(--cm-soft); }
 
-  /* Logo: la C gira como una moneda al pasar el cursor */
+  /* Logo: la "c" mordida gira como una moneda al pasar el cursor */
   .comy-logo-mark {
-    border-radius: 14px;
-    box-shadow: 0 8px 18px -8px rgba(245, 149, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .5);
     transition: transform 0.6s var(--cm-jelly), border-radius 0.4s var(--cm-soft);
   }
   .comy-logo:hover .comy-logo-mark { transform: rotateY(180deg) scale(1.06); border-radius: 50%; }
   .comy-logo:active .comy-logo-mark { transform: scale(0.88); }
-  .comy-beta { border-radius: 999px; padding: 1px 6px; }
 
   /* Menú lateral: el círculo viaja con rebote y se estira en el camino */
   .comy-side-indicator {
     transition: top 0.55s var(--cm-jelly), opacity 0.2s;
-    box-shadow: 0 8px 20px -6px rgba(245, 149, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: 0 8px 20px -6px rgba(255, 212, 0, 0.55), inset 0 -3px 0 rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
   .comy-side-link { -webkit-tap-highlight-color: transparent; transition: color 0.2s, transform 0.45s var(--cm-jelly); }
   .comy-side-link svg { transition: transform 0.45s var(--cm-jelly); }
   .comy-side-link:hover svg { animation: cmWiggle 0.5s ease; }
   .comy-side-link:active { transform: scale(0.86); }
 
-  /* Tooltip: píldora de cristal que sale con resorte */
+  /* Tooltip: píldora crema que sale con resorte */
   .comy-side-tooltip {
-    padding: 0.42rem 0.8rem; border-radius: 999px;
-    background: rgba(26, 26, 26, 0.88);
+    padding: 0.45rem 0.85rem; border-radius: 999px;
+    background: rgba(255, 253, 248, 0.94);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 12px 26px -12px rgba(80, 50, 0, 0.45), 0 0 0 1px var(--c-border);
     transform: translate(-8px, -50%) scale(0.85); transform-origin: left center;
     transition: opacity 0.18s, transform 0.5s var(--cm-jelly);
   }
   .comy-side-link:hover .comy-side-tooltip { transform: translate(0, -50%) scale(1); }
 
   /* Botones de invitado */
-  .comy-icon-btn { border-radius: 50%; transition: transform 0.45s var(--cm-jelly), background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+  .comy-icon-btn { transition: transform 0.45s var(--cm-jelly), background 0.2s, color 0.2s, box-shadow 0.2s; }
   .comy-icon-btn:hover { transform: translateY(-2px); }
   .comy-icon-btn:active { transform: scale(0.86); }
 
   /* Avatar y menú: el menú brota desde el avatar */
   .comy-avatar { transition: transform 0.45s var(--cm-jelly), box-shadow 0.2s; }
-  .comy-avatar:hover { transform: scale(1.06); }
+  .comy-avatar:hover { transform: scale(1.06) rotate(-6deg); }
   .comy-avatar:active { transform: scale(0.9); }
   .comy-user-dropdown {
-    padding: 6px; border-radius: 22px;
-    background: rgba(255, 255, 255, 0.92);
+    padding: 6px; border-radius: 24px;
+    background: rgba(255, 253, 248, 0.94);
     -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
-    box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 28px 54px -18px rgba(80, 50, 0, 0.38);
     transform-origin: bottom left;
   }
   .comy-avatar-wrap:hover .comy-user-dropdown,
   .comy-avatar-wrap.open .comy-user-dropdown { animation: cmPop 0.5s var(--cm-jelly) both; }
   .cd-header { padding: 0.75rem 0.9rem 0.6rem; }
   .cd-divider { margin: 4px 8px; }
-  .cd-item { border-radius: 14px; padding: 0.62rem 0.9rem; transition: background 0.15s, transform 0.4s var(--cm-jelly); }
+  .cd-item { border-radius: 16px; padding: 0.62rem 0.9rem; transition: background 0.15s, transform 0.4s var(--cm-jelly); }
   .cd-item:active { transform: scale(0.96); }
 
-  /* Barra inferior móvil: cristal, la píldora se estira y el ícono rebota */
-  .comy-mobile-nav {
-    background: rgba(255, 255, 255, 0.82);
-    -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px);
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
+  /* Barra inferior móvil: la píldora se estira y el ícono rebota */
   .cmn-indicator {
     transition: left 0.55s var(--cm-jelly), opacity 0.2s;
-    box-shadow: 0 8px 18px -8px rgba(245, 149, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: 0 8px 18px -8px rgba(255, 212, 0, 0.7), inset 0 -2px 0 rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
   .cmn-icon { transition: transform 0.4s var(--cm-jelly); }
   .cmn-link:active .cmn-icon { transform: scale(0.82); }
@@ -364,7 +402,7 @@
   .cmn-link.active .cmn-label { transform: translateY(-1px); }
 
   @media (prefers-reduced-motion: reduce) {
-    .cm-sq-h, .cm-sq-v, .cmn-link.active .cmn-icon svg, .comy-side-link:hover svg { animation: none; }
+    .cm-sq-h, .cm-sq-v, .cm-shake, .cmn-link.active .cmn-icon svg, .comy-side-link:hover svg { animation: none; }
   }
 </style>
 
