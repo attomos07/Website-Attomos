@@ -449,6 +449,29 @@ async function reinitializeOnboardingEvents() {
     }
 
     let AGENT_SECTIONS = _isGovModal ? AGENT_SECTIONS_GOV : AGENT_SECTIONS_BUSINESS;
+
+    // Igual que en el Dashboard: si ya hay agentes (el negocio ya está
+    // llenado en Mi Negocio), solo se configuran Info. Básica y Personalidad
+    // (+ Resumen). El resto de secciones viene de Mi Negocio y se oculta.
+    let _hasExistingAgents = !!_editingAgentId;
+    if (!_hasExistingAgents) {
+        try {
+            const _agentsResp = await fetch('/api/agents', { credentials: 'include' });
+            if (_agentsResp.ok) {
+                const _agentsData = await _agentsResp.json();
+                _hasExistingAgents = Array.isArray(_agentsData.agents) && _agentsData.agents.length > 0;
+            }
+        } catch (_) {}
+    }
+    if (_hasExistingAgents) {
+        const _keep = ['section-basic', 'section-personality'];
+        AGENT_SECTIONS = AGENT_SECTIONS.filter(s => _keep.includes(s.containerId));
+        ['section-business','section-location','section-social','section-schedule','section-holidays',
+         'section-services','section-menu','section-workers'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+        });
+    }
     const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
 
     if (typeof initializeRichEditor==='function') initializeRichEditor();
