@@ -287,3 +287,46 @@
   renderCourses();
   show(slugFromPath());
 })();
+/* Capa iOS 27: las tarjetas de curso se inclinan siguiendo el cursor */
+(function () {
+  'use strict';
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!fine || reduce) return;
+  const grid = document.getElementById('courseGrid');
+  if (!grid) return;
+  grid.addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.course-card');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    card.classList.add('is-tilting');
+    card.style.setProperty('--ry', (px * 8).toFixed(2) + 'deg');
+    card.style.setProperty('--rx', (-py * 7).toFixed(2) + 'deg');
+  });
+  grid.addEventListener('pointerout', (e) => {
+    const card = e.target.closest('.course-card');
+    if (!card || card.contains(e.relatedTarget)) return;
+    card.classList.remove('is-tilting');
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+  });
+})();
+
+/* Capa iOS 27: ondita al tocar "Cursos" y "Ver en YouTube / TikTok" */
+(function () {
+  'use strict';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('.back-btn, .video-actions .btn');
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    const dot = document.createElement('span');
+    dot.className = 'ios-ripple';
+    dot.style.left = (e.clientX - r.left) + 'px';
+    dot.style.top = (e.clientY - r.top) + 'px';
+    btn.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove(), { once: true });
+  });
+})();

@@ -330,36 +330,52 @@
   // Control segmentado líquido
   // ---------------------------------------------------------------------
 
-  let stretchTimer = null;
+  // Misma cápsula que las pestañas de Mi Negocio (Mi Negocio / Inventario /
+  // Contabilidad): resortes k=420 d=30, se estira un poco mientras viaja y
+  // se encoge al presionar la opción activa.
+  const segReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const mkS = (v, k, d, eps = 0.1) => ({ v, vel: 0, t: v, k, d, eps });
+  const SX = mkS(0, 420, 30), SW = mkS(0, 420, 30), SS = mkS(1, 600, 30, 0.001);
+  const segSprings = [SX, SW, SS];
+  let segRaf = null, segLast = 0, segReady = false;
+
+  function segStep(sp, dt) {
+    if (segReduce.matches) { sp.v = sp.t; sp.vel = 0; return; }
+    sp.vel += (-sp.k * (sp.v - sp.t) - sp.d * sp.vel) * dt;
+    sp.v += sp.vel * dt;
+  }
+  const segRest = (sp) => Math.abs(sp.v - sp.t) < sp.eps && Math.abs(sp.vel) < sp.eps * 5;
+  function segRender() {
+    const ind = els.indicator;
+    if (!segReady) { ind.style.opacity = 0; return; }
+    const st = Math.min(Math.abs(SX.vel) / 3000, 0.1);
+    ind.style.opacity = 1;
+    ind.style.left = '0px';
+    ind.style.width = `${SW.v}px`;
+    ind.style.transform = `translateX(${SX.v}px) scale(${SS.v}, ${SS.v * (1 - st)})`;
+  }
+  function segTick(now) {
+    const dt = Math.min((now - segLast) / 1000, 1 / 30);
+    segLast = now;
+    segSprings.forEach((sp) => segStep(sp, dt));
+    segRender();
+    if (segSprings.every(segRest)) { segSprings.forEach((sp) => { sp.v = sp.t; sp.vel = 0; }); segRender(); segRaf = null; return; }
+    segRaf = requestAnimationFrame(segTick);
+  }
+  function segKick() { if (segRaf) return; segLast = performance.now(); segRaf = requestAnimationFrame(segTick); }
 
   function placeIndicator(btn, animate) {
-    const ind = els.indicator;
-    const target = { left: btn.offsetLeft, width: btn.offsetWidth };
-    if (!animate) {
-      ind.style.transition = 'none';
-      ind.style.left = target.left + 'px';
-      ind.style.width = target.width + 'px';
-      void ind.offsetWidth;
-      ind.style.transition = '';
-      return;
-    }
-    const curLeft = parseFloat(ind.style.left) || 0;
-    const curRight = curLeft + (parseFloat(ind.style.width) || 0);
-    const left = Math.min(curLeft, target.left);
-    const right = Math.max(curRight, target.left + target.width);
-
-    // Fase 1: se estira hasta cubrir origen y destino
-    clearTimeout(stretchTimer);
-    ind.classList.add('is-stretching');
-    ind.style.left = left + 'px';
-    ind.style.width = (right - left) + 'px';
-    // Fase 2: se asienta en el destino con resorte
-    stretchTimer = setTimeout(() => {
-      ind.classList.remove('is-stretching');
-      ind.style.left = target.left + 'px';
-      ind.style.width = target.width + 'px';
-    }, 170);
+    SX.t = btn.offsetLeft; SW.t = btn.offsetWidth;
+    if (!animate || !segReady) { SX.v = SX.t; SW.v = SW.t; SX.vel = SW.vel = 0; }
+    segReady = true;
+    segRender();
+    segKick();
   }
+
+  els.segmented.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.seg-btn.is-active')) { SS.t = 0.94; segKick(); }
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => els.segmented.addEventListener(ev, () => { SS.t = 1; segKick(); }));
 
   els.segmented.addEventListener('click', (e) => {
     const btn = e.target.closest('.seg-btn');
@@ -414,6 +430,7 @@
   }, { passive: true });
 
   window.addEventListener('resize', syncIndicator);
+  if (window.ResizeObserver) new ResizeObserver(syncIndicator).observe(els.segmented);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncIndicator);
 
   // ---------------------------------------------------------------------
