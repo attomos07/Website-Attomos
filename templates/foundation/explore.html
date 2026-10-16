@@ -6,8 +6,8 @@
     <title>{{.Title}} · Attomos Foundation</title>
     <meta name="description" content="{{.Description}}">
     <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=1">
-    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=1">
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=3">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=3">
 </head>
 <body data-page="explore" data-mode="{{.Mode}}">
     <div class="af-glow" aria-hidden="true"></div>
@@ -26,18 +26,13 @@
                     <input class="af-input" type="search" id="afExSearch" placeholder="Buscar por nombre o ciudad" autocomplete="off" style="padding-right:18px;padding-left:46px">
                     <svg viewBox="0 0 24 24" style="position:absolute;left:18px;width:18px;height:18px;stroke:var(--af-muted);fill:none;stroke-width:2.2;pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
                 </div>
-                <div class="af-seg" id="afExFilter" hidden>
-                    <button type="button" class="af-seg-btn is-active" data-f="all">Todos</button>
-                    <button type="button" class="af-seg-btn" data-f="gato">Gatos</button>
-                    <button type="button" class="af-seg-btn" data-f="perro">Perros</button>
-                </div>
             </div>
             <div class="af-grid" id="afExGrid"></div>
         </div>
     </main>
     <footer class="af-footer">© Attomos Foundation · <a href="/">Attomos</a> · <a href="/terms">Términos</a> · <a href="/privacy">Privacidad</a></footer>
 
-    <script src="/static/js/foundation/foundation-core.js?v=1"></script>
-    <script src="/static/js/foundation/foundation-public.js?v=1"></script>
+    <script src="/static/js/foundation/foundation-core.js?v=3"></script>
+    <script src="/static/js/foundation/foundation-public.js?v=3"></script>
 </body>
 </html>{{end}}

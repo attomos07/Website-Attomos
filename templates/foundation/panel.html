@@ -6,18 +6,20 @@
     <title>Mi panel · Attomos Foundation</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=1">
-    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=1">
-    <script>
-        // Sin sesión no hay panel (antes de pintar nada)
-        (function () { try { if (!localStorage.getItem('af_session_v1')) location.replace('/foundation/login?next=' + encodeURIComponent('/foundation/panel' + location.hash)); } catch (e) {} })();
-    </script>
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=3">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=3">
 </head>
 <body class="af-body-panel">
     <div class="af-glow" aria-hidden="true"></div>
     {{template "foundation/sidebar.html" .}}
 
     <main class="af-app" id="afApp">
+        <div class="af-loading" id="afLoading" role="status"><span class="af-spinner" aria-hidden="true"></span><span>Cargando tu panel…</span></div>
+        <div class="af-card af-alert" id="afDriveIssue" hidden>
+            <span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></span>
+            <div class="af-alert-text"><strong>Revisa tus fotos</strong><span data-text></span></div>
+            <a href="#cuenta" data-go="cuenta" class="af-btn af-btn-soft af-btn-sm">Ver</a>
+        </div>
 
         <!-- ============================== RESCATISTA ============================== -->
 
@@ -67,16 +69,15 @@
             <div class="af-cols">
                 <div class="af-stack">
                     <div class="af-card">
-                        <div class="af-upload-cover" id="pCover">
-                            <button type="button" class="af-btn af-btn-ghost af-btn-sm" data-pick="cover">
-                                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Portada
-                            </button>
-                        </div>
                         <div class="af-upload-avatar">
                             <span class="af-avatar" id="pAvatar"></span>
-                            <button type="button" class="af-btn af-btn-soft af-btn-sm" data-pick="avatar">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/></svg>Cambiar foto
-                            </button>
+                            <div class="af-upload-text">
+                                <strong>Foto de perfil</strong>
+                                <span>Se guarda en tu Google Drive. JPG, PNG o WebP.</span>
+                                <button type="button" class="af-btn af-btn-soft af-btn-sm" data-pick="avatar">
+                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/></svg>Cambiar foto
+                                </button>
+                            </div>
                         </div>
                         <input type="file" class="af-file" id="pFile" accept="image/*">
 
@@ -99,7 +100,7 @@
                             <div class="af-field">
                                 <label class="af-label" for="pCountry">País</label>
                                 <select id="pCountry" data-bind="country">
-                                    <option>México</option><option>Estados Unidos</option><option>Colombia</option><option>Argentina</option><option>Chile</option><option>Perú</option><option>España</option><option>Guatemala</option><option>Costa Rica</option><option>Ecuador</option><option>Otro</option>
+                                    <option>México</option><option>Venezuela</option>
                                 </select>
                             </div>
                             <div class="af-field is-full">
@@ -168,7 +169,7 @@
                             <div class="af-input-wrap">
                                 <span class="af-input-prefix">$</span>
                                 <input class="af-input has-prefix" id="mMin" data-bind="minCustomMonthly" data-num type="number" min="1" step="1" inputmode="decimal">
-                                <span class="af-input-suffix">USD</span>
+                                <span class="af-input-suffix" data-cur>MXN</span>
                             </div>
                         </div>
                     </div>
@@ -177,27 +178,6 @@
             </div>
         </section>
 
-        <!-- Apadrinamientos -->
-        <section class="af-view" data-view="apadrina" data-for="rescuer">
-            <header class="af-app-head">
-                <div>
-                    <h1>Apadrinamientos</h1>
-                    <p>Sube a tus peludos para que alguien los apadrine con un monto al mes.</p>
-                </div>
-                <div class="af-app-actions">
-                    <button type="button" class="af-btn af-btn-coral" data-new-animal>
-                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar peludo
-                    </button>
-                </div>
-            </header>
-            <div class="af-seg" id="animalFilter" style="margin-bottom:18px">
-                <button type="button" class="af-seg-btn is-active" data-filter="all">Todos <span class="af-count" data-c="all">0</span></button>
-                <button type="button" class="af-seg-btn" data-filter="disponible">Disponibles <span class="af-count" data-c="disponible">0</span></button>
-                <button type="button" class="af-seg-btn" data-filter="apadrinado">Apadrinados <span class="af-count" data-c="apadrinado">0</span></button>
-                <button type="button" class="af-seg-btn" data-filter="adoptado">Adoptados <span class="af-count" data-c="adoptado">0</span></button>
-            </div>
-            <div class="af-items" id="animalList"></div>
-        </section>
 
         <!-- Donación única -->
         <section class="af-view" data-view="unica" data-for="rescuer">
@@ -244,7 +224,7 @@
                             <div class="af-input-wrap">
                                 <span class="af-input-prefix">$</span>
                                 <input class="af-input has-prefix" id="oMin" data-bind="oneTime.min" data-num type="number" min="1" step="1" inputmode="decimal">
-                                <span class="af-input-suffix">USD</span>
+                                <span class="af-input-suffix" data-cur>MXN</span>
                             </div>
                         </div>
                     </div>
@@ -270,7 +250,7 @@
             <div class="af-stack">
                 <div class="af-stats" id="dStats"></div>
                 <div class="af-card">
-                    <h2 class="af-card-title" style="margin-bottom:14px"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg></span>Peludos que podrías apadrinar</h2>
+                    <h2 class="af-card-title" style="margin-bottom:14px"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>Rescatistas que puedes apoyar</h2>
                     <div class="af-grid" id="dSuggest"></div>
                 </div>
             </div>
@@ -280,13 +260,12 @@
             <header class="af-app-head">
                 <div>
                     <h1>Mis aportes</h1>
-                    <p>Tus suscripciones, apadrinamientos y donaciones.</p>
+                    <p>Tus suscripciones y donaciones.</p>
                 </div>
             </header>
             <div class="af-seg" id="pledgeFilter" style="margin-bottom:18px">
                 <button type="button" class="af-seg-btn is-active" data-filter="all">Todos</button>
                 <button type="button" class="af-seg-btn" data-filter="subscription">Suscripciones</button>
-                <button type="button" class="af-seg-btn" data-filter="sponsor">Apadrinamientos</button>
                 <button type="button" class="af-seg-btn" data-filter="one_time">Únicas</button>
             </div>
             <div class="af-pledges" id="dPledges"></div>
@@ -307,21 +286,47 @@
         <section class="af-view" data-view="cuenta">
             <header class="af-app-head">
                 <div>
-                    <h1>Cuenta</h1>
-                    <p>Tus datos de acceso.</p>
+                    <h1 data-cuenta-title>Cuenta</h1>
+                    <p data-cuenta-sub>Tus datos de acceso.</p>
                 </div>
             </header>
-            <div class="af-card" style="max-width:640px">
-                <div class="af-form-grid">
-                    <div class="af-field is-full"><label class="af-label" for="aName">Nombre</label><input class="af-input" id="aName" maxlength="60"></div>
-                    <div class="af-field is-full"><label class="af-label" for="aEmail">Correo</label><input class="af-input" id="aEmail" readonly></div>
-                    <div class="af-field is-full"><span class="af-label">Tipo de cuenta</span><span><span class="af-badge" id="aRole"></span></span></div>
+            <div class="af-stack" style="max-width:720px">
+                <!-- Cobros (rescatista) -->
+                <div class="af-card" data-only="rescuer" id="payCard">
+                    <div class="af-card-head" style="margin-bottom:12px">
+                        <div>
+                            <h2 class="af-card-title"><span class="af-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg></span>Cobros</h2>
+                            <p class="af-card-sub" data-pay-sub></p>
+                        </div>
+                        <span class="af-badge" data-pay-badge></span>
+                    </div>
+                    <div data-pay-body></div>
                 </div>
-                <div class="af-sheet-foot" style="justify-content:space-between">
-                    <button type="button" class="af-btn af-btn-danger" data-af-logout>
-                        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>Cerrar sesión
-                    </button>
-                    <button type="button" class="af-btn af-btn-primary" id="aSave">Guardar</button>
+                <!-- Google Drive (rescatista) -->
+                <div class="af-card" data-only="rescuer" id="driveCard">
+                    <div class="af-card-head" style="margin-bottom:12px">
+                        <div>
+                            <h2 class="af-card-title"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M8.5 3h7l6 10.5-3.5 6h-12L2.5 13.5Z"/><path d="m8.5 3 6 10.5M15.5 3l-6 10.5M2.5 13.5h19"/></svg></span>Fotos en Google Drive</h2>
+                            <p class="af-card-sub">Tus fotos se guardan en tu propio Drive, en la carpeta <strong>Attomos Foundation</strong>.</p>
+                        </div>
+                        <span class="af-badge" data-drive-badge></span>
+                    </div>
+                    <div data-drive-body></div>
+                </div>
+                <!-- Datos de acceso -->
+                <div class="af-card">
+                    <h2 class="af-card-title" style="margin-bottom:18px"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>Datos de acceso</h2>
+                    <div class="af-form-grid">
+                        <div class="af-field is-full"><label class="af-label" for="aName">Nombre</label><input class="af-input" id="aName" maxlength="60"></div>
+                        <div class="af-field is-full"><label class="af-label" for="aEmail">Correo</label><input class="af-input" id="aEmail" readonly></div>
+                        <div class="af-field is-full"><span class="af-label">Tipo de cuenta</span><span><span class="af-badge" id="aRole"></span></span></div>
+                    </div>
+                    <div class="af-sheet-foot" style="justify-content:space-between">
+                        <button type="button" class="af-btn af-btn-danger" data-af-logout>
+                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>Cerrar sesión
+                        </button>
+                        <button type="button" class="af-btn af-btn-primary" id="aSave">Guardar</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -353,7 +358,7 @@
                         <div class="af-input-wrap">
                             <span class="af-input-prefix">$</span>
                             <input class="af-input has-prefix" id="plAmount" type="number" min="1" step="1" inputmode="decimal" placeholder="10">
-                            <span class="af-input-suffix">USD</span>
+                            <span class="af-input-suffix" data-cur>MXN</span>
                         </div>
                     </div>
                     <div class="af-field is-full"><label class="af-label" for="plDesc">¿A qué se va el dinero?</label><textarea class="af-textarea" id="plDesc" maxlength="200" style="min-height:90px" placeholder="Ej. Alimento para un peludo durante una semana."></textarea></div>
@@ -377,52 +382,6 @@
         </form>
     </div>
 
-    <div class="af-sheet" id="animalSheet" aria-hidden="true">
-        <div class="af-sheet-backdrop" data-close></div>
-        <form class="af-sheet-card" role="dialog" aria-modal="true" aria-labelledby="animalSheetTitle" novalidate>
-            <div class="af-sheet-head">
-                <h3 id="animalSheetTitle"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg></span><span data-title>Nuevo peludo</span></h3>
-                <button type="button" class="af-icon-btn af-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-            </div>
-            <div class="af-form">
-                <label class="af-photo-pick" id="anPhotoPick">
-                    <img id="anPhotoImg" alt="" hidden>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/></svg><em id="anPhotoText" style="font-style:normal">Subir foto</em></span>
-                    <input type="file" class="af-file" id="anPhoto" accept="image/*">
-                </label>
-                <div class="af-form-grid">
-                    <div class="af-field"><label class="af-label" for="anName">Nombre</label><input class="af-input" id="anName" maxlength="30" placeholder="Ej. Bombón"></div>
-                    <div class="af-field">
-                        <label class="af-label" for="anSpecies">Especie</label>
-                        <select id="anSpecies"><option value="gato">Gato</option><option value="perro">Perro</option></select>
-                    </div>
-                    <div class="af-field">
-                        <label class="af-label" for="anSex">Sexo</label>
-                        <select id="anSex"><option value="hembra">Hembra</option><option value="macho">Macho</option></select>
-                    </div>
-                    <div class="af-field"><label class="af-label" for="anAge">Edad</label><input class="af-input" id="anAge" maxlength="20" placeholder="Ej. 2 años"></div>
-                    <div class="af-field">
-                        <label class="af-label" for="anAmount">Apadrinar cuesta</label>
-                        <div class="af-input-wrap">
-                            <span class="af-input-prefix">$</span>
-                            <input class="af-input has-prefix" id="anAmount" type="number" min="1" step="1" inputmode="decimal" placeholder="12">
-                            <span class="af-input-suffix">/mes</span>
-                        </div>
-                    </div>
-                    <div class="af-field">
-                        <label class="af-label" for="anStatus">Estado</label>
-                        <select id="anStatus"><option value="disponible">Disponible para apadrinar</option><option value="apadrinado">Ya tiene padrino</option><option value="adoptado">Adoptado</option></select>
-                    </div>
-                    <div class="af-field is-full"><label class="af-label" for="anStory">Su historia</label><textarea class="af-textarea" id="anStory" maxlength="400" style="min-height:100px" placeholder="¿Cómo llegó contigo? ¿Qué necesita?"></textarea></div>
-                </div>
-            </div>
-            <div class="af-sheet-foot">
-                <button type="button" class="af-btn af-btn-danger" data-delete hidden>Eliminar</button>
-                <span style="flex:1"></span>
-                <button type="button" class="af-btn af-btn-ghost" data-close>Cancelar</button>
-                <button type="submit" class="af-btn af-btn-coral">Guardar</button>
-            </div>
-        </form>
     </div>
 
     <div class="af-sheet" id="confirmSheet" aria-hidden="true">
@@ -440,7 +399,7 @@
 
     <div class="af-toasts" id="afToasts" aria-live="polite"></div>
 
-    <script src="/static/js/foundation/foundation-core.js?v=1"></script>
-    <script src="/static/js/foundation/foundation-panel.js?v=1"></script>
+    <script src="/static/js/foundation/foundation-core.js?v=3"></script>
+    <script src="/static/js/foundation/foundation-panel.js?v=3"></script>
 </body>
 </html>{{end}}

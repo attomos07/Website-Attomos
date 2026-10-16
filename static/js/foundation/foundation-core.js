@@ -1,8 +1,7 @@
 /* ==========================================================================
    Attomos Foundation — núcleo compartido
-   - AF.store: datos (por ahora en localStorage; cada método está pensado para
-     cambiarse por su endpoint /api/foundation/... cuando exista el backend)
-   - AF.session: sesión del usuario
+   - AF.api / AF.store: llamadas a /api/foundation/... (backend Go)
+   - AF.session: sesión del usuario (cookie httpOnly af_token)
    - Utilidades de UI estilo iOS 27: toasts, control segmentado con cápsula
      (mismos resortes que las pestañas de Mi Negocio), dropdown iOS,
      navbar público y sidebar del panel.
@@ -10,8 +9,6 @@
 (function () {
     'use strict';
 
-    const LS_KEY = 'af_db_v1';
-    const SESSION_KEY = 'af_session_v1';
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     // ------------------------------------------------------------------
@@ -19,157 +16,102 @@
     // ------------------------------------------------------------------
     const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const money = (n, cur = 'USD') => {
+    const money = (n, cur = 'MXN') => {
         const v = Number(n) || 0;
-        const s = new Intl.NumberFormat('es-MX', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(v);
-        return `$${s} ${cur}`;
+        const str = new Intl.NumberFormat('es-MX', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(v);
+        return cur ? `$${str} ${cur}` : `$${str}`;
     };
     const slugify = (s) => String(s || '')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'rescatista';
     const initials = (s) => String(s || '?').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-    /** Reduce una imagen a dataURL JPEG (para no llenar el almacenamiento). */
-    function readImage(file, max = 900, quality = 0.82) {
+    /** Reduce una imagen a JPEG (Blob) antes de subirla, para no gastar Drive. */
+    function readImage(file, max = 600, quality = 0.86) {
         return new Promise((resolve, reject) => {
-            if (!file || !file.type.startsWith('image/')) { reject(new Error('Elige una imagen (JPG, PNG o WebP)')); return; }
-            const fr = new FileReader();
-            fr.onerror = () => reject(new Error('No se pudo leer la imagen'));
-            fr.onload = () => {
-                const img = new Image();
-                img.onerror = () => reject(new Error('No se pudo abrir la imagen'));
-                img.onload = () => {
-                    const k = Math.min(1, max / Math.max(img.width, img.height));
-                    const c = document.createElement('canvas');
-                    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                    resolve(c.toDataURL('image/jpeg', quality));
-                };
-                img.src = fr.result;
+            if (!file || !/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type || 'image/jpeg')) { reject(new Error('Elige una imagen (JPG, PNG o WebP)')); return; }
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo abrir la imagen')); };
+            img.onload = () => {
+                const k = Math.min(1, max / Math.max(img.width, img.height));
+                const c = document.createElement('canvas');
+                c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+                ctx.drawImage(img, 0, 0, c.width, c.height);
+                URL.revokeObjectURL(url);
+                c.toBlob((blob) => blob ? resolve(blob) : reject(new Error('No se pudo procesar la imagen')), 'image/jpeg', quality);
             };
-            fr.readAsDataURL(file);
+            img.src = url;
         });
     }
 
     // ------------------------------------------------------------------
-    // Datos
+    // API (/api/foundation)
     // ------------------------------------------------------------------
-    function emptyRescuer(name, ownerId) {
-        return {
-            id: uid('res'),
-            ownerId,
-            slug: slugify(name),
-            name: name || '',
-            city: '',
-            country: 'México',
-            bio: '',
-            avatar: '',
-            cover: '',
-            socials: { instagram: '', facebook: '', tiktok: '', whatsapp: '' },
-            currency: 'USD',
-            plans: [],
-            allowCustomMonthly: true,
-            minCustomMonthly: 3,
-            animals: [],
-            oneTime: { enabled: true, suggested: [10, 20, 50], allowCustom: true, min: 1 },
-            published: false,
-            createdAt: Date.now(),
-        };
-    }
-
-    function demoRescuer() {
-        const r = emptyRescuer('Huellitas Hermosillo', 'demo');
-        Object.assign(r, {
-            id: 'res_demo', slug: 'huellitas-hermosillo', city: 'Hermosillo, Sonora', demo: true, published: true,
-            bio: 'Rescatamos perritos y gatitos de la calle, los esterilizamos y les buscamos un hogar. Todo lo que recibimos se va a croquetas, veterinario y medicinas.',
-            socials: { instagram: '@huellitashmo', facebook: '', tiktok: '', whatsapp: '' },
-            plans: [
-                { id: 'pl_1', name: 'Croquetas', amount: 5, description: 'Alimento para un peludo durante una semana.', perks: ['Fotos mensuales de los rescates'], featured: false },
-                { id: 'pl_2', name: 'Veterinario', amount: 15, description: 'Ayuda con vacunas y desparasitación.', perks: ['Fotos mensuales', 'Tu nombre en el muro de padrinos'], featured: true },
-                { id: 'pl_3', name: 'Ángel guardián', amount: 30, description: 'Cubre una esterilización al mes.', perks: ['Todo lo anterior', 'Videollamada con los rescatados'], featured: false },
-            ],
-            animals: [
-                { id: 'an_1', name: 'Bombón', species: 'gato', sex: 'hembra', age: '2 años', photo: '', story: 'La encontramos bajo un carro con una patita lastimada. Ya está sana y es la más cariñosa.', sponsorAmount: 12, status: 'disponible' },
-                { id: 'an_2', name: 'Chispas', species: 'perro', sex: 'macho', age: '8 meses', photo: '', story: 'Cachorro juguetón rescatado de un lote baldío. Necesita sus últimas vacunas.', sponsorAmount: 15, status: 'disponible' },
-                { id: 'an_3', name: 'Luna', species: 'perro', sex: 'hembra', age: '5 años', photo: '', story: 'Abuelita tranquila que busca alguien que le dé calor.', sponsorAmount: 10, status: 'apadrinado' },
-            ],
-        });
-        return r;
-    }
-
-    function load() {
-        let db = null;
-        try { db = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (_) { db = null; }
-        if (!db || typeof db !== 'object') db = { users: [], rescuers: [], pledges: [] };
-        db.users = db.users || []; db.rescuers = db.rescuers || []; db.pledges = db.pledges || [];
-        if (!db.rescuers.some((r) => r.demo)) db.rescuers.push(demoRescuer());
-        return db;
-    }
-    function save(db) {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(db)); return true; }
-        catch (_) { toast('No hay espacio para guardar. Usa fotos más ligeras.', 'error'); return false; }
+    async function api(path, { method = 'GET', body, form } = {}) {
+        const opts = { method, credentials: 'same-origin', headers: { Accept: 'application/json' } };
+        if (form) opts.body = form;
+        else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        let res;
+        try { res = await fetch('/api/foundation' + path, opts); }
+        catch (_) { const e = new Error('Sin conexión. Revisa tu internet e intenta de nuevo.'); e.status = 0; throw e; }
+        let data = null;
+        try { data = await res.json(); } catch (_) { data = null; }
+        if (!res.ok) {
+            const e = new Error((data && data.error) || 'Algo salió mal. Intenta de nuevo.');
+            e.status = res.status; e.code = data && data.code; e.field = data && data.field;
+            throw e;
+        }
+        return data || {};
     }
 
     const store = {
-        // TODO backend: POST /api/foundation/register
-        register({ name, email, password, role }) {
-            const db = load();
-            email = String(email || '').trim().toLowerCase();
-            if (db.users.some((u) => u.email === email)) throw new Error('Ya existe una cuenta con ese correo');
-            const user = { id: uid('usr'), name: name.trim(), email, password, role, createdAt: Date.now() };
-            if (role === 'rescuer') {
-                const r = emptyRescuer(name, user.id);
-                let base = r.slug, n = 2;
-                while (db.rescuers.some((x) => x.slug === r.slug)) r.slug = `${base}-${n++}`;
-                db.rescuers.push(r);
-                user.rescuerId = r.id;
-            }
-            db.users.push(user);
-            save(db);
-            return user;
+        register: (data) => api('/auth/register', { method: 'POST', body: data }).then((d) => d.user),
+        login: (email, password) => api('/auth/login', { method: 'POST', body: { email, password } }).then((d) => d.user),
+        updateMe: (name) => api('/auth/me', { method: 'PATCH', body: { name } }).then((d) => d.user),
+
+        rescuers: (q = '') => api('/rescuers' + (q ? '?q=' + encodeURIComponent(q) : '')).then((d) => d.rescuers || []),
+        rescuer: (slug) => api('/rescuers/' + encodeURIComponent(slug)),
+
+        myRescuer: () => api('/rescuer').then((d) => d.rescuer),
+        saveRescuer: (payload) => api('/rescuer', { method: 'PUT', body: payload }).then((d) => d.rescuer),
+        rescuerPledges: () => api('/rescuer/pledges'),
+        createPlan: (p) => api('/plans', { method: 'POST', body: p }),
+        updatePlan: (id, p) => api('/plans/' + id, { method: 'PUT', body: p }),
+        deletePlan: (id) => api('/plans/' + id, { method: 'DELETE' }),
+        /** Sube la foto de perfil al Drive de la rescatista. */
+        upload(blob) {
+            const f = new FormData();
+            f.append('file', blob, 'perfil.jpg');
+            return api('/upload', { method: 'POST', form: f });
         },
-        // TODO backend: POST /api/foundation/login
-        login(email, password) {
-            const db = load();
-            const u = db.users.find((x) => x.email === String(email || '').trim().toLowerCase());
-            if (!u || u.password !== password) throw new Error('Correo o contraseña incorrectos');
-            return u;
-        },
-        user(id) { return load().users.find((u) => u.id === id) || null; },
-        // TODO backend: GET /api/foundation/rescuers (solo publicados)
-        rescuers({ onlyPublished = true } = {}) {
-            return load().rescuers.filter((r) => !onlyPublished || r.published);
-        },
-        rescuerBySlug(slug) { return load().rescuers.find((r) => r.slug === slug) || null; },
-        rescuerById(id) { return load().rescuers.find((r) => r.id === id) || null; },
-        // TODO backend: PUT /api/foundation/rescuers/:id
-        saveRescuer(rescuer) {
-            const db = load();
-            const i = db.rescuers.findIndex((r) => r.id === rescuer.id);
-            if (i < 0) throw new Error('No se encontró tu perfil de rescatista');
-            if (db.rescuers.some((r) => r.slug === rescuer.slug && r.id !== rescuer.id)) throw new Error('Esa dirección ya la usa otro rescatista');
-            db.rescuers[i] = rescuer;
-            return save(db);
-        },
-        // Intención de aporte (todavía sin cobro). TODO backend: POST /api/foundation/pledges
-        addPledge(pledge) {
-            const db = load();
-            const p = Object.assign({ id: uid('pg'), createdAt: Date.now(), status: 'pendiente_pago' }, pledge);
-            db.pledges.push(p);
-            save(db);
-            return p;
-        },
-        pledgesByDonor(userId) { return load().pledges.filter((p) => p.donorId === userId); },
-        pledgesByRescuer(rescuerId) { return load().pledges.filter((p) => p.rescuerId === rescuerId); },
+
+        driveConnect: () => api('/google/connect').then((d) => d.authUrl),
+        driveDisconnect: () => api('/google', { method: 'DELETE' }),
+        stripeConnect: () => api('/stripe/connect', { method: 'POST' }).then((d) => d.url),
+        stripeStatus: () => api('/stripe/status').then((d) => d.stripe),
+        stripeDashboard: () => api('/stripe/dashboard', { method: 'POST' }).then((d) => d.url),
+
+        checkout: (payload) => api('/checkout', { method: 'POST', body: payload }),
+        confirm: (sessionId) => api('/checkout/confirm', { method: 'POST', body: { sessionId } }).then((d) => d.pledge),
+        myPledges: () => api('/pledges').then((d) => d.pledges || []),
+        cancelPledge: (id) => api('/pledges/' + id + '/cancel', { method: 'POST' }).then((d) => d.pledge),
     };
 
+    let mePromise = null;
     const session = {
-        get() {
-            const id = localStorage.getItem(SESSION_KEY);
-            return id ? store.user(id) : null;
+        /** Usuario de la sesión o null (se pide una vez por página). */
+        get(force) {
+            if (!mePromise || force) mePromise = api('/auth/me').then((d) => d.user || null).catch(() => null);
+            return mePromise;
         },
-        set(user) { localStorage.setItem(SESSION_KEY, user.id); },
-        clear() { localStorage.removeItem(SESSION_KEY); },
+        async logout(to = '/foundation') {
+            try { await api('/auth/logout', { method: 'POST' }); } catch (_) { /* igual salimos */ }
+            mePromise = Promise.resolve(null);
+            location.href = to;
+        },
     };
 
     // ------------------------------------------------------------------
@@ -411,10 +353,10 @@
     // ------------------------------------------------------------------
     // Navbar público
     // ------------------------------------------------------------------
-    function initNavbar() {
+    async function initNavbar() {
         const nav = document.getElementById('afNavbar');
         if (!nav) return;
-        const user = session.get();
+        const user = await session.get();
         const guest = nav.querySelector('[data-af-guest]');
         const logged = nav.querySelector('[data-af-user]');
         if (user) {
@@ -474,14 +416,14 @@
         onScroll();
 
         nav.querySelectorAll('[data-af-logout]').forEach((b) => b.addEventListener('click', (e) => {
-            e.preventDefault(); session.clear(); location.href = '/foundation';
+            e.preventDefault(); session.logout('/foundation');
         }));
     }
 
     // ------------------------------------------------------------------
     // Sidebar del panel
     // ------------------------------------------------------------------
-    function initSidebar({ role, onNavigate } = {}) {
+    function initSidebar({ role, user, onNavigate } = {}) {
         const side = document.getElementById('afSidebar');
         if (!side) return null;
         side.querySelectorAll('[data-role]').forEach((el) => {
@@ -507,9 +449,8 @@
             onNavigate && onNavigate(a.dataset.view);
         }));
         side.querySelectorAll('[data-af-logout]').forEach((b) => b.addEventListener('click', (e) => {
-            e.preventDefault(); session.clear(); location.href = '/foundation/login';
+            e.preventDefault(); onNavigate && onNavigate('__logout');
         }));
-        const user = session.get();
         if (user) {
             const av = side.querySelector('.af-side-avatar');
             if (av) av.textContent = initials(user.name);
@@ -538,66 +479,66 @@
     // Piezas de UI compartidas (inicio, listas, panel)
     // ------------------------------------------------------------------
     const PIN = '<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
-    function petArt(species) {
-        return species === 'perro'
-            ? '<svg class="af-pet-ph" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true"><path d="M14 14c-4 0-7 6-7 12 0 4 2 6 4 6 3 0 5-4 6-8l1-6c0-2-2-4-4-4Zm36 0c4 0 7 6 7 12 0 4-2 6-4 6-3 0-5-4-6-8l-1-6c0-2 2-4 4-4ZM32 16c-9 0-15 7-15 17 0 11 6 19 15 19s15-8 15-19c0-10-6-17-15-17Zm-6 15a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Zm12 0a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Zm-6 8c2.5 0 4 1.2 4 2.6 0 1.6-2 3.4-4 3.4s-4-1.8-4-3.4c0-1.4 1.5-2.6 4-2.6Z" fill-opacity=".9"/></svg>'
-            : '<svg class="af-pet-ph" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true"><path d="M12 8l12 12c2.5-1 5.2-1.5 8-1.5s5.5.5 8 1.5L52 8v22c0 13-9 22-20 22S12 43 12 30V8Zm13 23a2.5 3 0 1 0 0 6 2.5 3 0 0 0 0-6Zm14 0a2.5 3 0 1 0 0 6 2.5 3 0 0 0 0-6Zm-7 9-3 2.5c0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5L32 40Z" fill-opacity=".9"/></svg>';
-    }
     function avatarHtml(r, cls = '') {
         return `<span class="af-avatar ${cls}">${r.avatar ? `<img src="${esc(r.avatar)}" alt="">` : esc(initials(r.name))}</span>`;
     }
-    function rescuerCard(r, i = 0) {
-        const avail = (r.animals || []).filter((a) => a.status === 'disponible').length;
+    function rescuerCard(r, i = 0, href) {
         const tags = [];
-        if ((r.plans || []).length || r.allowCustomMonthly) tags.push('<span class="af-badge">Suscripción</span>');
-        if (avail) tags.push(`<span class="af-badge is-coral">${avail} por apadrinar</span>`);
-        if (r.oneTime && r.oneTime.enabled) tags.push('<span class="af-badge is-green">Donación única</span>');
-        return `<a class="af-rcard af-in" style="--i:${i}" href="/foundation/r/${encodeURIComponent(r.slug)}">
-            <div class="af-rcard-cover"${r.cover ? ` style="background-image:url('${esc(r.cover)}')"` : ''}>${avatarHtml(r)}</div>
-            <div class="af-rcard-body">
-                <h3>${esc(r.name || 'Rescatista')}</h3>
-                ${r.city ? `<span class="af-rcard-city">${PIN}${esc(r.city)}</span>` : ''}
-                <p class="af-rcard-bio">${esc(r.bio || 'Rescatista independiente.')}</p>
+        if ((r.plans || []).length || r.allowCustomMonthly) tags.push('<span class="af-badge">Suscripción mensual</span>');
+        if (r.oneTime && r.oneTime.enabled) tags.push('<span class="af-badge is-coral">Donación única</span>');
+        const from = (r.plans || []).length ? Math.min(...r.plans.map((p) => p.amount)) : (r.allowCustomMonthly ? r.minCustomMonthly : 0);
+        return `<a class="af-rcard af-in" style="--i:${i}" href="${href || `/foundation/r/${encodeURIComponent(r.slug)}`}">
+            <div class="af-rcard-head">
+                ${avatarHtml(r)}
+                <div class="af-rcard-title">
+                    <h3>${esc(r.name || 'Rescatista')}</h3>
+                    ${r.city || r.country ? `<span class="af-rcard-city">${PIN}${esc([r.city, r.country].filter(Boolean).join(' · '))}</span>` : ''}
+                </div>
+            </div>
+            <p class="af-rcard-bio">${esc(r.bio || 'Rescatista independiente de gatos y perros.')}</p>
+            <div class="af-rcard-foot">
                 <div class="af-rcard-tags">${tags.join('')}</div>
+                ${from ? `<span class="af-rcard-from">Desde <strong>${money(from, r.currency || 'MXN')}</strong>/mes</span>` : ''}
             </div>
         </a>`;
     }
-    const STATUS = { disponible: ['Disponible', 'is-coral'], apadrinado: ['Con padrino', 'is-green'], adoptado: ['Adoptado', 'is-gray'] };
-    function animalCard(a, r, i = 0, { href = true, action = null } = {}) {
-        const st = STATUS[a.status] || STATUS.disponible;
-        const link = `/foundation/r/${encodeURIComponent(r.slug)}?tab=apadrina&animal=${encodeURIComponent(a.id)}`;
-        const cta = a.status === 'disponible'
-            ? `<a class="af-btn af-btn-coral af-btn-sm" href="${link}">Apadrinar</a>`
-            : `<a class="af-btn af-btn-ghost af-btn-sm" href="${link}">Ver</a>`;
-        return `<article class="af-acard af-in" style="--i:${i}" data-animal="${esc(a.id)}">
-            <div class="af-acard-photo">${a.photo ? `<img src="${esc(a.photo)}" alt="${esc(a.name)}">` : petArt(a.species)}<span class="af-badge ${st[1]}"><span class="af-dot"></span>${st[0]}</span></div>
-            <div class="af-acard-body">
-                <h3>${esc(a.name)}</h3>
-                <span class="af-acard-meta">${a.species === 'perro' ? 'Perro' : 'Gato'} · ${a.sex === 'macho' ? 'Macho' : 'Hembra'}${a.age ? ' · ' + esc(a.age) : ''}${href ? ` · ${esc(r.name)}` : ''}</span>
-                <p class="af-acard-story">${esc(a.story || '')}</p>
-                <div class="af-acard-foot"><span class="af-price">${money(a.sponsorAmount, '')}<small>USD/mes</small></span>${action != null ? action : (href ? cta : '')}</div>
-            </div>
-        </article>`;
+    const PLEDGE_TYPES = { subscription: 'Suscripción mensual', one_time: 'Donación única' };
+    const fmtDate = (v) => {
+        if (!v) return '';
+        const d = new Date(typeof v === 'number' ? v : Date.parse(v));
+        return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    function pledgeStatus(p) {
+        switch (p.status) {
+            case 'active': return ['Activa', 'is-green'];
+            case 'canceling': return [p.currentPeriodEnd ? `Termina el ${fmtDate(p.currentPeriodEnd)}` : 'Se cancela', 'is-gray'];
+            case 'past_due': return ['Pago rechazado', 'is-coral'];
+            case 'canceled': return ['Cancelada', 'is-gray'];
+            case 'paid': return ['Pagada', 'is-green'];
+            default: return ['Pendiente', 'is-gray'];
+        }
     }
-    const PLEDGE_TYPES = { subscription: 'Suscripción mensual', sponsor: 'Apadrinamiento', one_time: 'Donación única' };
     function pledgeRow(p, i = 0, { who = 'rescuer' } = {}) {
-        const ic = p.type === 'sponsor'
-            ? '<span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg></span>'
-            : p.type === 'subscription'
-                ? '<span class="af-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg></span>'
-                : '<span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>';
-        const what = p.type === 'sponsor' ? `Apadrinas a ${p.animalName}` : p.type === 'subscription' ? (p.planName ? `Plan ${p.planName}` : 'Monto libre') : 'Donación única';
-        const title = who === 'donor' ? `${p.rescuerName} · ${what}` : `${p.donorName || 'Donador'} · ${what.replace('Apadrinas a', 'Apadrina a')}`;
-        const date = new Date(p.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+        const ic = p.type === 'subscription'
+            ? '<span class="af-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg></span>'
+            : '<span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>';
+        const what = p.type === 'subscription' ? (p.planName ? `Plan ${p.planName}` : 'Monto libre') : 'Donación única';
+        const title = who === 'donor' ? `${p.rescuerName} · ${what}` : `${p.donorName || 'Donador'} · ${what}`;
+        const st = pledgeStatus(p);
+        const monthly = p.type !== 'one_time';
+        const canCancel = who === 'donor' && monthly && (p.status === 'active' || p.status === 'past_due');
+        const meta = [PLEDGE_TYPES[p.type] || '', fmtDate(p.createdAt)];
+        if (monthly && p.paymentsCount > 1) meta.push(`${p.paymentsCount} pagos`);
         return `<div class="af-pledge" style="--i:${i}">${ic}
-            <div class="af-pledge-text"><strong>${esc(title)}</strong><span>${PLEDGE_TYPES[p.type] || ''} · ${date} · Pago pendiente</span></div>
-            <span class="af-price">${money(p.amount, '')}<small>${p.type === 'one_time' ? 'USD' : 'USD/mes'}</small></span>
+            <div class="af-pledge-text"><strong>${who === 'donor' && p.rescuerSlug ? `<a href="/foundation/r/${encodeURIComponent(p.rescuerSlug)}" style="color:inherit;text-decoration:none">${esc(title)}</a>` : esc(title)}</strong><span>${esc(meta.filter(Boolean).join(' · '))} · <span class="af-badge ${st[1]}" style="padding:2px 8px;font-size:11px">${esc(st[0])}</span></span></div>
+            <span class="af-price">${money(p.amount, '')}<small>${esc(p.currency || 'MXN')}${monthly ? '/mes' : ''}</small></span>
+            ${canCancel ? `<button type="button" class="af-icon-btn is-danger" data-cancel-pledge="${esc(p.id)}" aria-label="Cancelar" title="Cancelar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>` : ''}
         </div>`;
     }
 
     window.AF = {
-        store, session, toast, segmented, iosSelect, initNavbar, initSidebar, readImage, uid, esc, money, slugify, initials,
-        ui: { petArt, avatarHtml, rescuerCard, animalCard, pledgeRow, PLEDGE_TYPES },
+        api, store, session, toast, segmented, iosSelect, initNavbar, initSidebar, readImage, uid, esc, money, slugify, initials, fmtDate,
+        ui: { avatarHtml, rescuerCard, pledgeRow, pledgeStatus, PLEDGE_TYPES },
     };
     document.addEventListener('DOMContentLoaded', initNavbar);
 })();

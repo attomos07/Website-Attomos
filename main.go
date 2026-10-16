@@ -59,6 +59,12 @@ func main() {
 		&models.PasswordReset{},         // ← Códigos/tokens de recuperación de contraseña
 		&handlers.Flow{},                // ← Flujos de automatización (gubernamental)
 		&handlers.FlowOption{},          // ← Opciones de respuesta de cada flujo
+		&models.FoundationUser{},        // ← Foundation: donadores y rescatistas
+		&models.FoundationRescuer{},     // ← Foundation: perfil público de la rescatista
+		&models.FoundationPlan{},        // ← Foundation: planes de suscripción mensual
+		&models.FoundationPledge{},      // ← Foundation: aportes (suscripción mensual o única)
+		&models.FoundationPayment{},     // ← Foundation: cada cobro exitoso
+		&models.FoundationFile{},        // ← Foundation: foto de perfil en el Drive de la rescatista
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -235,45 +241,10 @@ func main() {
 	log.Println("✅ Attomos Finance configurado en: /finance")
 
 	// ============================================
-	// 🐾 ATTOMOS FOUNDATION — Donaciones a rescatistas independientes (público)
+	// 🐾 ATTOMOS FOUNDATION — Donaciones a rescatistas independientes
+	// Páginas, API (/api/foundation), webhook de Stripe Connect y fotos en Drive
 	// ============================================
-	router.GET("/foundation", func(c *gin.Context) {
-		c.HTML(200, "foundation/home.html", nil)
-	})
-	router.GET("/foundation/login", func(c *gin.Context) {
-		c.HTML(200, "foundation/login.html", nil)
-	})
-	router.GET("/foundation/register", func(c *gin.Context) {
-		c.HTML(200, "foundation/register.html", nil)
-	})
-	router.GET("/foundation/panel", func(c *gin.Context) {
-		c.HTML(200, "foundation/panel.html", nil)
-	})
-	router.GET("/foundation/rescatistas", func(c *gin.Context) {
-		c.HTML(200, "foundation/explore.html", gin.H{
-			"Mode":        "rescatistas",
-			"Title":       "Rescatistas",
-			"Description": "Suscríbete cada mes a un rescatista independiente.",
-		})
-	})
-	router.GET("/foundation/apadrina", func(c *gin.Context) {
-		c.HTML(200, "foundation/explore.html", gin.H{
-			"Mode":        "apadrina",
-			"Title":       "Apadrina a un peludo",
-			"Description": "Apadrina a un gato o perro rescatado con un monto al mes.",
-		})
-	})
-	router.GET("/foundation/donar", func(c *gin.Context) {
-		c.HTML(200, "foundation/explore.html", gin.H{
-			"Mode":        "donar",
-			"Title":       "Donación única",
-			"Description": "Dona una sola vez a un rescatista independiente.",
-		})
-	})
-	router.GET("/foundation/r/:slug", func(c *gin.Context) {
-		c.HTML(200, "foundation/rescuer.html", gin.H{"Slug": c.Param("slug")})
-	})
-	log.Println("✅ Attomos Foundation configurado en: /foundation")
+	handlers.RegisterFoundationRoutes(router)
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)

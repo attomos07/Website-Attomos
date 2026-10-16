@@ -37,7 +37,7 @@
 .af-hero-bubble.b2 { top: 46%; right: -6%; animation-delay: -1.3s; }
 .af-hero-bubble.b3 { bottom: 4%; left: 6%; animation-delay: -2.6s; }
 
-.af-ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.af-ways { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; max-width: 860px; }
 .af-way { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 28px; border-radius: 32px; background: #fff; box-shadow: var(--af-ring), var(--af-shadow); text-decoration: none; transition: transform 0.55s var(--af-spring), box-shadow 0.3s ease; }
 .af-way:hover { transform: translateY(-6px); box-shadow: var(--af-ring), var(--af-shadow-lift); }
 .af-way:active { transform: scale(0.97); }
@@ -54,36 +54,10 @@
 .af-cta-band p { margin: 0; opacity: 0.9; }
 .af-cta-band .af-btn-ghost { color: var(--af-cyan-strong); }
 
-/* Tarjetas de rescatista */
 .af-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
-.af-rcard { display: flex; flex-direction: column; overflow: hidden; border-radius: 32px; background: #fff; box-shadow: var(--af-ring), var(--af-shadow); text-decoration: none; transition: transform 0.55s var(--af-spring), box-shadow 0.3s ease; }
-.af-rcard:hover { transform: translateY(-6px); box-shadow: var(--af-ring), var(--af-shadow-lift); }
-.af-rcard:active { transform: scale(0.97); }
-.af-rcard-cover { position: relative; height: 120px; background: linear-gradient(130deg, #a5f3fc, #22d3ee 55%, #0891b2); background-size: cover; background-position: center; }
-.af-rcard-cover .af-avatar { position: absolute; left: 22px; bottom: -28px; width: 64px; height: 64px; font-size: 20px; box-shadow: 0 0 0 4px #fff, 0 10px 20px -10px rgba(15, 23, 42, 0.4); }
-.af-rcard-body { display: flex; flex-direction: column; gap: 6px; padding: 38px 22px 22px; flex: 1; }
-.af-rcard-body h3 { margin: 0; font-size: 18px; letter-spacing: -0.02em; }
-.af-rcard-city { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--af-muted); }
-.af-rcard-city svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
-.af-rcard-bio { margin: 4px 0 0; color: var(--af-ink-2); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.af-rcard-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 12px; }
 
-/* Tarjetas de peludo */
-.af-acard { display: flex; flex-direction: column; overflow: hidden; border-radius: 32px; background: #fff; box-shadow: var(--af-ring), var(--af-shadow); transition: transform 0.55s var(--af-spring), box-shadow 0.3s ease; }
-.af-acard:hover { transform: translateY(-6px); box-shadow: var(--af-ring), 0 28px 50px -24px rgba(240, 79, 95, 0.4); }
-.af-acard-photo { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(140deg, #ffe4e1, #ffd0cc 50%, #fecaca); display: grid; place-items: center; overflow: hidden; }
-.af-acard-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--af-smooth); }
-.af-acard:hover .af-acard-photo img { transform: scale(1.05); }
-.af-acard-photo .af-pet-ph { width: 46%; height: 46%; color: rgba(240, 79, 95, 0.55); }
-.af-acard-photo .af-badge { position: absolute; top: 14px; left: 14px; background: rgba(255, 255, 255, 0.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.af-acard-body { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px 20px; flex: 1; }
-.af-acard-body h3 { margin: 0; font-size: 19px; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
-.af-acard-meta { font-size: 13px; color: var(--af-muted); }
-.af-acard-story { margin: 2px 0 0; font-size: 14px; color: var(--af-ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.af-acard-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 14px; }
 .af-price { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
 .af-price small { font-size: 13px; font-weight: 600; color: var(--af-muted); }
-.af-acard.is-picked { box-shadow: 0 0 0 2.5px var(--af-coral), 0 28px 50px -24px rgba(240, 79, 95, 0.5); }
 
 /* --------------------------------------------------------------------------
    Login / registro
@@ -122,16 +96,9 @@
 /* --------------------------------------------------------------------------
    Página pública del rescatista
    -------------------------------------------------------------------------- */
-.af-profile-cover { position: relative; height: 260px; border-radius: 36px; background: linear-gradient(130deg, #a5f3fc, #22d3ee 50%, #0891b2); background-size: cover; background-position: center; box-shadow: 0 30px 60px -36px rgba(6, 182, 212, 0.8); }
-.af-profile-head { display: flex; align-items: flex-start; gap: 22px; padding: 0 30px; margin-top: -56px; position: relative; flex-wrap: wrap; }
-.af-profile-head .af-avatar { width: 120px; height: 120px; font-size: 36px; box-shadow: 0 0 0 6px #fff, 0 18px 30px -16px rgba(15, 23, 42, 0.45); }
-.af-profile-name { flex: 1; min-width: 220px; padding-top: 66px; }
-.af-profile-head > div:last-child { padding: 70px 0 0 !important; }
-.af-profile-name h1 { margin: 0; font-size: clamp(26px, 3.6vw, 38px); letter-spacing: -0.03em; }
 .af-profile-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; color: var(--af-muted); font-size: 14px; }
 .af-profile-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .af-profile-meta svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
-.af-profile-bio { margin: 22px 30px 0; max-width: 760px; font-size: 16px; color: var(--af-ink-2); }
 .af-profile-body { display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-top: 30px; align-items: start; }
 .af-profile-tabs { margin-bottom: 20px; }
 .af-profile-body > * { min-width: 0; }
@@ -254,11 +221,6 @@
 .af-check-item svg.af-go { width: 16px; height: 16px; stroke: var(--af-faint); fill: none; stroke-width: 2.4; }
 
 /* Subida de imagen */
-.af-upload-cover { position: relative; height: 170px; border-radius: 30px; overflow: hidden; background: linear-gradient(130deg, #a5f3fc, #22d3ee 55%, #0891b2); background-size: cover; background-position: center; }
-.af-upload-cover .af-btn { position: absolute; right: 14px; bottom: 14px; }
-.af-upload-avatar { display: flex; align-items: center; gap: 16px; margin-top: -46px; padding-left: 22px; position: relative; }
-.af-upload-avatar .af-avatar { width: 96px; height: 96px; font-size: 30px; box-shadow: 0 0 0 5px #fff, 0 16px 26px -14px rgba(15, 23, 42, 0.45); }
-.af-upload-avatar .af-btn { margin-top: 44px; }
 .af-file { display: none; }
 
 /* Lista de planes en el panel */
@@ -268,9 +230,6 @@
 .af-item p { margin: 0; font-size: 13.5px; color: var(--af-muted); }
 .af-item-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
 .af-item-actions .af-btn { flex: 1; }
-.af-item-thumb { width: 100%; aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden; background: linear-gradient(140deg, #ffe4e1, #fecaca); display: grid; place-items: center; }
-.af-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.af-item-thumb .af-pet-ph { width: 40%; height: 40%; color: rgba(240, 79, 95, 0.5); }
 .af-add-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 180px; border: 0; border-radius: 28px; background: transparent; box-shadow: inset 0 0 0 2px rgba(6, 182, 212, 0.3); color: var(--af-cyan-strong); font-weight: 700; cursor: pointer; transition: background 0.2s ease, transform 0.5s var(--af-spring), box-shadow 0.2s ease; }
 .af-add-tile:hover { background: var(--af-cyan-soft); box-shadow: inset 0 0 0 2px var(--af-cyan); }
 .af-add-tile:active { transform: scale(0.95); }
@@ -283,18 +242,11 @@
 .af-perk .af-input { min-height: 44px; padding: 10px 16px; }
 
 /* Foto en modal de peludo */
-.af-photo-pick { position: relative; display: grid; place-items: center; height: 180px; border-radius: 28px; overflow: hidden; background: linear-gradient(140deg, #ffe4e1, #fecaca); cursor: pointer; transition: transform 0.5s var(--af-spring); }
-.af-photo-pick:active { transform: scale(0.97); }
-.af-photo-pick img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.af-photo-pick span { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); font-weight: 650; font-size: 14px; color: var(--af-coral-strong); }
-.af-photo-pick svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
 
 /* Vista previa (mini página pública) */
 .af-preview { position: sticky; top: 26px; }
 .af-preview-frame { overflow: hidden; border-radius: 30px; background: #fff; box-shadow: 0 0 0 6px #fff, 0 0 0 7px rgba(6, 182, 212, 0.18), 0 30px 60px -30px rgba(15, 23, 42, 0.4); }
-.af-preview-cover { height: 90px; background: linear-gradient(130deg, #a5f3fc, #22d3ee 55%, #0891b2); background-size: cover; background-position: center; }
 .af-preview-body { padding: 0 18px 18px; }
-.af-preview-body .af-avatar { width: 60px; height: 60px; margin-top: -30px; font-size: 19px; box-shadow: 0 0 0 4px #fff; }
 .af-preview-body h4 { margin: 8px 0 2px; font-size: 17px; }
 .af-preview-body p { margin: 0; font-size: 13px; color: var(--af-muted); }
 .af-preview-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
@@ -349,12 +301,6 @@
   .af-auth-side p { font-size: 15px; }
   .af-hero-bubble.b1 { left: 0; }
   .af-hero-bubble.b2 { right: 0; }
-  .af-profile-cover { height: 170px; border-radius: 30px; }
-  .af-profile-head { padding: 0 12px; margin-top: -48px; gap: 10px; flex-direction: column; align-items: flex-start; }
-  .af-profile-name { min-width: 0; width: 100%; padding-top: 0; }
-  .af-profile-head > div:last-child { padding: 0 !important; }
-  .af-profile-head .af-avatar { width: 96px; height: 96px; font-size: 30px; }
-  .af-profile-bio { margin: 16px 12px 0; font-size: 15px; }
   .af-profile-tabs { width: 100%; }
   .af-tab-long { display: none; }
   .af-tab-short { display: inline; }
@@ -367,4 +313,80 @@
   .af-cta-band { padding: 26px; border-radius: 30px; }
   .af-save-bar { padding-left: 18px; }
   .af-save-bar span { font-size: 13px; }
+}
+
+/* --------------------------------------------------------------------------
+   Backend: carga, avisos, conexiones
+   -------------------------------------------------------------------------- */
+@keyframes afSpin { to { transform: rotate(360deg); } }
+.af-spinner { display: inline-block; width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid rgba(6, 182, 212, 0.2); border-top-color: var(--af-cyan); animation: afSpin 0.8s linear infinite; }
+.af-loading { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 50vh; color: var(--af-muted); font-weight: 600; }
+.af-app.is-ready .af-loading { display: none; }
+.af-alert { display: flex; align-items: center; gap: 14px; padding: 14px 16px 14px 14px; margin-bottom: 20px; border-radius: 999px; box-shadow: 0 0 0 1.5px rgba(240, 79, 95, 0.25), 0 14px 30px -20px rgba(240, 79, 95, 0.6); animation: afRise 0.6s var(--af-spring) backwards; }
+.af-alert-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.af-alert-text span { font-size: 13.5px; color: var(--af-muted); }
+.af-connect { display: flex; flex-direction: column; gap: 14px; }
+.af-connect-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.af-connect-steps li { display: flex; gap: 10px; font-size: 14px; color: var(--af-ink-2); }
+.af-connect-steps li::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; background: var(--af-cyan-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230891b2' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 12px no-repeat; }
+.af-connect-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.af-connect-note { margin: 0; font-size: 13px; color: var(--af-muted); }
+.af-btn.is-busy { pointer-events: none; opacity: 0.75; }
+.af-btn.is-busy::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: afSpin 0.7s linear infinite; }
+.af-pledge .af-icon-btn { flex: none; }
+.af-notice { display: flex; gap: 12px; align-items: center; padding: 14px 18px; border-radius: 26px; background: var(--af-cyan-soft); color: var(--af-ink-2); font-size: 14px; }
+.af-notice.is-coral { background: var(--af-coral-soft); }
+@media (max-width: 640px) {
+  .af-alert { border-radius: 28px; flex-wrap: wrap; }
+}
+@media (max-width: 640px) {
+  .af-pledge { border-radius: 28px; align-items: flex-start; padding: 14px; }
+  .af-pledge-text strong { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .af-pledge .af-price { font-size: 15px; }
+}
+
+
+/* Tarjetas de rescatista (sin portada) */
+.af-rcard { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 32px; background: #fff; box-shadow: var(--af-ring), var(--af-shadow); text-decoration: none; transition: transform 0.55s var(--af-spring), box-shadow 0.3s ease; }
+.af-rcard:hover { transform: translateY(-6px); box-shadow: var(--af-ring), var(--af-shadow-lift); }
+.af-rcard:active { transform: scale(0.97); }
+.af-rcard-head { display: flex; align-items: center; gap: 14px; }
+.af-rcard-head .af-avatar { width: 64px; height: 64px; font-size: 20px; box-shadow: 0 0 0 4px #fff, 0 10px 22px -12px rgba(6, 182, 212, 0.7); }
+.af-rcard-title { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.af-rcard-title h3 { margin: 0; font-size: 18px; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-rcard-city { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--af-muted); }
+.af-rcard-city svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex: none; }
+.af-rcard-bio { margin: 0; color: var(--af-ink-2); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.af-rcard-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+.af-rcard-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.af-rcard-from { font-size: 13px; color: var(--af-muted); white-space: nowrap; }
+.af-rcard-from strong { color: var(--af-ink); }
+
+/* Encabezado del rescatista (sin portada) */
+.af-profile-hero { display: flex; align-items: flex-start; gap: 24px; padding: 30px; border-radius: 36px; background: linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(255, 255, 255, 0) 55%), linear-gradient(315deg, rgba(255, 107, 107, 0.1), rgba(255, 255, 255, 0) 50%), #fff; box-shadow: var(--af-ring), var(--af-shadow); }
+.af-profile-hero .af-avatar { width: 112px; height: 112px; font-size: 34px; box-shadow: 0 0 0 6px #fff, 0 18px 30px -16px rgba(6, 182, 212, 0.6); }
+.af-profile-name { flex: 1; min-width: 0; padding-top: 6px; }
+.af-profile-name h1 { margin: 0; font-size: clamp(26px, 3.6vw, 38px); letter-spacing: -0.03em; }
+.af-profile-bio { margin: 14px 0 0; max-width: 720px; font-size: 16px; color: var(--af-ink-2); }
+.af-profile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Foto de perfil en el panel */
+.af-upload-avatar { display: flex; align-items: center; gap: 18px; }
+.af-upload-avatar .af-avatar { position: relative; width: 96px; height: 96px; font-size: 30px; box-shadow: 0 0 0 5px #fff, 0 16px 26px -14px rgba(6, 182, 212, 0.6); }
+.af-upload-avatar .af-avatar.is-busy::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.55); }
+.af-upload-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.af-upload-text span { font-size: 13px; color: var(--af-muted); margin-bottom: 6px; }
+
+.af-preview-body { padding-top: 18px; }
+.af-preview-body .af-avatar { width: 60px; height: 60px; font-size: 19px; box-shadow: 0 0 0 4px #fff; }
+
+@media (max-width: 640px) {
+  .af-profile-hero { flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 24px 18px; border-radius: 30px; }
+  .af-profile-hero .af-avatar { width: 96px; height: 96px; font-size: 30px; }
+  .af-profile-name { padding-top: 0; }
+  .af-profile-meta { justify-content: center; }
+  .af-profile-bio { font-size: 15px; }
+  .af-profile-actions { justify-content: center; }
+  .af-upload-avatar { flex-direction: column; text-align: center; }
+  .af-upload-text { align-items: center; }
 }

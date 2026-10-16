@@ -20,9 +20,6 @@
         <a href="#planes" class="af-side-link" data-view="planes" data-role="rescuer">
             <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Suscripciones</span>
         </a>
-        <a href="#apadrina" class="af-side-link" data-view="apadrina" data-role="rescuer">
-            <svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg><span>Apadrinamientos</span>
-        </a>
         <a href="#unica" class="af-side-link" data-view="unica" data-role="rescuer">
             <svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Donación única</span>
         </a>
@@ -37,7 +34,10 @@
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>Explorar</span>
         </a>
         <!-- Ambos -->
-        <a href="#cuenta" class="af-side-link" data-view="cuenta" data-role-any>
+        <a href="#cuenta" class="af-side-link" data-view="cuenta" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Cobros y cuenta</span>
+        </a>
+        <a href="#cuenta" class="af-side-link" data-view="cuenta" data-role="donor">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg><span>Cuenta</span>
         </a>
     </nav>
@@ -58,11 +58,11 @@
     <a href="#resumen" class="af-tab-link" data-view="resumen" data-role="rescuer"><svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span></a>
     <a href="#perfil" class="af-tab-link" data-view="perfil" data-role="rescuer"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Perfil</span></a>
     <a href="#planes" class="af-tab-link" data-view="planes" data-role="rescuer"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Planes</span></a>
-    <a href="#apadrina" class="af-tab-link" data-view="apadrina" data-role="rescuer"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg><span>Peludos</span></a>
     <a href="#unica" class="af-tab-link" data-view="unica" data-role="rescuer"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Única</span></a>
     <a href="#resumen" class="af-tab-link" data-view="resumen" data-role="donor"><svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span></a>
     <a href="#aportes" class="af-tab-link" data-view="aportes" data-role="donor"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Aportes</span></a>
     <a href="#explorar" class="af-tab-link" data-view="explorar" data-role="donor"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>Explorar</span></a>
-    <a href="#cuenta" class="af-tab-link" data-view="cuenta"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Cuenta</span></a>
+    <a href="#cuenta" class="af-tab-link" data-view="cuenta" data-role="rescuer"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Cobros</span></a>
+    <a href="#cuenta" class="af-tab-link" data-view="cuenta" data-role="donor"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Cuenta</span></a>
 </nav>
 {{end}}

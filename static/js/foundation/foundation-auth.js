@@ -8,8 +8,7 @@
     const safeNext = next && next.startsWith('/foundation') ? next : null;
 
     // Si ya hay sesión, no tiene caso mostrar el formulario
-    const current = session.get();
-    if (current) { location.replace(safeNext || '/foundation/panel'); return; }
+    session.get().then((u) => { if (u) location.replace(safeNext || '/foundation/panel'); });
 
     // Mostrar / ocultar contraseña
     document.querySelectorAll('[data-af-eye]').forEach((b) => b.addEventListener('click', () => {
@@ -45,7 +44,7 @@
     const loginForm = document.getElementById('afLoginForm');
     if (loginForm) {
         const err = document.getElementById('afLoginError');
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             err.classList.remove('is-show');
             const email = loginForm.email.value.trim();
@@ -55,8 +54,7 @@
             const btn = loginForm.querySelector('[type=submit]');
             busy(btn, true);
             try {
-                const user = store.login(email, pass);
-                session.set(user);
+                const user = await store.login(email, pass);
                 toast(`¡Hola, ${user.name.split(' ')[0]}!`);
                 setTimeout(() => location.assign(safeNext || '/foundation/panel'), 450);
             } catch (ex) {
@@ -136,7 +134,7 @@
             meter.classList.toggle('is-weak', s > 0 && s < 2);
         });
 
-        regForm.addEventListener('submit', (e) => {
+        regForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             err.classList.remove('is-show');
             const name = nameInput.value.trim();
@@ -149,14 +147,13 @@
             const btn = document.getElementById('afRegisterSubmit');
             busy(btn, true);
             try {
-                const user = store.register({ name, email, password: pass, role });
-                session.set(user);
+                await store.register({ name, email, password: pass, role });
                 toast(role === 'rescuer' ? '¡Listo! Ahora completa tu perfil' : '¡Bienvenido a la manada!');
                 const dest = safeNext || (role === 'rescuer' ? '/foundation/panel#perfil' : '/foundation/panel');
                 setTimeout(() => location.assign(dest), 500);
             } catch (ex) {
                 busy(btn, false);
-                showError(err, ex.message, regForm.email);
+                showError(err, ex.message, ex.status === 409 ? regForm.email : null);
             }
         });
     }
