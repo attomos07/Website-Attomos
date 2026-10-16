@@ -1,0 +1,446 @@
+{{define "foundation/panel.html"}}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mi panel · Attomos Foundation</title>
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=1">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=1">
+    <script>
+        // Sin sesión no hay panel (antes de pintar nada)
+        (function () { try { if (!localStorage.getItem('af_session_v1')) location.replace('/foundation/login?next=' + encodeURIComponent('/foundation/panel' + location.hash)); } catch (e) {} })();
+    </script>
+</head>
+<body class="af-body-panel">
+    <div class="af-glow" aria-hidden="true"></div>
+    {{template "foundation/sidebar.html" .}}
+
+    <main class="af-app" id="afApp">
+
+        <!-- ============================== RESCATISTA ============================== -->
+
+        <!-- Resumen -->
+        <section class="af-view" data-view="resumen" data-for="rescuer">
+            <header class="af-app-head">
+                <div>
+                    <h1 data-hello>Hola</h1>
+                    <p>Así va tu página de donaciones.</p>
+                </div>
+                <div class="af-app-actions">
+                    <a class="af-btn af-btn-ghost" data-public-link target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Ver mi página
+                    </a>
+                </div>
+            </header>
+            <div class="af-stack">
+                <div class="af-stats" id="rStats"></div>
+                <div class="af-cols">
+                    <div class="af-card">
+                        <div class="af-card-head">
+                            <div>
+                                <h2 class="af-card-title"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Arma tu página</h2>
+                                <p class="af-card-sub" id="rProgressText"></p>
+                            </div>
+                            <span class="af-badge" id="rPublishedBadge"></span>
+                        </div>
+                        <div class="af-progress"><i id="rProgressBar" style="width:0"></i></div>
+                        <div class="af-checklist" id="rChecklist"></div>
+                    </div>
+                    <div class="af-card">
+                        <h2 class="af-card-title" style="margin-bottom:14px"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>Aportes recientes</h2>
+                        <div class="af-pledges" id="rRecent"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Perfil -->
+        <section class="af-view" data-view="perfil" data-for="rescuer">
+            <header class="af-app-head">
+                <div>
+                    <h1>Mi perfil</h1>
+                    <p>Esto es lo que ven los donadores en tu página.</p>
+                </div>
+            </header>
+            <div class="af-cols">
+                <div class="af-stack">
+                    <div class="af-card">
+                        <div class="af-upload-cover" id="pCover">
+                            <button type="button" class="af-btn af-btn-ghost af-btn-sm" data-pick="cover">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Portada
+                            </button>
+                        </div>
+                        <div class="af-upload-avatar">
+                            <span class="af-avatar" id="pAvatar"></span>
+                            <button type="button" class="af-btn af-btn-soft af-btn-sm" data-pick="avatar">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/></svg>Cambiar foto
+                            </button>
+                        </div>
+                        <input type="file" class="af-file" id="pFile" accept="image/*">
+
+                        <div class="af-form-grid" style="margin-top:22px">
+                            <div class="af-field">
+                                <label class="af-label" for="pName">Nombre del rescate</label>
+                                <input class="af-input" id="pName" data-bind="name" maxlength="60" placeholder="Ej. Huellitas Hermosillo">
+                            </div>
+                            <div class="af-field">
+                                <label class="af-label" for="pSlug">Dirección de tu página</label>
+                                <div class="af-input-wrap">
+                                    <span class="af-input-prefix">/r/</span>
+                                    <input class="af-input has-prefix" id="pSlug" data-bind="slug" maxlength="48" placeholder="tu-rescate" style="padding-left:44px">
+                                </div>
+                            </div>
+                            <div class="af-field">
+                                <label class="af-label" for="pCity">Ciudad</label>
+                                <input class="af-input" id="pCity" data-bind="city" maxlength="60" placeholder="Ej. Hermosillo, Sonora">
+                            </div>
+                            <div class="af-field">
+                                <label class="af-label" for="pCountry">País</label>
+                                <select id="pCountry" data-bind="country">
+                                    <option>México</option><option>Estados Unidos</option><option>Colombia</option><option>Argentina</option><option>Chile</option><option>Perú</option><option>España</option><option>Guatemala</option><option>Costa Rica</option><option>Ecuador</option><option>Otro</option>
+                                </select>
+                            </div>
+                            <div class="af-field is-full">
+                                <label class="af-label" for="pBio">Cuéntales tu historia</label>
+                                <textarea class="af-textarea" id="pBio" data-bind="bio" maxlength="600" placeholder="¿Desde cuándo rescatas? ¿A qué se va el dinero?"></textarea>
+                                <span class="af-hint"><span id="pBioCount">0</span>/600</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="af-card">
+                        <h2 class="af-card-title" style="margin-bottom:18px"><span class="af-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>Redes y contacto</h2>
+                        <div class="af-form-grid">
+                            <div class="af-field"><label class="af-label" for="sIg">Instagram</label><input class="af-input" id="sIg" data-bind="socials.instagram" placeholder="@turescate"></div>
+                            <div class="af-field"><label class="af-label" for="sFb">Facebook</label><input class="af-input" id="sFb" data-bind="socials.facebook" placeholder="facebook.com/turescate"></div>
+                            <div class="af-field"><label class="af-label" for="sTt">TikTok</label><input class="af-input" id="sTt" data-bind="socials.tiktok" placeholder="@turescate"></div>
+                            <div class="af-field"><label class="af-label" for="sWa">WhatsApp</label><input class="af-input" id="sWa" data-bind="socials.whatsapp" inputmode="tel" placeholder="+52 662 000 0000"></div>
+                        </div>
+                    </div>
+
+                    <div class="af-card">
+                        <div class="af-row" style="padding:0">
+                            <div class="af-row-text">
+                                <strong>Publicar mi página</strong>
+                                <span>Aparecerás en la lista de rescatistas y cualquiera podrá apoyarte.</span>
+                            </div>
+                            <label class="af-switch"><input type="checkbox" id="pPublished" data-bind="published"><span></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="af-preview" data-preview></aside>
+            </div>
+        </section>
+
+        <!-- Planes de suscripción -->
+        <section class="af-view" data-view="planes" data-for="rescuer">
+            <header class="af-app-head">
+                <div>
+                    <h1>Suscripciones mensuales</h1>
+                    <p>Crea los planes a los que se pueden suscribir tus donadores cada mes.</p>
+                </div>
+                <div class="af-app-actions">
+                    <button type="button" class="af-btn af-btn-primary" data-new-plan>
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nuevo plan
+                    </button>
+                </div>
+            </header>
+            <div class="af-cols">
+                <div class="af-stack">
+                    <div class="af-items" id="planList"></div>
+                    <div class="af-card">
+                        <h2 class="af-card-title" style="margin-bottom:6px"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></span>Monto libre</h2>
+                        <div class="af-row">
+                            <div class="af-row-text">
+                                <strong>Dejar que el donador elija su monto</strong>
+                                <span>Además de tus planes, podrán escribir cuánto quieren dar al mes.</span>
+                            </div>
+                            <label class="af-switch"><input type="checkbox" id="mAllow" data-bind="allowCustomMonthly"><span></span></label>
+                        </div>
+                        <div class="af-row" id="mMinRow">
+                            <div class="af-row-text">
+                                <strong>Monto mínimo al mes</strong>
+                                <span>Lo menos que se puede donar con monto libre.</span>
+                            </div>
+                            <div class="af-input-wrap">
+                                <span class="af-input-prefix">$</span>
+                                <input class="af-input has-prefix" id="mMin" data-bind="minCustomMonthly" data-num type="number" min="1" step="1" inputmode="decimal">
+                                <span class="af-input-suffix">USD</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <aside class="af-preview" data-preview></aside>
+            </div>
+        </section>
+
+        <!-- Apadrinamientos -->
+        <section class="af-view" data-view="apadrina" data-for="rescuer">
+            <header class="af-app-head">
+                <div>
+                    <h1>Apadrinamientos</h1>
+                    <p>Sube a tus peludos para que alguien los apadrine con un monto al mes.</p>
+                </div>
+                <div class="af-app-actions">
+                    <button type="button" class="af-btn af-btn-coral" data-new-animal>
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar peludo
+                    </button>
+                </div>
+            </header>
+            <div class="af-seg" id="animalFilter" style="margin-bottom:18px">
+                <button type="button" class="af-seg-btn is-active" data-filter="all">Todos <span class="af-count" data-c="all">0</span></button>
+                <button type="button" class="af-seg-btn" data-filter="disponible">Disponibles <span class="af-count" data-c="disponible">0</span></button>
+                <button type="button" class="af-seg-btn" data-filter="apadrinado">Apadrinados <span class="af-count" data-c="apadrinado">0</span></button>
+                <button type="button" class="af-seg-btn" data-filter="adoptado">Adoptados <span class="af-count" data-c="adoptado">0</span></button>
+            </div>
+            <div class="af-items" id="animalList"></div>
+        </section>
+
+        <!-- Donación única -->
+        <section class="af-view" data-view="unica" data-for="rescuer">
+            <header class="af-app-head">
+                <div>
+                    <h1>Donación única</h1>
+                    <p>Para quien quiere ayudar una sola vez, sin suscribirse.</p>
+                </div>
+            </header>
+            <div class="af-cols">
+                <div class="af-card">
+                    <div class="af-row" style="padding-top:0">
+                        <div class="af-row-text">
+                            <strong>Aceptar donaciones únicas</strong>
+                            <span>Muestra la pestaña "Donación única" en tu página.</span>
+                        </div>
+                        <label class="af-switch"><input type="checkbox" id="oEnabled" data-bind="oneTime.enabled"><span></span></label>
+                    </div>
+                    <div id="oBody">
+                        <div class="af-row" style="flex-direction:column;align-items:stretch">
+                            <div class="af-row-text">
+                                <strong>Montos sugeridos</strong>
+                                <span>Aparecen como botones rápidos. Máximo 6.</span>
+                            </div>
+                            <div class="af-chips" id="oChips"></div>
+                            <div class="af-input-wrap" style="max-width:260px">
+                                <span class="af-input-prefix">$</span>
+                                <input class="af-input has-prefix" id="oNew" type="number" min="1" step="1" inputmode="decimal" placeholder="Agregar monto">
+                                <button type="button" class="af-icon-btn" id="oAdd" aria-label="Agregar monto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="af-row">
+                            <div class="af-row-text">
+                                <strong>Permitir otro monto</strong>
+                                <span>El donador puede escribir la cantidad que quiera.</span>
+                            </div>
+                            <label class="af-switch"><input type="checkbox" id="oCustom" data-bind="oneTime.allowCustom"><span></span></label>
+                        </div>
+                        <div class="af-row">
+                            <div class="af-row-text">
+                                <strong>Monto mínimo</strong>
+                                <span>Lo menos que se puede donar de una vez.</span>
+                            </div>
+                            <div class="af-input-wrap">
+                                <span class="af-input-prefix">$</span>
+                                <input class="af-input has-prefix" id="oMin" data-bind="oneTime.min" data-num type="number" min="1" step="1" inputmode="decimal">
+                                <span class="af-input-suffix">USD</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <aside class="af-preview" data-preview></aside>
+            </div>
+        </section>
+
+        <!-- ============================== DONADOR ============================== -->
+
+        <section class="af-view" data-view="resumen" data-for="donor">
+            <header class="af-app-head">
+                <div>
+                    <h1 data-hello>Hola</h1>
+                    <p>Gracias por apoyar a quienes rescatan.</p>
+                </div>
+                <div class="af-app-actions">
+                    <a href="/foundation/rescatistas" class="af-btn af-btn-primary">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Buscar rescatistas
+                    </a>
+                </div>
+            </header>
+            <div class="af-stack">
+                <div class="af-stats" id="dStats"></div>
+                <div class="af-card">
+                    <h2 class="af-card-title" style="margin-bottom:14px"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg></span>Peludos que podrías apadrinar</h2>
+                    <div class="af-grid" id="dSuggest"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="af-view" data-view="aportes" data-for="donor">
+            <header class="af-app-head">
+                <div>
+                    <h1>Mis aportes</h1>
+                    <p>Tus suscripciones, apadrinamientos y donaciones.</p>
+                </div>
+            </header>
+            <div class="af-seg" id="pledgeFilter" style="margin-bottom:18px">
+                <button type="button" class="af-seg-btn is-active" data-filter="all">Todos</button>
+                <button type="button" class="af-seg-btn" data-filter="subscription">Suscripciones</button>
+                <button type="button" class="af-seg-btn" data-filter="sponsor">Apadrinamientos</button>
+                <button type="button" class="af-seg-btn" data-filter="one_time">Únicas</button>
+            </div>
+            <div class="af-pledges" id="dPledges"></div>
+        </section>
+
+        <section class="af-view" data-view="explorar" data-for="donor">
+            <header class="af-app-head">
+                <div>
+                    <h1>Explorar</h1>
+                    <p>Rescatistas que puedes apoyar hoy.</p>
+                </div>
+            </header>
+            <div class="af-grid" id="dExplore"></div>
+        </section>
+
+        <!-- ============================== AMBOS ============================== -->
+
+        <section class="af-view" data-view="cuenta">
+            <header class="af-app-head">
+                <div>
+                    <h1>Cuenta</h1>
+                    <p>Tus datos de acceso.</p>
+                </div>
+            </header>
+            <div class="af-card" style="max-width:640px">
+                <div class="af-form-grid">
+                    <div class="af-field is-full"><label class="af-label" for="aName">Nombre</label><input class="af-input" id="aName" maxlength="60"></div>
+                    <div class="af-field is-full"><label class="af-label" for="aEmail">Correo</label><input class="af-input" id="aEmail" readonly></div>
+                    <div class="af-field is-full"><span class="af-label">Tipo de cuenta</span><span><span class="af-badge" id="aRole"></span></span></div>
+                </div>
+                <div class="af-sheet-foot" style="justify-content:space-between">
+                    <button type="button" class="af-btn af-btn-danger" data-af-logout>
+                        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>Cerrar sesión
+                    </button>
+                    <button type="button" class="af-btn af-btn-primary" id="aSave">Guardar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barra de guardar (aparece al editar) -->
+        <div class="af-save-bar" id="afSaveBar" role="status">
+            <span>Tienes cambios sin guardar</span>
+            <div style="display:flex;gap:6px">
+                <button type="button" class="af-btn af-btn-ghost af-btn-sm" id="afDiscard">Descartar</button>
+                <button type="button" class="af-btn af-btn-primary af-btn-sm" id="afSave">Guardar</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================== HOJAS ============================== -->
+
+    <div class="af-sheet" id="planSheet" aria-hidden="true">
+        <div class="af-sheet-backdrop" data-close></div>
+        <form class="af-sheet-card" role="dialog" aria-modal="true" aria-labelledby="planSheetTitle" novalidate>
+            <div class="af-sheet-head">
+                <h3 id="planSheetTitle"><span class="af-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg></span><span data-title>Nuevo plan</span></h3>
+                <button type="button" class="af-icon-btn af-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="af-form">
+                <div class="af-form-grid">
+                    <div class="af-field"><label class="af-label" for="plName">Nombre del plan</label><input class="af-input" id="plName" maxlength="40" placeholder="Ej. Croquetas"></div>
+                    <div class="af-field">
+                        <label class="af-label" for="plAmount">Monto al mes</label>
+                        <div class="af-input-wrap">
+                            <span class="af-input-prefix">$</span>
+                            <input class="af-input has-prefix" id="plAmount" type="number" min="1" step="1" inputmode="decimal" placeholder="10">
+                            <span class="af-input-suffix">USD</span>
+                        </div>
+                    </div>
+                    <div class="af-field is-full"><label class="af-label" for="plDesc">¿A qué se va el dinero?</label><textarea class="af-textarea" id="plDesc" maxlength="200" style="min-height:90px" placeholder="Ej. Alimento para un peludo durante una semana."></textarea></div>
+                    <div class="af-field is-full">
+                        <span class="af-label">Lo que recibe el donador</span>
+                        <div class="af-perks" id="plPerks"></div>
+                        <button type="button" class="af-btn af-btn-soft af-btn-sm" id="plAddPerk" style="align-self:flex-start"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar beneficio</button>
+                    </div>
+                </div>
+                <div class="af-row" style="padding-bottom:0">
+                    <div class="af-row-text"><strong>Destacar este plan</strong><span>Se marca como "Popular" en tu página.</span></div>
+                    <label class="af-switch"><input type="checkbox" id="plFeatured"><span></span></label>
+                </div>
+            </div>
+            <div class="af-sheet-foot">
+                <button type="button" class="af-btn af-btn-danger" data-delete hidden>Eliminar</button>
+                <span style="flex:1"></span>
+                <button type="button" class="af-btn af-btn-ghost" data-close>Cancelar</button>
+                <button type="submit" class="af-btn af-btn-primary">Guardar plan</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="af-sheet" id="animalSheet" aria-hidden="true">
+        <div class="af-sheet-backdrop" data-close></div>
+        <form class="af-sheet-card" role="dialog" aria-modal="true" aria-labelledby="animalSheetTitle" novalidate>
+            <div class="af-sheet-head">
+                <h3 id="animalSheetTitle"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg></span><span data-title>Nuevo peludo</span></h3>
+                <button type="button" class="af-icon-btn af-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="af-form">
+                <label class="af-photo-pick" id="anPhotoPick">
+                    <img id="anPhotoImg" alt="" hidden>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/></svg><em id="anPhotoText" style="font-style:normal">Subir foto</em></span>
+                    <input type="file" class="af-file" id="anPhoto" accept="image/*">
+                </label>
+                <div class="af-form-grid">
+                    <div class="af-field"><label class="af-label" for="anName">Nombre</label><input class="af-input" id="anName" maxlength="30" placeholder="Ej. Bombón"></div>
+                    <div class="af-field">
+                        <label class="af-label" for="anSpecies">Especie</label>
+                        <select id="anSpecies"><option value="gato">Gato</option><option value="perro">Perro</option></select>
+                    </div>
+                    <div class="af-field">
+                        <label class="af-label" for="anSex">Sexo</label>
+                        <select id="anSex"><option value="hembra">Hembra</option><option value="macho">Macho</option></select>
+                    </div>
+                    <div class="af-field"><label class="af-label" for="anAge">Edad</label><input class="af-input" id="anAge" maxlength="20" placeholder="Ej. 2 años"></div>
+                    <div class="af-field">
+                        <label class="af-label" for="anAmount">Apadrinar cuesta</label>
+                        <div class="af-input-wrap">
+                            <span class="af-input-prefix">$</span>
+                            <input class="af-input has-prefix" id="anAmount" type="number" min="1" step="1" inputmode="decimal" placeholder="12">
+                            <span class="af-input-suffix">/mes</span>
+                        </div>
+                    </div>
+                    <div class="af-field">
+                        <label class="af-label" for="anStatus">Estado</label>
+                        <select id="anStatus"><option value="disponible">Disponible para apadrinar</option><option value="apadrinado">Ya tiene padrino</option><option value="adoptado">Adoptado</option></select>
+                    </div>
+                    <div class="af-field is-full"><label class="af-label" for="anStory">Su historia</label><textarea class="af-textarea" id="anStory" maxlength="400" style="min-height:100px" placeholder="¿Cómo llegó contigo? ¿Qué necesita?"></textarea></div>
+                </div>
+            </div>
+            <div class="af-sheet-foot">
+                <button type="button" class="af-btn af-btn-danger" data-delete hidden>Eliminar</button>
+                <span style="flex:1"></span>
+                <button type="button" class="af-btn af-btn-ghost" data-close>Cancelar</button>
+                <button type="submit" class="af-btn af-btn-coral">Guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="af-sheet" id="confirmSheet" aria-hidden="true">
+        <div class="af-sheet-backdrop" data-close></div>
+        <div class="af-sheet-card" role="alertdialog" aria-modal="true" style="width:min(400px,100%);text-align:center">
+            <span class="af-ic" style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(150deg,#fb7185,#e11d48)"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></span>
+            <h3 style="margin:0 0 6px" data-title>¿Eliminar?</h3>
+            <p style="margin:0;color:var(--af-muted)" data-text>Esta acción no se puede deshacer.</p>
+            <div class="af-sheet-foot" style="justify-content:center">
+                <button type="button" class="af-btn af-btn-ghost" data-close>Cancelar</button>
+                <button type="button" class="af-btn af-btn-danger" data-ok>Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="af-toasts" id="afToasts" aria-live="polite"></div>
+
+    <script src="/static/js/foundation/foundation-core.js?v=1"></script>
+    <script src="/static/js/foundation/foundation-panel.js?v=1"></script>
+</body>
+</html>{{end}}

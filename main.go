@@ -138,6 +138,7 @@ func main() {
 		"templates/comy/*.html",
 		"templates/agency/*.html",
 		"templates/flows/*.html",
+		"templates/foundation/*.html",
 	}
 	router.LoadHTMLFiles(getTemplateFiles(templates...)...)
 
@@ -232,6 +233,47 @@ func main() {
 		c.HTML(200, "finance.html", nil)
 	})
 	log.Println("✅ Attomos Finance configurado en: /finance")
+
+	// ============================================
+	// 🐾 ATTOMOS FOUNDATION — Donaciones a rescatistas independientes (público)
+	// ============================================
+	router.GET("/foundation", func(c *gin.Context) {
+		c.HTML(200, "foundation/home.html", nil)
+	})
+	router.GET("/foundation/login", func(c *gin.Context) {
+		c.HTML(200, "foundation/login.html", nil)
+	})
+	router.GET("/foundation/register", func(c *gin.Context) {
+		c.HTML(200, "foundation/register.html", nil)
+	})
+	router.GET("/foundation/panel", func(c *gin.Context) {
+		c.HTML(200, "foundation/panel.html", nil)
+	})
+	router.GET("/foundation/rescatistas", func(c *gin.Context) {
+		c.HTML(200, "foundation/explore.html", gin.H{
+			"Mode":        "rescatistas",
+			"Title":       "Rescatistas",
+			"Description": "Suscríbete cada mes a un rescatista independiente.",
+		})
+	})
+	router.GET("/foundation/apadrina", func(c *gin.Context) {
+		c.HTML(200, "foundation/explore.html", gin.H{
+			"Mode":        "apadrina",
+			"Title":       "Apadrina a un peludo",
+			"Description": "Apadrina a un gato o perro rescatado con un monto al mes.",
+		})
+	})
+	router.GET("/foundation/donar", func(c *gin.Context) {
+		c.HTML(200, "foundation/explore.html", gin.H{
+			"Mode":        "donar",
+			"Title":       "Donación única",
+			"Description": "Dona una sola vez a un rescatista independiente.",
+		})
+	})
+	router.GET("/foundation/r/:slug", func(c *gin.Context) {
+		c.HTML(200, "foundation/rescuer.html", gin.H{"Slug": c.Param("slug")})
+	})
+	log.Println("✅ Attomos Foundation configurado en: /foundation")
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)

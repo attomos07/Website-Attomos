@@ -1,0 +1,68 @@
+{{define "foundation/sidebar.html"}}
+<!-- Sidebar del panel (escritorio) — foundation-core.js deja solo los
+     elementos del rol de la sesión (data-role="rescuer" | "donor") -->
+<aside class="af-sidebar" id="afSidebar" aria-label="Panel">
+    <a href="/foundation" class="af-side-brand" aria-label="Attomos Foundation">
+        <span class="af-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none"><path d="M16 27.5s-10.5-6.3-10.5-14A6 6 0 0 1 16 9.6a6 6 0 0 1 10.5 3.9c0 7.7-10.5 14-10.5 14Z" fill="#fff"/><circle cx="12.6" cy="15.2" r="1.45" fill="#0891b2"/><circle cx="16" cy="13.6" r="1.45" fill="#0891b2"/><circle cx="19.4" cy="15.2" r="1.45" fill="#0891b2"/><path d="M13.4 19.6c0-1.6 1.2-2.8 2.6-2.8s2.6 1.2 2.6 2.8c0 1.1-1.2 1.6-2.6 1.6s-2.6-.5-2.6-1.6Z" fill="#0891b2"/></svg>
+        </span>
+        <span class="af-side-brand-text"><strong>Attomos</strong><br>Foundation</span>
+    </a>
+
+    <nav class="af-side-list">
+        <!-- Rescatista -->
+        <a href="#resumen" class="af-side-link" data-view="resumen" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span>
+        </a>
+        <a href="#perfil" class="af-side-link" data-view="perfil" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Mi perfil</span>
+        </a>
+        <a href="#planes" class="af-side-link" data-view="planes" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Suscripciones</span>
+        </a>
+        <a href="#apadrina" class="af-side-link" data-view="apadrina" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg><span>Apadrinamientos</span>
+        </a>
+        <a href="#unica" class="af-side-link" data-view="unica" data-role="rescuer">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Donación única</span>
+        </a>
+        <!-- Donador -->
+        <a href="#resumen" class="af-side-link" data-view="resumen" data-role="donor">
+            <svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span>
+        </a>
+        <a href="#aportes" class="af-side-link" data-view="aportes" data-role="donor">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Mis aportes</span>
+        </a>
+        <a href="#explorar" class="af-side-link" data-view="explorar" data-role="donor">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>Explorar</span>
+        </a>
+        <!-- Ambos -->
+        <a href="#cuenta" class="af-side-link" data-view="cuenta" data-role-any>
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg><span>Cuenta</span>
+        </a>
+    </nav>
+
+    <div class="af-side-foot">
+        <div class="af-side-me">
+            <span class="af-side-avatar" aria-hidden="true"></span>
+            <span class="af-side-me-text"><span class="af-side-name"></span><span class="af-side-role"></span></span>
+        </div>
+        <button type="button" class="af-side-logout" data-af-logout aria-label="Cerrar sesión">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+        </button>
+    </div>
+</aside>
+
+<!-- Barra inferior (celular) -->
+<nav class="af-tabbar" id="afTabbar" aria-label="Panel">
+    <a href="#resumen" class="af-tab-link" data-view="resumen" data-role="rescuer"><svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span></a>
+    <a href="#perfil" class="af-tab-link" data-view="perfil" data-role="rescuer"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Perfil</span></a>
+    <a href="#planes" class="af-tab-link" data-view="planes" data-role="rescuer"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Planes</span></a>
+    <a href="#apadrina" class="af-tab-link" data-view="apadrina" data-role="rescuer"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg><span>Peludos</span></a>
+    <a href="#unica" class="af-tab-link" data-view="unica" data-role="rescuer"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Única</span></a>
+    <a href="#resumen" class="af-tab-link" data-view="resumen" data-role="donor"><svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg><span>Resumen</span></a>
+    <a href="#aportes" class="af-tab-link" data-view="aportes" data-role="donor"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg><span>Aportes</span></a>
+    <a href="#explorar" class="af-tab-link" data-view="explorar" data-role="donor"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span>Explorar</span></a>
+    <a href="#cuenta" class="af-tab-link" data-view="cuenta"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Cuenta</span></a>
+</nav>
+{{end}}

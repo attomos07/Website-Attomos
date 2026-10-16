@@ -1,0 +1,37 @@
+{{define "foundation/navbar.html"}}
+<!-- Navbar público de Attomos Foundation -->
+<header class="af-navbar" id="afNavbar">
+    <div class="af-nav-pill">
+        <a href="/foundation" class="af-brand" aria-label="Attomos Foundation, inicio">
+            <span class="af-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none"><path d="M16 27.5s-10.5-6.3-10.5-14A6 6 0 0 1 16 9.6a6 6 0 0 1 10.5 3.9c0 7.7-10.5 14-10.5 14Z" fill="#fff"/><circle cx="12.6" cy="15.2" r="1.45" fill="#0891b2"/><circle cx="16" cy="13.6" r="1.45" fill="#0891b2"/><circle cx="19.4" cy="15.2" r="1.45" fill="#0891b2"/><path d="M13.4 19.6c0-1.6 1.2-2.8 2.6-2.8s2.6 1.2 2.6 2.8c0 1.1-1.2 1.6-2.6 1.6s-2.6-.5-2.6-1.6Z" fill="#0891b2"/></svg>
+            </span>
+            <span class="af-brand-text"><strong>Attomos</strong> Foundation</span>
+        </a>
+
+        <nav class="af-nav-links" aria-label="Principal">
+            <a href="/foundation" class="af-nav-link">Inicio</a>
+            <a href="/foundation/rescatistas" class="af-nav-link">Rescatistas</a>
+            <a href="/foundation/apadrina" class="af-nav-link">Apadrina</a>
+            <a href="/foundation/donar" class="af-nav-link">Donar</a>
+        </nav>
+
+        <div class="af-nav-actions">
+            <div class="af-nav-guest" data-af-guest>
+                <a href="/foundation/login" class="af-btn af-btn-ghost af-btn-sm">Iniciar sesión</a>
+                <a href="/foundation/register" class="af-btn af-btn-primary af-btn-sm">Crear cuenta</a>
+            </div>
+            <div class="af-nav-user" data-af-user hidden>
+                <a href="/foundation/panel" class="af-nav-me">
+                    <span class="af-nav-avatar" aria-hidden="true"></span>
+                    <span class="af-nav-username"></span>
+                </a>
+                <a href="#" class="af-btn af-btn-ghost af-btn-sm af-nav-logout" data-af-logout>Salir</a>
+            </div>
+            <button type="button" class="af-burger" aria-label="Menú" aria-expanded="false">
+                <span></span><span></span>
+            </button>
+        </div>
+    </div>
+</header>
+{{end}}

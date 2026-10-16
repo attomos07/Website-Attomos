@@ -1,0 +1,27 @@
+{{define "foundation/rescuer.html"}}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Rescatista · Attomos Foundation</title>
+    <meta name="description" content="Apoya a este rescatista con una suscripción mensual, apadrinando a un peludo o con una donación única.">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=1">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=1">
+</head>
+<body data-page="rescuer" data-slug="{{.Slug}}">
+    <div class="af-glow" aria-hidden="true"></div>
+    {{template "foundation/navbar.html" .}}
+
+    <main class="af-page">
+        <div class="af-wrap" id="afRescuer">
+            <!-- Lo llena foundation-public.js -->
+        </div>
+    </main>
+    <footer class="af-footer">© Attomos Foundation · <a href="/">Attomos</a> · <a href="/terms">Términos</a> · <a href="/privacy">Privacidad</a></footer>
+
+    <div class="af-toasts" id="afToasts" aria-live="polite"></div>
+    <script src="/static/js/foundation/foundation-core.js?v=1"></script>
+    <script src="/static/js/foundation/foundation-public.js?v=1"></script>
+</body>
+</html>{{end}}

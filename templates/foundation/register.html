@@ -1,0 +1,74 @@
+{{define "foundation/register.html"}}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Crear cuenta · Attomos Foundation</title>
+    <meta name="description" content="Crea tu cuenta en Attomos Foundation como donador o como rescatista independiente.">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=1">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=1">
+</head>
+<body class="af-body-auth">
+    <div class="af-glow" aria-hidden="true"></div>
+    {{template "foundation/navbar.html" .}}
+
+    <main class="af-auth">
+        <section class="af-auth-side af-in">
+            <span class="af-eyebrow"><span class="af-dot-ic"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>Únete a la manada</span>
+            <h1 id="afRegTitle">Ayuda a quienes rescatan todos los días.</h1>
+            <p id="afRegLead">Como donador puedes suscribirte cada mes, apadrinar a un peludo o hacer una donación única.</p>
+            <ul class="af-auth-list">
+                <li class="af-in" style="--i:2"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Registro gratis, en menos de un minuto</li>
+                <li class="af-in" style="--i:3"><span class="af-ic is-coral"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg></span>El dinero llega directo a la rescatista</li>
+                <li class="af-in" style="--i:4"><span class="af-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg></span>Cancela tu suscripción cuando quieras</li>
+            </ul>
+        </section>
+
+        <section class="af-auth-card af-in" style="--i:1">
+            <h2>Crear cuenta</h2>
+            <p>¿Cómo quieres participar?</p>
+            <form class="af-form" id="afRegisterForm" novalidate>
+                <div class="af-seg af-role-seg" id="afRoleSeg" role="tablist" aria-label="Tipo de cuenta">
+                    <button type="button" class="af-seg-btn is-active" data-role="donor" role="tab" aria-selected="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11Z"/></svg>Quiero donar
+                    </button>
+                    <button type="button" class="af-seg-btn" data-role="rescuer" role="tab" aria-selected="false">
+                        <svg viewBox="0 0 24 24"><circle cx="5.5" cy="10" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M8 17.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.7-1.8 2.5-4 2.5s-4-.8-4-2.5Z"/></svg>Soy rescatista
+                    </button>
+                </div>
+                <p class="af-role-note" id="afRoleNote">Apoya a rescatistas con suscripciones, apadrinamientos o donaciones únicas.</p>
+                <div class="af-form-error" id="afRegisterError" role="alert"></div>
+                <div class="af-field">
+                    <label class="af-label" for="regName" id="regNameLabel">Tu nombre</label>
+                    <input class="af-input" type="text" id="regName" name="name" autocomplete="name" placeholder="Nombre y apellido" required>
+                </div>
+                <div class="af-field">
+                    <label class="af-label" for="regEmail">Correo</label>
+                    <input class="af-input" type="email" id="regEmail" name="email" autocomplete="email" placeholder="tu@correo.com" required>
+                </div>
+                <div class="af-field">
+                    <label class="af-label" for="regPassword">Contraseña</label>
+                    <div class="af-input-wrap">
+                        <input class="af-input" type="password" id="regPassword" name="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required minlength="8">
+                        <button type="button" class="af-icon-btn" data-af-eye aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    </div>
+                    <div class="af-strength" id="afStrength" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                </div>
+                <label class="af-check">
+                    <input type="checkbox" id="regTerms" required>
+                    <span>Acepto los <a href="/terms" target="_blank" rel="noopener">términos</a> y el <a href="/privacy" target="_blank" rel="noopener">aviso de privacidad</a>.</span>
+                </label>
+                <button type="submit" class="af-btn af-btn-primary af-btn-lg af-btn-block" id="afRegisterSubmit">
+                    Crear cuenta
+                    <svg class="af-go" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+            </form>
+            <p class="af-auth-alt">¿Ya tienes cuenta? <a href="/foundation/login">Iniciar sesión</a></p>
+        </section>
+    </main>
+
+    <script src="/static/js/foundation/foundation-core.js?v=1"></script>
+    <script src="/static/js/foundation/foundation-auth.js?v=1"></script>
+</body>
+</html>{{end}}
