@@ -563,10 +563,10 @@ function setActiveNavLink() {
         }
     });
 
-    // Micronichos: "Más" queda activo dentro de /academy y /finance
+    // Micronichos: "Más" queda activo dentro de /academy, /finance y /foundation
     const moreTrigger = document.getElementById('navMoreTrigger');
     if (moreTrigger) {
-        const inMore = ['/academy', '/finance'].some(p => currentPath === p || currentPath.startsWith(p + '/'));
+        const inMore = ['/academy', '/finance', '/foundation'].some(p => currentPath === p || currentPath.startsWith(p + '/'));
         moreTrigger.classList.toggle('active', inMore);
         if (inMore) matchFound = true;
         document.querySelectorAll('#navMoreMenu .nav-more-option').forEach(a => {
