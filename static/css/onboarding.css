@@ -3850,3 +3850,164 @@ input:checked + .toggle-slider:before {
   .success-icon-large, .content-card .tone-radio-option.selected .tone-icon-wrapper,
   .content-card .social-card input[type="radio"]:checked + .social-content::after{ animation: none !important; }
 }
+
+/* ============================================
+   ONBOARDING — blanco y redondo
+   Sin rellenos grises: todo sobre blanco con sombras suaves; los íconos
+   en círculo y los campos en cápsula. Las pestañas de sección usan una
+   cápsula cian que viaja con resorte (onboarding.js, ob-seg-thumb).
+   ============================================ */
+:root {
+  --ob-fill: #ffffff;
+  --ob-ring: 0 0 0 1.5px rgba(15, 23, 42, 0.07);
+  --ob-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px -16px rgba(15, 23, 42, 0.28);
+}
+
+/* Puntos de progreso */
+.content-card .progress-steps { background: #fff; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .progress-step { background: rgba(6, 182, 212, 0.22); }
+
+/* Íconos en círculo */
+.content-card .step-title i,
+.content-card .section-title i,
+.content-card .tone-icon-wrapper,
+.content-card .editor-btn,
+.content-card .service-editor-btn,
+.creating-icon { border-radius: 50% !important; }
+
+/* Pestañas de sección: riel blanco + cápsula cian con resorte */
+.content-card .section-navigation {
+  position: relative;
+  isolation: isolate;
+  background: #fff;
+  box-shadow: var(--ob-ring), var(--ob-soft);
+  padding: 5px;
+}
+.content-card .section-navigation.ob-seg .section-nav-btn,
+.content-card .section-navigation.ob-seg .section-nav-btn.active,
+.content-card .section-navigation.ob-seg .section-nav-btn:hover {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  animation: none;
+}
+.content-card .section-navigation.ob-seg .section-nav-btn.active,
+.content-card .section-navigation.ob-seg .section-nav-btn.active i { color: #fff !important; }
+.content-card .section-navigation.ob-seg .section-nav-btn:not(.active):hover { color: #0891b2; }
+.content-card .section-navigation.ob-seg .section-nav-btn.completed:not(.active),
+.content-card .section-navigation.ob-seg .section-nav-btn.completed:not(.active) i { color: #16a34a !important; }
+.content-card .section-navigation:not(.ob-seg) .section-nav-btn.active {
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  color: #fff;
+}
+.ob-seg-thumb {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 16px -6px rgba(6, 182, 212, 0.75);
+  pointer-events: none;
+  will-change: transform, width;
+}
+.content-card .section-nav-btn i { transition: transform 0.45s var(--ob-spring); }
+.content-card .section-nav-btn.active i { transform: scale(1.12); }
+
+/* Campos en cápsula, sobre blanco */
+.content-card .form-input,
+.content-card .form-select,
+.content-card .time-input,
+.content-card .holiday-item .form-input {
+  border-radius: 999px;
+  background-color: #fff;
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+}
+.content-card .form-textarea,
+.content-card textarea.form-input { border-radius: 26px; background-color: #fff; border: 1.5px solid rgba(15, 23, 42, 0.1); }
+.content-card .form-input:hover,
+.content-card .form-select:hover,
+.content-card .time-input:hover { background-color: #fff; border-color: rgba(6, 182, 212, 0.45); }
+.content-card .form-input[readonly]:not(.form-select) { background: #fff !important; border: 1.5px dashed rgba(15, 23, 42, 0.12) !important; color: #64748b; }
+.content-card .time-input:disabled { background: #fff; opacity: 0.5; }
+.content-card .readonly-notice { border-radius: 22px !important; }
+
+/* Interruptores: riel cian claro cuando está apagado */
+.content-card .toggle-slider { background: #dff4f9; box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.18); }
+.content-card .toggle-container { background: #fff; box-shadow: var(--ob-ring), var(--ob-soft); border-radius: 28px; }
+
+/* Tarjetas y listas sobre blanco */
+.content-card .tone-radio-option { border-radius: 28px; border: 0; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .tone-radio-option.selected { box-shadow: 0 16px 30px -14px rgba(6, 182, 212, 0.75); }
+.content-card .rich-editor,
+.content-card .service-description-editor { border-radius: 26px; }
+.content-card .editor-toolbar,
+.content-card .service-editor-toolbar { background: #fff; }
+.content-card .language-checkbox-item { border-radius: 999px; border: 0; background: #fff; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .language-checkbox-item:has(input:checked) { background: #fff; box-shadow: 0 0 0 2px #06b6d4, 0 10px 22px -14px rgba(6, 182, 212, 0.7); }
+.content-card .schedule-day { background: #fff; border-radius: 28px; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .schedule-day:hover { background: #fff; box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.4), var(--ob-soft); }
+.content-card .holiday-item,
+.content-card .service-item,
+.content-card .worker-item { border-radius: 28px; border: 0; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .holiday-item:hover,
+.content-card .service-item:hover,
+.content-card .worker-item:hover { box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.4), 0 16px 30px -18px rgba(6, 182, 212, 0.55); }
+.content-card .price-type-selector { background: #fff; box-shadow: var(--ob-ring); }
+.content-card .price-type-option.active { background: linear-gradient(180deg, #22c3dd, #0891b2); color: #fff; box-shadow: 0 6px 14px -6px rgba(6, 182, 212, 0.7); }
+.content-card .availability-day { background: #fff; box-shadow: var(--ob-ring); }
+.content-card .availability-day:has(input:checked) { background: #fff; box-shadow: 0 0 0 1.5px #06b6d4; }
+.content-card .btn-add-holiday,
+.content-card .btn-add-service,
+.content-card .btn-add-worker { background: #fff; }
+.content-card .summary-card { background: #fff; box-shadow: var(--ob-ring), var(--ob-soft); border-radius: 32px; }
+.content-card .summary-list li { border-radius: 22px; box-shadow: var(--ob-ring); }
+
+/* Botones */
+.content-card .btn-back { background: #fff; box-shadow: var(--ob-ring), var(--ob-soft); }
+.content-card .btn-back:hover { background: #fff; box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.45), var(--ob-soft); }
+.content-card .btn-next:disabled { background: rgba(6, 182, 212, 0.14); color: rgba(8, 145, 178, 0.55); }
+
+/* Notas del modal de creación */
+.creating-note,
+.agent-details-box { border-radius: 26px; }
+
+/* Móvil: el riel sigue siendo una sola fila deslizable (no cuadrícula) para que la cápsula viaje */
+@media (max-width: 768px) {
+  .content-card .section-navigation {
+    display: flex;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    border-radius: 999px;
+  }
+  .content-card .section-navigation .section-nav-btn {
+    flex: none !important;
+    width: auto !important;
+    grid-column: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 0.55rem 0.95rem;
+    font-size: 0.82rem;
+  }
+}
+
+
+/* Pestañas: la cápsula es la misma de Mi Negocio (cian sólido, sin gelatina) */
+.ob-seg-thumb {
+  background: #06b6d4;
+  box-shadow: 0 3px 8px rgba(6, 182, 212, 0.3), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+.content-card .section-nav-btn.active i { transform: none; }
+.content-card .section-navigation.ob-seg .section-nav-btn:active { transform: none; }
+.content-card .section-navigation.ob-seg .section-nav-btn:not(.active):active { opacity: 0.6; }
+
+/* Cambio de sección suave (sin rebote) */
+@keyframes obSmooth { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.content-card .section-container.active,
+.content-card .step.active .step-header { animation: obSmooth 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards; }

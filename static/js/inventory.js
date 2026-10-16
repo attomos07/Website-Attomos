@@ -1568,34 +1568,76 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================
-   CAPA iOS 27 — cápsula deslizante del control
-   segmentado y números del resumen que rebotan
+   CAPA iOS 27 — control segmentado igual al de las
+   pestañas de Mi Negocio (Mi Negocio / Inventario /
+   Contabilidad): cápsula cian que viaja hasta la
+   pestaña activa y se estira un poco mientras avanza.
+   También: números del resumen que rebotan.
    ============================================ */
 
-function invMoveSegThumb(animate) {
-    const tabs = document.querySelector('.inv-view-tabs');
-    if (!tabs) return;
-    let thumb = tabs.querySelector('.inv-seg-thumb');
-    if (!thumb) {
+const invSeg = (function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // Mismos resortes que segmentFor() de my-business.js
+    const mk = (v, k, d, eps = 0.1) => ({ v, vel: 0, t: v, k, d, eps });
+    const X = mk(0, 420, 30), W = mk(0, 420, 30), S = mk(1, 600, 30, 0.001);
+    const all = [X, W, S];
+    let thumb = null, tabs = null, ready = false, raf = null, last = 0;
+
+    function step(s, dt) {
+        if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+        s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+        s.v += s.vel * dt;
+    }
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    function render() {
+        if (!thumb) return;
+        if (!ready) { thumb.style.opacity = 0; return; }
+        const st = Math.min(Math.abs(X.vel) / 3000, 0.1);
+        thumb.style.opacity = 1;
+        thumb.style.width = `${W.v}px`;
+        thumb.style.transform = `translateX(${X.v}px) scale(${S.v}, ${S.v * (1 - st)})`;
+    }
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        all.forEach((s) => step(s, dt));
+        render();
+        if (all.every(atRest)) { all.forEach((s) => { s.v = s.t; s.vel = 0; }); render(); raf = null; return; }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() { if (raf) return; last = performance.now(); raf = requestAnimationFrame(tick); }
+
+    function ensure() {
+        if (thumb) return true;
+        tabs = document.querySelector('.inv-view-tabs');
+        if (!tabs) return false;
         thumb = document.createElement('span');
         thumb.className = 'inv-seg-thumb';
         thumb.setAttribute('aria-hidden', 'true');
         tabs.prepend(thumb);
         tabs.classList.add('has-thumb');
-        animate = false;
+        tabs.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.inv-view-tab.active')) { S.t = 0.94; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => tabs.addEventListener(ev, release));
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(tabs);
+        return true;
     }
-    const active = tabs.querySelector('.inv-view-tab.active');
-    if (!active || active.offsetParent === null) { thumb.style.opacity = '0'; return; }
-    const prev = thumb.style.transition;
-    if (!animate) thumb.style.transition = 'none';
-    thumb.style.opacity = '1';
-    thumb.style.width = active.offsetWidth + 'px';
-    thumb.style.transform = `translateX(${active.offsetLeft}px)`;
-    if (!animate) { void thumb.offsetWidth; thumb.style.transition = prev; return; }
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        thumb.classList.remove('is-squish'); void thumb.offsetWidth; thumb.classList.add('is-squish');
+    function place(snap) {
+        if (!ensure()) return;
+        const a = tabs.querySelector('.inv-view-tab.active');
+        if (!a || !tabs.offsetWidth) { ready = false; render(); return; }
+        X.t = a.offsetLeft; W.t = a.offsetWidth;
+        if (snap || !ready) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+        ready = true;
+        render();
+        kick();
     }
-}
+    return { place };
+})();
+
+function invMoveSegThumb(animate) { invSeg.place(!animate); }
 
 (function () {
     window.addEventListener('resize', () => invMoveSegThumb(false));

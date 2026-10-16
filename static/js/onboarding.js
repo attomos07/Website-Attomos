@@ -988,11 +988,11 @@ async function startQRPolling(agentId, agentName) {
     _obQRPollTimer = setInterval(poll, 3000);
 }
 // ============================================
-// CAPA iOS 27 — pestañas de sección con cápsula de resorte
+// CAPA iOS 27 — pestañas de sección con la misma cápsula de Mi Negocio
 // La barra #sectionNavigation la pintan dashboard.js / my-agents.js /
-// integrations.js / my-business.js; aquí solo se le agrega una cápsula
-// que viaja con física de resorte (se estira mientras avanza, como en iOS)
-// hasta la pestaña activa. No toca la lógica de navegación.
+// integrations.js / my-business.js; aquí solo se le agrega la cápsula cian
+// que usan las pestañas de Mi Negocio (mismos resortes, sin rebote de
+// gelatina) hasta la pestaña activa. No toca la lógica de navegación.
 // ============================================
 (function () {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1005,6 +1005,15 @@ async function startQRPolling(agentId, agentName) {
         const thumb = document.createElement('span');
         thumb.className = 'ob-seg-thumb';
         thumb.setAttribute('aria-hidden', 'true');
+        // Estilos esenciales en línea: funciona aunque el navegador tenga en
+        // caché un onboarding.css anterior (las páginas lo inyectan sin versión)
+        Object.assign(thumb.style, {
+            position: 'absolute', top: '5px', bottom: '5px', left: '0', zIndex: '0',
+            borderRadius: '999px', background: '#06b6d4', pointerEvents: 'none',
+            boxShadow: '0 3px 8px rgba(6, 182, 212, 0.3), 0 1px 1px rgba(15, 23, 42, 0.04)',
+            willChange: 'transform, width', opacity: '0',
+        });
+        if (getComputedStyle(nav).position === 'static') nav.style.position = 'relative';
 
         // Resortes: posición, ancho y escala (al presionar)
         const X = { v: 0, vel: 0, t: 0 }, W = { v: 0, vel: 0, t: 0 }, S = { v: 1, vel: 0, t: 1 };
@@ -1014,14 +1023,15 @@ async function startQRPolling(agentId, agentName) {
 
         function render() {
             if (!ready) { thumb.style.opacity = '0'; return; }
-            const st = Math.min(Math.abs(X.vel) / 2600, 0.14);
+            // Igual que las pestañas de Mi Negocio: se estira un poco mientras viaja
+            const st = Math.min(Math.abs(X.vel) / 3000, 0.1);
             thumb.style.opacity = '1';
             thumb.style.width = `${W.v}px`;
-            thumb.style.transform = `translateX(${X.v}px) scale(${S.v * (1 + st * 0.4)}, ${S.v * (1 - st)})`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${S.v}, ${S.v * (1 - st)})`;
         }
         function tick(now) {
             const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
-            for (let i = 0; i < 2; i++) { step(X, 380, 26, dt / 2); step(W, 380, 26, dt / 2); step(S, 600, 30, dt / 2); }
+            step(X, 420, 30, dt); step(W, 420, 30, dt); step(S, 600, 30, dt);
             render();
             if (atRest(X, 0.3) && atRest(W, 0.3) && atRest(S, 0.002)) { X.v = X.t; W.v = W.t; S.v = S.t; X.vel = W.vel = S.vel = 0; render(); raf = 0; return; }
             raf = requestAnimationFrame(tick);
@@ -1045,7 +1055,7 @@ async function startQRPolling(agentId, agentName) {
         }
 
         nav.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('.section-nav-btn')) { S.t = 0.93; kick(); }
+            if (e.target.closest('.section-nav-btn.active')) { S.t = 0.94; kick(); }
         });
         const release = () => { S.t = 1; kick(); };
         ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => nav.addEventListener(ev, release));
@@ -1061,7 +1071,18 @@ async function startQRPolling(agentId, agentName) {
         place(true);
     }
 
+    // Las páginas que abren el asistente como modal inyectan onboarding.css sin
+    // versión; se cambia por la versión actual para no quedarse con la de caché.
+    const OB_CSS_VERSION = '5';
+    function freshCss() {
+        document.querySelectorAll('link[rel="stylesheet"][href*="/static/css/onboarding.css"]').forEach((l) => {
+            const href = l.getAttribute('href');
+            if (href.includes('v=' + OB_CSS_VERSION)) return;
+            l.setAttribute('href', '/static/css/onboarding.css?v=' + OB_CSS_VERSION);
+        });
+    }
     function scan() {
+        freshCss();
         document.querySelectorAll('#sectionNavigation, .section-navigation').forEach(wire);
     }
     // El wizard puede inyectarse después (modal en Dashboard, Mis Agentes, etc.)

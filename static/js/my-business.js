@@ -3501,3 +3501,171 @@ function setText(id, val) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchNumbers);
     else watchNumbers();
 })();
+
+// ============================================
+// CONTABILIDAD — dropdown iOS para el periodo (mes y año)
+// El <select> nativo se queda (oculto) como fuente de verdad: la lógica de
+// arriba sigue leyendo acctMonth.value / acctYear.value. Aquí se pinta un
+// botón en cápsula y un menú que brota del botón con resorte, con un
+// resaltado que sigue al cursor y ✓ en la opción elegida.
+// ============================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const menus = [];
+
+    function enhance(select) {
+        if (!select || select.dataset.iosSelect) return;
+        select.dataset.iosSelect = '1';
+        select.classList.add('acct-select-native');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'acct-dd-btn';
+        btn.setAttribute('aria-haspopup', 'listbox');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.innerHTML = '<span class="acct-dd-label"></span><svg class="acct-dd-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        select.insertAdjacentElement('afterend', btn);
+
+        const menu = document.createElement('div');
+        menu.className = 'acct-dd-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.innerHTML = '<span class="acct-dd-ind" aria-hidden="true"></span><div class="acct-dd-list"></div>';
+        document.body.appendChild(menu);
+        const list = menu.querySelector('.acct-dd-list');
+        const ind = menu.querySelector('.acct-dd-ind');
+        let isOpen = false, hl = -1;
+
+        const label = btn.querySelector('.acct-dd-label');
+        function syncLabel() {
+            const o = select.options[select.selectedIndex];
+            label.textContent = o ? o.textContent.trim() : '';
+        }
+
+        function build() {
+            list.innerHTML = '';
+            [...select.options].forEach((o, i) => {
+                const it = document.createElement('button');
+                it.type = 'button';
+                it.className = 'acct-dd-opt' + (i === select.selectedIndex ? ' is-selected' : '');
+                it.setAttribute('role', 'option');
+                it.dataset.index = i;
+                it.textContent = o.textContent.trim();
+                list.appendChild(it);
+            });
+        }
+        const items = () => [...list.querySelectorAll('.acct-dd-opt')];
+
+        function highlight(i, snap) {
+            hl = i;
+            const arr = items();
+            arr.forEach((el, j) => el.classList.toggle('is-hover', j === i));
+            const el = arr[i];
+            if (!el) { ind.style.opacity = 0; return; }
+            if (snap) ind.style.transition = 'none';
+            ind.style.opacity = 1;
+            ind.style.height = `${el.offsetHeight}px`;
+            ind.style.transform = `translateY(${el.offsetTop - list.scrollTop + list.offsetTop}px)`;
+            if (snap) { void ind.offsetWidth; ind.style.transition = ''; }
+        }
+
+        function place() {
+            const r = btn.getBoundingClientRect();
+            const w = Math.max(r.width, 168);
+            menu.style.width = `${w}px`;
+            const h = Math.min(menu.scrollHeight, 300);
+            let top = r.bottom + 8;
+            let origin = 'top';
+            if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; origin = 'bottom'; }
+            const left = Math.min(Math.max(r.left + r.width / 2 - w / 2, 12), window.innerWidth - w - 12);
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            menu.style.transformOrigin = `${r.left + r.width / 2 - left}px ${origin}`;
+        }
+
+        function open() {
+            if (isOpen) return;
+            menus.forEach((m) => m !== api && m.close());
+            build();
+            isOpen = true;
+            menu.classList.add('is-open');
+            btn.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            place();
+            const sel = select.selectedIndex;
+            const el = items()[sel];
+            if (el) list.scrollTop = Math.max(0, el.offsetTop - list.clientHeight / 2 + el.offsetHeight / 2);
+            requestAnimationFrame(() => highlight(sel, true));
+        }
+        function close(focus) {
+            if (!isOpen) return;
+            isOpen = false;
+            menu.classList.remove('is-open');
+            btn.classList.remove('is-open');
+            btn.setAttribute('aria-expanded', 'false');
+            if (focus) btn.focus({ preventScroll: true });
+        }
+        function choose(i) {
+            const el = items()[i];
+            if (!el) return;
+            if (!reduce.matches) { el.classList.remove('is-bounce'); void el.offsetWidth; el.classList.add('is-bounce'); }
+            if (select.selectedIndex !== i) {
+                select.selectedIndex = i;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            syncLabel();
+            if (!reduce.matches) { label.classList.remove('is-bump'); void label.offsetWidth; label.classList.add('is-bump'); }
+            setTimeout(() => close(true), reduce.matches ? 0 : 140);
+        }
+
+        btn.addEventListener('click', () => (isOpen ? close() : open()));
+        btn.addEventListener('keydown', (e) => {
+            if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key) && !isOpen) { e.preventDefault(); open(); }
+        });
+        list.addEventListener('pointermove', (e) => {
+            const el = e.target.closest('.acct-dd-opt');
+            if (el) { const i = +el.dataset.index; if (i !== hl) highlight(i); }
+        });
+        list.addEventListener('scroll', () => highlight(hl, true));
+        list.addEventListener('click', (e) => {
+            const el = e.target.closest('.acct-dd-opt');
+            if (el) choose(+el.dataset.index);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (!isOpen) return;
+            const n = items().length;
+            if (e.key === 'Escape') { e.preventDefault(); close(true); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); highlight(Math.min(n - 1, hl + 1)); items()[hl]?.scrollIntoView({ block: 'nearest' }); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(Math.max(0, hl - 1)); items()[hl]?.scrollIntoView({ block: 'nearest' }); }
+            else if (e.key === 'Enter') { e.preventDefault(); choose(hl); }
+            else if (e.key === 'Tab') close();
+        });
+        document.addEventListener('pointerdown', (e) => {
+            if (isOpen && !menu.contains(e.target) && !btn.contains(e.target)) close();
+        }, true);
+        window.addEventListener('resize', () => close());
+        document.addEventListener('scroll', (e) => { if (isOpen && !menu.contains(e.target)) close(); }, true);
+
+        // Mantener el texto del botón al día (cambios por código, años que se agregan, traducciones)
+        select.addEventListener('change', syncLabel);
+        new MutationObserver(syncLabel).observe(select, { childList: true, subtree: true, characterData: true, attributes: true });
+        const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+        if (desc && desc.set) {
+            Object.defineProperty(select, 'value', {
+                configurable: true,
+                get() { return desc.get.call(this); },
+                set(v) { desc.set.call(this, v); syncLabel(); },
+            });
+        }
+        syncLabel();
+
+        const api = { close };
+        menus.push(api);
+    }
+
+    function init() {
+        enhance(document.getElementById('acctMonth'));
+        enhance(document.getElementById('acctYear'));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();

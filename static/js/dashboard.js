@@ -647,7 +647,7 @@ async function loadOnboardingContent() {
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
-                link.href = '/static/css/onboarding.css';
+                link.href = '/static/css/onboarding.css?v=5';
                 document.head.appendChild(link);
             }
             // Restaurar estilos del layout de dashboard que onboarding.css sobreescribe
@@ -754,7 +754,7 @@ async function loadOnboardingContent() {
 
             if (!onboardingScriptLoaded) {
                 const script = document.createElement('script');
-                script.src = '/static/js/onboarding.js';
+                script.src = '/static/js/onboarding.js?v=5';
                 script.onload = () => {
                     onboardingScriptLoaded = true;
                     if (window.Translations) window.Translations.apply(getLang());
