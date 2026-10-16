@@ -422,3 +422,15 @@
   renderMeta();
   render();
 })();
+/* Capa iOS 27: el monto rebota al elegir un monto rápido */
+(function () {
+  'use strict';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const chips = document.getElementById('amountChips');
+  const input = document.getElementById('amountInput');
+  if (!chips || !input) return;
+  chips.addEventListener('click', (e) => {
+    if (!e.target.closest('.chip')) return;
+    input.classList.remove('is-bump'); void input.offsetWidth; input.classList.add('is-bump');
+  });
+})();

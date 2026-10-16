@@ -210,6 +210,7 @@ function initMobileMenu(navbar, navMenu, mobileMenuBtn) {
 
     // ---------- Ir a una página: el indicador llega primero y luego se navega ----------
     function navigateTo(link) {
+        if (!link.getAttribute('href')) { retarget(); return; }
         links().forEach((a) => a.classList.toggle('active', a === link));
         retarget();
         link.classList.remove('bounce');
@@ -318,6 +319,7 @@ function initMobileMenu(navbar, navMenu, mobileMenuBtn) {
         if (!link || !mq.matches || !isOpen()) return;
         if (suppressClick) { e.preventDefault(); return; }
         if (link.matches('.nav-login, .nav-cta')) { setTimeout(closeMobileMenu, 150); return; }
+        if (!link.getAttribute('href')) return; // "Más" abre su menú, no navega
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         navigateTo(link);
@@ -484,6 +486,7 @@ function initDesktopGlide(navMenu) {
         if (!mq.matches) return;
         const link = e.target.closest('.nav-link');
         if (!link || !links().includes(link)) return;
+        if (!link.getAttribute('href')) return; // "Más" abre su menú, no navega
         if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0) return;
         if (link.target && link.target !== '_self') return;
         const isCurrent = link.classList.contains('active');
@@ -535,6 +538,9 @@ function setActiveNavLink() {
         // Limpiamos cualquier estado previo
         link.classList.remove('active');
 
+        // El botón "Más" no tiene href: se marca aparte (ver abajo)
+        if (!link.getAttribute('href')) return;
+
         // Normalizamos el href del link
         const linkHref = link.getAttribute('href')
             .toLowerCase()
@@ -556,6 +562,18 @@ function setActiveNavLink() {
             return; // ⛔ evita que otro link se active
         }
     });
+
+    // Micronichos: "Más" queda activo dentro de /academy y /finance
+    const moreTrigger = document.getElementById('navMoreTrigger');
+    if (moreTrigger) {
+        const inMore = ['/academy', '/finance'].some(p => currentPath === p || currentPath.startsWith(p + '/'));
+        moreTrigger.classList.toggle('active', inMore);
+        if (inMore) matchFound = true;
+        document.querySelectorAll('#navMoreMenu .nav-more-option').forEach(a => {
+            const h = a.getAttribute('href').toLowerCase();
+            a.classList.toggle('active', currentPath === h || currentPath.startsWith(h + '/'));
+        });
+    }
 
     // Fallback solo para el home real "/"
     if (!matchFound && (currentPath === "" || currentPath === "/")) {
@@ -1276,4 +1294,49 @@ function setActiveNavLink() {
     } else {
         setup();
     }
+})();
+
+// ============================================
+// MENÚ "MÁS" — micronichos (Academy, Finance)
+// Mismo IOSMenu que idioma/avatar: nace del botón con resorte, el
+// resaltado sigue al cursor o al dedo y se puede mantener presionado y
+// deslizar hasta la opción. Vive en <body> (portal) para poder abrirse
+// también desde el panel del menú móvil.
+// ============================================
+(function initNavMoreMenu() {
+    function setup() {
+        const trigger = document.getElementById('navMoreTrigger');
+        const menu = document.getElementById('navMoreMenu');
+        if (!trigger || !menu || !window.IOSMenu || trigger.dataset.iosWired) return;
+        trigger.dataset.iosWired = '1';
+
+        const center = () => {
+            // Centrado bajo el botón (el portal lo alinea a la derecha por defecto)
+            const a = trigger.getBoundingClientRect();
+            const w = menu.offsetWidth;
+            const left = Math.min(Math.max(a.left + a.width / 2 - w / 2, 12), window.innerWidth - w - 12);
+            menu.style.left = `${left}px`;
+        };
+
+        const api = window.IOSMenu.create({
+            trigger,
+            menu,
+            itemSelector: '.nav-more-option',
+            portal: true,
+            hover: window.matchMedia('(min-width: 769px)').matches,
+            onOpenChange: (open) => {
+                menu.classList.toggle('is-open', open);
+                trigger.classList.toggle('is-open', open);
+                if (open) center();
+            },
+        });
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                api && (api.isOpen() ? api.close() : api.open({ keyboard: true, pin: true }));
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+    else setup();
 })();

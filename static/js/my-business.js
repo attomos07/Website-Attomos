@@ -3465,3 +3465,39 @@ function setText(id, val) {
         new MutationObserver(() => fix(el)).observe(el, { childList: true, characterData: true, subtree: true });
     });
 })();
+
+// ============================================
+// CONTABILIDAD — capa iOS 27 (solo animación, sin tocar la lógica)
+// ============================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    function bump(el) {
+        if (reduce.matches) return;
+        el.classList.remove('acct-bump'); void el.offsetWidth; el.classList.add('acct-bump');
+    }
+
+    function watchNumbers() {
+        document.querySelectorAll('#tab-contabilidad .acct-kpi-value, #acctDiff, .acct-concil-book-val, .acct-er-util-val, .acct-flujo-neto').forEach((el) => {
+            if (el.dataset.acctWatch) return;
+            el.dataset.acctWatch = '1';
+            let last = el.textContent;
+            new MutationObserver(() => {
+                if (el.textContent === last) return;
+                last = el.textContent;
+                bump(el);
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    // Botón "Cargar": el ícono gira mientras llegan los datos
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#acctLoadBtn');
+        if (!btn || reduce.matches) return;
+        btn.classList.add('is-loading');
+        setTimeout(() => btn.classList.remove('is-loading'), 900);
+    });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchNumbers);
+    else watchNumbers();
+})();

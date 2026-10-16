@@ -6,9 +6,17 @@
   <meta name="theme-color" content="#ffffff">
   <title>Attomos Finance</title>
   <meta name="description" content="Compara rendimientos de SOFIPOs, bancos y CETES en México con sus requisitos reales, leídos directo de las páginas oficiales.">
-  <link rel="stylesheet" href="/static/css/finance.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/partials/navbar.css?v=7">
+  <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
+  <link rel="stylesheet" href="/static/css/finance.css?v=2">
 </head>
-<body>
+<body class="niche-page">
+
+  <!-- Navbar de Attomos (incluye el menú "Más" con Academy y Finance) -->
+  {{template "partials/navbar.html" .}}
 
   <!-- Barra compacta: aparece al hacer scroll (colapso de título grande estilo iOS) -->
   <header class="compact-bar" id="compactBar" aria-hidden="true">
@@ -80,6 +88,9 @@
       <p>Cada opción indica la fecha en que verificamos su información. Confirma siempre en la página oficial antes de invertir.</p>
     </footer>
   </main>
+
+  <!-- Footer -->
+  {{template "partials/footer.html" .}}
 
   <script src="/static/js/finance.js"></script>
 </body>

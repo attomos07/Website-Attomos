@@ -1,5 +1,5 @@
 {{define "partials/navbar.html"}}
-<link rel="stylesheet" href="/static/css/partials/navbar.css?v=6">
+<link rel="stylesheet" href="/static/css/partials/navbar.css?v=7">
 
 <nav class="navbar" id="navbar">
     <div class="nav-container">
@@ -37,10 +37,37 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/ninda" class="nav-link">
+                <a href="/comy" class="nav-link">
                     <span class="nav-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/></svg></span>
-                    <span class="nav-link-label" data-translate="nav_ninda">Ninda</span>
+                    <span class="nav-link-label">Comy</span>
                 </a>
+            </li>
+            <!-- Micronichos de Attomos (Academy, Finance): menú desplegable estilo iOS -->
+            <li class="nav-item nav-item-more">
+                <button type="button" class="nav-link nav-more-trigger" id="navMoreTrigger" aria-label="Más de Attomos">
+                    <span class="nav-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>
+                    <span class="nav-link-label">Más</span>
+                    <svg class="nav-more-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="nav-more-menu" id="navMoreMenu" role="menu" aria-label="Más de Attomos">
+                    <div class="nav-more-head">Más de Attomos</div>
+                    <a href="/academy" class="nav-more-option" role="menuitem">
+                        <span class="nav-more-ic is-academy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
+                        <span class="nav-more-text">
+                            <span class="nav-more-title">Academy</span>
+                            <span class="nav-more-desc">Aprende idiomas con videos cortos</span>
+                        </span>
+                        <svg class="nav-more-go" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="/finance" class="nav-more-option" role="menuitem">
+                        <span class="nav-more-ic is-finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/><path d="M15 8h5v5"/></svg></span>
+                        <span class="nav-more-text">
+                            <span class="nav-more-title">Finance</span>
+                            <span class="nav-more-desc">Rendimientos de SOFIPOs, bancos y CETES</span>
+                        </span>
+                        <svg class="nav-more-go" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                </div>
             </li>
             <li class="nav-item">
                 <a href="/contact" class="nav-link">
@@ -231,5 +258,5 @@
 </nav>
 
 <script src="/static/js/translations.js"></script>
-<script src="/static/js/partials/navbar.js?v=4"></script>
+<script src="/static/js/partials/navbar.js?v=5"></script>
 {{end}}

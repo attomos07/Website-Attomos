@@ -3813,3 +3813,101 @@ body .menu-upload-placeholder:hover {
     animation: none;
   }
 }
+
+/* ============================================
+   CONTABILIDAD — animaciones iOS 27
+   Panel que entra con resorte al cambiar de sub-pestaña, KPIs en
+   cascada con números que rebotan al actualizarse, renglones que
+   aparecen uno tras otro e íconos en círculo.
+   ============================================ */
+@keyframes acctPop { 0% { transform: scale(0.82); } 55% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes acctRow { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes acctSpin { to { transform: rotate(360deg); } }
+
+.acct-panel.active {
+  animation: iosRiseMove 0.6s var(--ios-spring), iosRiseFade 0.35s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.acct-period-bar {
+  border-radius: 999px;
+  animation: iosRiseMove 0.7s var(--ios-spring) backwards, iosRiseFade 0.4s ease backwards;
+}
+
+.acct-kpi-card {
+  border-radius: 28px;
+  animation: iosRiseMove 0.7s var(--ios-spring) backwards, iosRiseFade 0.4s ease backwards;
+  transition: transform 0.5s var(--ios-spring), box-shadow 0.3s ease;
+}
+.acct-kpi-card:nth-child(2) { animation-delay: 0.05s; }
+.acct-kpi-card:nth-child(3) { animation-delay: 0.1s; }
+.acct-kpi-card:nth-child(4) { animation-delay: 0.15s; }
+.acct-kpi-card:hover { transform: translateY(-4px); }
+.acct-kpi-card:active { transform: scale(0.97); }
+.acct-kpi-icon {
+  border-radius: 50% !important;
+  transition: transform 0.5s var(--ios-spring);
+}
+.acct-kpi-card:hover .acct-kpi-icon { transform: rotate(-10deg) scale(1.1); }
+.acct-kpi-value { display: inline-block; font-variant-numeric: tabular-nums; }
+.acct-kpi-value.acct-bump,
+.acct-concil-diff-val.acct-bump,
+.acct-concil-book-val.acct-bump,
+.acct-er-util-val.acct-bump,
+.acct-flujo-neto.acct-bump { animation: acctPop 0.5s var(--ios-spring); }
+
+/* Renglones en cascada */
+.acct-table tbody tr,
+.acct-er-row,
+.acct-flujo-rows > * {
+  animation: acctRow 0.4s ease backwards;
+}
+.acct-table tbody tr:nth-child(2), .acct-er-row:nth-child(2), .acct-flujo-rows > *:nth-child(2) { animation-delay: 0.03s; }
+.acct-table tbody tr:nth-child(3), .acct-er-row:nth-child(3), .acct-flujo-rows > *:nth-child(3) { animation-delay: 0.06s; }
+.acct-table tbody tr:nth-child(4), .acct-er-row:nth-child(4), .acct-flujo-rows > *:nth-child(4) { animation-delay: 0.09s; }
+.acct-table tbody tr:nth-child(n+5), .acct-er-row:nth-child(n+5), .acct-flujo-rows > *:nth-child(n+5) { animation-delay: 0.12s; }
+.acct-table tbody tr { transition: background 0.15s ease; }
+.acct-table tbody tr:hover { background: rgba(6, 182, 212, 0.04); }
+
+/* Secciones y cajas de conciliación */
+.acct-er-section,
+.acct-flujo-section,
+.acct-concil-box,
+.acct-bank-section {
+  border-radius: 26px;
+  transition: transform 0.5s var(--ios-spring), box-shadow 0.3s ease;
+}
+.acct-concil-box { animation: iosRiseMove 0.6s var(--ios-spring) backwards; }
+.acct-concil-box:nth-child(2) { animation-delay: 0.05s; }
+.acct-concil-box:nth-child(3) { animation-delay: 0.1s; }
+.acct-concil-box:hover { transform: translateY(-3px); }
+
+/* Botones: el de cargar gira su ícono, todos se aplastan */
+.acct-btn-load,
+.acct-btn-export,
+.acct-btn-submit,
+.acct-btn-sm,
+.btn-card-add { transition: background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring); }
+.acct-btn-load:active,
+.acct-btn-export:active,
+.acct-btn-sm:active,
+.btn-card-add:active { transform: scale(0.92, 0.86); }
+.acct-btn-load.is-loading i,
+.acct-btn-load.is-loading svg { animation: acctSpin 0.7s linear infinite; }
+.acct-btn-export i,
+.acct-btn-export svg { transition: transform 0.45s var(--ios-spring); }
+.acct-btn-export:hover i,
+.acct-btn-export:hover svg { transform: translateY(2px); }
+.acct-mov-type { transition: background 0.2s ease, color 0.2s ease, transform 0.45s var(--ios-spring); }
+.acct-mov-type.active { animation: acctPop 0.45s var(--ios-spring); }
+
+@media (prefers-reduced-motion: reduce) {
+  .acct-panel.active, .acct-period-bar, .acct-kpi-card, .acct-kpi-value, .acct-table tbody tr, .acct-er-row,
+  .acct-flujo-rows > *, .acct-concil-box, .acct-mov-type.active, .acct-btn-load.is-loading i, .acct-btn-load.is-loading svg {
+    animation: none !important;
+  }
+}
+@media (max-width: 768px) {
+  .acct-period-bar { border-radius: 26px; }
+}
+.acct-kpi-icon { width: 48px; height: 48px; flex: none; display: grid !important; place-items: center; }
+.acct-kpi-icon svg { width: 22px !important; height: 22px !important; }

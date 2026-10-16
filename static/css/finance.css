@@ -591,3 +591,42 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+/* ==========================================================================
+   Navbar y footer de Attomos (micronicho dentro del sitio)
+   La barra compacta propia queda oculta: el navbar flotante ocupa la parte
+   de arriba y el título grande sigue colapsando al hacer scroll.
+   ========================================================================== */
+.niche-page .compact-bar { display: none !important; }
+
+.niche-page .page {
+  padding-top: calc(118px + env(safe-area-inset-top));
+}
+
+.niche-page .footer {
+  position: relative;
+  z-index: 1;
+  margin-top: 24px;
+}
+
+/* El navbar trae su propia tipografía; que no la herede de esta página */
+.niche-page .navbar,
+.niche-page .nav-more-menu {
+  line-height: normal;
+}
+
+@media (max-width: 768px) {
+  .niche-page .page {
+    padding-top: calc(96px + env(safe-area-inset-top));
+  }
+}
+
+/* El control segmentado se pega justo debajo del navbar flotante */
+.niche-page .segmented-dock {
+  top: calc(100px + env(safe-area-inset-top));
+}
+
+@media (max-width: 768px) {
+  .niche-page .segmented-dock {
+    top: calc(80px + env(safe-area-inset-top));
+  }
+}

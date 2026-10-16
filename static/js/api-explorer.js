@@ -493,3 +493,17 @@ document.addEventListener('DOMContentLoaded', () => {
     wireApiExplorerButtons();
     initApiExplorer();
 });
+/* ---------- capa iOS 27: los indicadores rebotan cuando cambian ---------- */
+(function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    ['apxIndEstado', 'apxIndTotal', 'apxIndTiempo', 'apxIndActualizado'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let last = el.textContent;
+        new MutationObserver(() => {
+            if (el.textContent === last) return;
+            last = el.textContent;
+            el.classList.remove('apx-bump'); void el.offsetWidth; el.classList.add('apx-bump');
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+})();

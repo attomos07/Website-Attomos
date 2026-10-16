@@ -987,3 +987,88 @@ async function startQRPolling(agentId, agentName) {
     poll();
     _obQRPollTimer = setInterval(poll, 3000);
 }
+// ============================================
+// CAPA iOS 27 — pestañas de sección con cápsula de resorte
+// La barra #sectionNavigation la pintan dashboard.js / my-agents.js /
+// integrations.js / my-business.js; aquí solo se le agrega una cápsula
+// que viaja con física de resorte (se estira mientras avanza, como en iOS)
+// hasta la pestaña activa. No toca la lógica de navegación.
+// ============================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const wired = new WeakSet();
+
+    function wire(nav) {
+        if (!nav || wired.has(nav)) return;
+        wired.add(nav);
+        nav.classList.add('ob-seg');
+        const thumb = document.createElement('span');
+        thumb.className = 'ob-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+
+        // Resortes: posición, ancho y escala (al presionar)
+        const X = { v: 0, vel: 0, t: 0 }, W = { v: 0, vel: 0, t: 0 }, S = { v: 1, vel: 0, t: 1 };
+        let raf = 0, last = 0, ready = false;
+        const step = (s, k, d, dt) => { const a = -k * (s.v - s.t) - d * s.vel; s.vel += a * dt; s.v += s.vel * dt; };
+        const atRest = (s, eps) => Math.abs(s.v - s.t) < eps && Math.abs(s.vel) < eps * 10;
+
+        function render() {
+            if (!ready) { thumb.style.opacity = '0'; return; }
+            const st = Math.min(Math.abs(X.vel) / 2600, 0.14);
+            thumb.style.opacity = '1';
+            thumb.style.width = `${W.v}px`;
+            thumb.style.transform = `translateX(${X.v}px) scale(${S.v * (1 + st * 0.4)}, ${S.v * (1 - st)})`;
+        }
+        function tick(now) {
+            const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
+            for (let i = 0; i < 2; i++) { step(X, 380, 26, dt / 2); step(W, 380, 26, dt / 2); step(S, 600, 30, dt / 2); }
+            render();
+            if (atRest(X, 0.3) && atRest(W, 0.3) && atRest(S, 0.002)) { X.v = X.t; W.v = W.t; S.v = S.t; X.vel = W.vel = S.vel = 0; render(); raf = 0; return; }
+            raf = requestAnimationFrame(tick);
+        }
+        function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+
+        function place(snap) {
+            if (thumb.parentNode !== nav) nav.prepend(thumb);
+            const a = nav.querySelector('.section-nav-btn.active');
+            if (!a || !nav.offsetWidth) { ready = false; render(); return; }
+            X.t = a.offsetLeft; W.t = a.offsetWidth;
+            if (snap || !ready || reduce.matches) { X.v = X.t; W.v = W.t; X.vel = W.vel = 0; }
+            ready = true;
+            render();
+            if (!reduce.matches) kick();
+            // Mantiene visible la pestaña activa dentro del riel con scroll
+            const pad = 16;
+            if (a.offsetLeft < nav.scrollLeft + pad || a.offsetLeft + a.offsetWidth > nav.scrollLeft + nav.clientWidth - pad) {
+                nav.scrollTo({ left: a.offsetLeft - nav.clientWidth / 2 + a.offsetWidth / 2, behavior: reduce.matches ? 'auto' : 'smooth' });
+            }
+        }
+
+        nav.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.section-nav-btn')) { S.t = 0.93; kick(); }
+        });
+        const release = () => { S.t = 1; kick(); };
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => nav.addEventListener(ev, release));
+
+        // Se reacomoda cuando cambia la pestaña activa o se vuelven a pintar los botones
+        let pending = false;
+        new MutationObserver(() => {
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(() => { pending = false; place(false); });
+        }).observe(nav, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        if (window.ResizeObserver) new ResizeObserver(() => place(true)).observe(nav);
+        place(true);
+    }
+
+    function scan() {
+        document.querySelectorAll('#sectionNavigation, .section-navigation').forEach(wire);
+    }
+    // El wizard puede inyectarse después (modal en Dashboard, Mis Agentes, etc.)
+    function start() {
+        scan();
+        new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+})();

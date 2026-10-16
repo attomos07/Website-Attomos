@@ -1029,6 +1029,7 @@ function setActiveView(view) {
     document.querySelectorAll('.inv-view-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
     });
+    invMoveSegThumb(true);
     document.querySelectorAll('.inv-view-panel').forEach(panel => {
         panel.classList.toggle('active', panel.dataset.view === view);
     });
@@ -1565,3 +1566,54 @@ document.addEventListener('DOMContentLoaded', () => {
     notifyParentReady();
     initModalVisibilityBridge();
 });
+
+/* ============================================
+   CAPA iOS 27 — cápsula deslizante del control
+   segmentado y números del resumen que rebotan
+   ============================================ */
+
+function invMoveSegThumb(animate) {
+    const tabs = document.querySelector('.inv-view-tabs');
+    if (!tabs) return;
+    let thumb = tabs.querySelector('.inv-seg-thumb');
+    if (!thumb) {
+        thumb = document.createElement('span');
+        thumb.className = 'inv-seg-thumb';
+        thumb.setAttribute('aria-hidden', 'true');
+        tabs.prepend(thumb);
+        tabs.classList.add('has-thumb');
+        animate = false;
+    }
+    const active = tabs.querySelector('.inv-view-tab.active');
+    if (!active || active.offsetParent === null) { thumb.style.opacity = '0'; return; }
+    const prev = thumb.style.transition;
+    if (!animate) thumb.style.transition = 'none';
+    thumb.style.opacity = '1';
+    thumb.style.width = active.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${active.offsetLeft}px)`;
+    if (!animate) { void thumb.offsetWidth; thumb.style.transition = prev; return; }
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        thumb.classList.remove('is-squish'); void thumb.offsetWidth; thumb.classList.add('is-squish');
+    }
+}
+
+(function () {
+    window.addEventListener('resize', () => invMoveSegThumb(false));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => invMoveSegThumb(false));
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.addEventListener('DOMContentLoaded', () => {
+        invMoveSegThumb(false);
+        if (reduce) return;
+        ['invCountOk', 'invCountLow', 'invCountOut'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let last = el.textContent;
+            new MutationObserver(() => {
+                if (el.textContent === last) return;
+                last = el.textContent;
+                el.classList.remove('inv-bump'); void el.offsetWidth; el.classList.add('inv-bump');
+            }).observe(el, { childList: true, characterData: true, subtree: true });
+        });
+    });
+})();

@@ -3551,3 +3551,302 @@ input:checked + .toggle-slider:before {
 .menu-file-viewer {
   margin-top: 0.75rem;
 }
+/* ============================================
+   ONBOARDING — capa de estilo iOS 27
+   (la usa también el modal de crear/editar agente en Dashboard,
+   Mis Agentes, Integraciones y Mi Negocio)
+   - Indicador de pasos tipo iOS: el punto activo se estira en cápsula.
+   - Pestañas de sección como control de cápsulas.
+   - Campos rellenos, interruptores iOS y tarjetas con resorte.
+   ============================================ */
+:root {
+  --ob-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ob-line: rgba(15, 23, 42, 0.07);
+  --ob-fill: rgba(118, 118, 128, 0.08);
+}
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --ob-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+@keyframes obRise { from { opacity: 0; transform: translateY(20px) scale(0.975); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes obPop { 0% { transform: scale(0.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes obCheck { 0% { transform: scale(0) rotate(-30deg); } 60% { transform: scale(1.2) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes obSquish { 0% { transform: scale(1); } 30% { transform: scale(0.92, 0.86); } 65% { transform: scale(1.05, 1.07); } 100% { transform: scale(1); } }
+
+/* Tarjeta principal */
+.content-card{
+  border-radius: 30px;
+  border: 1px solid var(--ob-line);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 24px 54px -32px rgba(15, 23, 42, 0.3);
+  animation: obRise 0.8s var(--ob-spring) backwards;
+}
+.content-card:hover { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 24px 54px -32px rgba(15, 23, 42, 0.3); }
+
+/* Progreso: porcentaje y puntos tipo iOS */
+.content-card .progress-wrapper{ padding: 1.6rem 2.5rem 0.6rem; }
+.content-card .progress-percentage{
+  font-size: 1.15rem;
+  letter-spacing: 0;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  -webkit-text-fill-color: #0891b2;
+  color: #0891b2;
+  font-variant-numeric: tabular-nums;
+}
+.content-card .progress-steps{ gap: 6px; padding: 6px 8px; border-radius: 999px; background: var(--ob-fill); }
+.content-card .progress-step{
+  width: 8px;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.18);
+  transition: width 0.5s var(--ob-spring), background 0.25s ease, opacity 0.25s ease;
+}
+.content-card .progress-step.dot-lit{ background: #06b6d4; opacity: 0.45; }
+.content-card .progress-step.dot-active{
+  width: 26px;
+  transform: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee, #0891b2);
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.45);
+}
+
+/* Encabezados de paso y sección */
+.content-card .step.active .step-header{ animation: obRise 0.6s var(--ob-spring) backwards; }
+.content-card .step-title{ letter-spacing: -0.03em; }
+.content-card .step-title i,
+.content-card .section-title i{
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 1.3rem;
+  color: #fff;
+  background: linear-gradient(150deg, #22d3ee, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 18px -8px rgba(6, 182, 212, 0.8);
+}
+.content-card .section-title{ font-size: 1.3rem; letter-spacing: -0.02em; }
+.content-card .section-title i{ width: 38px; height: 38px; border-radius: 12px; font-size: 1.1rem; }
+.content-card .form-section{ padding: 1.5rem 0.25rem; }
+
+/* Redes sociales: círculos con resorte y palomita */
+.content-card .social-content{ transition: transform 0.55s var(--ob-spring), box-shadow 0.3s ease, border-color 0.25s ease, background 0.25s ease; }
+.content-card .social-card:active .social-content{ transform: scale(0.94); }
+.content-card .social-icon-wrapper{ transition: transform 0.55s var(--ob-spring), box-shadow 0.3s ease; }
+.content-card .social-card input[type="radio"]:checked + .social-content{ border-color: #06b6d4; box-shadow: 0 0 0 5px rgba(6, 182, 212, 0.14), 0 14px 30px -12px rgba(6, 182, 212, 0.55); }
+.content-card .social-card input[type="radio"]:checked + .social-content::after{
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  margin-left: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: #06b6d4;
+  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.5);
+  animation: obCheck 0.5s var(--ob-spring);
+}
+.content-card .social-card input[type="radio"]:focus-visible + .social-content{ outline: 3px solid rgba(6, 182, 212, 0.5); outline-offset: 3px; }
+.content-card .status-coming-soon{ border-radius: 999px; }
+
+/* Pestañas de sección: cápsulas */
+.content-card .section-navigation{ flex-wrap: nowrap; overflow-x: auto; gap: 0.4rem; padding: 0.35rem; border-radius: 999px; background: var(--ob-fill); scrollbar-width: none; }
+.content-card .section-navigation::-webkit-scrollbar{ display: none; }
+.content-card .section-nav-btn{
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: #475569;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.3s ease, transform 0.45s var(--ob-spring);
+}
+.content-card .section-nav-btn:hover{ background: rgba(255, 255, 255, 0.7); color: #0891b2; transform: none; box-shadow: none; }
+.content-card .section-nav-btn:active{ transform: scale(0.93); }
+.content-card .section-nav-btn.active{
+  background: #fff;
+  color: #0891b2;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.06);
+  animation: obSquish 0.5s var(--ob-spring);
+}
+.content-card .section-nav-btn.completed{ color: #16a34a; }
+.content-card .section-nav-btn.completed i{ color: #16a34a; }
+
+.content-card .section-container.active{ animation: obRise 0.55s var(--ob-spring); }
+
+/* Campos rellenos estilo iOS */
+.content-card .form-input,
+.content-card .form-select,
+.content-card .form-textarea,
+.content-card .time-input,
+.content-card .holiday-item .form-input{
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background-color: var(--ob-fill);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+}
+.content-card .form-input:hover,
+.content-card .form-select:hover,
+.content-card .time-input:hover{ border-color: transparent; background-color: rgba(118, 118, 128, 0.11); }
+.content-card .form-input:focus,
+.content-card .form-select:focus,
+.content-card .form-textarea:focus,
+.content-card .time-input:focus{
+  transform: none;
+  background-color: #fff;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+.content-card .form-input[readonly]:not(.form-select){ background: rgba(118, 118, 128, 0.06) !important; border-color: transparent !important; }
+.content-card .form-help{ font-style: normal; color: #94a3b8; }
+.content-card .readonly-notice{ border-radius: 14px !important; border: 0 !important; background: rgba(52, 199, 89, 0.1) !important; }
+
+/* Interruptor iOS */
+.content-card .toggle-switch{ width: 51px; height: 31px; }
+.content-card .toggle-slider{ background: rgba(120, 120, 128, 0.2); transition: background 0.25s ease; }
+.content-card .toggle-slider:before{
+  width: 27px;
+  height: 27px;
+  left: 2px;
+  bottom: 2px;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18), 0 1px 1px rgba(15, 23, 42, 0.1);
+  transition: transform 0.5s var(--ob-spring), width 0.25s ease;
+}
+.content-card .toggle-switch:active .toggle-slider:before{ width: 33px; }
+.content-card input:checked + .toggle-slider{ background: #34c759; }
+.content-card input:checked + .toggle-slider:before{ transform: translateX(20px); }
+.content-card .toggle-switch:active input:checked + .toggle-slider:before{ transform: translateX(14px); }
+.content-card .toggle-container{ border: 0; border-radius: 18px; background: var(--ob-fill); }
+.content-card .toggle-container:hover{ border-color: transparent; }
+
+/* Tono: tarjetas que se levantan */
+.content-card .tone-radio-option{
+  border: 1.5px solid var(--ob-line);
+  border-radius: 22px;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease, transform 0.5s var(--ob-spring);
+}
+.content-card .tone-radio-option:hover{ background: #fff; color: inherit; border-color: rgba(6, 182, 212, 0.4); transform: translateY(-3px); box-shadow: 0 14px 28px -16px rgba(6, 182, 212, 0.55); }
+.content-card .tone-radio-option:hover .tone-icon-wrapper{ background: rgba(6, 182, 212, 0.12); }
+.content-card .tone-radio-option:hover .tone-icon-wrapper i{ color: #06b6d4; }
+.content-card .tone-radio-option:hover .tone-radio-label span{ color: #6b7280; }
+.content-card .tone-radio-option:active{ transform: scale(0.95); }
+.content-card .tone-radio-option.selected{
+  border-color: transparent;
+  background: linear-gradient(160deg, #22d3ee, #0891b2);
+  color: #fff;
+  box-shadow: 0 16px 30px -14px rgba(6, 182, 212, 0.75);
+}
+.content-card .tone-radio-option.selected .tone-icon-wrapper{ background: rgba(255, 255, 255, 0.22); }
+.content-card .tone-radio-option.selected .tone-icon-wrapper i{ color: #fff; }
+.content-card .tone-radio-option.selected .tone-radio-label span{ color: rgba(255, 255, 255, 0.9); }
+.content-card .tone-icon-wrapper{ border-radius: 18px; transition: transform 0.5s var(--ob-spring), background 0.25s ease; }
+.content-card .tone-radio-option.selected .tone-icon-wrapper{ animation: obSquish 0.5s var(--ob-spring); }
+.content-card .rich-editor{ border: 1.5px solid var(--ob-line); border-radius: 18px; }
+.content-card .editor-toolbar{ background: rgba(248, 250, 252, 0.9); border-bottom-color: var(--ob-line); }
+.content-card .editor-btn{ border-radius: 10px; transition: background 0.2s ease, transform 0.4s var(--ob-spring); }
+.content-card .editor-btn:active{ transform: scale(0.85); }
+
+/* Idiomas: casillas redondas */
+.content-card .language-checkbox-item{ border: 1.5px solid var(--ob-line); border-radius: 16px; transition: border-color 0.2s ease, background 0.2s ease, transform 0.45s var(--ob-spring); }
+.content-card .language-checkbox-item:active{ transform: scale(0.96); }
+.content-card .language-checkbox-item:has(input:checked){ border-color: rgba(6, 182, 212, 0.45); background: rgba(6, 182, 212, 0.05); }
+.content-card .language-checkbox-item input[type="checkbox"]{ border-radius: 50%; transition: background 0.2s ease, border-color 0.2s ease, transform 0.4s var(--ob-spring); }
+.content-card .language-checkbox-item input[type="checkbox"]:checked{ transform: scale(1.08); }
+
+/* Horario y listas */
+.content-card .schedule-day{ border: 0; border-radius: 18px; background: var(--ob-fill); transition: background 0.2s ease, opacity 0.3s ease; }
+.content-card .schedule-day:hover{ border-color: transparent; background: rgba(6, 182, 212, 0.07); }
+.content-card .schedule-day.closed{ opacity: 0.55; }
+.content-card .holiday-item,
+.content-card .service-item,
+.content-card .worker-item{
+  border: 1.5px solid var(--ob-line);
+  border-radius: 20px;
+  animation: obRise 0.5s var(--ob-spring) backwards;
+}
+.content-card .holiday-item:hover,
+.content-card .service-item:hover,
+.content-card .worker-item:hover{ border-color: rgba(6, 182, 212, 0.35); box-shadow: 0 14px 28px -18px rgba(6, 182, 212, 0.5); }
+.content-card .service-header,
+.content-card .worker-header{ border-bottom-color: var(--ob-line); }
+.content-card .btn-remove-holiday,
+.content-card .btn-remove-service,
+.content-card .btn-remove-worker{ border-radius: 50%; transition: background 0.2s ease, transform 0.45s var(--ob-spring); }
+.content-card .btn-remove-holiday:hover,
+.content-card .btn-remove-service:hover,
+.content-card .btn-remove-worker:hover{ transform: rotate(-12deg) scale(1.08); }
+.content-card .price-type-selector{ gap: 0; padding: 4px; border-radius: 999px; background: var(--ob-fill); }
+.content-card .price-type-option{ border: 0; border-radius: 999px; background: transparent; transition: background 0.25s ease, color 0.25s ease, box-shadow 0.3s ease, transform 0.45s var(--ob-spring); }
+.content-card .price-type-option.active{ background: #fff; color: #0891b2; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12); }
+.content-card .service-description-editor{ border: 1.5px solid var(--ob-line); border-radius: 16px; }
+.content-card .availability-day{ border: 0; border-radius: 999px; background: var(--ob-fill); }
+.content-card .availability-day:has(input:checked){ background: rgba(6, 182, 212, 0.12); color: #0891b2; font-weight: 600; }
+.content-card .availability-day input[type="checkbox"]{ border-radius: 50%; }
+.content-card .btn-add-holiday,
+.content-card .btn-add-service,
+.content-card .btn-add-worker{
+  border-width: 1.5px;
+  border-radius: 999px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.45s var(--ob-spring);
+}
+.content-card .btn-add-holiday:active,
+.content-card .btn-add-service:active,
+.content-card .btn-add-worker:active{ transform: scale(0.94); }
+.content-card .btn-add-holiday i,
+.content-card .btn-add-service i,
+.content-card .btn-add-worker i{ transition: transform 0.45s var(--ob-spring); }
+.content-card .btn-add-holiday:hover i,
+.content-card .btn-add-service:hover i,
+.content-card .btn-add-worker:hover i{ transform: rotate(90deg); }
+
+/* Botones de navegación del wizard */
+.content-card .action-buttons{ border-top: 0; }
+.content-card .btn{ border-radius: 999px; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ob-spring); }
+.content-card .btn-next{
+  border: 0;
+  color: #fff;
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 22px -10px rgba(6, 182, 212, 0.8);
+}
+.content-card .btn-next::before{ display: none; }
+.content-card .btn-next:hover:not(:disabled){ background: linear-gradient(180deg, #22c3dd, #0891b2); transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 14px 28px -12px rgba(6, 182, 212, 0.85); }
+.content-card .btn-next:active:not(:disabled),
+.content-card .btn-back:active{ transform: scale(0.94, 0.88); }
+.content-card .btn-next:disabled{ background: rgba(118, 118, 128, 0.18); color: #94a3b8; box-shadow: none; opacity: 1; }
+.content-card .btn-back{ border: 0; background: var(--ob-fill); color: #334155; }
+.content-card .btn-back:hover{ border-color: transparent; background: rgba(6, 182, 212, 0.1); color: #0891b2; box-shadow: none; }
+.content-card .btn-next i,
+.content-card .btn-back i{ transition: transform 0.45s var(--ob-spring); }
+.content-card .btn-next:hover:not(:disabled) i.lni-arrow-right{ transform: translateX(4px); }
+.content-card .btn-back:hover i.lni-arrow-left{ transform: translateX(-4px); }
+.content-card #btnCreateAgent:hover:not(:disabled) i{ transform: translateY(-3px) rotate(-12deg); }
+
+/* Resumen */
+.content-card .summary-card{ border: 0; border-radius: 24px; background: var(--ob-fill); }
+.content-card .summary-section{ border-bottom-color: var(--ob-line); animation: obRise 0.5s var(--ob-spring) backwards; }
+.content-card .summary-section:nth-child(2){ animation-delay: 0.05s; }
+.content-card .summary-section:nth-child(3){ animation-delay: 0.1s; }
+.content-card .summary-section:nth-child(n+4){ animation-delay: 0.15s; }
+.content-card .summary-list li{ border: 0; border-radius: 14px; }
+
+/* Modales de creación / éxito: brotan con resorte */
+.content-card .overlay{ background: rgba(15, 23, 42, 0.3); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.overlay.show .creating-content { animation: obRise 0.6s var(--ob-spring); }
+.creating-content { border-radius: 30px; }
+.creating-icon { border-radius: 34px; }
+.success-icon-large { animation: obPop 0.7s var(--ob-spring) 0.1s backwards; }
+.agent-details-box,
+.creating-note { border-radius: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card, .content-card .step.active .step-header, .content-card .section-container.active, .content-card .section-nav-btn.active,
+  .content-card .holiday-item, .content-card .service-item, .content-card .worker-item, .content-card .summary-section, .overlay.show .creating-content,
+  .success-icon-large, .content-card .tone-radio-option.selected .tone-icon-wrapper,
+  .content-card .social-card input[type="radio"]:checked + .social-content::after{ animation: none !important; }
+}

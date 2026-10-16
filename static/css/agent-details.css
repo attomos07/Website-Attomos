@@ -1015,3 +1015,295 @@ body {
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+/* ============================================
+   DETALLES DEL AGENTE — capa de estilo iOS 27
+   Tarjetas de cristal con entrada de resorte, cápsulas que se aplastan
+   al presionar, filas agrupadas tipo Ajustes y un QR con línea de
+   escaneo. Todo el comportamiento sigue en agent-details.js.
+   ============================================ */
+
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ios-line: rgba(15, 23, 42, 0.07);
+  --ios-fill: rgba(118, 118, 128, 0.08);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root { --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+@keyframes iosRiseMove { from { transform: translateY(26px) scale(0.965); } to { transform: none; } }
+@keyframes iosRiseFade { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: blur(0); } }
+@keyframes iosPop { 0% { transform: scale(0.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes iosFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-4px) rotate(-2deg); } }
+@keyframes iosRing { 0% { box-shadow: 0 0 0 0 currentColor; } 100% { box-shadow: 0 0 0 7px transparent; } }
+@keyframes iosScan { 0% { top: 8%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 92%; opacity: 0; } }
+@keyframes iosSquish { 0% { transform: scale(1); } 30% { transform: scale(0.92, 0.86); } 65% { transform: scale(1.05, 1.07); } 100% { transform: scale(1); } }
+
+/* Entrada escalonada con resorte (reemplaza cardRise) */
+.content-wrapper { animation: none; }
+.agent-header,
+.details-section,
+.qr-section,
+.back-button {
+  animation: iosRiseMove 0.8s var(--ios-spring) backwards, iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+.back-button { animation-delay: 0s; }
+.agent-header { animation-delay: 0.05s; }
+.qr-section { animation-delay: 0.12s; }
+.details-column-right > .details-section:nth-child(1) { animation-delay: 0.14s; }
+.details-column-right > .details-section:nth-child(2) { animation-delay: 0.2s; }
+.details-column-right > .details-section:nth-child(3) { animation-delay: 0.26s; }
+.details-column-right > .details-section:nth-child(4) { animation-delay: 0.32s; }
+.details-column-right > .details-section:nth-child(5) { animation-delay: 0.38s; }
+
+/* Volver: cápsula con flecha que se adelanta */
+.back-button {
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem 0.6rem 0.9rem;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-color: var(--ios-line);
+  font-weight: 600;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.45s var(--ios-spring);
+}
+.back-button svg { transition: transform 0.45s var(--ios-spring); }
+.back-button:hover { transform: none; background: #fff; }
+.back-button:hover svg { transform: translateX(-4px); }
+.back-button:active { transform: scale(0.94); }
+
+/* Encabezado del agente */
+.agent-header {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border-color: var(--ios-line);
+  background:
+    radial-gradient(420px 200px at 0% 0%, rgba(6, 182, 212, 0.10), transparent 70%),
+    radial-gradient(360px 180px at 100% 100%, rgba(56, 189, 248, 0.08), transparent 70%),
+    #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 40px -24px rgba(15, 23, 42, 0.25);
+}
+
+.agent-avatar-large {
+  position: relative;
+  border-radius: 26px;
+  background: linear-gradient(150deg, #22d3ee 0%, #06b6d4 45%, #0891b2 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 14px 28px -12px rgba(6, 182, 212, 0.75);
+  animation: iosPop 0.7s var(--ios-spring) 0.15s backwards;
+}
+.agent-avatar-large::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.4) 0%, transparent 45%);
+  pointer-events: none;
+}
+.agent-avatar-large svg { animation: iosFloat 4s ease-in-out infinite; }
+
+.agent-name { letter-spacing: -0.03em; font-weight: 800; }
+
+.agent-id {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-platform { border-radius: 999px; padding: 0.3rem 0.8rem; font-weight: 600; }
+
+.status-badge { border-radius: 999px; padding: 0.38rem 0.85rem 0.38rem 0.7rem; }
+.status-badge .status-dot { width: 8px; height: 8px; animation: iosRing 1.6s ease-out infinite; }
+.status-badge.inactive .status-dot { animation: none; }
+.status-badge.pending { color: #d97706; }
+
+/* Botones: cápsulas que se aplastan */
+.agent-actions .btn-primary,
+.agent-actions .btn-secondary {
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+.agent-actions .btn-primary {
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 20px -8px rgba(6, 182, 212, 0.7);
+}
+.agent-actions .btn-primary:hover,
+.agent-actions .btn-secondary:hover { transform: translateY(-2px); }
+.agent-actions .btn-primary:active,
+.agent-actions .btn-secondary:active { transform: scale(0.94, 0.9); }
+.agent-actions .btn-primary i { transition: transform 0.45s var(--ios-spring); }
+.agent-actions .btn-primary:hover i { transform: rotate(-14deg) scale(1.1); }
+.agent-actions .btn-secondary.ios-squish { animation: iosSquish 0.5s var(--ios-spring); }
+
+/* Secciones: tarjetas de cristal */
+.details-section {
+  border-radius: 24px;
+  border-color: var(--ios-line);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 14px 34px -22px rgba(15, 23, 42, 0.22);
+  transition: box-shadow 0.3s ease, transform 0.5s var(--ios-spring);
+}
+.details-section:hover { box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04), 0 22px 44px -22px rgba(6, 182, 212, 0.35); }
+
+.section-header { border-bottom: 0; padding-bottom: 0; margin-bottom: 1.1rem; }
+.section-title { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.01em; }
+.section-title i {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  color: #fff;
+  background: linear-gradient(150deg, #22d3ee, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 14px -6px rgba(6, 182, 212, 0.7);
+  transition: transform 0.5s var(--ios-spring);
+}
+.details-section:hover .section-title i { transform: rotate(-8deg) scale(1.06); }
+
+/* Info y configuración como filas agrupadas */
+.info-grid,
+.config-grid { gap: 0.6rem; }
+.info-item,
+.config-item {
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  background: var(--ios-fill);
+  gap: 0.25rem;
+  transition: background 0.2s ease, transform 0.45s var(--ios-spring);
+}
+.info-item:hover,
+.config-item:hover { background: rgba(6, 182, 212, 0.08); }
+.info-item label,
+.config-item label { font-size: 0.72rem; letter-spacing: 0.06em; font-weight: 600; color: #64748b; }
+.info-value,
+.config-value { font-weight: 600; color: #0f172a; }
+.config-value.message { background: #fff; border-color: var(--ios-line); border-radius: 14px; font-weight: 500; }
+
+/* Horario: renglones con cápsula de hora */
+.schedule-grid { gap: 0; border-radius: 18px; overflow: hidden; background: var(--ios-fill); }
+.schedule-item {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  position: relative;
+  animation: iosRiseFade 0.4s ease backwards;
+}
+.schedule-item + .schedule-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 1px;
+  background: var(--ios-line);
+}
+.schedule-time {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.schedule-time .closed { color: #ef4444; }
+
+/* Servicios y personal */
+.service-item,
+.worker-item {
+  animation: iosRiseMove 0.6s var(--ios-spring) backwards, iosRiseFade 0.35s ease backwards;
+  border-radius: 18px;
+  border-color: var(--ios-line);
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.3s ease, transform 0.5s var(--ios-spring);
+}
+.service-item:hover,
+.worker-item:hover {
+  transform: translateY(-3px);
+  background: #fff;
+  border-color: rgba(6, 182, 212, 0.35);
+  box-shadow: 0 16px 30px -18px rgba(6, 182, 212, 0.55);
+}
+.service-price {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  font-variant-numeric: tabular-nums;
+}
+.worker-avatar { border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 16px -8px rgba(6, 182, 212, 0.7); transition: transform 0.5s var(--ios-spring); }
+.worker-item:hover .worker-avatar { transform: rotate(-8deg) scale(1.06); }
+.day-badge { border-radius: 999px; border: 0; padding: 0.3rem 0.75rem; font-weight: 600; transition: transform 0.4s var(--ios-spring); }
+.day-badge:hover { transform: scale(1.08); }
+
+.no-data {
+  font-style: normal;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(15, 23, 42, 0.12);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+/* QR: marco con línea de escaneo */
+.qr-container {
+  position: relative;
+  border-radius: 22px;
+  background: radial-gradient(400px 260px at 50% 0%, rgba(6, 182, 212, 0.08), transparent 70%), #f8fafc;
+  overflow: hidden;
+}
+.qr-code { position: relative; border-radius: 22px; animation: iosPop 0.6s var(--ios-spring) backwards; }
+.qr-code::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.8);
+  animation: iosScan 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.qr-info { border-radius: 999px; }
+.connected-icon,
+.disconnected-icon { border-radius: 32px; animation: iosPop 0.7s var(--ios-spring) backwards; }
+.qr-instructions { border-radius: 20px; }
+.qr-instructions ol { counter-reset: qr; list-style: none; padding-left: 0; }
+.qr-instructions li { counter-increment: qr; position: relative; padding-left: 2.2rem; margin-bottom: 0.45rem; }
+.qr-instructions li::before {
+  content: counter(qr);
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: #06b6d4;
+}
+
+/* Modal de confirmación: brota con resorte */
+.confirm-overlay { background: rgba(15, 23, 42, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.confirm-content { border-radius: 30px; animation: iosRiseMove 0.6s var(--ios-spring), iosRiseFade 0.3s ease; }
+.confirm-icon { border-radius: 24px; animation: iosPop 0.6s var(--ios-spring) 0.08s backwards; }
+.confirm-list { border-radius: 18px; }
+.btn-confirm-cancel,
+.btn-confirm-action { border-radius: 999px; transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.45s var(--ios-spring); }
+.btn-confirm-cancel:active,
+.btn-confirm-action:active:not(:disabled) { transform: scale(0.94, 0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-header, .details-section, .qr-section, .back-button, .agent-avatar-large, .agent-avatar-large svg,
+  .status-badge .status-dot, .qr-code, .service-item, .worker-item, .qr-code::after, .schedule-item, .confirm-content, .confirm-icon {
+    animation: none !important;
+  }
+}

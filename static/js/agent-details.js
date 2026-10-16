@@ -691,3 +691,29 @@ function escapeHtml(text) {
 window.addEventListener('beforeunload', function() {
     stopQRPolling();
 });
+// ============================================
+// Capa iOS 27 — detalles de interacción (no cambia la lógica de arriba)
+// ============================================
+(function () {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Las filas del horario y las tarjetas de servicios/personal entran en cascada
+    function cascade(container, selector) {
+        if (!container || reduce) return;
+        container.querySelectorAll(selector).forEach((el, i) => {
+            el.style.animationDelay = (i * 40) + 'ms';
+        });
+    }
+    ['scheduleGrid', 'servicesList', 'workersList'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        new MutationObserver(() => cascade(el, '.schedule-item, .service-item, .worker-item')).observe(el, { childList: true });
+    });
+
+    // Pausar/Activar: el botón se aplasta como gelatina al tocarlo
+    document.addEventListener('pointerdown', (e) => {
+        const btn = e.target.closest('.agent-actions .btn-secondary');
+        if (!btn || reduce) return;
+        btn.classList.remove('ios-squish'); void btn.offsetWidth; btn.classList.add('ios-squish');
+    });
+})();

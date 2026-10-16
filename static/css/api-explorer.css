@@ -283,3 +283,231 @@ select.apx-input { cursor: pointer; }
     .apx-card { padding: 1.1rem; }
     .apx-indicators { grid-template-columns: repeat(2, 1fr); }
 }
+/* ============================================
+   API EXPLORER — capa de estilo iOS 27
+   (también la usa la vista "API Explorer" de inventory.html)
+   ============================================ */
+:root {
+    --apx-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+    --apx-line: rgba(15, 23, 42, 0.07);
+    --apx-fill: rgba(118, 118, 128, 0.08);
+}
+@supports not (animation-timing-function: linear(0, 1)) {
+    :root { --apx-spring: cubic-bezier(0.34, 1.35, 0.64, 1); }
+}
+
+@keyframes apxRise { from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes apxRowIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes apxPop { 0% { transform: scale(0.82); } 55% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes apxRing { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); } 100% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } }
+@keyframes apxFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes apxShimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* Página standalone (/api-explorer): mismo marco que el resto de la app.
+   Con :has() no afecta a inventory.html, que trae su propio layout. */
+body:has(.apx-layout) {
+    margin: 0;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+body:has(.apx-layout) *,
+body:has(.apx-layout) *::before,
+body:has(.apx-layout) *::after { box-sizing: border-box; }
+body:has(.apx-layout) .app-container { display: flex; height: 100vh; }
+body:has(.apx-layout) .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+body:has(.apx-layout) .content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 104px 2rem 2rem calc(2rem + 96px);
+    position: relative;
+    z-index: 1;
+}
+@media (max-width: 768px) {
+    body:has(.apx-layout) .content-wrapper { padding: 90px 1rem 1.5rem; }
+    .apx-layout .page-title { font-size: 1.5rem; }
+}
+
+/* Encabezado de la página */
+.apx-layout .page-header { margin-bottom: 1.4rem; }
+.apx-layout .page-title { display: flex; align-items: center; gap: 0.8rem; margin: 0 0 0.4rem; font-size: 2rem; font-weight: 800; color: #0f172a; }
+.apx-layout .page-subtitle { margin: 0; color: #64748b; font-size: 0.98rem; }
+.apx-layout .page-header { border-bottom: 0; animation: apxRise 0.7s var(--apx-spring) backwards; }
+.apx-layout .page-title { letter-spacing: -0.03em; }
+.apx-layout .page-title i {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    font-size: 1.4rem;
+    color: #fff;
+    background: linear-gradient(150deg, #22d3ee, #0891b2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 10px 22px -10px rgba(6, 182, 212, 0.8);
+}
+
+/* Tarjeta */
+.apx-card {
+    border-radius: 26px;
+    border-color: var(--apx-line);
+    padding: 1.6rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 18px 40px -26px rgba(15, 23, 42, 0.28);
+    animation: apxRise 0.8s var(--apx-spring) 0.08s backwards;
+}
+.apx-card-title i {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    color: #0891b2;
+    background: rgba(6, 182, 212, 0.12);
+}
+.apx-card-title h2 { letter-spacing: -0.01em; }
+
+/* Estado */
+.apx-status-badge { padding: 0.4rem 0.85rem 0.4rem 0.7rem; transition: background 0.3s ease, color 0.3s ease; }
+.apx-status-badge.apx-connected .apx-status-dot { animation: apxRing 1.6s ease-out infinite; }
+.apx-status-badge { animation: apxPop 0.5s var(--apx-spring); }
+
+/* Campos: estilo iOS relleno */
+.apx-label { font-size: 0.78rem; color: #475569; }
+.apx-input {
+    border: 1.5px solid transparent;
+    border-radius: 14px;
+    background: var(--apx-fill);
+    padding: 0.75rem 1rem;
+    font-size: 0.92rem;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease, transform 0.45s var(--apx-spring);
+}
+.apx-input:hover { background: rgba(118, 118, 128, 0.11); }
+.apx-input:focus { background: #fff; border-color: #06b6d4; box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14); }
+select.apx-input {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2.4rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+.apx-eye-btn {
+    border: 0;
+    border-radius: 14px;
+    background: var(--apx-fill);
+    min-width: 46px;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.45s var(--apx-spring);
+}
+.apx-eye-btn:hover { background: rgba(6, 182, 212, 0.12); color: #0891b2; }
+.apx-eye-btn:active { transform: scale(0.88); }
+.apx-eye-btn i { display: inline-block; transition: transform 0.45s var(--apx-spring); }
+.apx-eye-btn:active i { transform: scale(0.8) rotate(-12deg); }
+
+/* "Se guarda en tu cuenta": interruptor iOS (fijo, solo informativo) */
+.apx-remember { cursor: default; }
+.apx-remember input {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    width: 42px;
+    height: 26px;
+    flex: none;
+    border-radius: 999px;
+    background: #34c759;
+    cursor: default;
+    margin: 0;
+}
+.apx-remember input::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 18px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+}
+.apx-remember input:not(:checked) { background: rgba(120, 120, 128, 0.2); }
+.apx-remember input:not(:checked)::after { left: 2px; }
+
+.apx-security-note { border-radius: 16px; border: 0; background: rgba(245, 158, 11, 0.1); }
+.apx-hint { color: #94a3b8; }
+
+/* Botones: cápsulas con resorte */
+.apx-btn {
+    border-radius: 999px;
+    padding: 0.65rem 1.2rem;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease, filter 0.2s ease, transform 0.45s var(--apx-spring);
+    -webkit-tap-highlight-color: transparent;
+}
+.apx-btn:active:not(:disabled) { transform: scale(0.93, 0.88); }
+.apx-btn-primary {
+    background: linear-gradient(180deg, #22c3dd, #0891b2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 18px -8px rgba(6, 182, 212, 0.75);
+}
+.apx-btn-primary:hover { filter: none; transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 12px 24px -10px rgba(6, 182, 212, 0.85); }
+.apx-btn-secondary { background: var(--apx-fill); }
+.apx-btn-secondary:hover { background: rgba(6, 182, 212, 0.1); color: #0891b2; }
+.apx-btn i { transition: transform 0.45s var(--apx-spring); }
+.apx-btn:hover i { transform: scale(1.12); }
+#btnApxRefresh:active i { transform: rotate(-200deg); }
+#btnApxRefresh:disabled i { animation: apxSpin 0.8s linear infinite; }
+@keyframes apxSpin { to { transform: rotate(360deg); } }
+
+/* Conexión */
+.apx-connection-info { border: 0; border-radius: 16px; background: rgba(6, 182, 212, 0.06); }
+.apx-connection-link { padding: 0.2rem 0.6rem; border-radius: 999px; background: #fff; }
+
+/* Indicadores */
+.apx-indicator-card {
+    border: 0;
+    border-radius: 18px;
+    background: var(--apx-fill);
+    transition: background 0.2s ease, transform 0.5s var(--apx-spring);
+    animation: apxRise 0.6s var(--apx-spring) backwards;
+}
+.apx-indicator-card:nth-child(2) { animation-delay: 0.05s; }
+.apx-indicator-card:nth-child(3) { animation-delay: 0.1s; }
+.apx-indicator-card:nth-child(4) { animation-delay: 0.15s; }
+.apx-indicator-card:hover { transform: translateY(-2px); background: rgba(6, 182, 212, 0.08); }
+.apx-ind-value {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    display: inline-block;
+}
+.apx-ind-value.apx-bump { animation: apxPop 0.5s var(--apx-spring); }
+
+/* Tabla */
+.apx-table-wrap { border: 0; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 1px var(--apx-line); }
+.apx-table th {
+    background: rgba(248, 250, 252, 0.92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom-color: var(--apx-line);
+    font-size: 0.7rem;
+}
+.apx-table tbody tr { animation: apxRowIn 0.45s ease backwards; transition: background 0.15s ease; }
+.apx-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.apx-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.apx-table tbody tr:nth-child(4) { animation-delay: 0.09s; }
+.apx-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
+.apx-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
+.apx-table tbody tr:hover { background: rgba(6, 182, 212, 0.05); }
+.apx-thumb { border-radius: 12px; transition: transform 0.45s var(--apx-spring), box-shadow 0.3s ease; }
+.apx-thumb:hover { transform: scale(1.6); box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.45); position: relative; z-index: 2; }
+
+/* JSON crudo y vacío */
+.apx-raw { border-radius: 18px; animation: apxRise 0.5s var(--apx-spring); }
+.apx-empty i { animation: apxFloat 3s ease-in-out infinite; color: #a5f3fc; font-size: 2rem; }
+.apx-empty {
+    border-radius: 18px;
+    border: 1.5px dashed rgba(15, 23, 42, 0.1);
+    margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .apx-layout .page-header, .apx-card, .apx-status-badge, .apx-status-dot, .apx-indicator-card,
+    .apx-ind-value, .apx-table tbody tr, .apx-raw, .apx-empty i { animation: none !important; }
+}
