@@ -78,6 +78,10 @@
         myRescuer: () => api('/rescuer').then((d) => d.rescuer),
         saveRescuer: (payload) => api('/rescuer', { method: 'PUT', body: payload }).then((d) => d.rescuer),
         rescuerPledges: () => api('/rescuer/pledges'),
+        cities: (country) => api('/cities?country=' + encodeURIComponent(country || 'México')).then((d) => d.cities || []),
+        createPayout: (m) => api('/payout-methods', { method: 'POST', body: m }).then((d) => d.rescuer),
+        updatePayout: (id, m) => api('/payout-methods/' + id, { method: 'PUT', body: m }).then((d) => d.rescuer),
+        deletePayout: (id) => api('/payout-methods/' + id, { method: 'DELETE' }).then((d) => d.rescuer),
         createPlan: (p) => api('/plans', { method: 'POST', body: p }),
         updatePlan: (id, p) => api('/plans/' + id, { method: 'PUT', body: p }),
         deletePlan: (id) => api('/plans/' + id, { method: 'DELETE' }),
@@ -484,9 +488,11 @@
     }
     function rescuerCard(r, i = 0, href) {
         const tags = [];
-        if ((r.plans || []).length || r.allowCustomMonthly) tags.push('<span class="af-badge">Suscripción mensual</span>');
-        if (r.oneTime && r.oneTime.enabled) tags.push('<span class="af-badge is-coral">Donación única</span>');
-        const from = (r.plans || []).length ? Math.min(...r.plans.map((p) => p.amount)) : (r.allowCustomMonthly ? r.minCustomMonthly : 0);
+        const ready = !!(r.payments && r.payments.ready);
+        if (ready && ((r.plans || []).length || r.allowCustomMonthly)) tags.push('<span class="af-badge">Suscripción mensual</span>');
+        if (ready && r.oneTime && r.oneTime.enabled) tags.push('<span class="af-badge is-coral">Donación única</span>');
+        if ((r.payoutMethods || []).length) tags.push('<span class="af-badge is-green">Transferencia</span>');
+        const from = !ready ? 0 : (r.plans || []).length ? Math.min(...r.plans.map((p) => p.amount)) : (r.allowCustomMonthly ? r.minCustomMonthly : 0);
         return `<a class="af-rcard af-in" style="--i:${i}" href="${href || `/foundation/r/${encodeURIComponent(r.slug)}`}">
             <div class="af-rcard-head">
                 ${avatarHtml(r)}
@@ -536,9 +542,314 @@
         </div>`;
     }
 
+
+    // ------------------------------------------------------------------
+    // Dropdown con búsqueda (ciudades): se alimenta de lo que ya existe y,
+    // si no aparece, deja usar lo que la persona escribió.
+    // ------------------------------------------------------------------
+    const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    function combo(input, { load, onPick, empty = 'Escribe para buscar' } = {}) {
+        if (!input || input._afCombo) return input && input._afCombo;
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('role', 'combobox');
+        input.setAttribute('aria-expanded', 'false');
+        const wrap = document.createElement('div');
+        wrap.className = 'af-combo';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        const chev = document.createElement('span');
+        chev.className = 'af-combo-chev';
+        chev.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        wrap.appendChild(chev);
+        const menu = document.createElement('div');
+        menu.className = 'af-menu af-combo-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.innerHTML = '<span class="af-menu-ind" aria-hidden="true"></span><div class="af-menu-list"></div>';
+        document.body.appendChild(menu);
+        const list = menu.querySelector('.af-menu-list');
+        const ind = menu.querySelector('.af-menu-ind');
+        let options = [], open = false, hl = -1, loaded = false;
+
+        async function reload() {
+            try { options = (await load()) || []; } catch (_) { options = []; }
+            loaded = true;
+            if (open) build();
+        }
+        function items() { return [...list.querySelectorAll('.af-menu-opt')]; }
+        function build() {
+            const q = fold(input.value);
+            const match = options.filter((o) => !q || fold(o).includes(q)).slice(0, 60);
+            const exact = options.some((o) => fold(o) === q);
+            let html = match.map((o) => `<button type="button" class="af-menu-opt${fold(o) === q ? ' is-selected' : ''}" data-v="${esc(o)}" role="option">${esc(o)}</button>`).join('');
+            if (q && !exact) html += `<button type="button" class="af-menu-opt af-combo-new" data-v="${esc(input.value.trim())}" role="option"><span class="af-combo-plus">+</span>Usar «${esc(input.value.trim())}»</button>`;
+            if (!html) html = `<div class="af-combo-empty">${loaded ? empty : 'Cargando…'}</div>`;
+            list.innerHTML = html;
+            hl = -1;
+            highlight(0, true);
+            place();
+        }
+        function highlight(i, snap) {
+            const els = items();
+            if (!els.length) { ind.style.opacity = 0; hl = -1; return; }
+            hl = Math.max(0, Math.min(els.length - 1, i));
+            const el = els[hl];
+            els.forEach((x) => x.classList.toggle('is-hover', x === el));
+            if (snap) ind.style.transition = 'none';
+            ind.style.opacity = 1;
+            ind.style.height = `${el.offsetHeight}px`;
+            ind.style.transform = `translateY(${el.offsetTop - list.scrollTop + list.offsetTop}px)`;
+            if (snap) { void ind.offsetWidth; ind.style.transition = ''; }
+            const top = el.offsetTop, bottom = top + el.offsetHeight;
+            if (top < list.scrollTop) list.scrollTop = top;
+            else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+        }
+        function place() {
+            const r = input.getBoundingClientRect();
+            menu.style.width = `${Math.max(r.width, 200)}px`;
+            const h = Math.min(menu.scrollHeight, 320);
+            let top = r.bottom + 8, origin = 'top';
+            if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; origin = 'bottom'; }
+            menu.style.top = `${top}px`;
+            menu.style.left = `${Math.min(Math.max(r.left, 12), window.innerWidth - Math.max(r.width, 200) - 12)}px`;
+            menu.style.transformOrigin = `50% ${origin}`;
+        }
+        function show() {
+            if (open) return;
+            open = true;
+            if (!loaded) reload();
+            build();
+            menu.classList.add('is-open'); wrap.classList.add('is-open');
+            input.setAttribute('aria-expanded', 'true');
+        }
+        function close() {
+            if (!open) return;
+            open = false;
+            menu.classList.remove('is-open'); wrap.classList.remove('is-open');
+            input.setAttribute('aria-expanded', 'false');
+        }
+        function choose(v) {
+            input.value = v;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            onPick && onPick(v);
+            close();
+        }
+        input.addEventListener('focus', show);
+        input.addEventListener('click', show);
+        input.addEventListener('input', () => { if (!open) show(); else build(); });
+        input.addEventListener('keydown', (e) => {
+            if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { show(); e.preventDefault(); return; }
+            if (!open) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); highlight(hl + 1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(hl - 1); }
+            else if (e.key === 'Enter') { const el = items()[hl]; if (el) { e.preventDefault(); choose(el.dataset.v); } }
+            else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            else if (e.key === 'Tab') close();
+        });
+        chev.addEventListener('pointerdown', (e) => { e.preventDefault(); if (open) close(); else { input.focus(); show(); } });
+        list.addEventListener('pointermove', (e) => { const el = e.target.closest('.af-menu-opt'); if (el) highlight(items().indexOf(el)); });
+        list.addEventListener('pointerdown', (e) => e.preventDefault());
+        list.addEventListener('click', (e) => { const el = e.target.closest('.af-menu-opt'); if (el) choose(el.dataset.v); });
+        list.addEventListener('scroll', () => highlight(hl, true));
+        document.addEventListener('pointerdown', (e) => { if (open && !menu.contains(e.target) && !wrap.contains(e.target)) close(); }, true);
+        window.addEventListener('resize', () => close());
+        document.addEventListener('scroll', (e) => { if (open && !menu.contains(e.target)) place(); }, true);
+        input._afCombo = { reload, close };
+        return input._afCombo;
+    }
+
+    // ------------------------------------------------------------------
+    // Redes sociales: limpiar el usuario y mostrar sus publicaciones
+    // (embeds oficiales de Instagram, TikTok y la Página de Facebook)
+    // ------------------------------------------------------------------
+    const social = {
+        instagram(v) {
+            v = String(v || '').trim();
+            const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+            const u = (m ? m[1] : v.replace(/^@/, '')).replace(/\/.*$/, '');
+            return /^[A-Za-z0-9._]{1,30}$/.test(u) && !['p', 'reel', 'reels', 'stories', 'explore'].includes(u.toLowerCase()) ? u : '';
+        },
+        tiktok(v) {
+            v = String(v || '').trim();
+            const m = v.match(/tiktok\.com\/@([A-Za-z0-9._]+)/i);
+            const u = m ? m[1] : v.replace(/^@/, '');
+            return /^[A-Za-z0-9._]{2,24}$/.test(u) ? u : '';
+        },
+        facebook(v) {
+            v = String(v || '').trim();
+            if (!v) return '';
+            if (/^https?:\/\//i.test(v)) return /facebook\.com|fb\.com/i.test(v) ? v.replace(/^http:/i, 'https:') : '';
+            if (/^(www\.|m\.)?(facebook|fb)\.com\//i.test(v)) return 'https://' + v.replace(/^m\./i, 'www.');
+            const u = v.replace(/^@/, '');
+            return /^[A-Za-z0-9.\-]{3,80}$/.test(u) ? `https://www.facebook.com/${u}` : '';
+        },
+    };
+    let tiktokScript = null;
+    function loadTikTok() {
+        if (window.tiktokEmbed && window.tiktokEmbed.lib) { try { window.tiktokEmbed.lib.render(document.querySelectorAll('.tiktok-embed')); } catch (_) { /* */ } return; }
+        if (tiktokScript) tiktokScript.remove();
+        tiktokScript = document.createElement('script');
+        tiktokScript.async = true;
+        tiktokScript.src = 'https://www.tiktok.com/embed.js';
+        document.body.appendChild(tiktokScript);
+    }
+    function socialList(socials) {
+        const s = socials || {};
+        const out = [];
+        const ig = social.instagram(s.instagram), tt = social.tiktok(s.tiktok), fb = social.facebook(s.facebook);
+        if (ig) out.push({ key: 'instagram', label: 'Instagram', handle: '@' + ig, url: `https://www.instagram.com/${ig}/`, embed: `https://www.instagram.com/${ig}/embed/` });
+        if (tt) out.push({ key: 'tiktok', label: 'TikTok', handle: '@' + tt, url: `https://www.tiktok.com/@${tt}`, user: tt });
+        if (fb) out.push({ key: 'facebook', label: 'Facebook', handle: fb.replace(/^https:\/\/(www\.)?facebook\.com\//i, ''), url: fb });
+        return out;
+    }
+    /** Pinta las publicaciones de una red dentro de `box`. */
+    function renderSocialEmbed(box, item) {
+        if (!item) { box.innerHTML = ''; return; }
+        const w = Math.min(500, Math.max(280, Math.floor(box.clientWidth || 360)));
+        if (item.key === 'instagram') {
+            box.innerHTML = `<iframe class="af-embed-frame is-ig" src="${esc(item.embed)}" title="Instagram de ${esc(item.handle)}" loading="lazy" scrolling="no" allowtransparency="true"></iframe>`;
+        } else if (item.key === 'facebook') {
+            const src = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(item.url)}&tabs=timeline&width=${w}&height=560&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+            box.innerHTML = `<iframe class="af-embed-frame is-fb" src="${esc(src)}" width="${w}" height="560" title="Facebook de ${esc(item.handle)}" loading="lazy" scrolling="no" allow="encrypted-media"></iframe>`;
+        } else if (item.key === 'tiktok') {
+            box.innerHTML = `<blockquote class="tiktok-embed" cite="${esc(item.url)}" data-unique-id="${esc(item.user)}" data-embed-type="creator" style="max-width:720px;min-width:288px;margin:0"><section><a target="_blank" rel="noopener" href="${esc(item.url)}?refer=creator_embed">${esc(item.handle)}</a></section></blockquote>`;
+            loadTikTok();
+        }
+        box.insertAdjacentHTML('beforeend', `<a class="af-embed-open" href="${esc(item.url)}" target="_blank" rel="noopener">Ver en ${esc(item.label)} ↗</a>`);
+    }
+    /**
+     * Sección de publicaciones con pestañas por red. `lazy` espera a que la
+     * sección sea visible para cargar los embeds de terceros.
+     */
+    function socialFeed(host, socials, { lazy = true } = {}) {
+        const items = socialList(socials);
+        if (!items.length) { host.innerHTML = ''; host.hidden = true; return null; }
+        host.hidden = false;
+        let active = (host._afFeedActive && items.find((x) => x.key === host._afFeedActive)) ? host._afFeedActive : items[0].key;
+        const sig = JSON.stringify(items.map((x) => x.url));
+        if (host._afFeedSig === sig && host.querySelector('.af-embed-box')) return host;
+        host._afFeedSig = sig;
+        host.innerHTML = `
+            ${items.length > 1 ? `<div class="af-seg af-embed-tabs">${items.map((x) => `<button type="button" class="af-seg-btn${x.key === active ? ' is-active' : ''}" data-net="${x.key}">${esc(x.label)}</button>`).join('')}</div>` : ''}
+            <div class="af-embed-box"><div class="af-embed-ph"><span class="af-spinner"></span><span>Cargando publicaciones…</span></div></div>`;
+        const box = host.querySelector('.af-embed-box');
+        const tabs = host.querySelector('.af-embed-tabs');
+        const paint = () => renderSocialEmbed(box, items.find((x) => x.key === active));
+        if (tabs) {
+            segmented(tabs);
+            tabs.addEventListener('click', (e) => {
+                const b = e.target.closest('[data-net]');
+                if (!b || b.dataset.net === active) return;
+                active = host._afFeedActive = b.dataset.net;
+                tabs.querySelectorAll('[data-net]').forEach((x) => x.classList.toggle('is-active', x === b));
+                paint();
+            });
+        }
+        if (!lazy || !('IntersectionObserver' in window)) { paint(); return host; }
+        const io = new IntersectionObserver((ents) => {
+            if (ents.some((x) => x.isIntersecting)) { io.disconnect(); paint(); }
+        }, { rootMargin: '200px' });
+        io.observe(host);
+        return host;
+    }
+
+    // ------------------------------------------------------------------
+    // Datos para transferencias
+    // ------------------------------------------------------------------
+    const VE_BANKS = [
+        ['0102', 'Banco de Venezuela'], ['0104', 'Venezolano de Crédito'], ['0105', 'Mercantil'], ['0108', 'Provincial'],
+        ['0114', 'Bancaribe'], ['0115', 'Exterior'], ['0128', 'Caroní'], ['0134', 'Banesco'], ['0137', 'Sofitasa'],
+        ['0138', 'Banco Plaza'], ['0151', 'BFC Fondo Común'], ['0156', '100% Banco'], ['0157', 'DelSur'],
+        ['0163', 'Banco del Tesoro'], ['0166', 'Banco Agrícola'], ['0168', 'Bancrecer'], ['0169', 'R4 (Mi Banco)'],
+        ['0171', 'Banco Activo'], ['0172', 'Bancamiga'], ['0174', 'Banplus'], ['0175', 'Banco Digital de los Trabajadores'],
+        ['0177', 'Banfanb'], ['0191', 'BNC Nacional de Crédito'],
+    ];
+    const PAYOUT_KINDS = {
+        bank: 'Cuenta bancaria', pago_movil: 'Pago Móvil', zelle: 'Zelle', paypal: 'PayPal',
+        binance: 'Binance Pay', zinli: 'Zinli', other: 'Otro método',
+    };
+    const ACCOUNT_TYPES = { ahorros: 'Cuenta de ahorros', corriente: 'Cuenta corriente', clabe: 'CLABE', tarjeta: 'Tarjeta de débito', otra: 'Cuenta' };
+    const PAYOUT_ICONS = {
+        bank: '<svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>',
+        pago_movil: '<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+        zelle: '<svg viewBox="0 0 24 24"><path d="M7 6h10l-10 12h10"/><path d="M12 3v3M12 18v3"/></svg>',
+        paypal: '<svg viewBox="0 0 24 24"><path d="M8 20 10 6h5.5a3.5 3.5 0 0 1 0 7H11"/><path d="M6 17h3"/></svg>',
+        binance: '<svg viewBox="0 0 24 24"><path d="m12 3 3 3-3 3-3-3ZM6 9l3 3-3 3-3-3ZM18 9l3 3-3 3-3-3ZM12 15l3 3-3 3-3-3Z"/></svg>',
+        zinli: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8 10h8l-8 4h8"/></svg>',
+        other: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+    };
+    const veBankName = (code) => (VE_BANKS.find((b) => b[0] === code) || [code, ''])[1];
+    function payoutTitle(m) {
+        if (m.kind === 'bank') return m.bankName || 'Cuenta bancaria';
+        if (m.kind === 'pago_movil') return `Pago Móvil · ${veBankName(m.bankCode) || 'Banco'}`;
+        if (m.kind === 'other') return m.bankName || 'Otro método';
+        return PAYOUT_KINDS[m.kind] || 'Método';
+    }
+    /** Filas [etiqueta, valor, copiable] de un método. */
+    function payoutRows(m) {
+        const rows = [];
+        if (m.kind === 'bank') {
+            rows.push([ACCOUNT_TYPES[m.accountType] || 'Cuenta', m.accountNumber, true]);
+            if (m.holderName) rows.push(['Titular', m.holderName, true]);
+            if (m.holderId) rows.push(['Documento', m.holderId, true]);
+        } else if (m.kind === 'pago_movil') {
+            rows.push(['Banco', `${m.bankCode} · ${veBankName(m.bankCode)}`, true]);
+            rows.push(['Teléfono', m.phone, true]);
+            rows.push(['Cédula', m.holderId, true]);
+            if (m.holderName) rows.push(['Titular', m.holderName, true]);
+        } else if (m.kind === 'other') {
+            rows.push(['Datos', m.note, true]);
+            if (m.holderName) rows.push(['Titular', m.holderName, true]);
+            if (m.holderId) rows.push(['Documento', m.holderId, true]);
+            return rows;
+        } else {
+            const lbl = { zelle: 'Correo o teléfono', zinli: 'Correo o teléfono', paypal: 'Correo o enlace', binance: 'Pay ID o correo' }[m.kind];
+            rows.push([lbl, m.handle, true]);
+            if (m.holderName) rows.push(['Titular', m.holderName, true]);
+        }
+        if (m.note) rows.push(['Nota', m.note, false]);
+        return rows;
+    }
+    function payoutText(m) {
+        return [payoutTitle(m) + (m.country && m.kind === 'bank' ? ` (${m.country})` : ''), ...payoutRows(m).map((r) => `${r[0]}: ${r[1]}`)].join('\n');
+    }
+    function payoutCard(m, i = 0, { edit = false } = {}) {
+        const paypalLink = m.kind === 'paypal' && /paypal\.me\//i.test(m.handle) ? (/^https?:/i.test(m.handle) ? m.handle : 'https://' + m.handle) : '';
+        return `<div class="af-payout af-in" style="--i:${i}" data-payout="${esc(m.id)}">
+            <div class="af-payout-head">
+                <span class="af-ic">${PAYOUT_ICONS[m.kind] || PAYOUT_ICONS.other}</span>
+                <div class="af-payout-title"><strong>${esc(payoutTitle(m))}</strong><span>${esc(PAYOUT_KINDS[m.kind] || '')}${m.country && m.kind === 'bank' ? ' · ' + esc(m.country) : ''}</span></div>
+                ${edit
+                    ? `<button type="button" class="af-btn af-btn-soft af-btn-sm" data-edit-payout="${esc(m.id)}">Editar</button>`
+                    : `<button type="button" class="af-btn af-btn-ghost af-btn-sm" data-copy-all="${esc(m.id)}">Copiar todo</button>`}
+            </div>
+            <dl class="af-payout-rows">${payoutRows(m).map((r) => `
+                <div class="af-payout-row"><dt>${esc(r[0])}</dt><dd><span>${esc(r[1])}</span>${r[2] && !edit ? `<button type="button" class="af-copy" data-copy="${esc(r[1])}" aria-label="Copiar ${esc(r[0])}"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>` : ''}</dd></div>`).join('')}
+            </dl>
+            ${paypalLink && !edit ? `<a class="af-btn af-btn-primary af-btn-sm" href="${esc(paypalLink)}" target="_blank" rel="noopener">Abrir PayPal</a>` : ''}
+        </div>`;
+    }
+    async function copyText(t) {
+        try { await navigator.clipboard.writeText(t); }
+        catch (_) {
+            const ta = document.createElement('textarea');
+            ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch (__) { /* */ }
+            ta.remove();
+        }
+    }
+    document.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-copy]');
+        if (!b) return;
+        await copyText(b.dataset.copy);
+        b.classList.remove('is-done'); void b.offsetWidth; b.classList.add('is-done');
+        toast('Copiado');
+    });
+
     window.AF = {
-        api, store, session, toast, segmented, iosSelect, initNavbar, initSidebar, readImage, uid, esc, money, slugify, initials, fmtDate,
-        ui: { avatarHtml, rescuerCard, pledgeRow, pledgeStatus, PLEDGE_TYPES },
+        api, store, session, toast, segmented, iosSelect, combo, initNavbar, initSidebar, readImage, uid, esc, money, slugify, initials, fmtDate, copyText,
+        social, socialList, socialFeed,
+        ui: { avatarHtml, rescuerCard, pledgeRow, pledgeStatus, PLEDGE_TYPES, payoutCard, payoutText, payoutTitle, PAYOUT_KINDS, ACCOUNT_TYPES, VE_BANKS },
     };
     document.addEventListener('DOMContentLoaded', initNavbar);
 })();

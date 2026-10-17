@@ -41,6 +41,7 @@ func RegisterFoundationRoutes(router *gin.Engine) {
 	api.GET("/auth/me", FoundationMe)
 	api.GET("/rescuers", FoundationListRescuers)
 	api.GET("/rescuers/:slug", FoundationGetRescuer)
+	api.GET("/cities", FoundationCities)
 
 	// Con sesión (donador o rescatista)
 	user := api.Group("", FoundationAuthRequired())
@@ -58,6 +59,9 @@ func RegisterFoundationRoutes(router *gin.Engine) {
 	res.POST("/plans", FoundationCreatePlan)
 	res.PUT("/plans/:id", FoundationUpdatePlan)
 	res.DELETE("/plans/:id", FoundationDeletePlan)
+	res.POST("/payout-methods", FoundationCreatePayout)
+	res.PUT("/payout-methods/:id", FoundationUpdatePayout)
+	res.DELETE("/payout-methods/:id", FoundationDeletePayout)
 	res.POST("/upload", FoundationUploadImage)
 	res.GET("/google/connect", FoundationDriveConnect)
 	res.DELETE("/google", FoundationDriveDisconnect)

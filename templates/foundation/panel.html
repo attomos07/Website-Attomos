@@ -6,8 +6,8 @@
     <title>Mi panel · Attomos Foundation</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=3">
-    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=3">
+    <link rel="stylesheet" href="/static/css/foundation/foundation.css?v=4">
+    <link rel="stylesheet" href="/static/css/foundation/foundation-pages.css?v=4">
 </head>
 <body class="af-body-panel">
     <div class="af-glow" aria-hidden="true"></div>
@@ -95,12 +95,12 @@
                             </div>
                             <div class="af-field">
                                 <label class="af-label" for="pCity">Ciudad</label>
-                                <input class="af-input" id="pCity" data-bind="city" maxlength="60" placeholder="Ej. Hermosillo, Sonora">
+                                <input class="af-input" id="pCity" data-bind="city" maxlength="60" placeholder="Busca o escribe tu ciudad">
                             </div>
                             <div class="af-field">
                                 <label class="af-label" for="pCountry">País</label>
                                 <select id="pCountry" data-bind="country">
-                                    <option>México</option><option>Venezuela</option>
+                                    <option>México</option><option>Venezuela</option><option>Ecuador</option>
                                 </select>
                             </div>
                             <div class="af-field is-full">
@@ -118,6 +118,10 @@
                             <div class="af-field"><label class="af-label" for="sFb">Facebook</label><input class="af-input" id="sFb" data-bind="socials.facebook" placeholder="facebook.com/turescate"></div>
                             <div class="af-field"><label class="af-label" for="sTt">TikTok</label><input class="af-input" id="sTt" data-bind="socials.tiktok" placeholder="@turescate"></div>
                             <div class="af-field"><label class="af-label" for="sWa">WhatsApp</label><input class="af-input" id="sWa" data-bind="socials.whatsapp" inputmode="tel" placeholder="+52 662 000 0000"></div>
+                        </div>
+                        <div class="af-social-preview" id="socialPreviewWrap" hidden>
+                            <p class="af-label" style="margin:22px 0 10px">Así se verán tus publicaciones en tu página</p>
+                            <div class="af-embed-host" id="socialPreview"></div>
                         </div>
                     </div>
 
@@ -302,6 +306,17 @@
                     </div>
                     <div data-pay-body></div>
                 </div>
+                <!-- Datos para transferencias (rescatista) -->
+                <div class="af-card" data-only="rescuer" id="payoutCard">
+                    <div class="af-card-head" style="margin-bottom:12px">
+                        <div>
+                            <h2 class="af-card-title"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span>Datos para transferencias</h2>
+                            <p class="af-card-sub">Cuentas de banco, Pago Móvil, Zelle, PayPal, Binance o lo que uses. Se muestran en tu página para que te donen directo.</p>
+                        </div>
+                        <button type="button" class="af-btn af-btn-primary af-btn-sm" data-new-payout><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar</button>
+                    </div>
+                    <div class="af-payouts" id="payoutList"></div>
+                </div>
                 <!-- Google Drive (rescatista) -->
                 <div class="af-card" data-only="rescuer" id="driveCard">
                     <div class="af-card-head" style="margin-bottom:12px">
@@ -384,10 +399,87 @@
 
     </div>
 
+    <div class="af-sheet" id="payoutSheet" aria-hidden="true">
+        <div class="af-sheet-backdrop" data-close></div>
+        <form class="af-sheet-card" role="dialog" aria-modal="true" aria-labelledby="payoutSheetTitle" novalidate>
+            <div class="af-sheet-head">
+                <h3 id="payoutSheetTitle"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><span data-title>Nuevo método</span></h3>
+                <button type="button" class="af-icon-btn af-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="af-form">
+                <div class="af-form-grid">
+                    <div class="af-field is-full">
+                        <label class="af-label" for="poKind">Tipo</label>
+                        <select id="poKind">
+                            <option value="bank">Cuenta bancaria</option>
+                            <option value="pago_movil">Pago Móvil (Venezuela)</option>
+                            <option value="zelle">Zelle</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="binance">Binance Pay</option>
+                            <option value="zinli">Zinli</option>
+                            <option value="other">Otro método</option>
+                        </select>
+                    </div>
+                    <div class="af-field" data-kinds="bank">
+                        <label class="af-label" for="poCountry">País de la cuenta</label>
+                        <select id="poCountry">
+                            <option>México</option><option>Venezuela</option><option>Ecuador</option><option>Colombia</option><option>Argentina</option><option>Perú</option><option>Chile</option><option>Estados Unidos</option><option>España</option><option>Otro</option>
+                        </select>
+                    </div>
+                    <div class="af-field" data-kinds="bank other">
+                        <label class="af-label" for="poBankName" data-label-bank>Banco</label>
+                        <input class="af-input" id="poBankName" maxlength="80" placeholder="Ej. Banco Pichincha">
+                    </div>
+                    <div class="af-field is-full" data-kinds="pago_movil">
+                        <label class="af-label" for="poBankCode">Banco</label>
+                        <select id="poBankCode"></select>
+                    </div>
+                    <div class="af-field" data-kinds="bank">
+                        <label class="af-label" for="poAccountType">Tipo de cuenta</label>
+                        <select id="poAccountType">
+                            <option value="ahorros">Ahorros</option><option value="corriente">Corriente</option><option value="clabe">CLABE (México)</option><option value="tarjeta">Tarjeta de débito</option><option value="otra">Otra</option>
+                        </select>
+                    </div>
+                    <div class="af-field" data-kinds="bank">
+                        <label class="af-label" for="poAccountNumber">Número de cuenta</label>
+                        <input class="af-input" id="poAccountNumber" maxlength="40" inputmode="numeric" placeholder="Solo números">
+                    </div>
+                    <div class="af-field" data-kinds="pago_movil">
+                        <label class="af-label" for="poPhone">Teléfono</label>
+                        <input class="af-input" id="poPhone" maxlength="20" inputmode="tel" placeholder="0412 0000000">
+                    </div>
+                    <div class="af-field is-full" data-kinds="zelle paypal binance zinli">
+                        <label class="af-label" for="poHandle" data-label-handle>Correo o teléfono</label>
+                        <input class="af-input" id="poHandle" maxlength="160">
+                    </div>
+                    <div class="af-field" data-kinds="bank pago_movil zelle binance zinli other">
+                        <label class="af-label" for="poHolderName">Titular</label>
+                        <input class="af-input" id="poHolderName" maxlength="120" placeholder="Nombre como aparece en la cuenta">
+                    </div>
+                    <div class="af-field" data-kinds="bank pago_movil other">
+                        <label class="af-label" for="poHolderId" data-label-id>Documento del titular</label>
+                        <input class="af-input" id="poHolderId" maxlength="40" placeholder="CI, cédula o RFC">
+                    </div>
+                    <div class="af-field is-full" data-kinds="bank pago_movil zelle paypal binance zinli other">
+                        <label class="af-label" for="poNote" data-label-note>Nota (opcional)</label>
+                        <textarea class="af-textarea" id="poNote" maxlength="300" style="min-height:80px" placeholder="Ej. Envía tu comprobante por WhatsApp"></textarea>
+                    </div>
+                </div>
+                <div class="af-payout-preview" id="poPreview"></div>
+            </div>
+            <div class="af-sheet-foot">
+                <button type="button" class="af-btn af-btn-danger" data-delete hidden>Eliminar</button>
+                <span style="flex:1"></span>
+                <button type="button" class="af-btn af-btn-ghost" data-close>Cancelar</button>
+                <button type="submit" class="af-btn af-btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+
     <div class="af-sheet" id="confirmSheet" aria-hidden="true">
         <div class="af-sheet-backdrop" data-close></div>
         <div class="af-sheet-card" role="alertdialog" aria-modal="true" style="width:min(400px,100%);text-align:center">
-            <span class="af-ic" style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(150deg,#fb7185,#e11d48)"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></span>
+            <span class="af-ic" style="width:56px;height:56px;margin:0 auto 12px;color:#e11d48;border-color:#e11d48"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></span>
             <h3 style="margin:0 0 6px" data-title>¿Eliminar?</h3>
             <p style="margin:0;color:var(--af-muted)" data-text>Esta acción no se puede deshacer.</p>
             <div class="af-sheet-foot" style="justify-content:center">
@@ -399,7 +491,7 @@
 
     <div class="af-toasts" id="afToasts" aria-live="polite"></div>
 
-    <script src="/static/js/foundation/foundation-core.js?v=3"></script>
-    <script src="/static/js/foundation/foundation-panel.js?v=3"></script>
+    <script src="/static/js/foundation/foundation-core.js?v=4"></script>
+    <script src="/static/js/foundation/foundation-panel.js?v=4"></script>
 </body>
 </html>{{end}}

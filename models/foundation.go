@@ -17,7 +17,9 @@ import (
 // suscripción mensual (o monto libre) y donación única.
 //
 // Pagos: México → Stripe Connect Express (cargo directo en la cuenta de la
-// rescatista). Venezuela → PayPal (pendiente).
+// rescatista). Venezuela → PayPal (pendiente). En cualquier país la
+// rescatista puede publicar sus datos para transferencias (cuentas de banco,
+// Pago Móvil, Zelle, PayPal, Binance...), que el donador copia y usa directo.
 // Foto de perfil: vive en el Google Drive de la rescatista (scope drive.file);
 // aquí solo se guarda el fileId.
 // =============================================================================
@@ -74,7 +76,7 @@ type FoundationRescuer struct {
 	Slug    string `gorm:"size:60;not null;uniqueIndex" json:"slug"`
 	Name    string `gorm:"size:120;not null" json:"name"`
 	City    string `gorm:"size:120" json:"city"`
-	Country string `gorm:"size:60;default:'México'" json:"country"` // México | Venezuela
+	Country string `gorm:"size:60;default:'México'" json:"country"` // México | Venezuela | Ecuador
 	Bio     string `gorm:"type:text" json:"bio"`
 
 	AvatarFileID string `gorm:"size:120" json:"avatarFileId"`
@@ -111,7 +113,8 @@ type FoundationRescuer struct {
 	DriveIssue       string     `gorm:"size:255" json:"-"` // aviso para la rescatista (foto en papelera, token revocado...)
 	DriveCheckedAt   *time.Time `json:"-"`
 
-	Plans []FoundationPlan `gorm:"foreignKey:RescuerID" json:"plans"`
+	Plans         []FoundationPlan         `gorm:"foreignKey:RescuerID" json:"plans"`
+	PayoutMethods []FoundationPayoutMethod `gorm:"foreignKey:RescuerID" json:"payoutMethods"`
 
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
@@ -122,18 +125,21 @@ func (FoundationRescuer) TableName() string { return "foundation_rescuers" }
 
 // Currency moneda en la que cobra según su país.
 func (r *FoundationRescuer) Currency() string {
-	if r.Country == "Venezuela" {
-		return "USD"
+	if r.Country == "México" || r.Country == "" {
+		return "MXN"
 	}
-	return "MXN"
+	return "USD"
 }
 
-// PaymentProvider pasarela según el país.
+// PaymentProvider pasarela de tarjeta según el país ("" = solo transferencias).
 func (r *FoundationRescuer) PaymentProvider() string {
-	if r.Country == "Venezuela" {
-		return "paypal"
+	switch r.Country {
+	case "México", "":
+		return "stripe"
+	case "Venezuela":
+		return "paypal" // próximamente
 	}
-	return "stripe"
+	return ""
 }
 
 // PaymentsReady true si ya puede recibir aportes.
@@ -159,6 +165,31 @@ func (r *FoundationRescuer) SetSuggested(v []float64) {
 	b, _ := json.Marshal(v)
 	r.OneTimeSuggested = string(b)
 }
+
+// FoundationPayoutMethod — dato para recibir transferencias directas que la
+// rescatista publica en su página (el donador lo copia y paga por su cuenta).
+type FoundationPayoutMethod struct {
+	ID            uint   `gorm:"primaryKey" json:"-"`
+	RescuerID     uint   `gorm:"not null;index" json:"-"`
+	Kind          string `gorm:"size:20;not null" json:"kind"` // bank | pago_movil | zelle | paypal | binance | zinli | other
+	Country       string `gorm:"size:40" json:"country"`
+	BankName      string `gorm:"size:80" json:"bankName"`      // banco, o nombre del método si Kind = other
+	BankCode      string `gorm:"size:10" json:"bankCode"`      // código de banco (Pago Móvil)
+	AccountType   string `gorm:"size:20" json:"accountType"`   // ahorros | corriente | clabe | tarjeta | otra
+	AccountNumber string `gorm:"size:40" json:"accountNumber"` // número de cuenta / CLABE / tarjeta
+	HolderName    string `gorm:"size:120" json:"holderName"`
+	HolderID      string `gorm:"size:40" json:"holderId"` // CI, cédula, RFC...
+	Phone         string `gorm:"size:30" json:"phone"`
+	Handle        string `gorm:"size:160" json:"handle"` // correo, teléfono, Pay ID, paypal.me...
+	Note          string `gorm:"size:300" json:"note"`
+	SortOrder     int    `gorm:"default:0" json:"-"`
+
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (FoundationPayoutMethod) TableName() string { return "foundation_payout_methods" }
 
 // FoundationPlan — plan de suscripción mensual de una rescatista.
 type FoundationPlan struct {

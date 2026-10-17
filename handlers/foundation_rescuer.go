@@ -20,7 +20,7 @@ import (
 // ATTOMOS FOUNDATION — perfil de rescatista, planes y listados
 // =============================================================================
 
-var foundationCountries = map[string]bool{"México": true, "Venezuela": true}
+var foundationCountries = map[string]bool{"México": true, "Venezuela": true, "Ecuador": true}
 
 const (
 	foundationMaxPlans     = 12
@@ -64,6 +64,10 @@ func foundationRescuerJSON(r *models.FoundationRescuer, private bool) gin.H {
 	for i := range r.Plans {
 		plans = append(plans, foundationPlanJSON(&r.Plans[i]))
 	}
+	methods := make([]gin.H, 0, len(r.PayoutMethods))
+	for i := range r.PayoutMethods {
+		methods = append(methods, foundationPayoutJSON(&r.PayoutMethods[i]))
+	}
 	cur := r.Currency()
 	out := gin.H{
 		"id":           idStr(r.ID),
@@ -90,10 +94,12 @@ func foundationRescuerJSON(r *models.FoundationRescuer, private bool) gin.H {
 			"allowCustom": r.OneTimeAllowCustom,
 			"min":         r.OneTimeMin,
 		},
-		"published": r.Published,
+		"published":     r.Published,
+		"payoutMethods": methods,
 		"payments": gin.H{
 			"provider":  r.PaymentProvider(),
 			"ready":     r.PaymentsReady(),
+			"manual":    len(methods) > 0,
 			"minAmount": foundationMinAmount(cur),
 		},
 	}
@@ -114,7 +120,7 @@ func foundationRescuerJSON(r *models.FoundationRescuer, private bool) gin.H {
 }
 
 func foundationLoadRescuer(q *gorm.DB) *gorm.DB {
-	return q.Preload("Plans")
+	return q.Preload("Plans").Preload("PayoutMethods", func(db *gorm.DB) *gorm.DB { return db.Order("sort_order ASC, id ASC") })
 }
 
 // ─── Público ─────────────────────────────────────────────────────────────────
@@ -216,7 +222,7 @@ func FoundationUpdateMyRescuer(c *gin.Context) {
 		return
 	}
 	if !foundationCountries[req.Country] {
-		badReq(c, "Por ahora solo México y Venezuela", "country")
+		badReq(c, "Por ahora solo México, Venezuela y Ecuador", "country")
 		return
 	}
 	if req.Country != r.Country {
@@ -287,7 +293,7 @@ func FoundationUpdateMyRescuer(c *gin.Context) {
 		return
 	}
 
-	r.Name, r.Slug, r.City, r.Country, r.Bio = req.Name, req.Slug, req.City, req.Country, req.Bio
+	r.Name, r.Slug, r.City, r.Country, r.Bio = req.Name, req.Slug, foundationCanonicalCity(req.Country, req.City), req.Country, req.Bio
 	r.AvatarFileID = req.AvatarFileID
 	r.Instagram, r.Facebook = strings.TrimSpace(req.Instagram), strings.TrimSpace(req.Facebook)
 	r.TikTok, r.WhatsApp = strings.TrimSpace(req.TikTok), strings.TrimSpace(req.WhatsApp)
@@ -296,7 +302,7 @@ func FoundationUpdateMyRescuer(c *gin.Context) {
 	r.SetSuggested(sugg)
 	r.Published = req.Published
 
-	if err := config.DB.Omit("Plans").Save(r).Error; err != nil {
+	if err := config.DB.Omit("Plans", "PayoutMethods").Save(r).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudieron guardar los cambios"})
 		return
 	}

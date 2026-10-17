@@ -2055,3 +2055,42 @@ html {
         animation: none !important;
     }
 }
+/* ============================================
+   ÍCONOS CON ANILLO CIAN
+   Mismo estilo que .platform-icon del index (Clínica Dental):
+   círculo blanco, anillo cian y trazo cian.
+   ============================================ */
+.nav-more-ic,
+.nav-more-ic.is-academy,
+.nav-more-ic.is-finance,
+.nav-more-ic.is-foundation {
+    background: #ffffff;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 8px 20px -10px rgba(6, 182, 212, 0.5);
+}
+
+.ios-menu .nav-more-option.is-hover .nav-more-ic {
+    background: #06b6d4;
+    color: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .nav-link-icon {
+        background: #ffffff;
+        color: #06b6d4;
+        border: 2px solid #06b6d4;
+        box-shadow: 0 6px 16px -10px rgba(6, 182, 212, 0.55);
+    }
+
+    .nav-link-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .nav-menu .nav-link.active .nav-link-icon {
+        background: #06b6d4;
+        border-color: #06b6d4;
+        color: #ffffff;
+    }
+}

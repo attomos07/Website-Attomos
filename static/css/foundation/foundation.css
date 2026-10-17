@@ -387,6 +387,7 @@ svg { flex: none; }
 .af-card-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
 .af-card-title { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 19px; font-weight: 750; letter-spacing: -0.02em; }
 .af-card-sub { margin: 4px 0 0; color: var(--af-muted); font-size: 14px; }
+/* Íconos en círculo con anillo cian (mismo estilo que .platform-icon del index) */
 .af-ic {
   display: grid;
   place-items: center;
@@ -394,12 +395,14 @@ svg { flex: none; }
   height: 40px;
   border-radius: 50%;
   flex: none;
-  color: #fff;
-  background: linear-gradient(150deg, #22d3ee, var(--af-cyan-strong));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 16px -8px rgba(6, 182, 212, 0.75);
+  color: var(--af-cyan);
+  background: #fff;
+  border: 2px solid var(--af-cyan);
+  box-shadow: 0 8px 20px -10px rgba(6, 182, 212, 0.5);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.45s var(--af-spring);
 }
-.af-ic.is-coral { background: linear-gradient(150deg, #ff9a8b, var(--af-coral-strong)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 16px -8px rgba(240, 79, 95, 0.7); }
-.af-ic svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.af-ic.is-coral { color: var(--af-cyan); border-color: var(--af-cyan); }
+.af-ic svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .af-empty {
   display: flex;
@@ -713,4 +716,56 @@ body:has(.af-navbar) .af-toasts { top: 92px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* --------------------------------------------------------------------------
+   Dropdown con búsqueda (ciudades)
+   -------------------------------------------------------------------------- */
+.af-combo { position: relative; display: flex; align-items: center; }
+.af-combo .af-input { padding-right: 44px; }
+.af-combo-chev { position: absolute; right: 16px; display: grid; place-items: center; width: 22px; height: 22px; color: var(--af-muted); cursor: pointer; transition: transform 0.45s var(--af-spring), color 0.2s ease; }
+.af-combo.is-open .af-combo-chev { transform: rotate(180deg); color: var(--af-cyan); }
+.af-combo.is-open .af-input { border-color: var(--af-cyan); box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14); }
+.af-combo-new { color: var(--af-cyan-strong); font-weight: 650; gap: 10px; }
+.af-combo-plus { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--af-cyan); color: var(--af-cyan); font-weight: 800; line-height: 1; }
+.af-combo-empty { padding: 12px 16px; color: var(--af-muted); font-size: 14px; }
+
+/* --------------------------------------------------------------------------
+   Datos para transferencias
+   -------------------------------------------------------------------------- */
+.af-payouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
+.af-payouts > * { min-width: 0; }
+.af-payout { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 28px; background: #fff; box-shadow: var(--af-ring), var(--af-shadow); animation: afRise 0.6s var(--af-spring) backwards; animation-delay: calc(var(--i, 0) * 50ms); }
+.af-payout-head { display: flex; align-items: center; gap: 12px; }
+.af-payout-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.af-payout-title strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-payout-title span { font-size: 12.5px; color: var(--af-muted); }
+.af-payout-rows { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.af-payout-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 999px; background: var(--af-cyan-soft); }
+.af-payout-row dt { font-size: 12.5px; color: var(--af-muted); white-space: nowrap; }
+.af-payout-row dd { margin: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; flex: 1; font-weight: 650; font-size: 14px; font-variant-numeric: tabular-nums; }
+.af-payout-row dd span { min-width: 0; overflow-wrap: anywhere; text-align: right; }
+.af-copy { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #fff; color: var(--af-cyan-strong); cursor: pointer; box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.35); transition: transform 0.45s var(--af-spring), background 0.2s ease, color 0.2s ease; }
+.af-copy svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+.af-copy:hover { background: var(--af-cyan); color: #fff; }
+.af-copy:active { transform: scale(0.85); }
+.af-copy.is-done { animation: afPop 0.45s var(--af-spring); background: #34c759; color: #fff; box-shadow: none; }
+.af-payout .af-btn-sm { align-self: flex-start; }
+.af-payout-preview .af-payout { box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.25); }
+
+/* --------------------------------------------------------------------------
+   Publicaciones de redes (Instagram / TikTok / Facebook)
+   -------------------------------------------------------------------------- */
+.af-embed-host { display: flex; flex-direction: column; gap: 14px; }
+.af-embed-tabs { align-self: flex-start; }
+.af-embed-box { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 160px; padding: 10px; border-radius: 28px; background: #fff; box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.06); overflow: hidden; }
+.af-embed-ph { display: flex; align-items: center; gap: 10px; min-height: 140px; color: var(--af-muted); font-size: 14px; }
+.af-embed-frame { display: block; width: 100%; max-width: 500px; border: 0; border-radius: 20px; background: #fff; }
+.af-embed-frame.is-ig { height: 560px; }
+.af-embed-frame.is-fb { max-width: 100%; }
+.af-embed-open { font-size: 13px; font-weight: 650; color: var(--af-cyan-strong); text-decoration: none; }
+.af-embed-host.is-public .af-embed-box { padding: 14px; }
+@media (max-width: 640px) {
+  .af-embed-frame.is-ig { height: 480px; }
+  .af-payouts { grid-template-columns: minmax(0, 1fr); }
 }

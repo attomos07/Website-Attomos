@@ -47,24 +47,25 @@ func main() {
 		&models.Subscription{},
 		&models.Payment{},
 		&models.GoogleCloudProject{},
-		&models.GlobalServer{},          // ← Servidor compartido global para AtomicBots
-		&models.Appointment{},           // ← Citas (manual + Google Sheets + agente)
-		&models.MyBusinessInfo{},        // ← Perfil de negocio del usuario
-		&models.Invoice{},               // ← Solicitudes de factura
-		&models.PaymentConfig{},         // ← Config de pagos del bot (CLABE + Stripe Connect)
-		&models.Order{},                 // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
-		&models.MyAgencyInfo{},          // ← Perfil de dependencia gubernamental
-		&models.AgencyInscription{},     // ← Inscripciones ciudadanas a cursos
-		&models.ClickPaymeTransaction{}, // ← Transacciones Click/Payme (Uzbekistán, Telegram)
-		&models.PasswordReset{},         // ← Códigos/tokens de recuperación de contraseña
-		&handlers.Flow{},                // ← Flujos de automatización (gubernamental)
-		&handlers.FlowOption{},          // ← Opciones de respuesta de cada flujo
-		&models.FoundationUser{},        // ← Foundation: donadores y rescatistas
-		&models.FoundationRescuer{},     // ← Foundation: perfil público de la rescatista
-		&models.FoundationPlan{},        // ← Foundation: planes de suscripción mensual
-		&models.FoundationPledge{},      // ← Foundation: aportes (suscripción mensual o única)
-		&models.FoundationPayment{},     // ← Foundation: cada cobro exitoso
-		&models.FoundationFile{},        // ← Foundation: foto de perfil en el Drive de la rescatista
+		&models.GlobalServer{},           // ← Servidor compartido global para AtomicBots
+		&models.Appointment{},            // ← Citas (manual + Google Sheets + agente)
+		&models.MyBusinessInfo{},         // ← Perfil de negocio del usuario
+		&models.Invoice{},                // ← Solicitudes de factura
+		&models.PaymentConfig{},          // ← Config de pagos del bot (CLABE + Stripe Connect)
+		&models.Order{},                  // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
+		&models.MyAgencyInfo{},           // ← Perfil de dependencia gubernamental
+		&models.AgencyInscription{},      // ← Inscripciones ciudadanas a cursos
+		&models.ClickPaymeTransaction{},  // ← Transacciones Click/Payme (Uzbekistán, Telegram)
+		&models.PasswordReset{},          // ← Códigos/tokens de recuperación de contraseña
+		&handlers.Flow{},                 // ← Flujos de automatización (gubernamental)
+		&handlers.FlowOption{},           // ← Opciones de respuesta de cada flujo
+		&models.FoundationUser{},         // ← Foundation: donadores y rescatistas
+		&models.FoundationRescuer{},      // ← Foundation: perfil público de la rescatista
+		&models.FoundationPlan{},         // ← Foundation: planes de suscripción mensual
+		&models.FoundationPayoutMethod{}, // ← Foundation: datos para transferencias directas
+		&models.FoundationPledge{},       // ← Foundation: aportes (suscripción mensual o única)
+		&models.FoundationPayment{},      // ← Foundation: cada cobro exitoso
+		&models.FoundationFile{},         // ← Foundation: foto de perfil en el Drive de la rescatista
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}

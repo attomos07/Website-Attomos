@@ -1,7 +1,7 @@
 /* Attomos Foundation — panel (rescatista y donador), conectado a /api/foundation */
 (async function () {
     'use strict';
-    const { store, session, toast, segmented, iosSelect, initSidebar, readImage, esc, money, slugify, ui, fmtDate } = window.AF;
+    const { store, session, toast, segmented, iosSelect, combo, initSidebar, readImage, esc, money, slugify, ui, fmtDate, socialFeed, socialList } = window.AF;
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
     const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -69,6 +69,8 @@
     function openSheet(el) {
         lastFocus = document.activeElement;
         openSheetEl = el;
+        const card = el.querySelector('.af-sheet-card');
+        if (card) card.scrollTop = 0;
         el.classList.add('is-open');
         el.setAttribute('aria-hidden', 'false');
         document.body.classList.add('af-lock');
@@ -141,7 +143,7 @@
 
         const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
         const setPath = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((a, k) => (a[k] = a[k] || {}), o)[last] = v; };
-        const curOf = (r) => (r.country === 'Venezuela' ? 'USD' : 'MXN');
+        const curOf = (r) => (r.country === 'México' || !r.country ? 'MXN' : 'USD');
 
         const EDITABLE = ['name', 'slug', 'city', 'country', 'bio', 'avatarFileId', 'socials', 'allowCustomMonthly', 'minCustomMonthly', 'oneTime', 'published'];
         const pick = (r) => JSON.stringify(EDITABLE.map((k) => r[k]));
@@ -168,6 +170,7 @@
         function adoptLists(r) {
             saved.plans = r.plans;
             draft.plans = clone(r.plans);
+            saved.payoutMethods = r.payoutMethods; draft.payoutMethods = clone(r.payoutMethods);
             saved.payments = r.payments; draft.payments = r.payments;
             markDirty();
             renderPreview();
@@ -206,10 +209,23 @@
             if (key === 'allowCustomMonthly') toggleRow($('#mMinRow'), draft.allowCustomMonthly);
             if (key === 'oneTime.enabled') toggleRow($('#oBody'), draft.oneTime.enabled);
             if (key === 'country') {
+                const prevCur = draft.currency;
                 draft.currency = curOf(draft);
+                // Si siguen los montos por defecto de la otra moneda, se ajustan
+                const DEF = { MXN: [50, 20, [100, 200, 500]], USD: [3, 1, [10, 20, 50]] };
+                const old = DEF[prevCur], neu = DEF[draft.currency];
+                if (old && neu && prevCur !== draft.currency) {
+                    if (Number(draft.minCustomMonthly) === old[0]) draft.minCustomMonthly = neu[0];
+                    if (Number(draft.oneTime.min) === old[1]) draft.oneTime.min = neu[1];
+                    if (JSON.stringify(draft.oneTime.suggested.map(Number)) === JSON.stringify(old[2])) draft.oneTime.suggested = neu[2].slice();
+                    $('#mMin').value = draft.minCustomMonthly; $('#oMin').value = draft.oneTime.min;
+                    renderChips();
+                }
                 renderCurrency();
-                if (draft.country === 'Venezuela') toast('Pagos con PayPal para Venezuela: muy pronto', 'info');
+                cityCombo && cityCombo.reload();
+                if (draft.country !== 'México') toast('Pagos con tarjeta solo en México por ahora. Agrega tus datos para transferencias en "Cobros".', 'info');
             }
+            if (key.startsWith('socials.')) scheduleSocialPreview();
             if (key === 'published' && draft.published) toast('Recuerda guardar para publicar tu página', 'info');
             markDirty();
             renderPreview();
@@ -219,6 +235,25 @@
             el.style.opacity = on ? '' : '0.4';
             el.style.pointerEvents = on ? '' : 'none';
             $$('input, button', el).forEach((x) => { x.disabled = !on; });
+        }
+
+        // --- ciudad: dropdown con búsqueda que se alimenta solo ---
+        const cityCombo = combo($('#pCity'), {
+            load: () => store.cities(draft.country),
+            empty: 'Escribe el nombre de tu ciudad',
+        });
+
+        // --- vista previa de publicaciones de sus redes ---
+        let socialTimer = null;
+        function renderSocialPreview() {
+            const wrap = $('#socialPreviewWrap');
+            const has = socialList(draft.socials).length > 0;
+            wrap.hidden = !has;
+            if (has) socialFeed($('#socialPreview'), draft.socials, { lazy: false });
+        }
+        function scheduleSocialPreview() {
+            clearTimeout(socialTimer);
+            socialTimer = setTimeout(renderSocialPreview, 900);
         }
 
         function fillForm() {
@@ -234,6 +269,7 @@
             renderImages();
             renderChips();
             renderPreview();
+            renderSocialPreview();
         }
 
         const FIELD = {
@@ -252,7 +288,8 @@
                 fillForm();
                 markDirty();
                 toast(!wasPublished && saved.published
-                    ? (saved.payments.ready ? '¡Tu página ya está publicada!' : 'Página publicada. Activa tus cobros para recibir aportes.')
+                    ? (saved.payments.ready || (saved.payoutMethods || []).length ? '¡Tu página ya está publicada!'
+                        : saved.country === 'México' ? 'Página publicada. Activa Stripe o agrega datos para transferencias en "Cobros".' : 'Página publicada. Agrega tus datos para transferencias en "Cobros".')
                     : 'Cambios guardados');
                 RENDER[current] && RENDER[current]();
             } catch (ex) {
@@ -361,7 +398,7 @@
             const steps = [
                 ['Nombre y foto de perfil', !!(r.name && r.avatar), 'perfil'],
                 ['Cuenta tu historia', (r.bio || '').length >= 40, 'perfil'],
-                [r.country === 'Venezuela' ? 'Cobros para Venezuela (PayPal, muy pronto)' : 'Activa tus cobros con Stripe', r.payments.ready, 'cuenta'],
+                ['Configura cómo recibir donativos (Stripe o transferencias)', r.payments.ready || (r.payoutMethods || []).length > 0, 'cuenta'],
                 ['Crea al menos un plan mensual', r.plans.length > 0, 'planes'],
                 ['Configura la donación única', r.oneTime.enabled && (r.oneTime.suggested.length > 0 || r.oneTime.allowCustom), 'unica'],
                 ['Publica tu página', r.published, 'perfil'],
@@ -525,10 +562,12 @@
             const body = $('[data-pay-body]', card);
             const badge = $('[data-pay-badge]', card);
             const sub = $('[data-pay-sub]', card);
-            if (saved.country === 'Venezuela') {
-                sub.textContent = 'Para Venezuela los cobros serán con PayPal.';
+            if (saved.country !== 'México') {
+                sub.textContent = saved.country === 'Venezuela' ? 'Para Venezuela los cobros con tarjeta serán con PayPal.' : 'Los cobros con tarjeta por ahora son solo para México.';
                 setBadge(badge, 'is-gray', 'Muy pronto');
-                body.innerHTML = `<div class="af-notice is-coral">Estamos terminando los pagos con PayPal para Venezuela. Puedes armar y publicar tu página desde ya; cuando esté listo te avisaremos para conectar tu cuenta.</div>`;
+                body.innerHTML = `<div class="af-notice is-coral">${saved.country === 'Venezuela'
+                    ? 'Estamos terminando los pagos con PayPal para Venezuela. Mientras tanto, agrega abajo tus datos para transferencias (Pago Móvil, Zelle, Binance…) y publica tu página.'
+                    : 'Mientras tanto, agrega abajo tus cuentas para transferencias y publica tu página: tus donadores te podrán apoyar directo.'}</div>`;
                 return;
             }
             const st = saved.stripe || {};
@@ -592,7 +631,100 @@
                 </div>`;
             }
         }
-        RENDER.cuenta = () => { renderAccount(); renderPayCard(); renderDriveCard(); };
+        // --- datos para transferencias ---
+        function renderPayouts() {
+            const list = saved.payoutMethods || [];
+            $('#payoutList').innerHTML = list.length
+                ? list.map((m, i) => ui.payoutCard(m, i, { edit: true })).join('')
+                : `<div class="af-empty"><span class="af-ic"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></span><strong>Aún no agregas datos para transferencias</strong><span>Agrega tus cuentas de banco, Pago Móvil, Zelle, PayPal o Binance.</span></div>`;
+        }
+        const poSheet = $('#payoutSheet');
+        const poForm = $('form', poSheet);
+        $('#poBankCode').innerHTML = '<option value="">Elige tu banco</option>' + ui.VE_BANKS.map((b) => `<option value="${b[0]}">${b[0]} · ${esc(b[1])}</option>`).join('');
+        ['#poKind', '#poCountry', '#poBankCode', '#poAccountType'].forEach((x) => iosSelect($(x)));
+        let editingPayout = null;
+        const HANDLE_LABEL = {
+            zelle: ['Correo o teléfono de Zelle', 'correo@ejemplo.com'],
+            zinli: ['Correo o teléfono de Zinli', 'correo@ejemplo.com'],
+            paypal: ['Correo de PayPal o enlace paypal.me', 'paypal.me/turescate'],
+            binance: ['Binance Pay ID o correo', 'Ej. 123456789'],
+        };
+        function poRead() {
+            return {
+                kind: $('#poKind').value, country: $('#poCountry').value, bankName: $('#poBankName').value,
+                bankCode: $('#poBankCode').value, accountType: $('#poAccountType').value, accountNumber: $('#poAccountNumber').value,
+                holderName: $('#poHolderName').value, holderId: $('#poHolderId').value, phone: $('#poPhone').value,
+                handle: $('#poHandle').value, note: $('#poNote').value,
+            };
+        }
+        function poSyncKind() {
+            const k = $('#poKind').value;
+            $$('[data-kinds]', poSheet).forEach((el) => { el.hidden = !el.dataset.kinds.split(' ').includes(k); });
+            $('[data-label-bank]', poSheet).textContent = k === 'other' ? 'Nombre del método' : 'Banco';
+            $('#poBankName').placeholder = k === 'other' ? 'Ej. Western Union, Nequi, Mercado Pago' : 'Ej. Banco Pichincha';
+            $('[data-label-note]', poSheet).textContent = k === 'other' ? 'Datos para recibir el pago' : 'Nota (opcional)';
+            $('[data-label-id]', poSheet).textContent = k === 'pago_movil' ? 'Cédula del titular' : 'Documento del titular (opcional)';
+            $('#poHolderId').placeholder = k === 'pago_movil' ? 'Ej. 25347012' : 'CI, cédula o RFC';
+            if (HANDLE_LABEL[k]) { $('[data-label-handle]', poSheet).textContent = HANDLE_LABEL[k][0]; $('#poHandle').placeholder = HANDLE_LABEL[k][1]; }
+            poPreview();
+        }
+        function poPreview() {
+            const m = Object.assign({ id: 'preview' }, poRead());
+            const filled = Object.entries(m).some(([key, v]) => !['id', 'kind', 'country', 'accountType'].includes(key) && String(v).trim());
+            $('#poPreview').innerHTML = filled ? `<p class="af-label" style="margin:18px 0 8px">Así se verá en tu página</p>${ui.payoutCard(m, 0)}` : '';
+            $$('#poPreview .af-in', poSheet).forEach((x) => { x.style.animation = 'none'; });
+        }
+        poForm.addEventListener('input', poPreview);
+        $('#poKind').addEventListener('change', poSyncKind);
+        ['#poCountry', '#poBankCode', '#poAccountType'].forEach((x) => $(x).addEventListener('change', poPreview));
+        function openPayout(id) {
+            editingPayout = id ? (saved.payoutMethods || []).find((m) => m.id === id) : null;
+            const m = editingPayout || {
+                kind: saved.country === 'Venezuela' ? 'pago_movil' : 'bank', country: saved.country || 'México', bankName: '', bankCode: '',
+                accountType: saved.country === 'México' ? 'clabe' : 'ahorros', accountNumber: '', holderName: '', holderId: '', phone: '', handle: '', note: '',
+            };
+            $('[data-title]', poSheet).textContent = editingPayout ? 'Editar método' : 'Nuevo método';
+            $('#poKind').value = m.kind;
+            $('#poCountry').value = m.country || saved.country || 'México';
+            $('#poBankName').value = m.bankName; $('#poBankCode').value = m.bankCode || '';
+            $('#poAccountType').value = m.accountType || 'ahorros'; $('#poAccountNumber').value = m.accountNumber;
+            $('#poHolderName').value = m.holderName; $('#poHolderId').value = m.holderId; $('#poPhone').value = m.phone;
+            $('#poHandle').value = m.handle; $('#poNote').value = m.note;
+            $('[data-delete]', poSheet).hidden = !editingPayout;
+            $$('.is-invalid', poSheet).forEach((x) => x.classList.remove('is-invalid'));
+            poSyncKind();
+            openSheet(poSheet);
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('[data-new-payout]')) {
+                if ((saved.payoutMethods || []).length >= 10) { toast('Máximo 10 métodos', 'info'); return; }
+                openPayout(null); return;
+            }
+            const ed = e.target.closest('[data-edit-payout]');
+            if (ed) openPayout(ed.dataset.editPayout);
+        });
+        const PO_FIELD = { kind: '#poKindBtn', bankName: '#poBankName', bankCode: '#poBankCodeBtn', accountNumber: '#poAccountNumber', holderName: '#poHolderName', holderId: '#poHolderId', phone: '#poPhone', handle: '#poHandle', note: '#poNote' };
+        poForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = $('[type=submit]', poForm);
+            busy(btn, true);
+            try {
+                const r = editingPayout ? await store.updatePayout(editingPayout.id, poRead()) : await store.createPayout(poRead());
+                adoptLists(r);
+                closeSheet(poSheet);
+                renderPayouts();
+                toast(editingPayout ? 'Método actualizado' : 'Método agregado. Ya aparece en tu página.');
+            } catch (ex) { invalid(PO_FIELD[ex.field] && $(PO_FIELD[ex.field]), ex.message); }
+            busy(btn, false);
+        });
+        $('[data-delete]', poSheet).addEventListener('click', async () => {
+            const m = editingPayout;
+            closeSheet(poSheet);
+            if (!(await confirmSheet(`¿Eliminar ${ui.payoutTitle(m)}?`, 'Ya no aparecerá en tu página.'))) return;
+            try { adoptLists(await store.deletePayout(m.id)); renderPayouts(); toast('Método eliminado'); } catch (ex) { toast(ex.message, 'error'); }
+        });
+
+        RENDER.cuenta = () => { renderAccount(); renderPayCard(); renderPayouts(); renderDriveCard(); };
 
         async function refreshRescuer() {
             const r = await store.myRescuer();

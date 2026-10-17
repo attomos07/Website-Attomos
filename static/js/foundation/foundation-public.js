@@ -1,7 +1,7 @@
 /* Attomos Foundation — páginas públicas (inicio, listas y página del rescatista) */
 (async function () {
     'use strict';
-    const { store, session, toast, segmented, esc, money, ui } = window.AF;
+    const { store, session, toast, segmented, esc, money, ui, socialFeed, socialList, copyText } = window.AF;
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
     const page = document.body.dataset.page;
@@ -12,6 +12,8 @@
         pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
         shield: '<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>',
         share: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>',
+        bank: '<svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>',
+        wa: '<svg viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7Z"/><path d="M9 9.5c.3 2 2.5 4.2 4.5 4.5l1-1 2 1c-.3 1.2-1.3 1.8-2.5 1.6-3-.6-5.5-3-6-6-.2-1.2.4-2.2 1.6-2.5l1 2Z"/></svg>',
     };
     const emptyBox = (title, text, cta = '') => `<div class="af-empty" style="grid-column:1/-1"><span class="af-ic is-coral">${ICON.heart}</span><strong>${title}</strong><span>${text}</span>${cta}</div>`;
 
@@ -47,9 +49,9 @@
         function render() {
             const q = norm(search.value.trim());
             let list = rs.filter((r) => !q || norm(`${r.name} ${r.city} ${r.country}`).includes(q));
-            if (mode === 'donar') list = list.filter((r) => r.oneTime && r.oneTime.enabled);
+            if (mode === 'donar') list = list.filter((r) => (r.payments.ready && r.oneTime && r.oneTime.enabled) || (r.payoutMethods || []).length);
             grid.innerHTML = list.length
-                ? list.map((r, i) => ui.rescuerCard(r, i, mode === 'donar' ? `/foundation/r/${encodeURIComponent(r.slug)}?tab=unica` : '')).join('')
+                ? list.map((r, i) => ui.rescuerCard(r, i, mode === 'donar' ? `/foundation/r/${encodeURIComponent(r.slug)}?tab=${r.payments.ready && r.oneTime.enabled ? 'unica' : 'transferencia'}` : '')).join('')
                 : emptyBox('No encontramos rescatistas', q ? 'Prueba con otra búsqueda.' : 'Pronto habrá más.');
         }
         let t;
@@ -78,9 +80,14 @@
         const params = new URLSearchParams(location.search);
         const hasMonthly = r.plans.length > 0 || r.allowCustomMonthly;
         const hasOnce = r.oneTime && r.oneTime.enabled;
+        const methods = r.payoutMethods || [];
+        const cardReady = !!r.payments.ready;
+        // Sin cobro con tarjeta pero con datos de transferencia: solo esa pestaña
+        const cardTabs = cardReady || !methods.length;
         const tabs = [
-            hasMonthly && ['mensual', 'Suscripción mensual', ICON.sub, 'Mensual'],
-            hasOnce && ['unica', 'Donación única', ICON.heart, 'Única'],
+            cardTabs && hasMonthly && ['mensual', 'Suscripción mensual', ICON.sub, 'Mensual'],
+            cardTabs && hasOnce && ['unica', 'Donación única', ICON.heart, 'Única'],
+            methods.length && ['transferencia', 'Transferencia', ICON.bank, 'Transferir'],
         ].filter(Boolean);
 
         const st = {
@@ -125,7 +132,11 @@
                     <div id="afTabPanel"></div>
                 </div>
                 <aside class="af-card af-summary af-in" style="--i:4" id="afSummary"></aside>
-            </div>`;
+            </div>
+            <section class="af-section af-feed-section af-in" style="--i:5" id="afFeedSection" hidden>
+                <div class="af-section-head"><div><h2 class="af-h2" style="font-size:24px">Sus rescates en redes</h2><p>Lo más reciente que ha publicado ${esc(r.name)}.</p></div></div>
+                <div class="af-embed-host is-public" id="afFeed"></div>
+            </section>`;
 
         const panel = $('#afTabPanel');
         const summary = $('#afSummary');
@@ -172,6 +183,9 @@
                         <div class="af-custom-text"><strong>Elige tu monto</strong><span>Desde ${money(r.minCustomMonthly, cur)} al mes</span></div>
                         <div class="af-input-wrap"><span class="af-input-prefix">$</span><input class="af-input has-prefix" id="afCustomMonthly" type="number" min="${r.minCustomMonthly}" step="1" inputmode="decimal" placeholder="${Math.max(r.minCustomMonthly, cur === 'MXN' ? 100 : 8)}" value="${esc(st.custom)}"><span class="af-input-suffix">${cur}/mes</span></div>
                     </div>` : ''}`;
+            } else if (st.tab === 'transferencia') {
+                html = `<div class="af-notice" style="margin-bottom:14px">Copia los datos y haz tu transferencia o pago desde tu banco o app. El dinero llega directo a ${esc(r.name)}.</div>
+                    <div class="af-payouts">${methods.map((m, i) => ui.payoutCard(m, i)).join('')}</div>`;
             } else if (st.tab === 'unica') {
                 const sug = r.oneTime.suggested.slice().sort((a, b) => a - b);
                 html = `<div class="af-amounts">${sug.map((v, i) => `<button type="button" class="af-amount${st.amount === String(v) ? ' is-picked' : ''} af-in" style="--i:${i}" data-amount="${v}">${money(v, '')}<small>${cur}</small></button>`).join('')}</div>
@@ -189,7 +203,13 @@
             syncUrl();
         }
 
-        panel.addEventListener('click', (e) => {
+        panel.addEventListener('click', async (e) => {
+            const all = e.target.closest('[data-copy-all]');
+            if (all) {
+                const m = methods.find((x) => x.id === all.dataset.copyAll);
+                if (m) { await copyText(ui.payoutText(m)); toast('Datos copiados'); }
+                return;
+            }
             const p = e.target.closest('[data-plan]');
             if (p) { st.plan = p.dataset.plan; st.done = null; renderPanel(false); renderSummary(); return; }
             const pc = e.target.closest('[data-plan-custom]');
@@ -231,11 +251,23 @@
         }
 
         let lastTotal = null;
+        function renderTransferSummary() {
+            const wa = (r.socials && r.socials.whatsapp || '').replace(/\D/g, '');
+            const msg = encodeURIComponent(`¡Hola! Te acabo de enviar un donativo para ${r.name} desde Attomos Foundation 💙`);
+            summary.innerHTML = `
+                <h3 class="af-card-title" style="font-size:17px"><span class="af-ic">${ICON.bank}</span>Transferencia directa</h3>
+                <p style="margin:0;color:var(--af-muted);font-size:14px">Elige el método que te quede mejor, copia los datos y dona la cantidad que quieras.</p>
+                <div class="af-summary-row"><span>Para</span><strong>${esc(r.name)}</strong></div>
+                <div class="af-summary-row"><span>Métodos</span><strong>${methods.length}</strong></div>
+                ${wa ? `<a class="af-btn af-btn-coral af-btn-lg af-btn-block" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">${ICON.wa}Avisar que ya doné</a>` : ''}
+                <p class="af-summary-note">${ICON.shield}<span>Attomos no cobra comisión por transferencias: el dinero llega completo a ${esc(r.name)}.</span></p>`;
+        }
         function renderSummary() {
+            if (st.tab === 'transferencia') { renderTransferSummary(); return; }
             if (st.done) {
                 const d = st.done;
                 summary.innerHTML = `
-                    <span class="af-ic" style="width:56px;height:56px;background:linear-gradient(150deg,#4ade80,#16a34a);animation:afPop .5s var(--af-spring)"><svg viewBox="0 0 24 24" style="width:26px;height:26px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                    <span class="af-ic" style="width:56px;height:56px;color:#16a34a;border-color:#22c55e;animation:afPop .5s var(--af-spring)"><svg viewBox="0 0 24 24" style="width:26px;height:26px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
                     <h3 style="margin:0;font-size:20px;letter-spacing:-.02em">¡Gracias${me ? ', ' + esc(me.name.split(' ')[0]) : ''}!</h3>
                     <p style="margin:0;color:var(--af-muted);font-size:14px">${d.monthly
                         ? `Tu ${d.label.toLowerCase()} de <strong style="color:var(--af-ink)">${money(d.amount, cur)}/mes</strong> para ${esc(r.name)} quedó activa. Se cobrará automáticamente cada mes y puedes cancelarla cuando quieras.`
@@ -330,5 +362,9 @@
         renderPanel(false);
         renderSummary();
         handleReturn();
+        if (socialList(r.socials).length) {
+            $('#afFeedSection').hidden = false;
+            socialFeed($('#afFeed'), r.socials, { lazy: true });
+        }
     }
 })();
