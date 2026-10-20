@@ -1,9 +1,11 @@
 package main
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"attomos/config"
@@ -17,21 +19,27 @@ import (
 	"attomos/handlers/comy"
 	"attomos/handlers/foundation"
 	"attomos/realtime"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-// getTemplateFiles obtiene todos los archivos de template de los patrones dados
-func getTemplateFiles(patterns ...string) []string {
+// getTemplateFiles recorre recursivamente la carpeta dada y devuelve todos los .html,
+// sin importar en qué subcarpeta (client/, admin/, auth/, ...) estén.
+func getTemplateFiles(root string) []string {
 	var files []string
-	for _, pattern := range patterns {
-		matches, err := filepath.Glob(pattern)
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Printf("Error buscando templates con patrón %s: %v", pattern, err)
-			continue
+			return err
 		}
-		files = append(files, matches...)
+		if !d.IsDir() && strings.HasSuffix(path, ".html") {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error buscando templates en %s: %v", root, err)
 	}
 	return files
 }
@@ -139,20 +147,8 @@ func main() {
 	// Servir archivos estáticos
 	router.Static("/static", "./static")
 
-	// Cargar templates de múltiples directorios
-	templates := []string{
-		"templates/*.html",
-		"templates/auth/*.html",
-		"templates/partials/*.html",
-		"templates/legal/*.html",
-		"templates/admin/*.html",
-		"templates/ninda/*.html",
-		"templates/comy/*.html",
-		"templates/agency/*.html",
-		"templates/flows/*.html",
-		"templates/foundation/*.html",
-	}
-	router.LoadHTMLFiles(getTemplateFiles(templates...)...)
+	// Cargar todos los templates (recursivo)
+	router.LoadHTMLFiles(getTemplateFiles("templates")...)
 
 	// ============================================
 	// RUTAS PÚBLICAS
