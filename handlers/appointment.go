@@ -10,8 +10,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/google"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,7 +56,7 @@ func GetAppointments(c *gin.Context) {
 	}
 
 	if len(agents) > 0 {
-		sheetsService := &services.GoogleSheetsService{
+		sheetsService := &google.GoogleSheetsService{
 			ClientID:     getGoogleClientID(),
 			ClientSecret: getGoogleClientSecret(),
 			RedirectURL:  getGoogleRedirectURL(),
@@ -363,7 +363,7 @@ func CreateBotAppointment(c *gin.Context) {
 // ============================================
 
 // syncAppointmentsFromSheets lee los Sheets de cada agente y guarda citas nuevas en BD
-func syncAppointmentsFromSheets(ctx context.Context, sheetsService *services.GoogleSheetsService, agents []models.Agent, userID uint) {
+func syncAppointmentsFromSheets(ctx context.Context, sheetsService *google.GoogleSheetsService, agents []models.Agent, userID uint) {
 	for _, agent := range agents {
 		if agent.GoogleSheetID == "" {
 			continue
@@ -451,7 +451,7 @@ func splitClientName(fullName string) (string, string) {
 // LECTURA DESDE SHEETS (lógica original)
 // ============================================
 
-func readAppointmentsFromSheet(ctx context.Context, sheetsService *services.GoogleSheetsService, tokenJSON, sheetID string, agentID uint, agentName string) ([]AppointmentResponse, error) {
+func readAppointmentsFromSheet(ctx context.Context, sheetsService *google.GoogleSheetsService, tokenJSON, sheetID string, agentID uint, agentName string) ([]AppointmentResponse, error) {
 	service, err := sheetsService.CreateSheetsService(ctx, tokenJSON)
 	if err != nil {
 		return nil, fmt.Errorf("error creando servicio: %w", err)

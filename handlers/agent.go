@@ -13,8 +13,11 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/bots"
+	"attomos/chatwoot"
+	"attomos/google"
+	"attomos/infrastructure"
 	"github.com/gin-gonic/gin"
 )
 
@@ -211,7 +214,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("║ %s ║", centerText("DESPLIEGUE DE ATOMIC BOT (GO)", 76))
 			log.Println(strings.Repeat("═", 80))
 
-			serverManager := services.GetGlobalServerManager()
+			serverManager := bots.GetGlobalServerManager()
 			globalServer, err := serverManager.GetOrCreateAtomicBotsServer()
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error obteniendo servidor compartido: %v", agent.ID, err)
@@ -269,7 +272,7 @@ func CreateAgent(c *gin.Context) {
 			agent.DeployStatus = "deploying"
 			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
-			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+			atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
 			maxRetries := 10
 			retryDelay := 10 * time.Second
@@ -331,7 +334,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("║ %s ║", centerText("DESPLIEGUE DE TELEGRAM BOT", 76))
 			log.Println(strings.Repeat("═", 80))
 
-			serverManager := services.GetGlobalServerManager()
+			serverManager := bots.GetGlobalServerManager()
 			globalServer, err := serverManager.GetOrCreateAtomicBotsServer()
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error obteniendo servidor compartido: %v", agent.ID, err)
@@ -388,7 +391,7 @@ func CreateAgent(c *gin.Context) {
 			agent.DeployStatus = "deploying"
 			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
-			telegramService := services.NewTelegramBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+			telegramService := bots.NewTelegramBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
 			maxRetries := 10
 			retryDelay := 10 * time.Second
@@ -480,7 +483,7 @@ func CreateAgent(c *gin.Context) {
 						config.DB.Save(&gcpProject)
 					}
 
-					gca, gcaErr := services.NewGoogleCloudAutomation()
+					gca, gcaErr := google.NewGoogleCloudAutomation()
 					if gcaErr != nil {
 						log.Printf("⚠️ [User %d] GCP no disponible (NO CRÍTICO): %v", user.ID, gcaErr)
 						gcpProject.MarkAsError()
@@ -520,7 +523,7 @@ func CreateAgent(c *gin.Context) {
 				agent.ServerStatus = "creating"
 				config.DB.Model(&agent).Updates(map[string]interface{}{"server_status": agent.ServerStatus})
 
-				hetznerService, err := services.NewHetznerService()
+				hetznerService, err := infrastructure.NewHetznerService()
 				if err != nil {
 					log.Printf("❌ [Agent %d] Error Hetzner: %v", agent.ID, err)
 					agent.ServerStatus = "error"
@@ -559,7 +562,7 @@ func CreateAgent(c *gin.Context) {
 			}
 
 			// PASO 3: Cloudflare DNS
-			cloudflareService, err := services.NewCloudflareService()
+			cloudflareService, err := infrastructure.NewCloudflareService()
 			if err != nil {
 				log.Printf("⚠️  [Agent %d] Cloudflare no configurado (NO CRÍTICO): %v", agent.ID, err)
 			} else {
@@ -571,7 +574,7 @@ func CreateAgent(c *gin.Context) {
 			}
 
 			// PASO 4: Chatwoot
-			chatwootService := services.NewChatwootService(agent.ServerIP, user.ID, agent.ServerPassword)
+			chatwootService := chatwoot.NewChatwootService(agent.ServerIP, user.ID, agent.ServerPassword)
 			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
 			if err != nil {
 				log.Printf("⚠️ [Agent %d] Chatwoot (NO CRÍTICO): %v", agent.ID, err)
@@ -591,7 +594,7 @@ func CreateAgent(c *gin.Context) {
 			agent.DeployStatus = "deploying"
 			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 
-			orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
+			orbitalService := bots.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 
 			maxRetries := 30
 			retryDelay := 10 * time.Second
@@ -818,14 +821,14 @@ func DeleteAgent(c *gin.Context) {
 	go func() {
 		if agent.IsAtomicBot() {
 			// AtomicBot — servidor compartido global
-			serverManager := services.GetGlobalServerManager()
+			serverManager := bots.GetGlobalServerManager()
 			servers, err := serverManager.ListAllServers()
 			if err != nil || len(servers) == 0 {
 				log.Printf("⚠️  [Agent %d] No se encontró servidor compartido", agent.ID)
 				return
 			}
 			globalServer := servers[0]
-			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+			atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 			if err := atomicService.Connect(); err != nil {
 				log.Printf("⚠️  [Agent %d] Error conectando: %v", agent.ID, err)
 				return
@@ -840,14 +843,14 @@ func DeleteAgent(c *gin.Context) {
 
 		} else if agent.IsTelegramBot() {
 			// TelegramBot — servidor compartido global
-			serverManager := services.GetGlobalServerManager()
+			serverManager := bots.GetGlobalServerManager()
 			servers, err := serverManager.ListAllServers()
 			if err != nil || len(servers) == 0 {
 				log.Printf("⚠️  [Agent %d] No se encontró servidor compartido", agent.ID)
 				return
 			}
 			globalServer := servers[0]
-			telegramService := services.NewTelegramBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+			telegramService := bots.NewTelegramBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 			if err := telegramService.Connect(); err != nil {
 				log.Printf("⚠️  [Agent %d] Error conectando: %v", agent.ID, err)
 				return
@@ -863,7 +866,7 @@ func DeleteAgent(c *gin.Context) {
 		} else {
 			// OrbitalBot — servidor del usuario
 			if agent.HasOwnServer() {
-				orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
+				orbitalService := bots.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 				if err := orbitalService.Connect(); err != nil {
 					log.Printf("⚠️  [Agent %d] Error conectando: %v", agent.ID, err)
 					return
@@ -883,7 +886,7 @@ func DeleteAgent(c *gin.Context) {
 
 				if otherAgents == 0 {
 					log.Printf("🗑️  [Agent %d] Último agente — eliminando servidor Hetzner...", agent.ID)
-					hetznerService, err := services.NewHetznerService()
+					hetznerService, err := infrastructure.NewHetznerService()
 					if err == nil {
 						if err := hetznerService.DeleteServer(agent.ServerID); err != nil {
 							log.Printf("⚠️  [Agent %d] Error eliminando servidor: %v", agent.ID, err)
@@ -933,14 +936,14 @@ func ResetAgentSession(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Redeploy iniciado, generando nuevo QR..."})
 
 	go func() {
-		serverManager := services.GetGlobalServerManager()
+		serverManager := bots.GetGlobalServerManager()
 		servers, err := serverManager.ListAllServers()
 		if err != nil || len(servers) == 0 {
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
 		}
 		globalServer := servers[0]
-		atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+		atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 		if err := atomicService.Connect(); err != nil {
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
@@ -994,7 +997,7 @@ func GetAgentQRCode(c *gin.Context) {
 		return
 	}
 
-	serverManager := services.GetGlobalServerManager()
+	serverManager := bots.GetGlobalServerManager()
 	servers, err := serverManager.ListAllServers()
 	if err != nil || len(servers) == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se encontró servidor compartido"})
@@ -1002,7 +1005,7 @@ func GetAgentQRCode(c *gin.Context) {
 	}
 
 	globalServer := servers[0]
-	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := atomicService.Connect(); err != nil {
 		log.Printf("❌ [Agent %d] GetAgentQRCode: no se pudo conectar por SSH al servidor %s: %v", agent.ID, globalServer.IPAddress, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo conectar al servidor"})
@@ -1053,14 +1056,14 @@ func RedeployAgent(c *gin.Context) {
 	config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": "deploying", "is_active": false, "whatsapp_connected": false})
 
 	go func() {
-		serverManager := services.GetGlobalServerManager()
+		serverManager := bots.GetGlobalServerManager()
 		servers, err := serverManager.ListAllServers()
 		if err != nil || len(servers) == 0 {
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
 		}
 		globalServer := servers[0]
-		atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+		atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 		if err := atomicService.Connect(); err != nil {
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return

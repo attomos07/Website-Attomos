@@ -3,7 +3,6 @@ package handlers
 import (
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 	"bufio"
 	"context"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"attomos/bots"
 	"github.com/gin-gonic/gin"
 )
 
@@ -59,7 +59,7 @@ func GetAgentLogs(c *gin.Context) {
 			return
 		}
 
-		deployService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+		deployService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 		if err := deployService.Connect(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor: " + err.Error()})
 			return
@@ -79,7 +79,7 @@ func GetAgentLogs(c *gin.Context) {
 			return
 		}
 
-		deployService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
+		deployService := bots.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 		if err := deployService.Connect(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor: " + err.Error()})
 			return
@@ -163,7 +163,7 @@ func streamAtomicBotLogs(ctx context.Context, c *gin.Context, agent models.Agent
 		return
 	}
 
-	deployService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	deployService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := deployService.Connect(); err != nil {
 		sendSSEError(c, flusher, "Error conectando al servidor: "+err.Error())
 		return
@@ -224,7 +224,7 @@ func streamOrbitalBotLogs(ctx context.Context, c *gin.Context, agent models.Agen
 		return
 	}
 
-	deployService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
+	deployService := bots.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 	if err := deployService.Connect(); err != nil {
 		sendSSEError(c, flusher, "Error conectando al servidor: "+err.Error())
 		return

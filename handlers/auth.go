@@ -7,8 +7,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/utils"
 
+	"attomos/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -127,7 +127,7 @@ func Register(c *gin.Context) {
 	}
 	// ============================================================
 
-	token, err := utils.GenerateToken(user.ID, user.Email)
+	token, err := auth.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("❌ Error generando token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -183,7 +183,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateToken(user.ID, user.Email)
+	token, err := auth.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Error al generar token",

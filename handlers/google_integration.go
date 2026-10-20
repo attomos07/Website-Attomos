@@ -12,8 +12,9 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/bots"
+	googlesvc "attomos/google"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -22,8 +23,8 @@ import (
 )
 
 type GoogleIntegrationHandler struct {
-	calendarService *services.GoogleCalendarService
-	sheetsService   *services.GoogleSheetsService
+	calendarService *googlesvc.GoogleCalendarService
+	sheetsService   *googlesvc.GoogleSheetsService
 }
 
 type Schedule struct {
@@ -68,12 +69,12 @@ func NewGoogleIntegrationHandler() (*GoogleIntegrationHandler, error) {
 	log.Printf("✅ Google Integration configurado con redirect URL: %s", redirectURL)
 
 	return &GoogleIntegrationHandler{
-		calendarService: &services.GoogleCalendarService{
+		calendarService: &googlesvc.GoogleCalendarService{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RedirectURL:  redirectURL,
 		},
-		sheetsService: &services.GoogleSheetsService{
+		sheetsService: &googlesvc.GoogleSheetsService{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RedirectURL:  redirectURL,
@@ -210,7 +211,7 @@ func (h *GoogleIntegrationHandler) createGoogleResource(ctx context.Context, age
 		log.Printf("✅ [Agent %d] Calendar creado: %s", agent.ID, calendarID)
 
 	case "sheets":
-		spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, agent.GoogleToken, agent.Name, services.Schedule{
+		spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, agent.GoogleToken, agent.Name, models.Schedule{
 			Monday:    convertDaySchedule(agent.Config.Schedule.Monday),
 			Tuesday:   convertDaySchedule(agent.Config.Schedule.Tuesday),
 			Wednesday: convertDaySchedule(agent.Config.Schedule.Wednesday),
@@ -249,14 +250,14 @@ func (h *GoogleIntegrationHandler) syncAtomicBotGoogleEnv(agent *models.Agent) {
 	}
 	log.Printf("🔄 [Agent %d] Actualizando .env de Google en el servidor AtomicBot...", agent.ID)
 
-	serverManager := services.GetGlobalServerManager()
+	serverManager := bots.GetGlobalServerManager()
 	servers, err := serverManager.ListAllServers()
 	if err != nil || len(servers) == 0 {
 		log.Printf("⚠️  [Agent %d] No se encontró servidor compartido global", agent.ID)
 		return
 	}
 	globalServer := servers[0]
-	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
 	if err := atomicService.Connect(); err != nil {
 		log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
@@ -589,7 +590,7 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 
 	// Crear evento en Calendar SOLO si está conectado
 	if agent.GoogleCalendarConnected && agent.GoogleCalendarID != "" {
-		eventData := services.EventData{
+		eventData := googlesvc.EventData{
 			Title:       req.Title,
 			Description: req.Description,
 			StartTime:   req.StartTime,
@@ -610,7 +611,7 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 
 	// Agregar a Sheets SOLO si está conectado
 	if agent.GoogleSheetsConnected && agent.GoogleSheetID != "" {
-		appointmentData := services.AppointmentData{
+		appointmentData := googlesvc.AppointmentData{
 			EventID:     eventID,
 			Date:        req.StartTime.Format("2006-01-02"),
 			StartTime:   req.StartTime.Format("15:04"),
@@ -643,8 +644,8 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 }
 
 // convertDaySchedule convierte un DaySchedule del modelo a un DaySchedule de services
-func convertDaySchedule(day models.DaySchedule) services.DaySchedule {
-	return services.DaySchedule{
+func convertDaySchedule(day models.DaySchedule) models.DaySchedule {
+	return models.DaySchedule{
 		Open:  day.Open,
 		Start: day.Start,
 		End:   day.End,

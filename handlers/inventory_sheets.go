@@ -16,8 +16,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/google"
 	"github.com/gin-gonic/gin"
 )
 
@@ -430,7 +430,7 @@ func (h *GoogleIntegrationHandler) UploadInventoryRowPhotos(c *gin.Context) {
 		return
 	}
 
-	photos := make([]services.UploadedPhoto, 0, len(fileHeaders))
+	photos := make([]google.UploadedPhoto, 0, len(fileHeaders))
 	for _, fh := range fileHeaders {
 		f, err := fh.Open()
 		if err != nil {
@@ -447,7 +447,7 @@ func (h *GoogleIntegrationHandler) UploadInventoryRowPhotos(c *gin.Context) {
 		if mimeType == "" {
 			mimeType = "image/jpeg"
 		}
-		photos = append(photos, services.UploadedPhoto{Bytes: data, FileName: fh.Filename, MimeType: mimeType})
+		photos = append(photos, google.UploadedPhoto{Bytes: data, FileName: fh.Filename, MimeType: mimeType})
 	}
 
 	ctx := context.Background()
@@ -543,7 +543,7 @@ func (h *GoogleIntegrationHandler) DetectAndUploadInventoryPhotos(c *gin.Context
 		return
 	}
 
-	photos := make([]services.UploadedPhoto, 0, len(fileHeaders))
+	photos := make([]google.UploadedPhoto, 0, len(fileHeaders))
 	for _, fh := range fileHeaders {
 		f, err := fh.Open()
 		if err != nil {
@@ -562,7 +562,7 @@ func (h *GoogleIntegrationHandler) DetectAndUploadInventoryPhotos(c *gin.Context
 		if mimeType == "" {
 			mimeType = "image/jpeg"
 		}
-		photos = append(photos, services.UploadedPhoto{Bytes: data, FileName: fh.Filename, MimeType: mimeType})
+		photos = append(photos, google.UploadedPhoto{Bytes: data, FileName: fh.Filename, MimeType: mimeType})
 	}
 	log.Printf("📸 [Agent %d] detect-upload: %d foto(s) recibida(s)", agent.ID, len(photos))
 
@@ -592,7 +592,7 @@ func (h *GoogleIntegrationHandler) DetectAndUploadInventoryPhotos(c *gin.Context
 	analyzed := make([]analyzedPhoto, len(photos))
 	var vin string
 	for i, p := range photos {
-		detected, err := services.ExtractVINFromPhoto(uploadCtx, geminiKey, p.Bytes, p.MimeType)
+		detected, err := google.ExtractVINFromPhoto(uploadCtx, geminiKey, p.Bytes, p.MimeType)
 		if err != nil {
 			log.Printf("❌ [Agent %d] detect-upload: error de Gemini en foto %d (%s): %v", agent.ID, i+1, p.FileName, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error consultando la IA: " + err.Error()})
@@ -742,7 +742,7 @@ func (h *GoogleIntegrationHandler) syncInventoryToCatalog(ctx context.Context, a
 // syncInventoryToCatalogWithData hace el mismo trabajo que syncInventoryToCatalog
 // pero reutilizando datos de la hoja ya leídos (para no volver a llamar a la
 // API de Sheets cuando quien llama ya los tiene, ej. GetInventorySheetRows).
-func (h *GoogleIntegrationHandler) syncInventoryToCatalogWithData(agent *models.Agent, data *services.InventorySheetData) (int, error) {
+func (h *GoogleIntegrationHandler) syncInventoryToCatalogWithData(agent *models.Agent, data *google.InventorySheetData) (int, error) {
 	if agent.InventoryTitleColumn == "" {
 		return 0, nil
 	}
@@ -790,7 +790,7 @@ func (h *GoogleIntegrationHandler) syncInventoryToCatalogWithData(agent *models.
 	origIdx, hasOrig := colIdx[agent.InventoryOriginalPriceColumn]
 	promoIdx, hasPromo := colIdx[agent.InventoryPromoPriceColumn]
 
-	cellText := func(row services.InventoryRow, idx int, ok bool) string {
+	cellText := func(row google.InventoryRow, idx int, ok bool) string {
 		if !ok || idx >= len(row.Cells) {
 			return ""
 		}
@@ -1083,7 +1083,7 @@ func (h *GoogleIntegrationHandler) BulkUpdateInventoryFromFile(c *gin.Context) {
 		return
 	}
 
-	headers, rows, err := services.ParseXLSXRows(fileBytes)
+	headers, rows, err := google.ParseXLSXRows(fileBytes)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

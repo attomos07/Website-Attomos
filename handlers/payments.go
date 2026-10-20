@@ -7,8 +7,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/payments"
 	"github.com/gin-gonic/gin"
 )
 
@@ -191,7 +191,7 @@ func CancelSubscription(c *gin.Context) {
 
 	// ── Cancelar en Stripe (al final del período) ────────────────────────────
 	if subscription.StripeSubscriptionID != "" {
-		stripeService, err := services.NewStripeService()
+		stripeService, err := payments.NewStripeService()
 		if err != nil {
 			log.Printf("❌ [CANCEL] Error inicializando Stripe: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar en Stripe"})

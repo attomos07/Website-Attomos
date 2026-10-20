@@ -9,8 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"attomos/services"
-
+	"attomos/scraper"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,11 +40,11 @@ func (h *GoogleIntegrationHandler) ScrapeVehicleFromWebsite(c *gin.Context) {
 	scrapeCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	browserCtx, cancelBrowser := services.NewHeadlessBrowser(scrapeCtx)
+	browserCtx, cancelBrowser := scraper.NewHeadlessBrowser(scrapeCtx)
 	defer cancelBrowser()
 
 	start := time.Now()
-	data, err := services.ScrapeVehiclePage(browserCtx, rawURL)
+	data, err := scraper.ScrapeVehiclePage(browserCtx, rawURL)
 	if err != nil {
 		log.Printf("❌ [Agent %d] ScrapeVehicleFromWebsite: falló tras %s — url=%s err=%v", agent.ID, time.Since(start), rawURL, err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": "No se pudo extraer la información del sitio: " + err.Error()})
@@ -82,12 +81,12 @@ func validateHTTPURL(raw string) (*url.URL, error) {
 */
 
 type websiteScrapeJob struct {
-	Status    string                          `json:"status"` // "running" | "done" | "error"
-	Done      int                             `json:"done"`
-	Total     int                             `json:"total"`
-	Results   []services.VehicleScrapeOutcome `json:"results,omitempty"`
-	Error     string                          `json:"error,omitempty"`
-	StartedAt time.Time                       `json:"started_at"`
+	Status    string                         `json:"status"` // "running" | "done" | "error"
+	Done      int                            `json:"done"`
+	Total     int                            `json:"total"`
+	Results   []scraper.VehicleScrapeOutcome `json:"results,omitempty"`
+	Error     string                         `json:"error,omitempty"`
+	StartedAt time.Time                      `json:"started_at"`
 }
 
 var (
@@ -116,7 +115,7 @@ func (h *GoogleIntegrationHandler) StartScrapeAllVehicles(c *gin.Context) {
 		return
 	}
 
-	maxVehicles := 0 // 0 → default interno de services.ScrapeAllVehicles (500)
+	maxVehicles := 0 // 0 → default interno de scraper.ScrapeAllVehicles (500)
 	if maxStr := c.Query("max"); maxStr != "" {
 		if n, err := strconv.Atoi(maxStr); err == nil && n > 0 {
 			maxVehicles = n
@@ -147,7 +146,7 @@ func (h *GoogleIntegrationHandler) StartScrapeAllVehicles(c *gin.Context) {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 		defer cancel()
 
-		results, err := services.ScrapeAllVehicles(bgCtx, listingURL, maxV, func(done, total int) {
+		results, err := scraper.ScrapeAllVehicles(bgCtx, listingURL, maxV, func(done, total int) {
 			websiteScrapeJobsMu.Lock()
 			if j, ok := websiteScrapeJobs[agentID]; ok {
 				j.Done = done

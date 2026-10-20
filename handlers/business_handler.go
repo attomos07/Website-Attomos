@@ -12,6 +12,7 @@ import (
 	"attomos/config"
 	"attomos/models"
 
+	"attomos/realtime"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -168,7 +169,7 @@ func syncAtomicBots(branch *models.MyBusinessInfo) {
 	log.Printf("🔄 [SyncBots] Avisando a %d bot(s) atómico(s) para sucursal %d (refresh_business_config)...", len(agents), branch.ID)
 
 	for _, agent := range agents {
-		if CRMHub.sendToBot(agent.ID, crmSendCommand{Type: "refresh_business_config"}) {
+		if realtime.CRMHub.SendToBot(agent.ID, realtime.CRMSendCommand{Type: "refresh_business_config"}) {
 			log.Printf("✅ [SyncBots] Agente %d avisado por WebSocket", agent.ID)
 		} else {
 			log.Printf("ℹ️  [SyncBots] Agente %d no conectado al hub ahora — lo recogerá su polling de 5 min", agent.ID)

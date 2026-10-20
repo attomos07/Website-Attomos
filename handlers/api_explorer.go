@@ -13,6 +13,7 @@ import (
 	"attomos/config"
 	"attomos/models"
 
+	"attomos/realtime"
 	"github.com/gin-gonic/gin"
 )
 
@@ -305,7 +306,7 @@ func notifyBranchAgentsToRefreshAPIExplorer(branchID uint) {
 		return
 	}
 	for _, agent := range agents {
-		if CRMHub.sendToBot(agent.ID, crmSendCommand{Type: "refresh_api_explorer"}) {
+		if realtime.CRMHub.SendToBot(agent.ID, realtime.CRMSendCommand{Type: "refresh_api_explorer"}) {
 			log.Printf("🔄 [Branch %d] Aviso de refresco de API Explorer enviado al agente %d", branchID, agent.ID)
 		} else {
 			log.Printf("ℹ️  [Branch %d] Agente %d no conectado al hub del CRM ahora mismo — recogerá el cambio en su próximo ciclo de polling", branchID, agent.ID)

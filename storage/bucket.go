@@ -38,8 +38,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/bots"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -274,7 +274,7 @@ func resolveGlobalServer() (*models.GlobalServer, error) {
 
 	// No hay ninguno listo → delegar al manager (crea si hace falta) y esperar
 	log.Printf("⏳ [Upload] Servidor global no disponible — iniciando creación y espera bloqueante...")
-	return services.GetGlobalServerManager().GetOrCreateReadyServer(35 * time.Minute)
+	return bots.GetGlobalServerManager().GetOrCreateReadyServer(35 * time.Minute)
 }
 
 // uploadViaSFTP conecta por SSH/SFTP, crea el directorio y sube el archivo en memoria.

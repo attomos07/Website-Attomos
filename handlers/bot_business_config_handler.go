@@ -20,8 +20,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/bots"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,6 +58,6 @@ func GetBotBusinessConfig(c *gin.Context) {
 		}
 	}
 
-	businessConfig := services.GenerateBusinessConfig(&agent, branch)
+	businessConfig := bots.GenerateBusinessConfig(&agent, branch)
 	c.JSON(http.StatusOK, businessConfig)
 }

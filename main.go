@@ -12,6 +12,11 @@ import (
 	"attomos/models"
 	"attomos/storage"
 
+	"attomos/auth"
+	"attomos/handlers/admin"
+	"attomos/handlers/comy"
+	"attomos/handlers/foundation"
+	"attomos/realtime"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -75,7 +80,7 @@ func main() {
 	// ============================================
 	// INICIALIZAR GOOGLE OAUTH
 	// ============================================
-	if err := handlers.InitGoogleOAuth(); err != nil {
+	if err := auth.InitGoogleOAuth(); err != nil {
 		log.Printf("⚠️  Google OAuth no inicializado: %v", err)
 		log.Println("ℹ️  El login/registro con Google no estará disponible")
 	} else {
@@ -167,8 +172,8 @@ func main() {
 	// ============================================
 	// GOOGLE OAUTH ROUTES
 	// ============================================
-	router.GET("/api/auth/google/login", handlers.GoogleLogin)
-	router.GET("/api/auth/google/callback", handlers.GoogleCallback)
+	router.GET("/api/auth/google/login", auth.GoogleLogin)
+	router.GET("/api/auth/google/callback", auth.GoogleCallback)
 
 	// ============================================
 	// 💳 STRIPE WEBHOOK (PÚBLICO — sin auth)
@@ -209,17 +214,17 @@ func main() {
 	// 🛒 COMY — Marketplace público (sin auth)
 	// ============================================
 	// Páginas HTML
-	router.GET("/comy", handlers.GetNindaDirectory)
-	router.GET("/comy/map", handlers.GetNindaMap)
-	router.GET("/comy/login", handlers.GetNindaLogin)
-	router.GET("/comy/register", handlers.GetNindaRegister)
-	router.GET("/comy/:branch_id", handlers.GetNindaStore)
+	router.GET("/comy", comy.GetNindaDirectory)
+	router.GET("/comy/map", comy.GetNindaMap)
+	router.GET("/comy/login", comy.GetNindaLogin)
+	router.GET("/comy/register", comy.GetNindaRegister)
+	router.GET("/comy/:branch_id", comy.GetNindaStore)
 	// API pública
-	router.GET("/api/comy/stores", handlers.APIGetStores)
-	router.GET("/api/comy/stores/:branch_id", handlers.APIGetStore)
-	router.GET("/api/comy/dishes", handlers.APIGetDishes)
-	router.POST("/api/comy/checkout", handlers.APICreateCheckout)
-	router.POST("/api/comy/confirm", handlers.APIConfirmOrder)
+	router.GET("/api/comy/stores", comy.APIGetStores)
+	router.GET("/api/comy/stores/:branch_id", comy.APIGetStore)
+	router.GET("/api/comy/dishes", comy.APIGetDishes)
+	router.POST("/api/comy/checkout", comy.APICreateCheckout)
+	router.POST("/api/comy/confirm", comy.APIConfirmOrder)
 	log.Println("✅ Comy Marketplace configurado en: /comy")
 
 	// ============================================
@@ -245,7 +250,7 @@ func main() {
 	// 🐾 ATTOMOS FOUNDATION — Donaciones a rescatistas independientes
 	// Páginas, API (/api/foundation), webhook de Stripe Connect y fotos en Drive
 	// ============================================
-	handlers.RegisterFoundationRoutes(router)
+	foundation.RegisterFoundationRoutes(router)
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)
@@ -275,9 +280,9 @@ func main() {
 		protected.POST("/agents/:id/reset-session", handlers.ResetAgentSession)
 
 		// CRM en vivo — puente en tiempo real con el bot de WhatsApp del agente
-		protected.GET("/agents/:id/crm/stream", handlers.StreamAgentCRM)
-		protected.POST("/agents/:id/crm/send", handlers.SendCRMMessage)
-		protected.POST("/agents/:id/crm/control", handlers.ControlCRMConversation)
+		protected.GET("/agents/:id/crm/stream", realtime.StreamAgentCRM)
+		protected.POST("/agents/:id/crm/send", realtime.SendCRMMessage)
+		protected.POST("/agents/:id/crm/control", realtime.ControlCRMConversation)
 
 		// Mi Negocio / Sucursales
 		protected.GET("/my-business", handlers.GetMyBusiness)
@@ -320,7 +325,7 @@ func main() {
 		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
-		router.GET("/ws/bot/crm", handlers.BotCRMSocket)
+		router.GET("/ws/bot/crm", realtime.BotCRMSocket)
 
 		// ============================================
 		// 🔀 FLOWS — Flujos de automatización (gubernamental)
@@ -634,7 +639,7 @@ func main() {
 			"title": "Admin — Attomos",
 		})
 	})
-	router.POST("/admin/api/login", handlers.AdminLogin)
+	router.POST("/admin/api/login", admin.AdminLogin)
 
 	// Rutas protegidas del admin
 	adminGroup := router.Group("/admin")
@@ -652,16 +657,16 @@ func main() {
 		adminGroup.GET("/metrics", func(c *gin.Context) {
 			c.HTML(200, "admin-metrics", nil)
 		})
-		adminGroup.GET("/api/metrics", handlers.GetAdminMetrics)
+		adminGroup.GET("/api/metrics", admin.GetAdminMetrics)
 		adminGroup.GET("/api/invoices", handlers.AdminGetInvoices)
 		adminGroup.PATCH("/api/invoices/:id", handlers.AdminUpdateInvoiceStatus)
-		adminGroup.POST("/api/logout", handlers.AdminLogout)
-		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
-		adminGroup.POST("/api/companies", handlers.AdminCreateCompany)
-		adminGroup.PUT("/api/companies/:id/plan", handlers.AdminUpdateCompanyPlan)
-		adminGroup.PUT("/api/companies/:id/email", handlers.AdminUpdateCompanyEmail)
-		adminGroup.PUT("/api/companies/:id/password", handlers.AdminUpdateCompanyPassword)
-		adminGroup.DELETE("/api/companies/:id", handlers.AdminDeleteCompany)
+		adminGroup.POST("/api/logout", admin.AdminLogout)
+		adminGroup.GET("/api/companies", admin.AdminGetCompanies)
+		adminGroup.POST("/api/companies", admin.AdminCreateCompany)
+		adminGroup.PUT("/api/companies/:id/plan", admin.AdminUpdateCompanyPlan)
+		adminGroup.PUT("/api/companies/:id/email", admin.AdminUpdateCompanyEmail)
+		adminGroup.PUT("/api/companies/:id/password", admin.AdminUpdateCompanyPassword)
+		adminGroup.DELETE("/api/companies/:id", admin.AdminDeleteCompany)
 	}
 
 	// ============================================

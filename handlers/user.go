@@ -12,8 +12,10 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/google"
+	"attomos/mailer"
+	"attomos/payments"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -114,7 +116,7 @@ func DeleteAccount(c *gin.Context) {
 
 	for _, sub := range subscriptions {
 		if sub.StripeSubscriptionID != "" {
-			stripeService, err := services.NewStripeService()
+			stripeService, err := payments.NewStripeService()
 			if err != nil {
 				log.Printf("⚠️  [User %d] Error inicializando Stripe: %v", user.ID, err)
 				continue
@@ -152,7 +154,7 @@ func DeleteAccount(c *gin.Context) {
 
 	if err == nil && gcpProject.ProjectID != "" {
 		// Eliminar proyecto de GCP
-		gcpService, err := services.NewGoogleCloudAutomation()
+		gcpService, err := google.NewGoogleCloudAutomation()
 		if err != nil {
 			log.Printf("⚠️  [User %d] Error inicializando GCP: %v", user.ID, err)
 		} else {
@@ -511,7 +513,7 @@ func RequestPasswordReset(c *gin.Context) {
 		return
 	}
 
-	emailService := services.NewEmailService()
+	emailService := mailer.NewEmailService()
 	if err := emailService.SendPasswordResetCode(user.Email, code); err != nil {
 		log.Printf("❌ [User %d] Error enviando correo de recuperación: %v", user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -7,8 +7,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/payments"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,7 +55,7 @@ func CreateCheckoutSession(c *gin.Context) {
 	log.Printf("🛒 [CHECKOUT] Plan: %s | Período: %s", req.Plan, req.BillingPeriod)
 	log.Printf("🛒 [CHECKOUT] ══════════════════════════════════")
 
-	stripeService, err := services.NewStripeService()
+	stripeService, err := payments.NewStripeService()
 	if err != nil {
 		log.Printf("❌ [CHECKOUT] Error inicializando Stripe: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al procesar el pago"})

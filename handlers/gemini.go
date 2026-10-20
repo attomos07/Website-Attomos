@@ -6,8 +6,8 @@ import (
 
 	"attomos/config"
 	"attomos/models"
-	"attomos/services"
 
+	"attomos/bots"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,7 +56,7 @@ func SaveGeminiKey(c *gin.Context) {
 
 	log.Printf("💾 [Agent %d] Guardando Gemini API Key...", agent.ID)
 
-	serverManager := services.GetGlobalServerManager()
+	serverManager := bots.GetGlobalServerManager()
 	servers, err := serverManager.ListAllServers()
 	if err != nil || len(servers) == 0 {
 		log.Printf("❌ [Agent %d] No se encontró servidor compartido", agent.ID)
@@ -65,7 +65,7 @@ func SaveGeminiKey(c *gin.Context) {
 	}
 
 	globalServer := servers[0]
-	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := atomicService.Connect(); err != nil {
 		log.Printf("❌ [Agent %d] Error conectando a servidor: %v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor"})
@@ -109,7 +109,7 @@ func RemoveGeminiKey(c *gin.Context) {
 
 	log.Printf("🗑️  [Agent %d] Eliminando Gemini API Key...", agent.ID)
 
-	serverManager := services.GetGlobalServerManager()
+	serverManager := bots.GetGlobalServerManager()
 	servers, err := serverManager.ListAllServers()
 	if err != nil || len(servers) == 0 {
 		log.Printf("❌ [Agent %d] No se encontró servidor compartido", agent.ID)
@@ -118,7 +118,7 @@ func RemoveGeminiKey(c *gin.Context) {
 	}
 
 	globalServer := servers[0]
-	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := atomicService.Connect(); err != nil {
 		log.Printf("❌ [Agent %d] Error conectando a servidor: %v", agent.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor"})
@@ -162,7 +162,7 @@ func GetGeminiStatus(c *gin.Context) {
 	}
 
 	// AtomicBot: verificar .env en servidor compartido
-	serverManager := services.GetGlobalServerManager()
+	serverManager := bots.GetGlobalServerManager()
 	servers, err := serverManager.ListAllServers()
 	if err != nil || len(servers) == 0 {
 		c.JSON(http.StatusOK, gin.H{"has_api_key": false})
@@ -170,7 +170,7 @@ func GetGeminiStatus(c *gin.Context) {
 	}
 
 	globalServer := servers[0]
-	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	atomicService := bots.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 	if err := atomicService.Connect(); err != nil {
 		c.JSON(http.StatusOK, gin.H{"has_api_key": false})
 		return

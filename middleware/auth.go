@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"attomos/models"
-	"attomos/utils"
 
+	"attomos/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,7 +38,7 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		// Validar token — el JWT ya contiene userID y email, no necesitamos ir a DB
-		claims, err := utils.ValidateToken(token)
+		claims, err := auth.ValidateToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Token inválido o expirado",
