@@ -390,3 +390,26 @@
   .af-upload-avatar { flex-direction: column; text-align: center; }
   .af-upload-text { align-items: center; }
 }
+
+/* ==========================================================================
+   Navbar de Attomos (el mismo del index) dentro de Foundation
+   El navbar trae su propia tipografía; que no herede la de Foundation.
+   ========================================================================== */
+body .navbar,
+body .nav-more-menu {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+}
+
+.af-page { padding-top: calc(118px + env(safe-area-inset-top)); }
+.af-auth { padding-top: calc(118px + env(safe-area-inset-top)); }
+body:has(.navbar) .af-toasts { top: 92px; }
+
+@media (max-width: 860px) {
+  body:has(.navbar) .af-toasts { top: 80px; }
+}
+@media (max-width: 768px) {
+  .af-page,
+  .af-auth { padding-top: calc(96px + env(safe-area-inset-top)); }
+}
