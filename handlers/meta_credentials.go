@@ -116,9 +116,19 @@ func SaveMetaCredentials(c *gin.Context) {
 	log.Printf("   - Phone Number ID: %s", maskSensitiveValue(phoneNumberID))
 	log.Printf("   - WABA ID: %s", maskSensitiveValue(wabaID))
 
+	// Validar las credenciales contra la Graph API y obtener número/nombre
+	displayNumber, verifiedName, err := fetchMetaPhoneNumberInfo(accessToken, phoneNumberID)
+	if err != nil {
+		log.Printf("❌ [Agent %d] Credenciales de Meta inválidas: %v", agent.ID, err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Meta rechazó las credenciales: " + err.Error()})
+		return
+	}
+
 	// Actualizar credenciales en la base de datos
 	agent.MetaAccessToken = accessToken
 	agent.MetaPhoneNumberID = phoneNumberID
+	agent.MetaDisplayNumber = displayNumber
+	agent.MetaVerifiedName = verifiedName
 	agent.MetaWABAID = wabaID
 	agent.MetaConnected = true
 	now := time.Now()
@@ -209,6 +219,14 @@ func GetMetaCredentialsStatus(c *gin.Context) {
 		"daysRemaining":      agent.GetMetaTokenDaysRemaining(),
 		"webhookUrl":         fmt.Sprintf("https://attomos.com/webhook/meta/%d", agent.ID),
 		"webhookVerifyToken": webhookVerifyToken,
+		"botType":            agent.BotType,
+
+		// Claves snake_case que espera static/js/client/integrations.js
+		"has_credentials": agent.MetaAccessToken != "" && agent.MetaPhoneNumberID != "",
+		"bot_type":        agent.BotType,
+		"display_number":  agent.MetaDisplayNumber,
+		"verified_name":   agent.MetaVerifiedName,
+		"connected_at":    agent.MetaConnectedAt,
 	})
 }
 
