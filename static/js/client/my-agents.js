@@ -130,7 +130,7 @@ function ensureOnboardingScriptLoaded() {
             return;
         }
         const script = document.createElement('script');
-        script.src = '/static/js/onboarding.js?v=' + Date.now();
+        script.src = '/static/js/client/onboarding.js?v=' + Date.now();
         script.onload = () => { _onboardingScriptLoaded = true; resolve(); };
         script.onerror = () => resolve(); // no bloquear el resto de la página si falla
         document.body.appendChild(script);
@@ -191,7 +191,7 @@ async function loadOnboardingContent() {
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
-                link.href = '/static/css/onboarding.css';
+                link.href = '/static/css/client/onboarding.css';
                 document.head.appendChild(link);
             }
             if (!document.getElementById('onboarding-modal-fixes')) {
@@ -266,7 +266,7 @@ async function loadOnboardingContent() {
 
             if (!_onboardingScriptLoaded) {
                 const script = document.createElement('script');
-                script.src = '/static/js/onboarding.js?v=' + Date.now();
+                script.src = '/static/js/client/onboarding.js?v=' + Date.now();
                 script.onload = () => {
                     _onboardingScriptLoaded = true;
                     // Re-apply translations after onboarding script loaded
@@ -522,9 +522,10 @@ async function reinitializeOnboardingEvents() {
     const sectionNav = document.getElementById('sectionNavigation');
     if (sectionNav) {
         sectionNav.innerHTML = '';
-        sectionNav.style.justifyContent = 'center';
-        sectionNav.style.flexWrap = 'wrap';
-        sectionNav.style.gap = '0.5rem';
+        // Una sola fila deslizable: la cápsula cian (ob-seg-thumb) solo viaja en horizontal
+        sectionNav.style.justifyContent = '';
+        sectionNav.style.flexWrap = '';
+        sectionNav.style.gap = '';
         AGENT_SECTIONS.forEach(sec => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -1827,4 +1828,543 @@ function _obAddWorkerRow(data) {
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIOS);
     else initIOS();
+})();
+
+// ============================================================================
+// iOS PICKERS — selector de hora (ruedas) y de fecha (calendario) con resortes
+// Mismo diseño y animación que Mi Negocio, empaquetado para usarse en
+// cualquier página (modal de onboarding en Mis Agentes, Dashboard, etc.).
+//
+// - El <input type="time|date"> original se queda en el DOM (oculto) y sigue
+//   guardando el valor HH:MM / AAAA-MM-DD, así que la lógica que lo lee no cambia.
+// - Si otro script escribe input.value o input.disabled, el picker se actualiza.
+// - Los popovers van en <body> con position:fixed para que no los recorte
+//   el overflow de .content-card ni el scroll del modal.
+// - Clases con prefijo iosp- para no chocar con onboarding.css.
+//
+// Se aplica solo a:
+//   .schedule-day input.time-input, input[data-ios-time]
+//   input.holiday-date, input[data-ios-date]
+// API: window.IOSPickers.enhance(root)
+// ============================================================================
+(function () {
+    if (window.IOSPickers) return;
+
+    const TIME_SEL = '.schedule-day input.time-input, input[data-ios-time]';
+    const DATE_SEL = 'input.holiday-date, input[data-ios-date]';
+    const ITEM_H = 36;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const SUPPORTS_LINEAR = window.CSS && CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const SPRING = SUPPORTS_LINEAR
+        ? 'linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1)'
+        : 'cubic-bezier(0.34, 1.35, 0.64, 1)';
+
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+
+    // ------------------------------------------------------------------------
+    // Motor de resortes
+    // ------------------------------------------------------------------------
+    const springs = [];
+    const renderers = new Set();
+    function spring(v = 0, k = 380, d = 30, eps = 0.1) {
+        const s = { v, vel: 0, t: v, k, d, eps };
+        springs.push(s);
+        return s;
+    }
+    const atRest = (s) => Math.abs(s.v - s.t) < s.eps && Math.abs(s.vel) < s.eps * 5;
+    let raf = 0, last = 0;
+    function tick(now) {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        springs.forEach((s) => {
+            if (reduce.matches) { s.v = s.t; s.vel = 0; return; }
+            s.vel += (-s.k * (s.v - s.t) - s.d * s.vel) * dt;
+            s.v += s.vel * dt;
+        });
+        renderers.forEach((r) => r());
+        if (springs.every(atRest)) {
+            springs.forEach((s) => { s.v = s.t; s.vel = 0; });
+            renderers.forEach((r) => r());
+            raf = 0;
+            return;
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    function kick() {
+        if (raf) return;
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+    }
+
+    // ------------------------------------------------------------------------
+    // Input nativo: escribir sin disparar el setter interceptado y vigilar
+    // cambios de value/disabled hechos por otros scripts.
+    // ------------------------------------------------------------------------
+    const VALUE = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    const DISABLED = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'disabled');
+
+    function watchNative(input, onChange) {
+        Object.defineProperty(input, 'value', {
+            configurable: true,
+            get() { return VALUE.get.call(this); },
+            set(v) { VALUE.set.call(this, v); onChange(); },
+        });
+        Object.defineProperty(input, 'disabled', {
+            configurable: true,
+            get() { return DISABLED.get.call(this); },
+            set(v) { DISABLED.set.call(this, v); onChange(); },
+        });
+        new MutationObserver(onChange).observe(input, { attributes: true, attributeFilter: ['disabled', 'value'] });
+    }
+
+    function writeNative(input, v) {
+        VALUE.set.call(input, v);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // ------------------------------------------------------------------------
+    // Popover compartido: crece desde el campo con un recorte animado
+    // ------------------------------------------------------------------------
+    const popovers = new Set();
+
+    function createPopover(className) {
+        const pop = document.createElement('div');
+        pop.className = `iosp-pop ${className}`;
+        pop.setAttribute('role', 'dialog');
+        pop.style.visibility = 'hidden';
+        pop.style.clipPath = 'inset(50% 50% 50% 50%)';
+        document.body.appendChild(pop);
+
+        const P = spring(0, 380, 28, 0.001);
+        const state = { open: false, anchor: null, onClose: null };
+
+        function place() {
+            const a = state.anchor;
+            if (!a || !a.isConnected) return;
+            const r = a.getBoundingClientRect();
+            const w = pop.offsetWidth, h = pop.offsetHeight;
+            const gap = 8, vw = window.innerWidth, vh = window.innerHeight;
+            let top = r.bottom + gap;
+            if (top + h > vh - gap && r.top - gap - h > gap) top = r.top - gap - h;
+            const left = clamp(r.left, gap, Math.max(gap, vw - w - gap));
+            pop.style.top = `${Math.round(top)}px`;
+            pop.style.left = `${Math.round(left)}px`;
+        }
+
+        function render() {
+            const p = P.v, pc = clamp(p);
+            if (p < 0.002 && P.t === 0) {
+                pop.style.visibility = 'hidden';
+                pop.style.clipPath = 'inset(50% 50% 50% 50%)';
+                return;
+            }
+            pop.style.visibility = 'visible';
+            pop.style.setProperty('--iosp-p', pc.toFixed(3));
+            if (state.open && atRest(P)) { pop.style.clipPath = 'none'; return; }
+            const a = state.anchor && state.anchor.isConnected ? state.anchor.getBoundingClientRect() : null;
+            const m = pop.getBoundingClientRect();
+            if (!a) { pop.style.clipPath = `inset(0 round 20px)`; pop.style.opacity = pc; return; }
+            const W = m.width, H = m.height;
+            const t = clamp(a.top - m.top, 0, H), b = clamp(m.bottom - a.bottom, 0, H);
+            const l = clamp(a.left - m.left, 0, W), r = clamp(m.right - a.right, 0, W);
+            pop.style.clipPath = `inset(${lerp(t, 0, p)}px ${lerp(r, 0, p)}px ${lerp(b, 0, p)}px ${lerp(l, 0, p)}px round ${lerp(a.height / 2, 20, pc)}px)`;
+        }
+        renderers.add(render);
+
+        const api = {
+            el: pop,
+            get open() { return state.open; },
+            get anchor() { return state.anchor; },
+            show(anchor, onClose) {
+                popovers.forEach((o) => o !== api && o.hide());
+                if (state.open && state.anchor !== anchor) state.onClose && state.onClose();
+                state.anchor = anchor;
+                state.onClose = onClose;
+                state.open = true;
+                place();
+                P.t = 1;
+                render();
+                kick();
+            },
+            hide() {
+                if (!state.open) return;
+                state.open = false;
+                const cb = state.onClose;
+                state.onClose = null;
+                P.t = 0;
+                render();
+                kick();
+                cb && cb();
+            },
+            place,
+            contains: (n) => pop.contains(n) || (state.anchor && state.anchor.contains(n)),
+        };
+        popovers.add(api);
+        return api;
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+        popovers.forEach((p) => { if (p.open && !p.contains(e.target)) p.hide(); });
+    }, true);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') popovers.forEach((p) => p.hide());
+    });
+    function reposition(e) {
+        popovers.forEach((p) => {
+            if (!p.open) return;
+            if (e && e.target && p.el.contains(e.target)) return;   // scroll de las ruedas
+            const a = p.anchor;
+            if (!a || !a.isConnected) { p.hide(); return; }
+            const r = a.getBoundingClientRect();
+            if (r.bottom < 0 || r.top > window.innerHeight) { p.hide(); return; }
+            p.place();
+        });
+    }
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+
+    // ========================================================================
+    // SELECTOR DE HORA — tres ruedas (Hora | Min | Periodo)
+    // ========================================================================
+    const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const BASE_MINUTES = ['00', '15', '30', '45'];
+    const PERIODS = ['AM', 'PM'];
+
+    function to12(v) {
+        const m = /^(\d{1,2}):(\d{2})/.exec(v || '');
+        if (!m) return null;
+        const h = +m[1];
+        return { h: String(h % 12 === 0 ? 12 : h % 12).padStart(2, '0'), m: m[2], p: h >= 12 ? 'PM' : 'AM' };
+    }
+    function to24(h, m, p) {
+        let x = parseInt(h, 10);
+        if (p === 'AM' && x === 12) x = 0;
+        if (p === 'PM' && x !== 12) x += 12;
+        return `${String(x).padStart(2, '0')}:${m}`;
+    }
+
+    let timePop = null;
+    let timeTarget = null;   // { input, trigger, refresh }
+    const wheels = {};
+
+    function buildTimePop() {
+        timePop = createPopover('iosp-time-pop');
+        timePop.el.innerHTML = `
+            <div class="iosp-time-cols">
+                <div class="iosp-time-col"><div class="iosp-time-title">${tr('onb_time_hour', 'Hora')}</div><div class="iosp-wheel" data-k="h"></div></div>
+                <div class="iosp-time-col"><div class="iosp-time-title">${tr('onb_time_min', 'Min')}</div><div class="iosp-wheel" data-k="m"></div></div>
+                <div class="iosp-time-col"><div class="iosp-time-title">${tr('onb_time_period', 'Periodo')}</div><div class="iosp-wheel" data-k="p"></div></div>
+            </div>`;
+        timePop.el.querySelectorAll('.iosp-wheel').forEach((scroll) => {
+            const k = scroll.dataset.k;
+            const w = wheels[k] = { scroll, items: [], value: null, timer: null, syncing: false };
+
+            w.setItems = (list) => {
+                if (w.items.join() === list.join()) return;
+                w.items = list.slice();
+                scroll.innerHTML = list.map((v) => `<div class="iosp-opt" data-v="${v}">${v}</div>`).join('');
+            };
+            w.paint = () => {
+                const st = scroll.scrollTop;
+                [...scroll.children].forEach((o, i) => {
+                    const dd = (i * ITEM_H - st) / ITEM_H;
+                    if (Math.abs(dd) > 4) { o.style.opacity = 0; return; }
+                    o.style.transform = `perspective(320px) rotateX(${-dd * 22}deg)`;
+                    o.style.opacity = Math.max(0.28, 1 - Math.abs(dd) * 0.3);
+                    o.classList.toggle('is-sel', Math.abs(dd) < 0.5);
+                });
+            };
+            w.sync = (v) => {
+                w.value = v;
+                w.syncing = true;
+                const i = Math.max(0, w.items.indexOf(v));
+                scroll.scrollTop = i * ITEM_H;
+                w.paint();
+                requestAnimationFrame(() => requestAnimationFrame(() => { w.syncing = false; }));
+            };
+            const settle = () => {
+                if (w.syncing) return;
+                const i = clamp(Math.round(scroll.scrollTop / ITEM_H), 0, w.items.length - 1);
+                const v = w.items[i];
+                if (v === undefined || v === w.value) return;
+                w.value = v;
+                if (navigator.vibrate) { try { navigator.vibrate(4); } catch (e) { /* sin vibración */ } }
+                commitTime();
+            };
+            scroll.addEventListener('scroll', () => {
+                w.paint();
+                clearTimeout(w.timer);
+                w.timer = setTimeout(settle, 110);
+            }, { passive: true });
+            scroll.addEventListener('click', (e) => {
+                const o = e.target.closest('.iosp-opt');
+                if (!o) return;
+                const i = [...scroll.children].indexOf(o);
+                scroll.scrollTo({ top: i * ITEM_H, behavior: reduce.matches ? 'auto' : 'smooth' });
+            });
+        });
+    }
+
+    function commitTime() {
+        if (!timeTarget) return;
+        const v = to24(wheels.h.value, wheels.m.value, wheels.p.value);
+        if (v !== timeTarget.input.value) writeNative(timeTarget.input, v);
+        timeTarget.refresh();
+    }
+
+    function openTime(target) {
+        if (!timePop) buildTimePop();
+        if (timePop.open && timeTarget === target) { timePop.hide(); return; }
+        timeTarget = target;
+        const t = to12(target.input.value) || to12(target.fallback) || { h: '09', m: '00', p: 'AM' };
+        const mins = BASE_MINUTES.includes(t.m) ? BASE_MINUTES : [...BASE_MINUTES, t.m].sort();
+        wheels.h.setItems(HOURS);
+        wheels.m.setItems(mins);
+        wheels.p.setItems(PERIODS);
+        target.trigger.classList.add('is-open');
+        timePop.show(target.trigger, () => {
+            target.trigger.classList.remove('is-open');
+            if (timeTarget === target) timeTarget = null;
+        });
+        wheels.h.sync(t.h); wheels.m.sync(t.m); wheels.p.sync(t.p);
+    }
+
+    function enhanceTime(input) {
+        if (input.dataset.iospDone) return;
+        input.dataset.iospDone = '1';
+        const fallback = input.getAttribute('value') || '09:00';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'iosp-time';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.innerHTML = `
+            <button type="button" class="iosp-trigger" aria-haspopup="dialog">
+                <span class="iosp-value"></span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>`;
+        wrap.appendChild(input);
+        input.classList.add('iosp-native');
+        input.tabIndex = -1;
+
+        const trigger = wrap.querySelector('.iosp-trigger');
+        const valueEl = wrap.querySelector('.iosp-value');
+        const target = {
+            input, trigger, fallback,
+            refresh() {
+                const t = to12(input.value);
+                valueEl.textContent = t ? `${t.h}:${t.m} ${t.p}` : '--:--';
+                trigger.disabled = input.disabled;
+                wrap.classList.toggle('is-disabled', input.disabled);
+                if (input.disabled && timeTarget === target) timePop.hide();
+            },
+        };
+        trigger.addEventListener('click', () => { if (!input.disabled) openTime(target); });
+        watchNative(input, () => target.refresh());
+        target.refresh();
+    }
+
+    // ========================================================================
+    // SELECTOR DE FECHA — calendario con cápsula que salta al día elegido
+    // ========================================================================
+    const LOCALE = (document.documentElement.lang || 'es').toLowerCase();
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const toISO = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const fromISO = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+        return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    };
+    const fmtValue = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
+    const fmtTitle = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' });
+    const WEEK = Array.from({ length: 7 }, (_, i) =>
+        new Intl.DateTimeFormat(LOCALE, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)));   // 1 ene 2024 = lunes
+    const CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    const CHEV = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+
+    let datePop = null, dateTarget = null, view = new Date();
+    let grid, titleEl, selEl;
+    const SX = spring(0, 520, 34), SY = spring(0, 520, 34), SS = spring(0, 600, 30, 0.001);
+
+    function buildDatePop() {
+        datePop = createPopover('iosp-date-pop');
+        datePop.el.innerHTML = `
+            <div class="iosp-date-head">
+                <span class="iosp-date-title"></span>
+                <button type="button" class="iosp-date-nav" data-step="-1" aria-label="${tr('onb_prev_month', 'Mes anterior')}">${CHEV('M15 18l-6-6 6-6')}</button>
+                <button type="button" class="iosp-date-nav" data-step="1" aria-label="${tr('onb_next_month', 'Mes siguiente')}">${CHEV('M9 18l6-6-6-6')}</button>
+            </div>
+            <div class="iosp-date-week">${WEEK.map((w) => `<span>${w}</span>`).join('')}</div>
+            <div class="iosp-date-grid"><span class="iosp-date-sel" aria-hidden="true"></span></div>
+            <div class="iosp-date-foot">
+                <button type="button" class="iosp-date-clear">${tr('onb_date_clear', 'Borrar')}</button>
+                <button type="button" class="iosp-date-today">${tr('onb_date_today', 'Hoy')}</button>
+            </div>`;
+        grid = datePop.el.querySelector('.iosp-date-grid');
+        titleEl = datePop.el.querySelector('.iosp-date-title');
+        selEl = datePop.el.querySelector('.iosp-date-sel');
+
+        renderers.add(() => {
+            selEl.style.opacity = clamp(SS.v);
+            selEl.style.transform = `translate(${SX.v}px, ${SY.v}px) scale(${Math.max(0, SS.v)})`;
+        });
+
+        datePop.el.querySelectorAll('.iosp-date-nav').forEach((b) => b.addEventListener('click', () => stepMonth(+b.dataset.step)));
+        grid.addEventListener('click', (e) => {
+            const b = e.target.closest('.iosp-date-day[data-iso]');
+            if (!b || b.disabled) return;
+            grid.querySelectorAll('.is-selected').forEach((x) => x.classList.remove('is-selected'));
+            b.classList.add('is-selected');
+            placeSel(false);
+            setDate(b.dataset.iso);
+            setTimeout(() => datePop.hide(), 260);   // deja ver el cambio antes de cerrar
+        });
+        datePop.el.querySelector('.iosp-date-today').addEventListener('click', () => {
+            const t = new Date();
+            view = new Date(t.getFullYear(), t.getMonth(), 1);
+            setDate(toISO(t));
+            buildMonth(0);
+            setTimeout(() => datePop.hide(), 260);
+        });
+        datePop.el.querySelector('.iosp-date-clear').addEventListener('click', () => { setDate(''); datePop.hide(); });
+
+        // Deslizar a los lados cambia de mes
+        let sx = null;
+        grid.addEventListener('pointerdown', (e) => { sx = e.clientX; });
+        grid.addEventListener('pointerup', (e) => {
+            if (sx === null) return;
+            const dx = e.clientX - sx; sx = null;
+            if (Math.abs(dx) > 45) stepMonth(dx < 0 ? 1 : -1);
+        });
+    }
+
+    function buildMonth(dir) {
+        const tt = fmtTitle.format(view);
+        titleEl.textContent = tt.charAt(0).toUpperCase() + tt.slice(1);
+        grid.querySelectorAll('.iosp-date-day').forEach((b) => b.remove());
+        const first = new Date(view.getFullYear(), view.getMonth(), 1);
+        const lead = (first.getDay() + 6) % 7;   // semana inicia en lunes
+        const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+        const todayISO = toISO(new Date());
+        const selISO = dateTarget ? dateTarget.input.value : '';
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < lead; i++) {
+            const s = document.createElement('span');
+            s.className = 'iosp-date-day is-pad';
+            frag.appendChild(s);
+        }
+        for (let d = 1; d <= days; d++) {
+            const iso = toISO(new Date(view.getFullYear(), view.getMonth(), d));
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'iosp-date-day';
+            b.textContent = d;
+            b.dataset.iso = iso;
+            if (iso === todayISO) b.classList.add('is-today');
+            if (iso === selISO) b.classList.add('is-selected');
+            frag.appendChild(b);
+        }
+        grid.appendChild(frag);
+        placeSel(true);
+        if (dir && !reduce.matches && grid.animate) {
+            grid.animate(
+                [{ transform: `translateX(${dir * 28}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+                { duration: 480, easing: SPRING }
+            );
+        }
+    }
+
+    function placeSel(snap) {
+        const b = grid.querySelector('.iosp-date-day.is-selected');
+        if (!b) { SS.t = 0; if (snap) SS.v = 0; kick(); return; }
+        SX.t = b.offsetLeft; SY.t = b.offsetTop; SS.t = 1;
+        if (snap || SS.v < 0.05) { SX.v = SX.t; SY.v = SY.t; SX.vel = SY.vel = 0; }
+        if (snap && SS.v < 0.05) SS.v = 0.4;   // pequeño "pop" al aparecer
+        kick();
+    }
+
+    function stepMonth(dir) {
+        view = new Date(view.getFullYear(), view.getMonth() + dir, 1);
+        buildMonth(dir);
+    }
+
+    function setDate(iso) {
+        if (!dateTarget) return;
+        writeNative(dateTarget.input, iso);
+        dateTarget.refresh();
+    }
+
+    function openDate(target) {
+        if (!datePop) buildDatePop();
+        if (datePop.open && dateTarget === target) { datePop.hide(); return; }
+        dateTarget = target;
+        const d = fromISO(target.input.value) || new Date();
+        view = new Date(d.getFullYear(), d.getMonth(), 1);
+        buildMonth(0);
+        target.wrap.classList.add('is-open');
+        datePop.show(target.trigger, () => {
+            target.wrap.classList.remove('is-open');
+            if (dateTarget === target) dateTarget = null;
+        });
+    }
+
+    function enhanceDate(input) {
+        if (input.dataset.iospDone) return;
+        input.dataset.iospDone = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'iosp-date';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.innerHTML = `
+            <button type="button" class="iosp-trigger iosp-date-trigger" aria-haspopup="dialog">
+                ${CAL_ICON}<span class="iosp-value"></span>
+            </button>`;
+        wrap.appendChild(input);
+        input.classList.add('iosp-native');
+        input.tabIndex = -1;
+
+        const trigger = wrap.querySelector('.iosp-trigger');
+        const valueEl = wrap.querySelector('.iosp-value');
+        const placeholder = input.dataset.placeholder || tr('onb_date_placeholder', 'Seleccionar fecha');
+        const target = {
+            input, trigger, wrap,
+            refresh() {
+                const d = fromISO(input.value);
+                valueEl.textContent = d ? fmtValue.format(d) : placeholder;
+                trigger.classList.toggle('is-empty', !d);
+                trigger.disabled = input.disabled;
+                if (input.disabled && dateTarget === target) datePop.hide();
+            },
+        };
+        trigger.addEventListener('click', () => { if (!input.disabled) openDate(target); });
+        watchNative(input, () => target.refresh());
+        target.refresh();
+    }
+
+    // ------------------------------------------------------------------------
+    // Arranque: inputs actuales + los que se agreguen después (modal, filas nuevas)
+    // ------------------------------------------------------------------------
+    function enhance(root = document) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll(TIME_SEL).forEach(enhanceTime);
+        root.querySelectorAll(DATE_SEL).forEach(enhanceDate);
+    }
+
+    let pending = false;
+    function schedule() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => { pending = false; enhance(document); });
+    }
+
+    function start() {
+        enhance(document);
+        new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    }
+
+    window.IOSPickers = { enhance };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
 })();

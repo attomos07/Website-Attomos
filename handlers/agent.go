@@ -18,6 +18,7 @@ import (
 	"attomos/chatwoot"
 	"attomos/google"
 	"attomos/infrastructure"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -86,19 +87,29 @@ func CreateAgent(c *gin.Context) {
 		}
 	}
 
-	// ── Determinar botType según la plataforma seleccionada ──────────────────
+	// ── Determinar botType según la plataforma y el plan ─────────────────────
+	// WhatsApp Web (AtomicBot) es exclusivo del plan Gratuito. Los planes de
+	// pago (Protón, Neutrón, Electrón) usan WhatsApp Business vía Meta Cloud
+	// API (OrbitalBot); las credenciales de Meta se conectan después desde
+	// Integraciones y se inyectan en el .env del bot.
+	isFreePlan := subscription.Plan == "" || subscription.Plan == "gratuito" || subscription.Plan == "pending"
 	var botType string
 	switch strings.ToLower(req.Social) {
 	case "whatsapp":
-		botType = "atomic"
-		log.Printf("📋 [User %d] social=whatsapp → AtomicBot (WhatsApp Web)", user.ID)
+		if isFreePlan {
+			botType = "atomic"
+			log.Printf("📋 [User %d] social=whatsapp, plan=%s → AtomicBot (WhatsApp Web)", user.ID, subscription.Plan)
+		} else {
+			botType = "orbital"
+			log.Printf("📋 [User %d] social=whatsapp, plan=%s → OrbitalBot (Meta Cloud API)", user.ID, subscription.Plan)
+		}
 	case "telegram":
 		botType = "telegram"
 		log.Printf("📋 [User %d] social=telegram → TelegramBot", user.ID)
 	default:
 		// meta, facebook, instagram, etc. → OrbitalBot
 		// Plan gratuito sin social especificado → AtomicBot por defecto
-		if subscription.Plan == "gratuito" && req.Social == "" {
+		if isFreePlan && req.Social == "" {
 			botType = "atomic"
 			log.Printf("📋 [User %d] Plan gratuito sin social → AtomicBot", user.ID)
 		} else {

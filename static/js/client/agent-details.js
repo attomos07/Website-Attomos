@@ -86,6 +86,9 @@ function renderAgentDetails(agent) {
         toggleText.textContent = window.Translations?.dict?.[getLang()]?.ad_activate || 'Activar';
     }
     
+    // Enviar mensaje por WhatsApp Cloud API (solo agentes con Meta conectado)
+    renderSendTestSection(agent);
+
     // Basic Info
     document.getElementById('infoName').textContent = agent.name;
 
@@ -717,3 +720,86 @@ window.addEventListener('beforeunload', function() {
         btn.classList.remove('ios-squish'); void btn.offsetWidth; btn.classList.add('ios-squish');
     });
 })();
+// ============================================
+// Enviar mensaje (WhatsApp Cloud API)
+// ============================================
+let sendTestType = 'template';
+
+function renderSendTestSection(agent) {
+    const section = document.getElementById('sendTestSection');
+    if (!section) return;
+    const hasMeta = !!agent.metaConnected || !!agent.metaPhoneNumberId;
+    section.style.display = hasMeta ? '' : 'none';
+    if (!hasMeta) return;
+
+    const from = document.getElementById('sendTestFrom');
+    const number = agent.metaDisplayNumber || agent.phoneNumber || '';
+    const name = agent.metaVerifiedName || '';
+    from.textContent = number
+        ? `${t('ad_st_from', 'Desde')}: ${name ? name + ' · ' : ''}${number}`
+        : '';
+}
+
+function setSendTestType(type) {
+    sendTestType = type === 'text' ? 'text' : 'template';
+    document.querySelectorAll('.send-test-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === sendTestType);
+    });
+    document.getElementById('sendTestTemplateFields').style.display = sendTestType === 'template' ? '' : 'none';
+    document.getElementById('sendTestTextField').style.display = sendTestType === 'text' ? '' : 'none';
+}
+
+async function sendTestMessage(event) {
+    event.preventDefault();
+    const btn = document.getElementById('sendTestBtn');
+    const btnLabel = btn.querySelector('span');
+    const originalLabel = btnLabel.textContent;
+
+    const payload = {
+        to: document.getElementById('sendTestTo').value.trim(),
+        type: sendTestType,
+        templateName: document.getElementById('sendTestTemplate').value.trim(),
+        languageCode: document.getElementById('sendTestLang').value.trim(),
+        text: document.getElementById('sendTestText').value.trim(),
+    };
+
+    btn.disabled = true;
+    btnLabel.textContent = t('ad_st_sending', 'Enviando...');
+
+    let data = null;
+    try {
+        const response = await fetch(`/api/meta/send-test/${agentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+        const msgId = data.response?.messages?.[0]?.id;
+        showSendTestResult(true, `${t('ad_st_ok', 'Mensaje enviado correctamente')}${msgId ? ' · ID: ' + msgId : ''}`, data);
+    } catch (error) {
+        showSendTestResult(false, `${t('ad_st_error', 'No se pudo enviar')}: ${error.message}`, data);
+    } finally {
+        btn.disabled = false;
+        btnLabel.textContent = originalLabel;
+    }
+}
+
+function showSendTestResult(ok, message, data) {
+    const result = document.getElementById('sendTestResult');
+    const status = document.getElementById('sendTestStatus');
+    result.style.display = '';
+    status.className = 'send-test-status ' + (ok ? 'success' : 'error');
+    status.textContent = message;
+
+    const req = data?.request;
+    document.getElementById('sendTestRequest').textContent = req
+        ? `${req.method} ${req.endpoint}\nAuthorization: Bearer ••••••••\nContent-Type: application/json\n\n${JSON.stringify(req.body, null, 2)}`
+        : '--';
+    document.getElementById('sendTestResponse').textContent = data?.response
+        ? JSON.stringify(data.response, null, 2)
+        : '--';
+}

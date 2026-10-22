@@ -419,6 +419,7 @@ func main() {
 		protected.GET("/meta/credentials/status/:agent_id", handlers.GetMetaCredentialsStatus)
 		protected.POST("/meta/credentials/save/:agent_id", handlers.SaveMetaCredentials)
 		protected.DELETE("/meta/credentials/remove/:agent_id", handlers.RemoveMetaCredentials)
+		protected.POST("/meta/send-test/:agent_id", handlers.SendMetaTestMessage)
 
 		// ============================================
 		// 💳 PAYMENT CONFIG - Pasarela de pagos del bot (CLABE + Stripe Connect + Click/Payme)

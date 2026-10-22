@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=2">
+    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=3">
      <link rel="stylesheet" href="/static/css/client/sidebar.css">
 </head>
 <body>
@@ -110,6 +110,64 @@
 
                         <!-- Right Column: Agent Information -->
                         <div class="details-column-right">
+                            <!-- Send test message (WhatsApp Cloud API) -->
+                            <div class="details-section send-test-section" id="sendTestSection" style="display:none">
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-telegram-original"></i>
+                                        <span data-translate="ad_st_title">Enviar mensaje de WhatsApp</span>
+                                    </h2>
+                                    <p class="send-test-subtitle">
+                                        <span data-translate="ad_st_subtitle">Envía un mensaje desde tu número de WhatsApp Business usando la WhatsApp Cloud API.</span>
+                                        <span class="send-test-from" id="sendTestFrom"></span>
+                                    </p>
+                                </div>
+                                <form class="send-test-form" id="sendTestForm" onsubmit="sendTestMessage(event)">
+                                    <div class="send-test-field">
+                                        <label for="sendTestTo" data-translate="ad_st_to">Número de destino</label>
+                                        <input type="tel" id="sendTestTo" placeholder="526621234567" autocomplete="off" required>
+                                        <small data-translate="ad_st_to_hint">Formato internacional, sin + ni espacios.</small>
+                                    </div>
+                                    <div class="send-test-field">
+                                        <label data-translate="ad_st_type">Tipo de mensaje</label>
+                                        <div class="send-test-toggle">
+                                            <button type="button" class="active" data-type="template" onclick="setSendTestType('template')" data-translate="ad_st_type_template">Plantilla</button>
+                                            <button type="button" data-type="text" onclick="setSendTestType('text')" data-translate="ad_st_type_text">Texto</button>
+                                        </div>
+                                    </div>
+                                    <div class="send-test-row" id="sendTestTemplateFields">
+                                        <div class="send-test-field">
+                                            <label for="sendTestTemplate" data-translate="ad_st_template">Plantilla</label>
+                                            <input type="text" id="sendTestTemplate" value="hello_world" autocomplete="off">
+                                        </div>
+                                        <div class="send-test-field">
+                                            <label for="sendTestLang" data-translate="ad_st_lang">Idioma</label>
+                                            <input type="text" id="sendTestLang" value="en_US" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="send-test-field" id="sendTestTextField" style="display:none">
+                                        <label for="sendTestText" data-translate="ad_st_message">Mensaje</label>
+                                        <textarea id="sendTestText" rows="3" data-translate-placeholder="ad_st_message_ph" placeholder="Hola, este es un mensaje enviado desde Attomos."></textarea>
+                                        <small data-translate="ad_st_text_hint">Los mensajes de texto solo se entregan si el destinatario te escribió en las últimas 24 horas.</small>
+                                    </div>
+                                    <button type="submit" class="btn-primary send-test-btn" id="sendTestBtn">
+                                        <i class="lni lni-telegram-original"></i>
+                                        <span data-translate="ad_st_send">Enviar mensaje</span>
+                                    </button>
+                                </form>
+                                <div class="send-test-result" id="sendTestResult" style="display:none">
+                                    <div class="send-test-status" id="sendTestStatus"></div>
+                                    <div class="send-test-code">
+                                        <label data-translate="ad_st_request">Petición</label>
+                                        <pre id="sendTestRequest"></pre>
+                                    </div>
+                                    <div class="send-test-code">
+                                        <label data-translate="ad_st_response">Respuesta de la API</label>
+                                        <pre id="sendTestResponse"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Basic Info -->
                             <div class="details-section">
                                 <div class="section-header">
@@ -209,6 +267,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/agent-details.js?v=2"></script>
+    <script src="/static/js/client/agent-details.js?v=3"></script>
 </body>
 </html>
