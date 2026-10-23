@@ -74,6 +74,7 @@ function renderAgentDetails(agent) {
     // Header
     document.getElementById('agentName').textContent = agent.name;
     document.getElementById('agentId').textContent = `ID: ${agent.id}`;
+    renderPlatformBadge(agent);
     updateStatusBadge(agent);
     
     // Toggle button
@@ -955,5 +956,24 @@ async function copyMetaValue(elementId, btn) {
         setTimeout(() => { icon.className = 'lni lni-copy'; }, 1500);
     } catch (e) {
         console.error('No se pudo copiar', e);
+    }
+}
+
+// Badge de plataforma del encabezado (misma lógica que getPlatformBadge en my-agents.js)
+function renderPlatformBadge(agent) {
+    const botType = (agent.botType || '').toLowerCase();
+    const icon = document.querySelector('#agentPlatform i');
+    const name = document.getElementById('agentPlatformName');
+    if (!icon || !name) return;
+
+    if (botType === 'telegram') {
+        icon.className = 'lni lni-telegram-original';
+        name.textContent = 'Telegram';
+    } else if (botType === 'orbital' || botType === 'builderbot') {
+        icon.className = 'lni lni-whatsapp';
+        name.textContent = 'WhatsApp Business';
+    } else {
+        icon.className = 'lni lni-whatsapp';
+        name.textContent = 'WhatsApp';
     }
 }
