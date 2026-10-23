@@ -61,6 +61,7 @@ async function loadAgentDetails() {
         // (se hace aquí porque agent ya está cargado)
         loadQRCode();
         startQRPolling();
+        loadMetaConnection();
     } catch (error) {
         console.error('❌ Error:', error);
         alert('Error loading agent details');
@@ -73,6 +74,7 @@ function renderAgentDetails(agent) {
     // Header
     document.getElementById('agentName').textContent = agent.name;
     document.getElementById('agentId').textContent = `ID: ${agent.id}`;
+    renderPlatformBadge(agent);
     updateStatusBadge(agent);
     
     // Toggle button
@@ -728,7 +730,8 @@ let sendTestType = 'template';
 function renderSendTestSection(agent) {
     const section = document.getElementById('sendTestSection');
     if (!section) return;
-    const hasMeta = !!agent.metaConnected || !!agent.metaPhoneNumberId;
+    const hasMeta = (agent.botType || '').toLowerCase() === 'orbital'
+        && (!!agent.metaConnected || !!agent.metaPhoneNumberId);
     section.style.display = hasMeta ? '' : 'none';
     if (!hasMeta) return;
 
@@ -802,4 +805,175 @@ function showSendTestResult(ok, message, data) {
     document.getElementById('sendTestResponse').textContent = data?.response
         ? JSON.stringify(data.response, null, 2)
         : '--';
+}
+
+// ============================================
+// Conexión WhatsApp Business (Meta) — OrbitalBot
+// ============================================
+async function loadMetaConnection() {
+    const section = document.getElementById('metaConnSection');
+    if (!section) return;
+    if ((agent.botType || '').toLowerCase() !== 'orbital') {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'whatsapp_connected') {
+        showMetaStatus(true, t('ad_meta_connected_ok', 'WhatsApp Business conectado correctamente'));
+        history.replaceState(null, '', window.location.pathname);
+    }
+
+    try {
+        const response = await fetch(`/api/meta/credentials/status/${agentId}`, { credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        renderMetaConnection(data);
+    } catch (error) {
+        console.error('❌ Error cargando estado de Meta:', error);
+        renderMetaConnection({});
+    }
+}
+
+function renderMetaConnection(data) {
+    const connected = !!data.has_credentials && !!data.connected;
+    const badge = document.getElementById('metaConnBadge');
+    badge.classList.toggle('connected', connected);
+    badge.textContent = connected
+        ? t('ad_meta_connected', 'Conectado')
+        : t('ad_meta_not_connected', 'Sin conectar');
+
+    document.getElementById('metaConnSetup').style.display = connected ? 'none' : '';
+    document.getElementById('metaConnInfo').style.display = connected ? '' : 'none';
+    document.getElementById('metaCancelEditBtn').style.display = 'none';
+
+    document.getElementById('metaInfoNumber').textContent = data.displayNumber || data.display_number || '--';
+    document.getElementById('metaInfoName').textContent = data.verifiedName || data.verified_name || '--';
+    document.getElementById('metaWebhookUrl').textContent = data.webhookUrl || `${window.location.origin}/webhook/meta/${agentId}`;
+    document.getElementById('metaVerifyTokenValue').textContent = data.webhookVerifyToken || '--';
+
+    // Mantener el objeto agent sincronizado para la tarjeta de envío
+    agent.metaConnected = connected;
+    agent.metaPhoneNumberId = connected ? (data.phoneNumberId || agent.metaPhoneNumberId) : '';
+    agent.metaDisplayNumber = data.displayNumber || '';
+    agent.metaVerifiedName = data.verifiedName || '';
+    renderSendTestSection(agent);
+}
+
+function showMetaStatus(ok, message) {
+    const el = document.getElementById('metaConnStatus');
+    if (!el) return;
+    el.className = 'send-test-status ' + (ok ? 'success' : 'error');
+    el.textContent = message;
+    el.style.display = '';
+}
+
+async function connectMetaWithFacebook() {
+    const btn = document.getElementById('metaFbBtn');
+    btn.disabled = true;
+    try {
+        const response = await fetch(`/api/meta/connect?agent_id=${agentId}`, { credentials: 'include' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.auth_url) {
+            throw new Error(data.error || t('ad_meta_fb_unavailable', 'La conexión con Facebook no está disponible. Usa tus credenciales.'));
+        }
+        window.location.href = data.auth_url;
+    } catch (error) {
+        showMetaStatus(false, error.message);
+        btn.disabled = false;
+    }
+}
+
+async function saveMetaCredentials(event) {
+    event.preventDefault();
+    const btn = document.getElementById('metaSaveBtn');
+    const label = btn.querySelector('span');
+    const original = label.textContent;
+    btn.disabled = true;
+    label.textContent = t('ad_meta_validating', 'Validando...');
+
+    try {
+        const response = await fetch(`/api/meta/credentials/save/${agentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumberId: document.getElementById('metaPhoneId').value.trim(),
+                wabaId: document.getElementById('metaWaba').value.trim(),
+                accessToken: document.getElementById('metaToken').value.trim(),
+            }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+
+        document.getElementById('metaToken').value = '';
+        showMetaStatus(true, t('ad_meta_saved', 'Credenciales guardadas. El bot se está reiniciando con tu número.'));
+        await loadMetaConnection();
+    } catch (error) {
+        showMetaStatus(false, `${t('ad_meta_save_error', 'No se pudieron guardar')}: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        label.textContent = original;
+    }
+}
+
+function editMetaCredentials() {
+    document.getElementById('metaConnInfo').style.display = 'none';
+    document.getElementById('metaConnSetup').style.display = '';
+    document.getElementById('metaCancelEditBtn').style.display = '';
+}
+
+function cancelMetaEdit() {
+    document.getElementById('metaConnSetup').style.display = 'none';
+    document.getElementById('metaConnInfo').style.display = '';
+    document.getElementById('metaCancelEditBtn').style.display = 'none';
+}
+
+async function disconnectMeta() {
+    if (!confirm(t('ad_meta_disconnect_confirm', '¿Desconectar WhatsApp Business de este agente?'))) return;
+    try {
+        const response = await fetch(`/api/meta/credentials/remove/${agentId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+        showMetaStatus(true, t('ad_meta_disconnected', 'WhatsApp Business desconectado'));
+        await loadMetaConnection();
+    } catch (error) {
+        showMetaStatus(false, error.message);
+    }
+}
+
+async function copyMetaValue(elementId, btn) {
+    const text = document.getElementById(elementId).textContent.trim();
+    if (!text || text === '--') return;
+    try {
+        await navigator.clipboard.writeText(text);
+        const icon = btn.querySelector('i');
+        icon.className = 'lni lni-checkmark';
+        setTimeout(() => { icon.className = 'lni lni-copy'; }, 1500);
+    } catch (e) {
+        console.error('No se pudo copiar', e);
+    }
+}
+
+// Badge de plataforma del encabezado (misma lógica que getPlatformBadge en my-agents.js)
+function renderPlatformBadge(agent) {
+    const botType = (agent.botType || '').toLowerCase();
+    const icon = document.querySelector('#agentPlatform i');
+    const name = document.getElementById('agentPlatformName');
+    if (!icon || !name) return;
+
+    if (botType === 'telegram') {
+        icon.className = 'lni lni-telegram-original';
+        name.textContent = 'Telegram';
+    } else if (botType === 'orbital' || botType === 'builderbot') {
+        icon.className = 'lni lni-whatsapp';
+        name.textContent = 'WhatsApp Business';
+    } else {
+        icon.className = 'lni lni-whatsapp';
+        name.textContent = 'WhatsApp';
+    }
 }

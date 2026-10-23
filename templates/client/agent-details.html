@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=3">
+    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=4">
      <link rel="stylesheet" href="/static/css/client/sidebar.css">
 </head>
 <body>
@@ -57,9 +57,9 @@
                                 <h1 class="agent-name" id="agentName">Cargando...</h1>
                                 <div class="agent-meta">
                                     <span class="agent-id" id="agentId">ID: --</span>
-                                    <span class="agent-platform">
+                                    <span class="agent-platform" id="agentPlatform">
                                         <i class="lni lni-whatsapp"></i>
-                                        WhatsApp
+                                        <span id="agentPlatformName">WhatsApp</span>
                                     </span>
                                     <div class="status-badge" id="agentStatus">
                                         <span class="status-dot"></span>
@@ -110,6 +110,98 @@
 
                         <!-- Right Column: Agent Information -->
                         <div class="details-column-right">
+                            <!-- WhatsApp Business (Meta) connection — solo OrbitalBot -->
+                            <div class="details-section meta-conn-section" id="metaConnSection" style="display:none">
+                                <div class="section-header meta-conn-header">
+                                    <h2 class="section-title">
+                                        <i class="lni lni-whatsapp"></i>
+                                        <span data-translate="ad_meta_title">WhatsApp Business</span>
+                                    </h2>
+                                    <span class="meta-conn-badge" id="metaConnBadge" data-translate="ad_meta_not_connected">Sin conectar</span>
+                                </div>
+
+                                <div class="send-test-status" id="metaConnStatus" style="display:none"></div>
+
+                                <!-- Estado: sin conectar -->
+                                <div id="metaConnSetup" style="display:none">
+                                    <p class="send-test-subtitle" data-translate="ad_meta_setup_desc">Conecta el número de WhatsApp Business de tu negocio para que tu agente empiece a responder.</p>
+                                    <button type="button" class="btn-primary meta-fb-btn" id="metaFbBtn" onclick="connectMetaWithFacebook()">
+                                        <i class="lni lni-facebook-original"></i>
+                                        <span data-translate="ad_meta_fb_connect">Conectar con Facebook</span>
+                                    </button>
+                                    <div class="meta-conn-divider"><span data-translate="ad_meta_or_manual">o ingresa tus credenciales</span></div>
+                                    <form class="send-test-form" id="metaCredForm" onsubmit="saveMetaCredentials(event)">
+                                        <div class="send-test-row">
+                                            <div class="send-test-field">
+                                                <label for="metaPhoneId">Phone Number ID</label>
+                                                <input type="text" id="metaPhoneId" placeholder="123456789012345" autocomplete="off" required>
+                                            </div>
+                                            <div class="send-test-field">
+                                                <label for="metaWaba">WABA ID</label>
+                                                <input type="text" id="metaWaba" placeholder="123456789012345" autocomplete="off" required>
+                                            </div>
+                                        </div>
+                                        <div class="send-test-field">
+                                            <label for="metaToken">Access Token</label>
+                                            <input type="password" id="metaToken" placeholder="EAAxxxxxxxxxxxx..." autocomplete="off" required>
+                                            <small data-translate="ad_meta_token_hint">Usa un token permanente de usuario del sistema (System User).</small>
+                                        </div>
+                                        <div class="meta-conn-actions">
+                                            <button type="submit" class="btn-primary" id="metaSaveBtn">
+                                                <i class="lni lni-save"></i>
+                                                <span data-translate="ad_meta_save">Guardar y conectar</span>
+                                            </button>
+                                            <button type="button" class="btn-secondary" id="metaCancelEditBtn" style="display:none" onclick="cancelMetaEdit()">
+                                                <span data-translate="ad_meta_cancel">Cancelar</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Estado: conectado -->
+                                <div id="metaConnInfo" style="display:none">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <label data-translate="ad_meta_number">Número</label>
+                                            <div class="info-value" id="metaInfoNumber">--</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <label data-translate="ad_meta_verified">Nombre verificado</label>
+                                            <div class="info-value" id="metaInfoName">--</div>
+                                        </div>
+                                    </div>
+                                    <div class="meta-conn-actions">
+                                        <button type="button" class="btn-secondary" onclick="editMetaCredentials()">
+                                            <i class="lni lni-pencil"></i>
+                                            <span data-translate="ad_meta_update">Actualizar credenciales</span>
+                                        </button>
+                                        <button type="button" class="btn-secondary meta-disconnect-btn" onclick="disconnectMeta()">
+                                            <i class="lni lni-unlink"></i>
+                                            <span data-translate="ad_meta_disconnect">Desconectar</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Webhook (siempre visible para OrbitalBot) -->
+                                <div class="meta-webhook">
+                                    <div class="send-test-code">
+                                        <label data-translate="ad_meta_webhook_url">URL del webhook</label>
+                                        <div class="meta-copy-row">
+                                            <code id="metaWebhookUrl">--</code>
+                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaWebhookUrl', this)"><i class="lni lni-copy"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="send-test-code">
+                                        <label data-translate="ad_meta_verify_token">Token de verificación</label>
+                                        <div class="meta-copy-row">
+                                            <code id="metaVerifyTokenValue">--</code>
+                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaVerifyTokenValue', this)"><i class="lni lni-copy"></i></button>
+                                        </div>
+                                    </div>
+                                    <small class="meta-webhook-hint" data-translate="ad_meta_webhook_hint">Pega estos valores en Meta for Developers → WhatsApp → Configuración → Webhook, y suscríbete al campo "messages".</small>
+                                </div>
+                            </div>
+
                             <!-- Send test message (WhatsApp Cloud API) -->
                             <div class="details-section send-test-section" id="sendTestSection" style="display:none">
                                 <div class="section-header">
@@ -267,6 +359,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/agent-details.js?v=3"></script>
+    <script src="/static/js/client/agent-details.js?v=5"></script>
 </body>
 </html>

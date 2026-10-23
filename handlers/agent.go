@@ -15,7 +15,6 @@ import (
 	"attomos/models"
 
 	"attomos/bots"
-	"attomos/chatwoot"
 	"attomos/google"
 	"attomos/infrastructure"
 
@@ -572,36 +571,10 @@ func CreateAgent(c *gin.Context) {
 				go hetznerService.MonitorCloudInitLogs(agent.ServerIP, agent.ServerPassword, 10*time.Minute)
 			}
 
-			// PASO 3: Cloudflare DNS
-			cloudflareService, err := infrastructure.NewCloudflareService()
-			if err != nil {
-				log.Printf("⚠️  [Agent %d] Cloudflare no configurado (NO CRÍTICO): %v", agent.ID, err)
-			} else {
-				if err := cloudflareService.CreateOrUpdateChatwootDNS(agent.ServerIP, user.ID); err != nil {
-					log.Printf("⚠️  [Agent %d] Error DNS (NO CRÍTICO): %v", agent.ID, err)
-				} else {
-					log.Printf("✅ [Agent %d] DNS configurado", agent.ID)
-				}
-			}
+			// Chatwoot ya no se instala: Attomos usa su propio CRM (realtime/crm_hub).
+			// Los campos chatwoot_* del agente quedan vacíos.
 
-			// PASO 4: Chatwoot
-			chatwootService := chatwoot.NewChatwootService(agent.ServerIP, user.ID, agent.ServerPassword)
-			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
-			if err != nil {
-				log.Printf("⚠️ [Agent %d] Chatwoot (NO CRÍTICO): %v", agent.ID, err)
-			} else {
-				agent.ChatwootEmail = credentials.Email
-				agent.ChatwootPassword = credentials.Password
-				agent.ChatwootAccountID = credentials.AccountID
-				agent.ChatwootAccountName = credentials.AccountName
-				agent.ChatwootInboxID = credentials.InboxID
-				agent.ChatwootInboxName = credentials.InboxName
-				agent.ChatwootURL = credentials.ChatwootURL
-				config.DB.Model(&agent).Updates(map[string]interface{}{"chatwoot_email": agent.ChatwootEmail, "chatwoot_password": agent.ChatwootPassword, "chatwoot_account_id": agent.ChatwootAccountID, "chatwoot_account_name": agent.ChatwootAccountName, "chatwoot_inbox_id": agent.ChatwootInboxID, "chatwoot_inbox_name": agent.ChatwootInboxName, "chatwoot_url": agent.ChatwootURL})
-				log.Printf("✅ [Agent %d] Chatwoot: %s", agent.ID, credentials.ChatwootURL)
-			}
-
-			// PASO 5: Desplegar OrbitalBot
+			// PASO 3: Desplegar OrbitalBot
 			agent.DeployStatus = "deploying"
 			config.DB.Model(&agent).Updates(map[string]interface{}{"deploy_status": agent.DeployStatus})
 

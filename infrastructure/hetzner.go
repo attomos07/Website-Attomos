@@ -364,7 +364,7 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 	return &serverResp, nil
 }
 
-// getCloudInitScript genera el script de inicialización para BuilderBot
+// getCloudInitScript genera el script de inicialización del servidor individual (OrbitalBot)
 func (h *HetznerService) getCloudInitScript(userID uint) string {
 	return `#cloud-config
 
@@ -391,196 +391,17 @@ packages:
 
 runcmd:
   # === FASE 1: SETUP INICIAL ===
-  - mkdir -p /var/log/attomos /opt/agents /opt/chatwoot
+  - mkdir -p /var/log/attomos /opt/agents
   - echo "INICIO" > /var/log/attomos/init.log
   - date >> /var/log/attomos/init.log
   - echo "PHASE_1_START" > /var/log/attomos/status
   - chage -I -1 -m 0 -M 99999 -E -1 root
-  
-  # === FASE 2: INSTALAR DOCKER ===
-  - echo "PHASE_2_DOCKER" > /var/log/attomos/status
-  - echo "[$(date)] Instalando Docker..." >> /var/log/attomos/init.log
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
-  - apt-get update -y >> /var/log/attomos/init.log 2>&1
-  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin >> /var/log/attomos/init.log 2>&1
-  - systemctl enable docker >> /var/log/attomos/init.log 2>&1
-  - systemctl start docker >> /var/log/attomos/init.log 2>&1
-  - docker --version >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Docker instalado" >> /var/log/attomos/init.log
-  
-  # === FASE 3: INSTALAR NODE.JS Y PM2 ===
-  - echo "PHASE_3_NODEJS" > /var/log/attomos/status
-  - echo "[$(date)] Instalando Node.js..." >> /var/log/attomos/init.log
-  - curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-  - echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
-  - apt-get update -y >> /var/log/attomos/init.log 2>&1
-  - DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs >> /var/log/attomos/init.log 2>&1
-  - sleep 3
-  - node --version >> /var/log/attomos/init.log 2>&1
-  - npm --version >> /var/log/attomos/init.log 2>&1
-  - npm install -g pm2 >> /var/log/attomos/init.log 2>&1
-  - sleep 3
-  - pm2 --version >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Node.js instalado" >> /var/log/attomos/init.log
-  
-  # === FASE 4: CONFIGURAR CHATWOOT ===
-  - echo "PHASE_4_CHATWOOT" > /var/log/attomos/status
-  - echo "[$(date)] Configurando Chatwoot..." >> /var/log/attomos/init.log
-  - cd /opt/chatwoot
-  - |
-    cat > docker-compose.yml << 'EOFCOMPOSE'
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        container_name: chatwoot-postgres
-        restart: always
-        volumes:
-          - postgres_data:/var/lib/postgresql/data
-        environment:
-          - POSTGRES_DB=chatwoot_production
-          - POSTGRES_USER=postgres
-          - POSTGRES_PASSWORD=chatwoot_postgres_password
-        networks:
-          - chatwoot
-        healthcheck:
-          test: ["CMD-SHELL", "pg_isready -U postgres"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-    
-      redis:
-        image: redis:alpine
-        container_name: chatwoot-redis
-        restart: always
-        command: ["sh", "-c", "redis-server --requirepass chatwoot_redis_password"]
-        volumes:
-          - redis_data:/data
-        networks:
-          - chatwoot
-        healthcheck:
-          test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-    
-      chatwoot:
-        image: chatwoot/chatwoot:latest
-        container_name: chatwoot-app
-        restart: always
-        depends_on:
-          postgres:
-            condition: service_healthy
-          redis:
-            condition: service_healthy
-        ports:
-          - "3000:3000"
-        environment:
-          - NODE_ENV=production
-          - RAILS_ENV=production
-          - INSTALLATION_ENV=docker
-          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars_` + h.generateRandomString(32) + `
-          - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
-          - POSTGRES_HOST=postgres
-          - POSTGRES_PORT=5432
-          - POSTGRES_DATABASE=chatwoot_production
-          - POSTGRES_USERNAME=postgres
-          - POSTGRES_PASSWORD=chatwoot_postgres_password
-          - REDIS_URL=redis://:chatwoot_redis_password@redis:6379
-          - REDIS_PASSWORD=chatwoot_redis_password
-          - MAILER_SENDER_EMAIL=noreply@attomos.com
-          - SMTP_DOMAIN=attomos.com
-          - ACTIVE_STORAGE_SERVICE=local
-          - FORCE_SSL=false
-          - ENABLE_ACCOUNT_SIGNUP=true
-          - USE_INBOX_AVATAR_FOR_BOT=false
-        volumes:
-          - chatwoot_storage:/app/storage
-        networks:
-          - chatwoot
-        command: >
-          sh -c "bundle exec rails db:chatwoot_prepare && 
-                 bundle exec rails db:migrate &&
-                 bundle exec rails s -p 3000 -b 0.0.0.0"
-        healthcheck:
-          test: ["CMD-SHELL", "curl -f http://localhost:3000/api || exit 1"]
-          interval: 30s
-          timeout: 10s
-          retries: 5
-          start_period: 180s
-    
-      sidekiq:
-        image: chatwoot/chatwoot:latest
-        container_name: chatwoot-sidekiq
-        restart: always
-        depends_on:
-          postgres:
-            condition: service_healthy
-          redis:
-            condition: service_healthy
-          chatwoot:
-            condition: service_started
-        environment:
-          - NODE_ENV=production
-          - RAILS_ENV=production
-          - INSTALLATION_ENV=docker
-          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars_` + h.generateRandomString(32) + `
-          - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
-          - POSTGRES_HOST=postgres
-          - POSTGRES_PORT=5432
-          - POSTGRES_DATABASE=chatwoot_production
-          - POSTGRES_USERNAME=postgres
-          - POSTGRES_PASSWORD=chatwoot_postgres_password
-          - REDIS_URL=redis://:chatwoot_redis_password@redis:6379
-          - REDIS_PASSWORD=chatwoot_redis_password
-        volumes:
-          - chatwoot_storage:/app/storage
-        networks:
-          - chatwoot
-        command: bundle exec sidekiq -C config/sidekiq.yml
-    
-    networks:
-      chatwoot:
-        name: chatwoot
-    
-    volumes:
-      postgres_data:
-      redis_data:
-      chatwoot_storage:
-    EOFCOMPOSE
-  - echo "[$(date)] docker-compose.yml creado" >> /var/log/attomos/init.log
-  - docker compose up -d >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Esperando 180 segundos para que Chatwoot inicie..." >> /var/log/attomos/init.log
-  - sleep 180
-  - docker compose ps >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Verificando logs de Chatwoot..." >> /var/log/attomos/init.log
-  - docker compose logs chatwoot --tail=50 >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Chatwoot configurado" >> /var/log/attomos/init.log
-  
-  # === FASE 5: CONFIGURAR NGINX ===
-  - echo "PHASE_5_NGINX" > /var/log/attomos/status
+
+  # === FASE 2: CONFIGURAR NGINX (uploads en 8080) ===
+  # Chatwoot ya no se instala: Attomos usa su propio CRM.
+  # El OrbitalBot instala Go/GCC por su cuenta al desplegarse (bots/orbital_bot_deploy.go).
+  - echo "PHASE_2_NGINX" > /var/log/attomos/status
   - echo "[$(date)] Configurando Nginx..." >> /var/log/attomos/init.log
-  - |
-    cat > /etc/nginx/sites-available/chatwoot << 'EOFNGINX'
-    server {
-        listen 80;
-        server_name chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com;
-        
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_cache_bypass $http_upgrade;
-        }
-    }
-    EOFNGINX
-  - ln -sf /etc/nginx/sites-available/chatwoot /etc/nginx/sites-enabled/
-  - rm -f /etc/nginx/sites-enabled/default
   - |
     cat > /etc/nginx/sites-available/uploads << 'EOFUPLOADS'
     server {
@@ -603,53 +424,47 @@ runcmd:
     }
     EOFUPLOADS
   - ln -sf /etc/nginx/sites-available/uploads /etc/nginx/sites-enabled/uploads
+  - rm -f /etc/nginx/sites-enabled/default
   - mkdir -p /var/www/uploads
   - chmod 755 /var/www/uploads
   - nginx -t >> /var/log/attomos/init.log 2>&1
   - systemctl reload nginx >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Nginx configurado (chatwoot:80 + uploads:8080)" >> /var/log/attomos/init.log
-  
-  # === FASE 6: CONFIGURAR FIREWALL ===
-  - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
+  - echo "[$(date)] Nginx configurado (uploads:8080)" >> /var/log/attomos/init.log
+
+  # === FASE 3: CONFIGURAR FIREWALL ===
+  - echo "PHASE_3_FIREWALL" > /var/log/attomos/status
   - echo "[$(date)] Configurando firewall..." >> /var/log/attomos/init.log
   - ufw --force enable >> /var/log/attomos/init.log 2>&1
   - ufw allow 22 >> /var/log/attomos/init.log 2>&1
   - ufw allow 80 >> /var/log/attomos/init.log 2>&1
   - ufw allow 443 >> /var/log/attomos/init.log 2>&1
-  - ufw allow 3000 >> /var/log/attomos/init.log 2>&1
   - ufw allow 8080 >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Firewall configurado (puertos para BuilderBot se abrirán bajo demanda)" >> /var/log/attomos/init.log
-  
-  # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===
-  - echo "PHASE_7_OPTIMIZATIONS" > /var/log/attomos/status
+  - echo "[$(date)] Firewall configurado (puertos de bots se abren bajo demanda)" >> /var/log/attomos/init.log
+
+  # === FASE 4: OPTIMIZACIONES DEL SISTEMA ===
+  - echo "PHASE_4_OPTIMIZATIONS" > /var/log/attomos/status
   - echo "fs.file-max = 100000" >> /etc/sysctl.conf
   - echo "net.core.somaxconn = 1024" >> /etc/sysctl.conf
   - sysctl -p >> /var/log/attomos/init.log 2>&1 || true
-  
-  # === FASE 8: HEALTH CHECK ===
-  - echo "PHASE_8_HEALTH_CHECK" > /var/log/attomos/status
+
+  # === FASE 5: HEALTH CHECK ===
+  - echo "PHASE_5_HEALTH_CHECK" > /var/log/attomos/status
   - |
     cat > /opt/health_check.sh << 'EOFHEALTH'
     #!/bin/bash
     echo "=== HEALTH CHECK ==="
-    command -v node && echo "Node OK" || exit 1
-    command -v npm && echo "NPM OK" || exit 1
-    command -v pm2 && echo "PM2 OK" || exit 1
-    command -v docker && echo "Docker OK" || exit 1
-    docker ps | grep chatwoot && echo "Chatwoot OK" || exit 1
-    curl -f http://localhost:3000/api && echo "Chatwoot API OK" || exit 1
+    command -v nginx && echo "Nginx OK" || exit 1
+    curl -sf http://localhost:8080/health && echo "Uploads OK" || exit 1
     [ -f /var/log/attomos/status ] && cat /var/log/attomos/status
     [ "$(cat /var/log/attomos/status)" = "CLOUD_INIT_COMPLETE" ] && echo "SERVIDOR LISTO PARA DESPLEGAR BOTS" && exit 0
     exit 2
     EOFHEALTH
   - chmod +x /opt/health_check.sh
-  
+
   # === COMPLETADO ===
   - echo "CLOUD_INIT_COMPLETE" > /var/log/attomos/status
   - date >> /var/log/attomos/init.log
   - echo "[$(date)] COMPLETADO" >> /var/log/attomos/init.log
-  - echo "[$(date)] Verificando Chatwoot final..." >> /var/log/attomos/init.log
-  - curl -v http://localhost:3000/api >> /var/log/attomos/init.log 2>&1 || echo "Chatwoot no responde aún" >> /var/log/attomos/init.log 2>&1
 `
 }
 

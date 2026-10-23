@@ -166,3 +166,40 @@ func SendMetaTestMessage(c *gin.Context) {
 		"response": metaResp,
 	})
 }
+
+// fetchMetaPhoneNumberInfo valida un token + phone_number_id contra la Graph
+// API y devuelve el número visible y el nombre verificado del negocio.
+func fetchMetaPhoneNumberInfo(accessToken, phoneNumberID string) (string, string, error) {
+	endpoint := fmt.Sprintf("https://graph.facebook.com/%s/%s?fields=display_phone_number,verified_name", metaSendAPIVersion, phoneNumberID)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "", "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", fmt.Errorf("no se pudo contactar a Meta: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		DisplayPhoneNumber string `json:"display_phone_number"`
+		VerifiedName       string `json:"verified_name"`
+		Error              *struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", "", fmt.Errorf("respuesta inválida de Meta (HTTP %d)", resp.StatusCode)
+	}
+	if resp.StatusCode != http.StatusOK || data.Error != nil {
+		if data.Error != nil && data.Error.Message != "" {
+			return "", "", fmt.Errorf("%s", data.Error.Message)
+		}
+		return "", "", fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return data.DisplayPhoneNumber, data.VerifiedName, nil
+}

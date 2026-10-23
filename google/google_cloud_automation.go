@@ -148,11 +148,16 @@ func (gca *GoogleCloudAutomation) CreateProjectForUser(userID uint, userEmail st
 
 	_, err := gca.projectsService.Create(project).Do()
 	if err != nil {
-		log.Printf("⚠️ [User %d] Error creando proyecto (continuando sin GCP): %v", userID, err)
-		return "", "", fmt.Errorf("error creando proyecto: %v", err)
+		if !isAlreadyExistsError(err) {
+			log.Printf("⚠️ [User %d] Error creando proyecto (continuando sin GCP): %v", userID, err)
+			return "", "", fmt.Errorf("error creando proyecto: %v", err)
+		}
+		// El proyecto ya existe (p. ej. la BD perdió el estado o se reintentó
+		// el primer agente): reutilizarlo en lugar de quedarse sin API key.
+		log.Printf("♻️ [User %d] El proyecto %s ya existe — se reutiliza", userID, projectID)
+	} else {
+		log.Printf("✅ [User %d] Proyecto creado: %s", userID, projectID)
 	}
-
-	log.Printf("✅ [User %d] Proyecto creado: %s", userID, projectID)
 
 	// 2. Esperar a que esté activo
 	if err := gca.waitForProjectReady(projectID, userID); err != nil {
@@ -172,8 +177,8 @@ func (gca *GoogleCloudAutomation) CreateProjectForUser(userID uint, userEmail st
 		// NO RETORNAR - CONTINUAR
 	}
 
-	// 5. Crear API Key de Gemini (NO BLOQUEANTE)
-	apiKey, err := gca.createAPIKey(projectID, userID)
+	// 5. Obtener (o crear) API Key de Gemini (NO BLOQUEANTE)
+	apiKey, err := gca.getOrCreateAPIKey(projectID, userID)
 	if err != nil {
 		log.Printf("⚠️ [User %d] Error creando API Key (NO CRÍTICO): %v", userID, err)
 		log.Printf("ℹ️ [User %d] Puedes crear la API Key manualmente en Google Cloud Console", userID)
@@ -354,7 +359,42 @@ func (gca *GoogleCloudAutomation) DeleteProject(projectID string) error {
 	return nil
 }
 
+// getOrCreateAPIKey reutiliza la API key de Gemini que Attomos ya creó en el
+// proyecto (por DisplayName) y solo crea una nueva si no existe.
+func (gca *GoogleCloudAutomation) getOrCreateAPIKey(projectID string, userID uint) (string, error) {
+	parent := fmt.Sprintf("projects/%s/locations/global", projectID)
+	displayName := fmt.Sprintf("Attomos User %d - Gemini Key", userID)
+
+	listResp, err := gca.apiKeysService.Projects.Locations.Keys.List(parent).Do()
+	if err == nil {
+		for _, key := range listResp.Keys {
+			if key.DisplayName != displayName || key.DeleteTime != "" {
+				continue
+			}
+			keyStringResp, err := gca.apiKeysService.Projects.Locations.Keys.GetKeyString(key.Name).Do()
+			if err == nil && keyStringResp.KeyString != "" {
+				log.Printf("♻️ [User %d] Reutilizando API Key existente: %s", userID, key.Name)
+				return keyStringResp.KeyString, nil
+			}
+		}
+	} else {
+		log.Printf("⚠️ [User %d] No se pudieron listar API keys (se intentará crear una): %v", userID, err)
+	}
+
+	return gca.createAPIKey(projectID, userID)
+}
+
 // Helper functions
+
+func isAlreadyExistsError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "alreadyexists") ||
+		strings.Contains(errStr, "already exists") ||
+		strings.Contains(errStr, "error 409")
+}
 
 func isAlreadyEnabledError(err error) bool {
 	if err == nil {
