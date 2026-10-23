@@ -54,13 +54,16 @@ func ConnectDatabase() {
 		log.Printf("🔍 [DB] Usando variables manuales → host=%s db=%q", host, database)
 	}
 
-	// Logger: solo imprime queries lentas (> 50ms) y errores
+	// Logger: solo imprime queries lentas (> 500ms) y errores.
+	// ParameterizedQueries evita que se impriman valores (contraseñas de
+	// servidores, tokens de Meta/Google) en los logs.
 	slowLogger := logger.New(
 		log.New(os.Stdout, "\r\n[DB] ", log.LstdFlags),
 		logger.Config{
-			SlowThreshold:             50 * time.Millisecond,
+			SlowThreshold:             500 * time.Millisecond,
 			LogLevel:                  logger.Warn,
 			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      true,
 			Colorful:                  true,
 		},
 	)
