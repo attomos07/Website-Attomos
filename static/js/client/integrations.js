@@ -2132,7 +2132,7 @@ async function loadOnboardingContent() {
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
-                link.href = '/static/css/onboarding.css';
+                link.href = '/static/css/client/onboarding.css';
                 document.head.appendChild(link);
             }
             if (!document.getElementById('onboarding-modal-fixes')) {
@@ -2159,7 +2159,7 @@ async function loadOnboardingContent() {
             }
             if (!_onboardingScriptLoaded) {
                 const script = document.createElement('script');
-                script.src = '/static/js/onboarding.js?v=' + Date.now();
+                script.src = '/static/js/client/onboarding.js?v=' + Date.now();
                 script.onload = () => { _onboardingScriptLoaded = true;
                     // Re-apply translations after onboarding script loaded
                     if (window.Translations) window.Translations.apply(getLang());
@@ -2361,9 +2361,10 @@ async function reinitializeOnboardingEvents() {
     const sectionNav = document.getElementById('sectionNavigation');
     if (sectionNav) {
         sectionNav.innerHTML = '';
-        sectionNav.style.justifyContent = 'center';
-        sectionNav.style.flexWrap = 'wrap';
-        sectionNav.style.gap = '0.5rem';
+        // Una sola fila deslizable: la cápsula cian (ob-seg-thumb) solo viaja en horizontal
+        sectionNav.style.justifyContent = '';
+        sectionNav.style.flexWrap = '';
+        sectionNav.style.gap = '';
         AGENT_SECTIONS.forEach(sec => {
             const btn = document.createElement('button');
             btn.type = 'button'; btn.className = 'section-nav-btn'; btn.dataset.sectionId = sec.id;

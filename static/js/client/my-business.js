@@ -1195,7 +1195,7 @@ async function ensureOnboardingScriptLoadedForBusiness() {
     }
     await new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = '/static/js/onboarding.js?v=' + Date.now();
+        script.src = '/static/js/client/onboarding.js?v=' + Date.now();
         script.onload  = () => { _onboardingScriptLoadedForBusiness = true; resolve(); };
         script.onerror = () => resolve(); // si falla, watchAgentRedeployToast no existirá y hacemos fallback
         document.body.appendChild(script);
