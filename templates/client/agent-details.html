@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=5">
      <link rel="stylesheet" href="/static/css/client/sidebar.css">
 </head>
 <body>
@@ -188,14 +188,14 @@
                                         <label data-translate="ad_meta_webhook_url">URL del webhook</label>
                                         <div class="meta-copy-row">
                                             <code id="metaWebhookUrl">--</code>
-                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaWebhookUrl', this)"><i class="lni lni-copy"></i></button>
+                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaWebhookUrl', this)"><svg class="icon-copy" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
                                         </div>
                                     </div>
                                     <div class="send-test-code">
                                         <label data-translate="ad_meta_verify_token">Token de verificación</label>
                                         <div class="meta-copy-row">
                                             <code id="metaVerifyTokenValue">--</code>
-                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaVerifyTokenValue', this)"><i class="lni lni-copy"></i></button>
+                                            <button type="button" class="meta-copy-btn" onclick="copyMetaValue('metaVerifyTokenValue', this)"><svg class="icon-copy" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
                                         </div>
                                     </div>
                                     <small class="meta-webhook-hint" data-translate="ad_meta_webhook_hint">Pega estos valores en Meta for Developers → WhatsApp → Configuración → Webhook, y suscríbete al campo "messages".</small>
@@ -227,15 +227,21 @@
                                             <button type="button" data-type="text" onclick="setSendTestType('text')" data-translate="ad_st_type_text">Texto</button>
                                         </div>
                                     </div>
-                                    <div class="send-test-row" id="sendTestTemplateFields">
+                                    <div id="sendTestTemplateFields">
                                         <div class="send-test-field">
                                             <label for="sendTestTemplate" data-translate="ad_st_template">Plantilla</label>
-                                            <input type="text" id="sendTestTemplate" value="hello_world" autocomplete="off">
+                                            <div class="send-test-select-row">
+                                                <select id="sendTestTemplate" onchange="onSendTestTemplateChange()">
+                                                    <option value="" data-translate="ad_st_tpl_loading">Cargando plantillas...</option>
+                                                </select>
+                                                <button type="button" class="meta-copy-btn" id="sendTestReloadTpl" onclick="loadSendTestTemplates()" title="Recargar">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                                                </button>
+                                            </div>
+                                            <small id="sendTestTplHint" data-translate="ad_st_tpl_hint">Solo aparecen las plantillas aprobadas de tu cuenta de WhatsApp.</small>
                                         </div>
-                                        <div class="send-test-field">
-                                            <label for="sendTestLang" data-translate="ad_st_lang">Idioma</label>
-                                            <input type="text" id="sendTestLang" value="en_US" autocomplete="off">
-                                        </div>
+                                        <div class="send-test-preview" id="sendTestTplPreview" style="display:none"></div>
+                                        <div class="send-test-params" id="sendTestTplParams"></div>
                                     </div>
                                     <div class="send-test-field" id="sendTestTextField" style="display:none">
                                         <label for="sendTestText" data-translate="ad_st_message">Mensaje</label>
@@ -359,6 +365,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/agent-details.js?v=5"></script>
+    <script src="/static/js/client/agent-details.js?v=6"></script>
 </body>
 </html>

@@ -726,6 +726,8 @@ window.addEventListener('beforeunload', function() {
 // Enviar mensaje (WhatsApp Cloud API)
 // ============================================
 let sendTestType = 'template';
+let sendTestTemplates = [];
+let sendTestTemplatesLoaded = false;
 
 function renderSendTestSection(agent) {
     const section = document.getElementById('sendTestSection');
@@ -734,6 +736,7 @@ function renderSendTestSection(agent) {
         && (!!agent.metaConnected || !!agent.metaPhoneNumberId);
     section.style.display = hasMeta ? '' : 'none';
     if (!hasMeta) return;
+    if (!sendTestTemplatesLoaded) loadSendTestTemplates();
 
     const from = document.getElementById('sendTestFrom');
     const number = agent.metaDisplayNumber || agent.phoneNumber || '';
@@ -758,11 +761,18 @@ async function sendTestMessage(event) {
     const btnLabel = btn.querySelector('span');
     const originalLabel = btnLabel.textContent;
 
+    const tpl = getSelectedSendTestTemplate();
+    if (sendTestType === 'template' && !tpl) {
+        showSendTestResult(false, t('ad_st_tpl_required', 'Elige una plantilla aprobada'), null);
+        return;
+    }
     const payload = {
         to: document.getElementById('sendTestTo').value.trim(),
         type: sendTestType,
-        templateName: document.getElementById('sendTestTemplate').value.trim(),
-        languageCode: document.getElementById('sendTestLang').value.trim(),
+        templateName: tpl ? tpl.name : '',
+        languageCode: tpl ? tpl.language : '',
+        headerParams: collectSendTestParams('header'),
+        bodyParams: collectSendTestParams('body'),
         text: document.getElementById('sendTestText').value.trim(),
     };
 
@@ -951,9 +961,8 @@ async function copyMetaValue(elementId, btn) {
     if (!text || text === '--') return;
     try {
         await navigator.clipboard.writeText(text);
-        const icon = btn.querySelector('i');
-        icon.className = 'lni lni-checkmark';
-        setTimeout(() => { icon.className = 'lni lni-copy'; }, 1500);
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
     } catch (e) {
         console.error('No se pudo copiar', e);
     }
@@ -976,4 +985,112 @@ function renderPlatformBadge(agent) {
         icon.className = 'lni lni-whatsapp';
         name.textContent = 'WhatsApp';
     }
+}
+// ============================================
+// Plantillas aprobadas del WABA (selector + variables {{n}})
+// ============================================
+async function loadSendTestTemplates() {
+    const select = document.getElementById('sendTestTemplate');
+    const hint = document.getElementById('sendTestTplHint');
+    if (!select) return;
+    sendTestTemplatesLoaded = true;
+    select.innerHTML = `<option value="">${escapeHtml(t('ad_st_tpl_loading', 'Cargando plantillas...'))}</option>`;
+
+    try {
+        const response = await fetch(`/api/meta/templates/${agentId}`, { credentials: 'include' });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+
+        // hello_world solo funciona desde los números de prueba de Meta
+        sendTestTemplates = (data.templates || []).filter(tpl => tpl.supported && tpl.name !== 'hello_world');
+
+        if (sendTestTemplates.length === 0) {
+            select.innerHTML = `<option value="">${escapeHtml(t('ad_st_tpl_none', 'No hay plantillas aprobadas'))}</option>`;
+            hint.textContent = t('ad_st_tpl_none_hint', 'Crea una plantilla en WhatsApp Manager y espera a que la aprueben.');
+        } else {
+            select.innerHTML = sendTestTemplates.map((tpl, i) =>
+                `<option value="${i}">${escapeHtml(tpl.name)} · ${escapeHtml(tpl.language)} · ${escapeHtml(formatTemplateCategory(tpl.category))}</option>`
+            ).join('');
+            hint.textContent = t('ad_st_tpl_hint', 'Solo aparecen las plantillas aprobadas de tu cuenta de WhatsApp.');
+        }
+    } catch (error) {
+        console.error('❌ Error cargando plantillas:', error);
+        select.innerHTML = `<option value="">${escapeHtml(t('ad_st_tpl_error', 'No se pudieron cargar las plantillas'))}</option>`;
+        hint.textContent = error.message;
+        sendTestTemplates = [];
+    }
+    onSendTestTemplateChange();
+}
+
+function getSelectedSendTestTemplate() {
+    const select = document.getElementById('sendTestTemplate');
+    if (!select || select.value === '') return null;
+    return sendTestTemplates[parseInt(select.value, 10)] || null;
+}
+
+function formatTemplateCategory(category) {
+    const map = {
+        UTILITY: t('ad_st_cat_utility', 'Utilidad'),
+        MARKETING: t('ad_st_cat_marketing', 'Marketing'),
+        AUTHENTICATION: t('ad_st_cat_auth', 'Autenticación'),
+    };
+    return map[(category || '').toUpperCase()] || category || '';
+}
+
+function onSendTestTemplateChange() {
+    const tpl = getSelectedSendTestTemplate();
+    const preview = document.getElementById('sendTestTplPreview');
+    const params = document.getElementById('sendTestTplParams');
+    if (!preview || !params) return;
+
+    if (!tpl) {
+        preview.style.display = 'none';
+        params.innerHTML = '';
+        return;
+    }
+
+    preview.style.display = '';
+    preview.innerHTML = [
+        tpl.headerText ? `<strong>${escapeHtml(tpl.headerText)}</strong>` : '',
+        escapeHtml(tpl.bodyText || ''),
+    ].filter(Boolean).join('<br>');
+
+    const fields = [];
+    for (let i = 1; i <= (tpl.headerParams || 0); i++) {
+        fields.push(renderSendTestParam('header', i, `${t('ad_st_param_header', 'Encabezado')} {{${i}}}`));
+    }
+    for (let i = 1; i <= (tpl.bodyParams || 0); i++) {
+        fields.push(renderSendTestParam('body', i, `${t('ad_st_param_body', 'Variable')} {{${i}}}`));
+    }
+    params.innerHTML = fields.join('');
+    params.querySelectorAll('input').forEach(input => input.addEventListener('input', updateSendTestPreview));
+}
+
+function renderSendTestParam(kind, index, label) {
+    return `
+        <div class="send-test-field">
+            <label>${escapeHtml(label)}</label>
+            <input type="text" data-param-kind="${kind}" data-param-index="${index}" autocomplete="off" required>
+        </div>`;
+}
+
+function collectSendTestParams(kind) {
+    return Array.from(document.querySelectorAll(`#sendTestTplParams input[data-param-kind="${kind}"]`))
+        .sort((a, b) => a.dataset.paramIndex - b.dataset.paramIndex)
+        .map(input => input.value.trim());
+}
+
+// Vista previa con las variables sustituidas mientras se escriben
+function updateSendTestPreview() {
+    const tpl = getSelectedSendTestTemplate();
+    const preview = document.getElementById('sendTestTplPreview');
+    if (!tpl || !preview) return;
+    const fill = (text, values) => escapeHtml(text || '').replace(/\{\{\s*(\d+)\s*\}\}/g, (m, n) => {
+        const v = values[parseInt(n, 10) - 1];
+        return v ? `<mark>${escapeHtml(v)}</mark>` : m;
+    });
+    preview.innerHTML = [
+        tpl.headerText ? `<strong>${fill(tpl.headerText, collectSendTestParams('header'))}</strong>` : '',
+        fill(tpl.bodyText, collectSendTestParams('body')),
+    ].filter(Boolean).join('<br>');
 }

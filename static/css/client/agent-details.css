@@ -1451,3 +1451,51 @@ body {
 }
 .meta-copy-btn:hover { background: rgba(6, 182, 212, 0.12); }
 .meta-webhook-hint { font-size: 0.78rem; color: #94a3b8; line-height: 1.45; }
+
+/* ============================================
+   Selector de plantillas + variables {{n}}
+   ============================================ */
+.send-test-select-row { display: flex; align-items: center; gap: 0.5rem; }
+.send-test-select-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--ios-line, #e5e7eb);
+  border-radius: 14px;
+  background: var(--ios-fill, #f8fafc);
+  font: inherit;
+  font-size: 0.95rem;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+}
+.send-test-select-row select:focus {
+  background: #fff;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+}
+.send-test-select-row .meta-copy-btn { width: 44px; height: 44px; }
+
+.send-test-preview {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px 14px 14px 4px;
+  background: #dcf8c6;
+  color: #0f172a;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.send-test-preview mark { background: rgba(6, 182, 212, 0.18); color: inherit; border-radius: 4px; padding: 0 2px; }
+.send-test-params { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+.send-test-params:empty { display: none; }
+
+/* Botones de copiar con SVG (lni-copy no existe en LineIcons 4.0) */
+.meta-copy-btn { display: inline-grid; place-items: center; }
+.meta-copy-btn .icon-check { display: none; color: #059669; }
+.meta-copy-btn.copied .icon-copy { display: none; }
+.meta-copy-btn.copied .icon-check { display: block; }
+
+@media (max-width: 640px) {
+  .send-test-params { grid-template-columns: 1fr; }
+}
