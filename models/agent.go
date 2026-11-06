@@ -192,58 +192,6 @@ type Agent struct {
 	GoogleSheetsConnected   bool       `gorm:"default:false" json:"googleSheetsConnected"`
 	GoogleSheetsConnectedAt *time.Time `json:"googleSheetsConnectedAt"`
 
-	// Inventario de vehículos (VIN + fotos vía IA) — hoja de Sheets propia del
-	// cliente (concesionarias), independiente de la hoja de citas de arriba.
-	InventorySheetID          string     `gorm:"size:500" json:"inventorySheetId"`
-	InventorySheetConnected   bool       `gorm:"default:false" json:"inventorySheetConnected"`
-	InventorySheetConnectedAt *time.Time `json:"inventorySheetConnectedAt"`
-
-	// Columnas elegidas por el usuario para subir fotos (texto exacto del
-	// encabezado tal como está en su hoja — nunca asumido). Vacío = todavía
-	// no configuró la subida de fotos para esta hoja.
-	InventoryPhotoColumn string `gorm:"size:255" json:"inventoryPhotoColumn"`
-	InventoryAlbumColumn string `gorm:"size:255" json:"inventoryAlbumColumn"`
-
-	// API Key de Gemini PROPIA de este agente/cliente para detectar VIN en
-	// fotos (independiente de la del bot, que vive en el .env del servidor
-	// compartido o en GCP). Si está vacía, se usa GEMINI_VISION_API_KEY como
-	// fallback compartido.
-	InventoryGeminiAPIKey string `gorm:"type:text" json:"-"`
-
-	// Suscripción de notificaciones push de Google Drive (opción 3: "en
-	// tiempo real" sin depender de que el usuario le dé clic a Actualizar).
-	// Se renueva sola antes de vencer — ver RenewExpiringInventoryWatches.
-	InventoryWatchChannelID  string     `gorm:"size:255" json:"-"`
-	InventoryWatchResourceID string     `gorm:"size:255" json:"-"`
-	InventoryWatchToken      string     `gorm:"size:255" json:"-"`
-	InventoryWatchExpiresAt  *time.Time `json:"-"`
-
-	// Columnas elegidas por el usuario para nombrar las fotos que NO coinciden
-	// con el VIN detectado (ej. "Marca", o "Marca,Vehículo"). La foto donde sí
-	// se detectó el VIN siempre se nombra con el VIN mismo, sin importar esto.
-	InventoryFileNameColumns string `gorm:"size:500" json:"inventoryFileNameColumns"`
-
-	// Vinculación con el catálogo de Mi Negocio (columnas elegidas por el
-	// usuario). InventoryPhotoColumn ya existe arriba y se reutiliza para la
-	// foto del producto. Vacío = esa columna no se vincula.
-	InventoryTitleColumn         string `gorm:"size:255" json:"inventoryTitleColumn"`
-	InventoryDescriptionColumn   string `gorm:"size:255" json:"inventoryDescriptionColumn"`
-	InventoryOriginalPriceColumn string `gorm:"size:255" json:"inventoryOriginalPriceColumn"`
-	InventoryPromoPriceColumn    string `gorm:"size:255" json:"inventoryPromoPriceColumn"`
-
-	// Columnas para "Actualizar desde archivo (Excel)": VIN identifica cada
-	// fila para saber si es actualización o unidad nueva; NuevaLlegada marca
-	// en verde (solo esa celda) las unidades agregadas en la corrida más
-	// reciente — se limpia y se vuelve a marcar en cada subida. Lo que ya no
-	// aparece en el archivo NO se toca (no se marca como "Vendido" ni nada).
-	InventoryVinColumn        string `gorm:"size:255" json:"inventoryVinColumn"`
-	InventoryNewArrivalColumn string `gorm:"size:255" json:"inventoryNewArrivalColumn"`
-
-	// API Explorer — MOVIDO a models.MyBusinessInfo (ver business_info.go).
-	// Antes vivía aquí, pero al ser datos del NEGOCIO (no del agente/bot),
-	// se perdían si el agente se borraba/recreaba mientras la sucursal
-	// seguía existiendo. Ver handlers/api_explorer.go.
-
 	// Meta WhatsApp
 	MetaAccessToken    string     `gorm:"type:text" json:"-"`
 	MetaWABAID         string     `gorm:"size:255" json:"metaWabaId"`

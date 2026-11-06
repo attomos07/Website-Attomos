@@ -546,6 +546,7 @@ function getBusinessTypeLabel(businessType) {
         'clinica-dental': 'biz_type_clinica_dental',
         'consultorio':    'biz_type_consultorio',
         'veterinaria':    'biz_type_veterinaria',
+        'optica':         'biz_type_optica',
         // Belleza
         'peluqueria':     'biz_type_peluqueria',
         'spa':            'biz_type_spa',
@@ -571,7 +572,7 @@ function getBusinessTypeLabel(businessType) {
     };
     // Fallback en español (por si falta la traducción o el idioma es es)
     const businessTypesEs = {
-        'clinica-dental': 'Clínica Dental', 'consultorio': 'Consultorio Médico', 'veterinaria': 'Veterinaria',
+        'clinica-dental': 'Clínica Dental', 'consultorio': 'Consultorio Médico', 'veterinaria': 'Veterinaria', 'optica': 'Óptica',
         'peluqueria': 'Peluquería', 'spa': 'Spa & Wellness', 'estetica': 'Estética',
         'restaurante': 'Restaurante', 'pizzeria': 'Pizzería', 'pizza': 'Pizzería',
         'mariscos': 'Mariscos', 'gorditas': 'Gorditas', 'taqueria': 'Taquería', 'tacos': 'Taquería',

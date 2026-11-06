@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"attomos/config"
 	"attomos/handlers"
@@ -81,6 +80,12 @@ func main() {
 		&models.FoundationFile{},         // ← Foundation: foto de perfil en el Drive de la rescatista
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
+	}
+
+	// Inventario (sidebar → Inventario): artículos, departamentos, ajustes,
+	// kárdex, fotos y — solo ópticas — colores, materiales y tipos de armazón.
+	if err := config.DB.AutoMigrate(models.InventoryModels()...); err != nil {
+		log.Fatal("❌ Error en migración del inventario:", err)
 	}
 
 	log.Println("✅ Base de datos conectada y migrada")
@@ -199,14 +204,6 @@ func main() {
 	log.Println("✅ Webhook de la app de Meta configurado en: /webhook/meta-app")
 
 	// ============================================
-	// 🔔 WEBHOOK - Notificaciones push de Drive (inventario, PÚBLICO)
-	// ============================================
-	if googleIntegrationHandler != nil {
-		router.POST("/webhook/drive-inventory/:agent_id", googleIntegrationHandler.InventoryWebhook)
-		log.Println("✅ Webhook de inventario configurado en: /webhook/drive-inventory/:agent_id")
-	}
-
-	// ============================================
 	// 🛒 COMY — Marketplace público (sin auth)
 	// ============================================
 	// Páginas HTML
@@ -317,7 +314,6 @@ func main() {
 		// Bot endpoints (no requieren JWT, usan BOT_API_TOKEN)
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
-		router.GET("/api/bot/api-explorer/:agent_id", handlers.GetAPIExplorerForBot)
 		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
@@ -378,32 +374,40 @@ func main() {
 			protected.GET("/google/status/:agent_id", googleIntegrationHandler.GetIntegrationStatus)
 			protected.POST("/google/disconnect/:agent_id", googleIntegrationHandler.DisconnectGoogle)
 			protected.POST("/google/appointments", googleIntegrationHandler.CreateAppointment)
+		}
 
-			// 📦 INVENTARIO (VIN + fotos vía IA) — hoja de Sheets del cliente
-			protected.GET("/inventory-sheets/status/:agent_id", googleIntegrationHandler.GetInventorySheetStatus)
-			protected.POST("/inventory-sheets/connect/:agent_id", googleIntegrationHandler.ConnectInventorySheet)
-			protected.POST("/inventory-sheets/disconnect/:agent_id", googleIntegrationHandler.DisconnectInventorySheet)
-			protected.GET("/inventory-sheets/rows/:agent_id", googleIntegrationHandler.GetInventorySheetRows)
-			protected.POST("/inventory-sheets/columns/:agent_id", googleIntegrationHandler.SetInventoryColumns)
-			protected.POST("/inventory-sheets/upload/:agent_id", googleIntegrationHandler.UploadInventoryRowPhotos)
-			protected.PATCH("/inventory-sheets/cell/:agent_id", googleIntegrationHandler.UpdateInventoryCell)
-			protected.POST("/inventory-sheets/detect-upload/:agent_id", googleIntegrationHandler.DetectAndUploadInventoryPhotos)
-			protected.POST("/inventory-sheets/gemini-key/:agent_id", googleIntegrationHandler.SetInventoryGeminiKey)
-			protected.POST("/inventory-sheets/gemini-key/:agent_id/remove", googleIntegrationHandler.RemoveInventoryGeminiKey)
-			protected.POST("/inventory-sheets/sync-products/:agent_id", googleIntegrationHandler.SyncInventoryProducts)
-			protected.POST("/inventory-sheets/bulk-update/:agent_id", googleIntegrationHandler.BulkUpdateInventoryFromFile)
-
-			// 🔌 API EXPLORER — conecta cualquier endpoint externo que responda JSON.
-			// El fetch al endpoint externo lo hace el backend (proxy), no el navegador.
-			protected.GET("/api-explorer/status/:branch_id", handlers.GetAPIExplorerStatus)
-			protected.POST("/api-explorer/connect/:branch_id", handlers.ConnectAPIExplorer)
-			protected.POST("/api-explorer/disconnect/:branch_id", handlers.DisconnectAPIExplorer)
-			protected.GET("/api-explorer/data/:branch_id", handlers.GetAPIExplorerData)
-
-			// Inventario desde el sitio web del cliente (scraping con navegador headless)
-			protected.GET("/inventory-website/:agent_id/scrape", googleIntegrationHandler.ScrapeVehicleFromWebsite)
-			protected.POST("/inventory-website/:agent_id/scrape-all", googleIntegrationHandler.StartScrapeAllVehicles)
-			protected.GET("/inventory-website/:agent_id/scrape-all/status", googleIntegrationHandler.GetScrapeAllStatus)
+		// ============================================
+		// 📦 INVENTARIO — sidebar → Inventario (Artículos, Departamentos,
+		// Ajustes, Movimientos). Mismas rutas que el panel de Avante.
+		// ============================================
+		inv := protected.Group("/inventario")
+		{
+			inv.GET("/articulos", handlers.InvListItems)
+			inv.POST("/articulos", handlers.InvCreateItem)
+			inv.PUT("/articulos/:id", handlers.InvUpdateItem)
+			inv.DELETE("/articulos/:id", handlers.InvDeleteItem)
+			inv.POST("/articulos/:id/ajustar", handlers.InvAdjustItem)
+			inv.GET("/articulos/:id/fotos", handlers.InvListPhotos)
+			inv.POST("/articulos/:id/fotos", handlers.InvUploadPhotos)
+			inv.DELETE("/fotos/:fotoId", handlers.InvDeletePhoto)
+			inv.POST("/fotos/:fotoId/principal", handlers.InvPhotoMain)
+			inv.GET("/departamentos", handlers.InvListDepartments)
+			inv.POST("/departamentos", handlers.InvCreateDepartment)
+			inv.PUT("/departamentos/:id", handlers.InvRenameDepartment)
+			inv.DELETE("/departamentos/:id", handlers.InvDeleteDepartment)
+			inv.POST("/categorias", handlers.InvCreateCategory)
+			inv.PUT("/categorias/:id", handlers.InvUpdateCategory)
+			inv.DELETE("/categorias/:id", handlers.InvDeleteCategory)
+			inv.GET("/ajustes", handlers.InvListAdjustments)
+			inv.GET("/ajustes/:id", handlers.InvGetAdjustment)
+			inv.POST("/ajustes", handlers.InvApplyAdjustment)
+			inv.GET("/movimientos", handlers.InvListMovements)
+			// Solo ópticas
+			inv.GET("/tipos-armazon", handlers.InvFrameTypes)
+			inv.GET("/colores", handlers.InvListColors)
+			inv.POST("/colores", handlers.InvCreateColor)
+			inv.GET("/materiales", handlers.InvListMaterials)
+			inv.POST("/materiales", handlers.InvCreateMaterial)
 		}
 
 		// ============================================
@@ -595,11 +599,17 @@ func main() {
 		c.HTML(200, "my-business.html", nil)
 	})
 
-	// Inventario — embebido como iframe dentro del tab "Inventario" de /my-business
-	// (?embed=1 oculta sidebar/userbar/header) y también accesible standalone.
+	// Inventario (sidebar → Inventario): 4 pestañas, una página por pestaña.
 	router.GET("/inventory", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "inventory.html", nil)
+		c.Redirect(302, "/inventory/articulos")
 	})
+	router.GET("/inventory/articulos", middleware.AuthRequired(), handlers.InventoryItemsPage)
+	router.GET("/inventory/departamentos", middleware.AuthRequired(), handlers.InventoryDepartmentsPage)
+	router.GET("/inventory/ajustes", middleware.AuthRequired(), handlers.InventoryAdjustmentsPage)
+	router.GET("/inventory/movimientos", middleware.AuthRequired(), handlers.InventoryMovementsPage)
+	// Fotos de artículos (solo el dueño) y reporte público firmado de un ajuste.
+	router.GET("/media/inventario/foto/:fotoId", middleware.AuthRequired(), handlers.ServeInvPhoto)
+	router.GET("/inventory/ajuste/:id/:sig", handlers.PublicAdjustmentPage)
 
 	router.GET("/my-agency", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "my-agency.html", nil)
@@ -710,19 +720,6 @@ func main() {
 	log.Println("║    • 🎓 Academy en: /academy                            ║")
 	log.Println("║    • 💰 Finance en: /finance                            ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
-
-	// 🔔 Renovación periódica de las suscripciones push de Drive (inventario)
-	if googleIntegrationHandler != nil {
-		go func() {
-			ticker := time.NewTicker(6 * time.Hour)
-			defer ticker.Stop()
-			googleIntegrationHandler.RenewExpiringInventoryWatches() // una pasada al arrancar
-			for range ticker.C {
-				googleIntegrationHandler.RenewExpiringInventoryWatches()
-			}
-		}()
-		log.Println("✅ Renovación de suscripciones de inventario: cada 6h")
-	}
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)

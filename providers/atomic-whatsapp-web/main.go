@@ -120,11 +120,6 @@ func main() {
 		log.Println("ℹ️  No hay métodos de pago configurados en este negocio")
 	}
 
-	// Cargar inventario/endpoint conectado vía API Explorer (si el negocio
-	// configuró uno desde el panel) y refrescarlo cada 5 min en segundo plano.
-	log.Println("🔌 Cargando inventario de API Explorer...")
-	src.StartAPIExplorerPolling()
-
 	// Refrescar la config del negocio (giro, nombre, horario, servicios...)
 	// cada 5 min como respaldo — el aviso normal llega al instante por
 	// WebSocket cuando guardas en Mi Negocio (ver crm_bridge.go).

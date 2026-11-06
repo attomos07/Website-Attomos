@@ -6,8 +6,11 @@ package handlers
 // recibir "refresh_business_config" por el WebSocket del CRM bridge — ver
 // src.StartBusinessConfigPolling() y crm_bridge.go en el repo del bot.
 //
-// Mismo patrón de auth que /api/bot/orders (orders.go) y
-// /api/bot/api-explorer/:agent_id: Authorization: Bearer BOT_API_TOKEN.
+// Mismo patrón de auth que /api/bot/orders (orders.go):
+// Authorization: Bearer BOT_API_TOKEN.
+//
+// Los productos/servicios que ofrece el bot incluyen el catálogo de la
+// sección Inventario (bots.inventoryServices en bot_config.go).
 // Servidor-a-servidor, nunca se expone al navegador.
 //
 // Registrar junto a las demás rutas /api/bot/* en tu main.go:
@@ -22,6 +25,7 @@ import (
 	"attomos/models"
 
 	"attomos/bots"
+
 	"github.com/gin-gonic/gin"
 )
 

@@ -53,6 +53,7 @@ function getTypeName(code) {
         'peluqueria':     'Peluquería / Salón',
         'restaurante':    'Restaurante',
         'pizzeria':       'Pizzería',
+        'optica':         'Óptica',
         'escuela':        'Escuela',
         'gym':            'Gimnasio',
         'spa':            'Spa / Wellness',

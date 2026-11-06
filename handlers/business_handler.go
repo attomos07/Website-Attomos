@@ -13,6 +13,7 @@ import (
 	"attomos/models"
 
 	"attomos/realtime"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -156,7 +157,7 @@ func SaveMyBusiness(c *gin.Context) {
 // bot ya mantiene abierto con el CRM hub (ver crm_hub.go / bot/crm_bridge.go).
 // Si el bot no está conectado al hub justo en ese momento, su propio
 // polling de 5 min (src.StartBusinessConfigPolling en el bot) lo recoge de
-// todas formas — mismo criterio best-effort que ya usa refresh_api_explorer.
+// todas formas (best-effort).
 func syncAtomicBots(branch *models.MyBusinessInfo) {
 	var agents []models.Agent
 	if err := config.DB.Where(
@@ -465,7 +466,7 @@ func getTypeName(code string) string {
 		"clinica-dental": "Clínica Dental", "peluqueria": "Peluquería / Salón de Belleza",
 		"restaurante": "Restaurante", "pizzeria": "Pizzería",
 		"panaderia": "Panadería / Repostería", "libreria": "Librería", "pescaderia": "Pescadería / Marisquería",
-		"ensaladas": "Ensaladas",
+		"ensaladas": "Ensaladas", "optica": "Óptica",
 	}
 	if name, ok := types[code]; ok {
 		return name

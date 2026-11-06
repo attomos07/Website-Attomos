@@ -6,8 +6,7 @@
 let branches = [];
 let activeBranchId = null;
 
-// Expuesto para que api-explorer.js (si va embebido en esta misma página)
-// reutilice la sucursal activa en vez de pedir /api/my-business otra vez.
+// Sucursal activa, por si otro script de la página la necesita.
 window.getActiveBranchId = () => activeBranchId || null;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -257,6 +256,7 @@ function updateMenuLabel() {
         'automotriz', 'concesionario', 'agencia', 'taller', 'refaccionaria',
         'clinica-dental', 'clinica', 'dental',
         'peluqueria', 'peluquería', 'estetica', 'estética', 'salon', 'salón',
+        'optica', 'óptica',
     ];
     h2.textContent = catalogoGiros.includes(giro) ? t('mybiz_catalog_title','Catálogo') : t('mybiz_menu_title','Menú');
 }
@@ -1842,88 +1842,11 @@ function removeItem(btn, listId, hintId) {
 
 // ============================================
 // INVENTARIO
-// La vista (tabla de existencias + toggle a Sheets) ahora vive en
-// inventory.html, embebida en un <iframe id="inventoryFrame">. Aquí solo
-// calculamos las filas a partir del catálogo (.service-item, que sigue
-// viviendo en esta página) y se las mandamos por postMessage.
+// El inventario ya no vive en un tab de esta página: ahora es su propia
+// sección del sidebar (/inventory). Se deja esta función vacía porque el
+// catálogo la sigue llamando al editar existencias.
 // ============================================
-
-let lastInventoryRows = [];
-
-function refreshInventoryTable() {
-    const rows = [];
-    document.querySelectorAll('.service-item').forEach(item => {
-        const title   = item.querySelector('.service-title')?.value?.trim();
-        if (!title) return;
-        const qtyEl   = item.querySelector('.service-stock-qty');
-        const stockCb = item.querySelector('.service-in-stock');
-        const imgUrl  = (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean)[0] || '';
-        const qty     = qtyEl && qtyEl.value !== '' ? parseInt(qtyEl.value, 10) : null;
-        const inStock = stockCb ? stockCb.checked : true;
-
-        rows.push({ title, qty, inStock, imgUrl });
-    });
-
-    lastInventoryRows = rows;
-    sendInventoryRowsToFrame();
-}
-
-function sendInventoryRowsToFrame() {
-    const frame = document.getElementById('inventoryFrame');
-    if (!frame || !frame.contentWindow) return;
-    frame.contentWindow.postMessage({ type: 'attomos:inventory:rows', rows: lastInventoryRows }, window.location.origin);
-}
-
-// Ajustar qty desde los botones +/- de la tabla (dentro del iframe)
-function invAdjust(rowIdx, delta) {
-    const items = [...document.querySelectorAll('.service-item')].filter(item => {
-        return item.querySelector('.service-title')?.value?.trim();
-    });
-    const item = items[rowIdx];
-    if (!item) return;
-    const qtyInput = item.querySelector('.service-stock-qty');
-    if (!qtyInput) return;
-    const cur = parseInt(qtyInput.value, 10) || 0;
-    const newVal = Math.max(0, cur + delta);
-    qtyInput.value = newVal;
-    qtyInput.dispatchEvent(new Event('input')); // refreshInventoryTable ya está enganchado a este evento
-}
-
-// Ajustar qty directo desde el input de la tabla (dentro del iframe)
-function invSetQty(rowIdx, val) {
-    const items = [...document.querySelectorAll('.service-item')].filter(item => {
-        return item.querySelector('.service-title')?.value?.trim();
-    });
-    const item = items[rowIdx];
-    if (!item) return;
-    const qtyInput = item.querySelector('.service-stock-qty');
-    if (!qtyInput) return;
-    const newVal = Math.max(0, parseInt(val, 10) || 0);
-    qtyInput.value = newVal;
-    qtyInput.dispatchEvent(new Event('input'));
-}
-
-// Puente con el iframe de inventory.html
-window.addEventListener('message', (event) => {
-    if (event.origin !== window.location.origin) return;
-    const data = event.data || {};
-    if (data.type === 'attomos:inventory:ready') {
-        sendInventoryRowsToFrame();
-    } else if (data.type === 'attomos:inventory:adjust') {
-        invAdjust(data.idx, data.delta);
-    } else if (data.type === 'attomos:inventory:setqty') {
-        invSetQty(data.idx, data.value);
-    } else if (data.type === 'attomos:inventory:modal-state') {
-        // Un modal del iframe de inventario está abierto/cerrado: el overlay
-        // oscuro del modal vive DENTRO del iframe, así que solo cubre lo que
-        // hay ahí — el botón flotante "Guardar Cambios" y el resto de la
-        // pantalla (sidebar, header) viven fuera y hay que taparlos aparte.
-        const saveBtn = document.getElementById('saveProfileBtn');
-        if (saveBtn) saveBtn.style.visibility = data.open ? 'hidden' : '';
-        const bridgeOverlay = document.getElementById('inventoryModalBridgeOverlay');
-        if (bridgeOverlay) bridgeOverlay.style.display = data.open ? 'block' : 'none';
-    }
-});
+function refreshInventoryTable() {}
 
 // ============================================
 // NINDA BANNER — estado de visibilidad
@@ -2251,14 +2174,13 @@ async function _renderMenuViewer(url, isPdf) {
     }
 }
 /* ============================================
-   PAGE TABS — Mi Negocio / Inventario
+   PAGE TABS — Mi Negocio / Contabilidad
    ============================================ */
 const MYBIZ_TAB_STORAGE_KEY = 'attomos_mybiz_active_tab';
 
 function activateBusinessTab(target) {
     document.querySelectorAll('.page-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
     document.querySelectorAll('.page-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
-    if (target === 'inventario') refreshInventoryTable();
 }
 
 document.querySelectorAll('.page-tab').forEach(tab => {
@@ -2269,8 +2191,9 @@ document.querySelectorAll('.page-tab').forEach(tab => {
     });
 });
 
-// Al cargar/recargar la página: si venías de la pestaña Inventario, te
-// quedas ahí en vez de regresar siempre a Mi Negocio.
+// Al cargar/recargar la página: si venías de otra pestaña (Contabilidad),
+// te quedas ahí en vez de regresar siempre a Mi Negocio. Si la pestaña
+// guardada ya no existe (p. ej. la vieja "inventario"), no pasa nada.
 (function restoreBusinessTab() {
     let saved = null;
     try { saved = sessionStorage.getItem(MYBIZ_TAB_STORAGE_KEY); } catch (e) { /* modo privado, etc. */ }

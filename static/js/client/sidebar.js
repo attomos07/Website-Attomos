@@ -60,10 +60,13 @@
         const apptItem   = document.getElementById('appointmentsMenuItem');
         const ordersItem = document.getElementById('ordersMenuItem');
         const flowsItem  = document.getElementById('flowsMenuItem');
+        const invItem    = document.getElementById('inventoryMenuItem');
 
         if (bizItem)    bizItem.style.display    = isGov ? 'none' : '';
         if (agencyItem) agencyItem.style.display = isGov ? ''     : 'none';
         if (flowsItem)  flowsItem.style.display  = isGov ? ''     : 'none';
+        // Inventario: todos los giros menos dependencias gubernamentales
+        if (invItem)    invItem.style.display    = isGov ? 'none' : '';
 
         // Para dependencias: ocultar Citas y Pedidos (no aplican)
         if (isGov) {
@@ -170,7 +173,7 @@
             // Client History según giro
             const clientHistoryItem    = document.getElementById('clientHistoryMenuItem');
             const clientHistoryTooltip = document.getElementById('clientHistoryTooltip');
-            const TIPOS_CLINICA    = ['clinica','clínica','dental','medico','médico','salud','veterinaria','odontologia','odontología'];
+            const TIPOS_CLINICA    = ['clinica','clínica','dental','medico','médico','salud','veterinaria','odontologia','odontología','optica','óptica'];
             const TIPOS_PELUQUERIA = ['peluqueria','peluquería','salon','salón','barberia','barbería','spa','estetica','estética','belleza'];
 
             if (clientHistoryItem && clientHistoryTooltip) {

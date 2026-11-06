@@ -229,8 +229,6 @@ type MetaImage struct {
 }
 
 // SendImage envía una imagen por URL a un número de WhatsApp vía Meta Cloud API.
-// Usado por el interceptor de SEND_APX_PHOTOS (ver webhook.go) cuando el
-// cliente pide fotos de algún elemento del API Explorer.
 func (c *MetaClient) SendImage(to, imageURL, caption string) error {
 	if !c.IsConfigured() {
 		return fmt.Errorf("cliente Meta no configurado - configura las credenciales en Integraciones")

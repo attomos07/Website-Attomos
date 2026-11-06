@@ -17,6 +17,10 @@ package bots
 import (
 	"attomos/models"
 	"fmt"
+	"log"
+	"net/url"
+	"os"
+	"strings"
 )
 
 // BusinessConfig estructura que consume el bot (idéntica al struct
@@ -193,7 +197,87 @@ func GenerateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) 
 		config.Workers = convertBranchWorkers(branch.Workers)
 	}
 
+	// Productos y servicios de la sección Inventario (sidebar → Inventario).
+	// Se agregan a "services" con el mismo formato, así el bot los ofrece sin
+	// cambios de su lado.
+	config.Services = append(config.Services, inventoryServices(agent.UserID)...)
+
 	return config
+}
+
+// maxBotInventoryItems — tope de artículos que se mandan al bot (todo va
+// en el prompt; con más de esto conviene una búsqueda por relevancia).
+const maxBotInventoryItems = 400
+
+var micaNames = map[string]string{"oftalmico": "oftálmico", "sol": "de sol"}
+
+// inventoryServices convierte el catálogo del Inventario del negocio en
+// servicios para el bot: título = descripción, precio = precio 1, agotado
+// si no hay existencia (los servicios nunca se agotan). Las fotos van por
+// el proxy público del bucket, igual que las de Mi Negocio.
+func inventoryServices(userID uint) []Service {
+	if userID == 0 {
+		return nil
+	}
+	items, err := models.ListInvItemsForBot(userID, maxBotInventoryItems)
+	if err != nil {
+		log.Printf("⚠️  [BotConfig] inventario del usuario %d: %v", userID, err)
+		return nil
+	}
+	out := make([]Service, 0, len(items))
+	for _, it := range items {
+		var det []string
+		if it.Categoria != "" {
+			det = append(det, it.Categoria)
+		} else if it.Depto != "" && it.Depto != "SIN DEFINIR" {
+			det = append(det, it.Depto)
+		}
+		if it.TipoArmazon != "" {
+			det = append(det, "armazón "+it.TipoArmazon)
+		}
+		if m := micaNames[it.MicaTipo]; m != "" {
+			det = append(det, m)
+		}
+		if it.Color != "" {
+			det = append(det, "color "+strings.Join(append([]string{it.Color}, it.Extras...), "/"))
+		}
+		if len(it.Materiales) > 0 {
+			det = append(det, strings.Join(it.Materiales, ", "))
+		}
+		if !it.Servicio && it.Existencia > 0 {
+			det = append(det, fmt.Sprintf("%d en existencia", it.Existencia))
+		}
+		desc := strings.Join(det, " · ")
+		if it.Clave != "" {
+			if desc != "" {
+				desc = "Clave " + it.Clave + " · " + desc
+			} else {
+				desc = "Clave " + it.Clave
+			}
+		}
+		var imgs []string
+		for _, k := range it.PhotoKeys {
+			imgs = append(imgs, inventoryPhotoURL(k))
+		}
+		out = append(out, Service{
+			Title:       it.Descripcion,
+			Description: desc,
+			ImageUrls:   imgs,
+			PriceType:   "normal",
+			Price:       it.Precio,
+			InStock:     it.Servicio || it.Existencia > 0,
+		})
+	}
+	return out
+}
+
+// inventoryPhotoURL — mismo proxy público que bucketPublicURL (storage).
+func inventoryPhotoURL(key string) string {
+	base := strings.TrimRight(os.Getenv("BASE_URL"), "/")
+	if base == "" {
+		base = "http://localhost:8080"
+	}
+	return base + "/api/uploads/bucket?key=" + url.QueryEscape(key)
 }
 
 // ── Helpers de conversión (idénticos a los que ya existían) ────────────────

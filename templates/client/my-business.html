@@ -128,31 +128,6 @@
         color: #06b6d4; /* teal = en existencia */
     }
 
-    /* ── Inventario ──
-       La UI de inventario ahora vive en inventory.html/css/js.
-       Aquí solo queda el iframe que la embebe dentro de este tab. */
-    .inventory-iframe {
-        width: 100%;
-        min-height: 640px;
-        height: 70vh;
-        border: none;
-        display: block;
-        position: relative;
-        z-index: 10000; /* por encima del overlay de pantalla completa que se activa cuando el iframe tiene un modal abierto */
-    }
-    /* Se activa/desactiva desde JS cuando el iframe de inventario avisa que
-       abrió/cerró un modal — el overlay del modal vive DENTRO del iframe y
-       solo puede oscurecer lo que hay dentro de él; esto oscurece el resto
-       de la pantalla (sidebar, header) que vive fuera. */
-    #inventoryModalBridgeOverlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        pointer-events: none; /* puramente visual — nunca debe poder bloquear clics al modal real, que vive dentro del iframe */
-    }
 </style>
     <style>
         /* ── Menú Upload ── */
@@ -371,14 +346,6 @@
                                 <path d="M9 9v1a3 3 0 0 0 6 0V9"/>
                             </svg>
                             <span data-translate="mybiz_tab_business">Mi Negocio</span>
-                        </button>
-                        <button type="button" class="page-tab" data-tab="inventario">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                                <line x1="12" y1="22.08" x2="12" y2="12"/>
-                            </svg>
-                            <span data-translate="mybiz_tab_inventory">Inventario</span>
                         </button>
                         <button type="button" class="page-tab" data-tab="contabilidad">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;">
@@ -662,6 +629,10 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                                     <i class="lni lni-car"></i>
                                                     <span>Automotriz</span>
                                                 </div>
+                                                <div class="select-option" data-value="optica" data-keywords="optica óptica lentes anteojos armazones optometria optometrista">
+                                                    <i class="lni lni-eye"></i>
+                                                    <span>Óptica</span>
+                                                </div>
                                                 <div class="select-option" data-value="pizzeria" data-keywords="pizzeria pizza comida restaurante">
                                                     <i class="lni lni-pizza"></i>
                                                     <span>Pizzería</span>
@@ -927,22 +898,6 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                     </div>
                     </div><!-- /tab-mi-negocio -->
 
-                    <!-- TAB: Inventario
-                         La vista (existencias del negocio + toggle a Sheets)
-                         ahora vive en inventory.html; aquí solo la embebemos.
-                         my-business.js le manda los datos del catálogo vía
-                         postMessage cuando se activa este tab. -->
-                    <div id="tab-inventario" class="page-tab-panel">
-                        <iframe id="inventoryFrame" class="inventory-iframe" src="/inventory?embed=1" title="Inventario"></iframe>
-                        <!-- Oscurecido de pantalla completa cuando un modal del iframe de
-                             inventario está abierto — ver #inventoryModalBridgeOverlay en el CSS.
-                             Tiene que vivir DENTRO de #tab-inventario (mismo stacking context
-                             que el iframe) para que su z-index compita de verdad contra el del
-                             iframe; puesto fuera de .content-wrapper, el z-index:1 de
-                             .content-wrapper lo atrapaba por debajo sin importar qué z-index
-                             tuviera el iframe. -->
-                        <div id="inventoryModalBridgeOverlay"></div>
-                    </div><!-- /tab-inventario -->
 
                     <!-- ══════════════════════════════════════════
                          TAB: CONTABILIDAD

@@ -43,10 +43,9 @@ type crmEvent struct {
 // crmSendCommand es lo que el backend manda AL bot por este mismo socket —
 // tanto comandos de conversación (un humano contestando desde el CRM) como
 // avisos generales del backend que no son por conversación (ej. "refresca tu
-// caché del API Explorer" o "refresca tu business_config"), que por eso no
-// traen phone.
+// business_config"), que por eso no traen phone.
 type crmSendCommand struct {
-	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_api_explorer" | "refresh_business_config"
+	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_business_config"
 	Phone string `json:"phone,omitempty"`
 	Text  string `json:"text,omitempty"`
 }
@@ -147,18 +146,6 @@ func crmReadLoop(conn *websocket.Conn) {
 			return
 		}
 		switch cmd.Type {
-		case "refresh_api_explorer":
-			// No trae phone (no es un mensaje de conversación) — se procesa
-			// aparte, antes del filtro de "phone vacío" de abajo, que es solo
-			// para los comandos que sí son por conversación.
-			go func() {
-				if err := FetchAPIExplorerData(); err != nil {
-					log.Printf("⚠️  [CRM] refresh_api_explorer: %v", err)
-				} else {
-					log.Println("🔄 [CRM] Inventario de API Explorer refrescado por aviso del backend")
-				}
-			}()
-			continue
 		case "refresh_business_config":
 			// El backend manda esto justo después de guardar Mi Negocio
 			// (fotos, servicios, horario, etc.) o la config del agente, para

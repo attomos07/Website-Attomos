@@ -124,8 +124,7 @@ var BusinessCfg *BusinessConfig
 //
 // Antes esto leía un business_config.json local que el deploy escribía por
 // SFTP. Ese paso ya no existe (atomicService.UpdateBusinessConfig quedó
-// no-op del lado del backend — el reemplazo es este fetch directo, mismo
-// patrón que ya usa FetchAPIExplorerData en api_explorer.go). Se llama al
+// no-op del lado del backend — el reemplazo es este fetch directo). Se llama al
 // arrancar, cada businessConfigRefreshInterval como respaldo, y al instante
 // cuando el backend avisa "refresh_business_config" por el WebSocket del
 // CRM bridge (ver crm_bridge.go).
@@ -177,7 +176,7 @@ func LoadBusinessConfig() error {
 // ("refresh_business_config" en crm_bridge.go), pero si el bot estuvo
 // desconectado del hub del CRM cuando se guardó el cambio, este polling lo
 // recoge de todas formas sin esperar un redeploy manual. Llamar una vez
-// desde main.go, junto a StartAPIExplorerPolling().
+// desde main.go.
 func StartBusinessConfigPolling() {
 	go func() {
 		ticker := time.NewTicker(businessConfigRefreshInterval)
