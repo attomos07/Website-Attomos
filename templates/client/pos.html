@@ -1,0 +1,960 @@
+{{/* Punto de venta (sidebar → Punto de venta). Una sola plantilla con las 3
+     pestañas de Avante (Punto de venta · Ventas · Corte de caja); cada ruta
+     /pos/<pestaña> la renderiza con su .PosTab. */}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if eq .PosTab "ventas"}}Ventas{{else if eq .PosTab "corte-de-caja"}}Corte de caja{{else}}Punto de venta{{end}} — Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/client/sidebar.css">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/pos.css?v=1">
+</head>
+<body class="inv-body pos-body" data-biz="{{.BizJSON}}">
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+<div class="app-container">
+  {{template "sidebar.html" .}}
+
+  <div class="main-content">
+  {{template "userbar.html" .}}
+
+  <div class="content-wrapper">
+{{if eq .PosTab "punto-de-venta"}}
+{{/* ===================== PESTAÑA: PUNTO DE VENTA ===================== */}}
+  <main class="inv-page pos-page" id="posPage" data-cajero="{{.StaffName}}">
+    <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones del punto de venta">
+      <a href="/pos/punto-de-venta" class="{{if eq .PosTab "punto-de-venta"}}is-on{{end}}">Punto de venta</a>
+      <a href="/pos/ventas" class="{{if eq .PosTab "ventas"}}is-on{{end}}">Ventas</a>
+      <a href="/pos/corte-de-caja" class="{{if eq .PosTab "corte-de-caja"}}is-on{{end}}">Corte de caja</a>
+    </nav>
+    <div class="admin-header pos-header">
+      <div>
+        <h1>Punto de venta</h1>
+        <p>Busca el producto, elige al cliente y cobra. Lo que quede a deber se abona después en «Créditos y abonos».</p>
+      </div>
+      <button type="button" class="btn small pos-credits-btn" id="posCreditsBtn" title="Créditos del cliente: lo que debe y sus abonos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg>
+        Créditos y abonos <kbd>F4</kbd>
+      </button>
+    </div>
+
+    <div class="pos-layout">
+      <!-- ================= Productos ================= -->
+      <section class="admin-panel pos-products">
+        <div class="pos-search">
+          <div class="search-box pos-search-box">
+            <div class="search-box-glow"></div>
+            <div class="search-box-inner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" id="posSearch" placeholder="Buscar producto por nombre o clave…  (Enter agrega el primero)" autocomplete="off" autofocus>
+              <span class="pos-spinner" id="posSpinner" hidden></span>
+              <kbd class="pos-kbd">F2</kbd>
+            </div>
+          </div>
+        </div>
+        <p class="pos-count" id="posCount"></p>
+        <div class="pos-grid" id="posGrid"></div>
+        <p class="pos-empty" id="posEmpty" hidden></p>
+      </section>
+
+      <!-- ================= Venta ================= -->
+      <aside class="admin-panel pos-cart">
+        <div class="pos-client" id="posClient">
+          <div class="pos-client-pick" id="posClientPick">
+            <span class="pos-client-avatar" id="posClientAvatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            </span>
+            <div class="pos-client-text">
+              <small>Cliente</small>
+              <strong id="posClientName">Público en general</strong>
+              <span id="posClientMeta"></span>
+            </div>
+            <button type="button" class="pos-client-edit" id="posClientEdit" title="Editar datos del cliente" aria-label="Editar datos del cliente" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            <button type="button" class="pos-client-change" id="posClientBtn">Cambiar</button>
+          </div>
+          {{/* Lo que debe el cliente (créditos con saldo). Clic = ver créditos y abonar. */}}
+          <button type="button" class="pos-client-debt" id="posClientDebt" hidden>
+            <span class="pos-client-debt-label" id="posClientDebtLabel">Debe</span>
+            <strong id="posClientDebtAmount">$0.00</strong>
+            <span class="pos-client-debt-go">Abonar ›</span>
+          </button>
+          {{/* Reimprimir el ticket de la última venta del cliente elegido. */}}
+          <button type="button" class="pos-client-reprint" id="posClientReprint" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+            <span class="pos-client-reprint-txt">Imprimir ticket de su última venta</span>
+          </button>
+          <!-- Buscador de clientes -->
+          <div class="pos-client-drop" id="posClientDrop" hidden>
+            <div class="pos-client-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" id="posClientSearch" placeholder="Nombre, celular, No. de cliente o clave…" autocomplete="off">
+            </div>
+            <div class="pos-client-list" id="posClientList"></div>
+            <button type="button" class="pos-client-new" id="posClientNew">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Nuevo cliente
+            </button>
+          </div>
+        </div>
+
+        <div class="pos-lines-head">
+          <span>Venta</span>
+          <button type="button" class="pos-clear" id="posClearBtn" disabled>Vaciar</button>
+        </div>
+        <div class="pos-lines" id="posLines"></div>
+        <div class="pos-lines-empty" id="posLinesEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          <p>Toca un producto para agregarlo a la venta.</p>
+        </div>
+
+        <div class="pos-totals">
+          <div class="pos-row"><span>Artículos</span><span id="posItems">0</span></div>
+          <div class="pos-row"><span>Subtotal</span><span id="posSubtotal">$0.00</span></div>
+          <div class="pos-row pos-row-desc" id="posDescRow" hidden><span>Descuentos</span><span id="posDesc">−$0.00</span></div>
+          <div class="pos-row pos-total"><span>Total</span><strong id="posTotal">$0.00</strong></div>
+        </div>
+        <button type="button" class="btn solid pos-pay" id="posPayBtn" disabled>
+          Cobrar <kbd>F12</kbd>
+        </button>
+      </aside>
+    </div>
+
+    <!-- Celular: barra fija con el total que lleva a la venta -->
+    <button type="button" class="pos-mbar" id="posMobileBar" hidden>
+      <span class="pos-mbar-count" id="posMobileCount">0</span>
+      <span>Ver venta</span>
+      <strong id="posMobileTotal">$0.00</strong>
+    </button>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- ================= Modal: nuevo cliente ================= -->
+<div class="admin-modal-overlay" id="posClientModal">
+  <div class="admin-modal-card pos-client-card" role="dialog" aria-modal="true" aria-labelledby="posClientModalTitle">
+    <div class="admin-modal-head">
+      <h3 id="posClientModalTitle">Nuevo cliente</h3>
+      <button type="button" class="admin-modal-close" id="posClientModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <form class="staff-form" id="posClientForm" novalidate autocomplete="off">
+        <div class="form-section-title"><span class="form-section-num">1</span> Datos básicos</div>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>No. de cliente</span>
+            <input type="text" id="pcNumero" maxlength="12" inputmode="numeric" required>
+          </label>
+          <label class="staff-field">
+            <span>Clave <em>(opcional)</em></span>
+            <input type="text" id="pcClave" maxlength="30" placeholder="Ej. FRECUENTE" spellcheck="false">
+          </label>
+        </div>
+        <div class="qchips pos-clave-chips" id="pcClaveChips">
+          <small>Rápido:</small>
+          <button type="button" data-clave="FRECUENTE">Frecuente</button>
+          <button type="button" data-clave="VIP">VIP</button>
+          <button type="button" data-clave="EMPRESA">Empresa</button>
+          <button type="button" data-clave="UNISON">Unison</button>
+        </div>
+        <label class="staff-field">
+          <span>Nombre</span>
+          <input type="text" id="pcNombre" maxlength="120" required placeholder="Ej. Leonardo Ortega Miranda">
+        </label>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>Celular</span>
+            <input type="tel" id="pcCelular" maxlength="10" inputmode="numeric" placeholder="10 dígitos">
+          </label>
+          <label class="staff-field">
+            <span>Representante <em>(quién lo atendió)</em></span>
+            <input type="text" id="pcRepresentante" maxlength="120">
+          </label>
+        </div>
+
+        <div class="form-section-title"><span class="form-section-num">2</span> Crédito <small>opcional</small></div>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>Días de crédito</span>
+            <input type="number" id="pcDias" min="0" max="365" step="1" inputmode="numeric" placeholder="0">
+          </label>
+          <label class="staff-field">
+            <span>Límite de crédito</span>
+            <span class="pos-money"><span>$</span><input type="number" id="pcLimite" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+          </label>
+        </div>
+        <p class="staff-error" id="pcError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small" id="pcCancel">Cancelar</button>
+          <button type="submit" class="btn solid small">Guardar cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: cobrar ================= -->
+<div class="admin-modal-overlay" id="posPayModal">
+  <div class="admin-modal-card pos-pay-card" role="dialog" aria-modal="true" aria-labelledby="posPayTitle">
+    <div class="admin-modal-head">
+      <h3 id="posPayTitle">Cobrar</h3>
+      <button type="button" class="admin-modal-close" id="posPayClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="pos-pay-total">
+        <small>Total a pagar</small>
+        <strong id="payTotal">$0.00</strong>
+        <span id="payLetras"></span>
+      </div>
+
+      <div class="pos-methods" id="payMethods">
+        <label class="pos-method"><span class="pos-method-ico is-cash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></span><span>Efectivo</span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="efectivo" placeholder="0.00"></span></label>
+        <label class="pos-method"><span class="pos-method-ico is-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><span>Tarjeta</span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="tarjeta" placeholder="0.00"></span></label>
+        <label class="pos-method"><span class="pos-method-ico is-transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg></span><span>Transferencia</span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="transferencia" placeholder="0.00"></span></label>
+        <label class="pos-method"><span class="pos-method-ico is-vales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4Z"/></svg></span><span>Vales</span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="vales" placeholder="0.00"></span></label>
+        <label class="pos-method"><span class="pos-method-ico is-cheque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 14h6M15 14h3"/></svg></span><span>Cheque</span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="cheque" placeholder="0.00"></span></label>
+        <label class="pos-method pos-method-credit" id="payCreditRow"><span class="pos-method-ico is-credit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span>Crédito <small class="pos-method-hint">queda a deber</small></span>
+          <span class="pos-money"><span>$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-pay="credito" placeholder="0.00"></span></label>
+      </div>
+      <div class="pos-rest-row">
+        <button type="button" class="pos-rest" id="payRestBtn">Poner lo que falta en <b id="payRestLabel">efectivo</b></button>
+        <button type="button" class="pos-rest pos-rest-credit" id="payRestCredit" hidden>Dejar lo que falta a crédito</button>
+      </div>
+      <p class="pos-debt-warn" id="payDebtWarn" hidden></p>
+
+      <label class="staff-field pos-ref">
+        <span>Referencia <em>(opcional — no. de autorización, folio de transferencia…)</em></span>
+        <input type="text" id="payRef" maxlength="80">
+      </label>
+
+      <div class="pos-propina">
+        <label class="staff-field">
+          <span>Propina <em>(opcional — aparte del total)</em></span>
+          <span class="pos-money"><span>$</span><input type="number" id="payPropina" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+        </label>
+        <label class="staff-field">
+          <span>Forma de la propina</span>
+          <select id="payPropinaForma" data-av-select>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="vales">Vales</option>
+            <option value="cheque">Cheque</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="pos-credit-box" id="payCreditBox" hidden>
+        <div><small>Días de crédito</small><strong id="payCreditDias">—</strong></div>
+        <div><small>Límite</small><strong id="payCreditLimite">—</strong></div>
+        <div><small>Disponible</small><strong id="payCreditDisp">—</strong></div>
+        <div><small>Vence</small><strong id="payCreditVence">—</strong></div>
+      </div>
+
+      <div class="pos-pay-summary">
+        <div class="pos-row"><span>Pagado</span><span id="payPaid">$0.00</span></div>
+        <div class="pos-row pos-pay-falta" id="payFaltaRow"><span>Falta</span><strong id="payFalta">$0.00</strong></div>
+        <div class="pos-row pos-pay-cambio" id="payCambioRow" hidden><span>Cambio</span><strong id="payCambio">$0.00</strong></div>
+      </div>
+      <p class="staff-error" id="payError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="payCancel">Regresar</button>
+        <button type="button" class="btn solid small" id="payAccept" disabled>Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: venta terminada ================= -->
+<div class="admin-modal-overlay" id="posDoneModal">
+  <div class="admin-modal-card pos-done-card" role="dialog" aria-modal="true" aria-labelledby="posDoneTitle">
+    <div class="admin-modal-body pos-done">
+      <div class="pos-done-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h3 id="posDoneTitle">Venta lista</h3>
+      <p id="posDoneText"></p>
+      <p class="pos-done-credit" id="posDoneCredit" hidden></p>
+      <div class="pos-done-actions">
+        <button type="button" class="btn small" id="posDonePrint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir ticket
+        </button>
+        <button type="button" class="btn small" id="posDoneCredits" hidden>Ver créditos</button>
+        <button type="button" class="btn solid small" id="posDoneNew">Nueva venta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: créditos del cliente ================= -->
+<div class="admin-modal-overlay" id="posCreditsModal">
+  <div class="admin-modal-card pos-credits-card" role="dialog" aria-modal="true" aria-labelledby="posCreditsTitle">
+    <div class="admin-modal-head">
+      <h3 id="posCreditsTitle">Créditos del cliente</h3>
+      <button type="button" class="admin-modal-close" id="posCreditsClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="pos-cr-summary" id="posCrSummary"></div>
+
+      <div class="pos-cr-section">
+        <div class="pos-cr-section-head">
+          <span>Lista de créditos</span>
+          <button type="button" class="btn solid small" id="posCrAbonar" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Abonar <kbd>F3</kbd>
+          </button>
+        </div>
+        <div class="pos-cr-table-wrap">
+          <table class="pos-cr-table">
+            <thead><tr><th>Ticket</th><th>Fecha</th><th>Vence</th><th class="num">Crédito</th><th class="num">Abonado</th><th class="num">Saldo</th><th>Estado</th></tr></thead>
+            <tbody id="posCrList"></tbody>
+          </table>
+        </div>
+        <p class="pos-cr-empty" id="posCrEmpty" hidden>Este cliente no tiene créditos.</p>
+      </div>
+
+      <div class="pos-cr-section">
+        <div class="pos-cr-section-head"><span id="posCrAbonosTitle">Abonos</span></div>
+        <div class="pos-cr-table-wrap">
+          <table class="pos-cr-table">
+            <thead><tr><th>Fecha</th><th>Forma de pago</th><th>Referencia</th><th>Cajero</th><th class="num">Monto</th><th></th></tr></thead>
+            <tbody id="posCrAbonos"></tbody>
+          </table>
+        </div>
+        <p class="pos-cr-empty" id="posCrAbonosEmpty">Elige un crédito para ver sus abonos.</p>
+      </div>
+      <p class="staff-error" id="posCrError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: abono a crédito ================= -->
+<div class="admin-modal-overlay" id="posAbonoModal">
+  <div class="admin-modal-card pos-abono-card" role="dialog" aria-modal="true" aria-labelledby="posAbonoTitle">
+    <div class="admin-modal-head">
+      <h3 id="posAbonoTitle">Abono a crédito</h3>
+      <button type="button" class="admin-modal-close" id="posAbonoClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <form class="staff-form" id="posAbonoForm" novalidate autocomplete="off">
+        <div class="pos-abono-saldo">
+          <small>Saldo del ticket <b id="posAbonoFolio"></b></small>
+          <strong id="posAbonoSaldo">$0.00</strong>
+        </div>
+        <div class="staff-field">
+          <span>Forma de pago</span>
+          <div class="pos-abono-formas" id="posAbonoFormas">
+            <button type="button" data-forma="efectivo" class="is-on">Efectivo</button>
+            <button type="button" data-forma="tarjeta">Tarjeta</button>
+            <button type="button" data-forma="transferencia">Transferencia</button>
+            <button type="button" data-forma="vales">Vales</button>
+            <button type="button" data-forma="cheque">Cheque</button>
+          </div>
+        </div>
+        <div class="staff-form-row pos-abono-row">
+          <label class="staff-field">
+            <span>Abono</span>
+            <span class="pos-money"><span>$</span><input type="number" id="posAbonoMonto" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+          </label>
+          <label class="pos-abono-total">
+            <input type="checkbox" id="posAbonoSaldar">
+            <span class="pos-abono-check" aria-hidden="true"></span>
+            <span>Saldar total</span>
+          </label>
+        </div>
+        <label class="staff-field">
+          <span>Referencia <em>(opcional — no. de autorización, folio de transferencia…)</em></span>
+          <input type="text" id="posAbonoRef" maxlength="80">
+        </label>
+        <p class="pos-abono-after" id="posAbonoAfter"></p>
+        <p class="staff-error" id="posAbonoError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small" id="posAbonoCancel">Cancelar</button>
+          <button type="submit" class="btn solid small" id="posAbonoSave">Guardar abono</button>
+        </div>
+      </form>
+      <div class="pos-abono-done" id="posAbonoDone" hidden>
+        <div class="pos-done-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3>Abono guardado</h3>
+        <p id="posAbonoDoneText"></p>
+        <div class="pos-done-actions">
+          <button type="button" class="btn small" id="posAbonoPrint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir recibo
+          </button>
+          <button type="button" class="btn solid small" id="posAbonoOk">Listo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{else if eq .PosTab "ventas"}}
+{{/* ===================== PESTAÑA: VENTAS ===================== */}}
+  <main class="inv-page vt-page" id="vtPage" data-cajero="{{.StaffName}}">
+    <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones del punto de venta">
+      <a href="/pos/punto-de-venta" class="{{if eq .PosTab "punto-de-venta"}}is-on{{end}}">Punto de venta</a>
+      <a href="/pos/ventas" class="{{if eq .PosTab "ventas"}}is-on{{end}}">Ventas</a>
+      <a href="/pos/corte-de-caja" class="{{if eq .PosTab "corte-de-caja"}}is-on{{end}}">Corte de caja</a>
+    </nav>
+    <div class="admin-header">
+      <div>
+        <h1>Ventas</h1>
+        <p>Cada venta del punto de venta: cuánto pagó en efectivo y demás formas, cuánto quedó a crédito y cuánto debe todavía.</p>
+      </div>
+      <button type="button" class="btn small vt-export-btn" id="vtExportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
+        Exportar PDF
+      </button>
+    </div>
+
+    <!-- Resumen del periodo -->
+    <div class="vt-stats" id="vtStats">
+      <div class="vt-stat"><small>Ventas</small><strong id="vtStVentas">0</strong></div>
+      <div class="vt-stat"><small>Total vendido</small><strong id="vtStTotal">$0.00</strong></div>
+      <div class="vt-stat is-cash"><small>Efectivo en caja</small><strong id="vtStEfectivo">$0.00</strong></div>
+      <div class="vt-stat"><small>Tarjeta · transf. · otros</small><strong id="vtStOtros">$0.00</strong></div>
+      <div class="vt-stat is-credit"><small>Quedó a crédito</small><strong id="vtStCredito">$0.00</strong></div>
+      <div class="vt-stat is-owes"><small>Todavía deben</small><strong id="vtStSaldo">$0.00</strong></div>
+    </div>
+
+    <div class="admin-panel vt-panel">
+      <div class="vt-filters">
+        <div class="vt-seg" id="vtPeriod" role="tablist" aria-label="Periodo">
+          <span class="vt-seg-glow" aria-hidden="true"></span>
+          <button type="button" data-period="hoy" class="is-on">Hoy</button>
+          <button type="button" data-period="ayer">Ayer</button>
+          <button type="button" data-period="7d">7 días</button>
+          <button type="button" data-period="mes">Este mes</button>
+          <button type="button" data-period="mespasado">Mes pasado</button>
+          <button type="button" data-period="rango">Rango</button>
+        </div>
+        <div class="vt-range" id="vtRange" hidden>
+          <label><span>Desde</span><input type="date" id="vtDesde"></label>
+          <label><span>Hasta</span><input type="date" id="vtHasta"></label>
+        </div>
+        <div class="vt-filters-row">
+          <div class="search-box vt-search-box">
+            <div class="search-box-glow"></div>
+            <div class="search-box-inner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" id="vtSearch" placeholder="Buscar por cliente, ticket o cajero…" autocomplete="off">
+            </div>
+          </div>
+          <div class="vt-chips" id="vtEstado" role="group" aria-label="Estado">
+            <button type="button" data-estado="" class="is-on">Todas</button>
+            <button type="button" data-estado="pagada">Pagadas</button>
+            <button type="button" data-estado="debe">Con saldo</button>
+            <button type="button" data-estado="vencida">Vencidas</button>
+            <button type="button" data-estado="cancelada">Canceladas</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="vt-caption" id="vtCaption"></p>
+      <div class="vt-table-wrap">
+        <table class="vt-table" id="vtTable">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th class="num">Total</th>
+              <th class="num">Efectivo</th>
+              <th class="num">Tarjeta</th>
+              <th class="num">Transf.</th>
+              <th class="num c-otros" title="Vales y cheque">Otros</th>
+              <th class="num">Pagó</th>
+              <th class="num">A crédito</th>
+              <th class="num">Abonado</th>
+              <th class="num">Debe</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="vtBody"></tbody>
+          <tfoot id="vtFoot" hidden>
+            <tr>
+              <td colspan="3">Totales</td>
+              <td class="num" id="vtFtTotal"></td>
+              <td class="num" id="vtFtEfectivo"></td>
+              <td class="num" id="vtFtTarjeta"></td>
+              <td class="num" id="vtFtTransf"></td>
+              <td class="num c-otros" id="vtFtOtros"></td>
+              <td class="num" id="vtFtPagado"></td>
+              <td class="num" id="vtFtCredito"></td>
+              <td class="num" id="vtFtAbonado"></td>
+              <td class="num" id="vtFtSaldo"></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="vt-empty" id="vtEmpty" hidden></p>
+    </div>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- ================= Modal: detalle de la venta ================= -->
+<div class="admin-modal-overlay" id="vtDetailModal">
+  <div class="admin-modal-card vt-detail-card" role="dialog" aria-modal="true" aria-labelledby="vtDetailTitle">
+    <div class="admin-modal-head">
+      <h3 id="vtDetailTitle">Ticket</h3>
+      <button type="button" class="admin-modal-close" id="vtDetailClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body" id="vtDetailBody"></div>
+  </div>
+</div>
+
+<!-- ================= Modal: exportar reporte en PDF ================= -->
+<div class="admin-modal-overlay" id="vtExportModal">
+  <div class="admin-modal-card vt-export-card" role="dialog" aria-modal="true" aria-labelledby="vtExportTitle">
+    <div class="admin-modal-head">
+      <h3 id="vtExportTitle">Exportar reporte de ventas</h3>
+      <button type="button" class="admin-modal-close" id="vtExportClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="vt-export-hint">Un PDF con las estadísticas del periodo, una gráfica de barras de lo vendido y una de líneas por forma de pago.</p>
+      <div class="vt-seg vt-export-seg" id="vtExpTipo" role="tablist" aria-label="Periodo del reporte">
+        <span class="vt-seg-glow" aria-hidden="true"></span>
+        <button type="button" data-tipo="dia" class="is-on">Día</button>
+        <button type="button" data-tipo="semana">Semana</button>
+        <button type="button" data-tipo="mes">Mes</button>
+        <button type="button" data-tipo="actual">Periodo de la tabla</button>
+      </div>
+      <div class="vt-export-pick">
+        <label data-for="dia"><span>Día</span><input type="date" id="vtExpDia"></label>
+        <label data-for="semana" hidden><span>Cualquier día de la semana</span><input type="date" id="vtExpSemana"></label>
+        <label data-for="mes" hidden><span>Mes</span><input type="month" id="vtExpMes"></label>
+        <p data-for="actual" hidden class="vt-export-actual" id="vtExpActual"></p>
+      </div>
+      <p class="vt-export-range" id="vtExpRange"></p>
+      <p class="staff-error" id="vtExpError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="vtExpCancel">Cancelar</button>
+        <button type="button" class="btn solid small" id="vtExpGo">Descargar PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{else if eq .PosTab "corte-de-caja"}}
+{{/* ===================== PESTAÑA: CORTE DE CAJA ===================== */}}
+  <main class="inv-page cc-page" id="ccPage" data-cajero="{{.StaffName}}" data-caja="{{.Caja}}"
+        data-ve="{{if .VeCalculado}}1{{else}}0{{end}}" data-admin="{{if .EsAdmin}}1{{else}}0{{end}}"
+        data-mail="{{if .MailEnabled}}1{{else}}0{{end}}" data-mail-from="{{.MailFrom}}">
+    <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones del punto de venta">
+      <a href="/pos/punto-de-venta" class="{{if eq .PosTab "punto-de-venta"}}is-on{{end}}">Punto de venta</a>
+      <a href="/pos/ventas" class="{{if eq .PosTab "ventas"}}is-on{{end}}">Ventas</a>
+      <a href="/pos/corte-de-caja" class="{{if eq .PosTab "corte-de-caja"}}is-on{{end}}">Corte de caja</a>
+    </nav>
+    <div class="admin-header">
+      <div>
+        <h1>Corte de caja <span class="cc-caja-badge">{{.Caja}}</span></h1>
+        <p>Cuenta lo que tienes en caja y compáralo con lo que registró el sistema desde el último corte: ventas, abonos, gastos, retiros y demás entradas y salidas.</p>
+      </div>
+      {{if .EsAdmin}}
+      <label class="cc-perm" title="Recepción captura lo contado sin ver lo calculado.">
+        <input type="checkbox" id="ccPermVe">
+        <span class="cc-perm-track"></span>
+        <span><strong>Recepción ve «Calculado» y «Diferencia»</strong><small>Si está apagado, recepción cuenta a ciegas.</small></span>
+      </label>
+      {{end}}
+    </div>
+
+    <div class="vt-seg cc-tabs" id="ccTabs" role="tablist">
+      <button type="button" data-tab="corte" class="is-on">Corte de caja</button>
+      <button type="button" data-tab="consultar">Consultar cortes</button>
+      <button type="button" data-tab="estado">Estado de caja</button>
+      <button type="button" data-tab="movs">Entradas y salidas</button>
+    </div>
+
+    <!-- ================= Operaciones → Corte de caja ================= -->
+    <section class="cc-pane" data-pane="corte">
+      <div class="admin-panel cc-panel">
+        <div class="cc-toolbar">
+          <button type="button" class="cc-tool is-main" id="ccBtnCorte">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/></svg>
+            <span>Corte</span><kbd>F3</kbd>
+          </button>
+          <button type="button" class="cc-tool" id="ccBtnPropina">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2a2.6 2.6 0 0 0-2.4-1.4c-1.5 0-2.6.8-2.6 2s1.2 1.7 2.6 2 2.6.9 2.6 2.1-1.1 2.1-2.6 2.1a2.8 2.8 0 0 1-2.6-1.5M12 6.5v1.3M12 16.2v1.3"/></svg>
+            <span>Propina</span><kbd>F4</kbd>
+          </button>
+        </div>
+
+        <h3 class="cc-sub">Información del último corte de caja</h3>
+        <div class="cc-last" id="ccLast">
+          <div><small>Caja</small><strong id="ccLastCaja">—</strong></div>
+          <div><small>Usuario</small><strong id="ccLastUser">—</strong></div>
+          <div><small>Fecha</small><strong id="ccLastFecha">—</strong></div>
+          <div><small>Hora</small><strong id="ccLastHora">—</strong></div>
+        </div>
+        <p class="cc-hint" id="ccDesdeHint"></p>
+
+        <div class="cc-now" id="ccNow" hidden>
+          <h3 class="cc-sub">Lo que lleva la caja desde el último corte</h3>
+          <div class="vt-stats cc-now-stats" id="ccNowStats"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Consultas → Cortes de caja ================= -->
+    <section class="cc-pane" data-pane="consultar" hidden>
+      <div class="admin-panel cc-panel">
+        <div class="cc-toolbar is-wrap">
+          <button type="button" class="cc-tool" data-act="buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Buscar</span><kbd>F2</kbd></button>
+          <button type="button" class="cc-tool" data-act="previa" data-need="reporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M14 2v6h6v3"/><circle cx="17" cy="17" r="3"/><path d="m21 21-1.8-1.8"/></svg><span>Previa</span><kbd>Ctrl+R</kbd></button>
+          <button type="button" class="cc-tool is-xls" data-act="excel" data-need="reporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg><span>Excel</span><kbd>Alt+X</kbd></button>
+          <button type="button" class="cc-tool is-pdf" data-act="pdf" data-need="reporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h2.5a1.5 1.5 0 0 1 0 3H8v-3zm0 3v2"/></svg><span>PDF</span><kbd>Alt+P</kbd></button>
+          <button type="button" class="cc-tool" data-act="email" data-need="reporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg><span>Email</span><kbd>F11</kbd></button>
+          <button type="button" class="cc-tool" data-act="imprimir" data-need="reporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Imp</span><kbd>Ctrl+P</kbd></button>
+          <button type="button" class="cc-tool" data-act="ticket" data-need="corte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span>Ticket</span><kbd>Alt+T</kbd></button>
+        </div>
+
+        <div class="cc-subtabs" id="ccSubtabs">
+          <button type="button" data-sub="extendido" class="is-on">Corte de caja</button>
+          <button type="button" data-sub="detalle">Detalle de movimientos</button>
+        </div>
+
+        <div data-subpane="extendido">
+          <p class="cc-hint cc-ext-hint" id="ccExtHint"><b>Corte de caja extendido</b> · Selecciona un corte de caja desde <b>Buscar</b>; después presiona <b>Previa</b> para ver más información.</p>
+          <div class="cc-ext" id="ccExt"></div>
+        </div>
+        <div data-subpane="detalle" hidden>
+          <div class="cc-det-filters">
+            <div class="search-box cc-det-search">
+              <div class="search-box-glow"></div>
+              <div class="search-box-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" id="ccDetSearch" placeholder="Buscar en comentario, folio, usuario…" autocomplete="off">
+              </div>
+            </div>
+            <label class="cc-select"><span>Forma de pago</span>
+              <select id="ccDetFP">
+                <option value="">Todas</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="cheque">Cheque</option>
+                <option value="vales">Vales</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="credito">Crédito</option>
+              </select>
+            </label>
+          </div>
+          <div class="vt-table-wrap cc-det-wrap">
+            <table class="vt-table cc-det-table">
+              <thead><tr><th>Fecha</th><th>Comentario / Referencia</th><th>Mov</th><th>Doc</th><th class="num">Folio</th><th>FP</th><th>Usuario</th><th class="num">Entradas</th><th class="num">Salidas</th><th class="num">Saldo</th></tr></thead>
+              <tbody id="ccDetBody"></tbody>
+            </table>
+          </div>
+          <p class="vt-empty" id="ccDetEmpty">Selecciona un corte de caja desde Buscar.</p>
+          <div class="cc-det-totals" id="ccDetTotals"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Consultas → Estado de caja ================= -->
+    <section class="cc-pane" data-pane="estado" hidden>
+      <div class="admin-panel cc-panel">
+        <div class="cc-toolbar">
+          <button type="button" class="cc-tool" id="ccEstReload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg><span>Recargar</span><kbd>F5</kbd></button>
+          <div class="search-box cc-est-search">
+            <div class="search-box-glow"></div>
+            <div class="search-box-inner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" id="ccEstSearch" placeholder="Buscar caja…" autocomplete="off">
+            </div>
+          </div>
+          <p class="cc-est-upd">Última actualización: <b id="ccEstUpd">—</b></p>
+        </div>
+        <div class="vt-table-wrap">
+          <table class="vt-table cc-est-table">
+            <thead><tr><th>Caja</th><th class="num">Efectivo</th><th class="num">Cheque</th><th class="num">Vales</th><th class="num">Tarjeta</th><th class="num">Transferencia</th><th class="num">Total</th></tr></thead>
+            <tbody id="ccEstBody"></tbody>
+            <tfoot><tr id="ccEstFoot"></tr></tfoot>
+          </table>
+        </div>
+        <p class="vt-empty" id="ccEstEmpty" hidden></p>
+        <p class="cc-hint">Lo que debe haber en cada caja desde su último corte (fondo + entradas − salidas), por forma de pago.</p>
+      </div>
+    </section>
+
+    <!-- ================= Entradas y salidas de caja ================= -->
+    <section class="cc-pane" data-pane="movs" hidden>
+      <div class="admin-panel cc-panel">
+        <div class="cc-toolbar is-wrap">
+          <button type="button" class="cc-tool is-main" id="ccMovNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Nueva entrada / salida</span></button>
+          <div class="vt-range cc-mov-range">
+            <label><span>Desde</span><input type="date" id="ccMovDesde"></label>
+            <label><span>Hasta</span><input type="date" id="ccMovHasta"></label>
+          </div>
+        </div>
+        <p class="cc-hint">Gastos, compras, pagos a proveedores, notas de crédito, retiros, depósitos y devoluciones de proveedor: todo lo que entra o sale de la caja y no es una venta. Aparecen en el siguiente corte.</p>
+        <div class="vt-table-wrap">
+          <table class="vt-table cc-mov-table">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Forma</th><th class="num">Monto</th><th>Comentario</th><th>Usuario</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="ccMovBody"></tbody>
+          </table>
+        </div>
+        <p class="vt-empty" id="ccMovEmpty" hidden>No hay entradas ni salidas en estas fechas.</p>
+      </div>
+    </section>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- ================= Modal: corte (F3) ================= -->
+<div class="admin-modal-overlay" id="ccCorteModal">
+  <div class="admin-modal-card cc-corte-card" role="dialog" aria-modal="true" aria-labelledby="ccCorteTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccCorteTitle">Caja: {{.Caja}}</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="cc-hint" id="ccCorteDesde"></p>
+      <div class="cc-corte-grid">
+        <div class="cc-corte-main">
+          <table class="cc-corte-table" id="ccCorteTable">
+            <thead><tr><th></th><th>Contado</th><th class="cc-ve">Calculado</th><th class="cc-ve">Diferencia</th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr><th>Total</th><td id="ccTotContado">$0.00</td><td class="cc-ve" id="ccTotCalc">$0.00</td><td class="cc-ve" id="ccTotDif">$0.00</td></tr></tfoot>
+          </table>
+        </div>
+        <div class="cc-corte-retiro">
+          <h4>Retiro por corte</h4>
+          <div id="ccRetiros"></div>
+          <div class="cc-ret-total"><span>Total:</span><strong id="ccTotRetiro">$0.00</strong></div>
+          <p class="cc-hint">Lo que no retires se queda como fondo y aparece en el siguiente corte como <b>entrada por corte</b>.</p>
+        </div>
+      </div>
+      <div class="cc-info">
+        <h4>Información adicional</h4>
+        <div class="cc-info-row">
+          <div><small>Total transferencias</small><strong id="ccInfoTr">$0.00</strong></div>
+          <div><small>Total anticipos</small><strong id="ccInfoAn">$0.00</strong></div>
+          <div><small>Total pagos en línea</small><strong id="ccInfoPl">$0.00</strong></div>
+        </div>
+        <p class="cc-hint">El total de transferencias también se ve reflejado en los totales del corte de caja. Anticipos: lo que se pagó al momento en ventas que quedaron a crédito.</p>
+      </div>
+      <label class="cc-check"><input type="checkbox" id="ccAutoTicket"><span>Imprimir el ticket del corte al guardar</span></label>
+      <p class="staff-error" id="ccCorteError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close>Cancelar</button>
+        <button type="button" class="btn solid small" id="ccCorteSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: contar billetes y monedas ================= -->
+<div class="admin-modal-overlay" id="ccDenomModal">
+  <div class="admin-modal-card cc-denom-card" role="dialog" aria-modal="true" aria-labelledby="ccDenomTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccDenomTitle">Contar efectivo</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="cc-denom" id="ccDenom"></div>
+      <div class="cc-denom-total"><span>Total</span><strong id="ccDenomTotal">$0.00</strong></div>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="ccDenomClear">Limpiar</button>
+        <button type="button" class="btn solid small" id="ccDenomUse">Usar este total</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: corte de propinas (F4) ================= -->
+<div class="admin-modal-overlay" id="ccPropModal">
+  <div class="admin-modal-card cc-prop-card" role="dialog" aria-modal="true" aria-labelledby="ccPropTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccPropTitle">Corte de propinas</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="cc-hint" id="ccPropDesde"></p>
+      <div class="cc-prop-grid" id="ccPropGrid"></div>
+      <div class="cc-prop-total"><span>Total a repartir</span><strong id="ccPropTotal">$0.00</strong></div>
+      <p class="cc-hint cc-prop-note" id="ccPropEf">Las propinas en efectivo no se toman en cuenta en el corte.</p>
+      <p class="cc-hint" id="ccPropLast"></p>
+      <p class="staff-error" id="ccPropError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close>Cancelar</button>
+        <button type="button" class="btn solid small" id="ccPropSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: buscar corte (F2) ================= -->
+<div class="admin-modal-overlay" id="ccSearchModal">
+  <div class="admin-modal-card cc-search-card" role="dialog" aria-modal="true" aria-labelledby="ccSearchTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccSearchTitle">Buscar corte de caja</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="cc-search-bar">
+        <div class="vt-range">
+          <label><span>Fecha inicial</span><input type="date" id="ccSDesde"></label>
+          <label><span>Fecha final</span><input type="date" id="ccSHasta"></label>
+        </div>
+        <button type="button" class="cc-tool" id="ccSReload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg><span>Recargar</span><kbd>F5</kbd></button>
+      </div>
+      <div class="vt-table-wrap cc-search-wrap">
+        <table class="vt-table cc-search-table">
+          <thead><tr><th>Fecha</th><th>Caja</th><th class="num">Contado</th><th class="num cc-ve">Calculado</th><th class="num cc-ve">Diferencia</th><th class="num">Retirado</th><th>Usuario</th></tr></thead>
+          <tbody id="ccSBody"></tbody>
+        </table>
+      </div>
+      <p class="vt-empty" id="ccSEmpty" hidden>No hay cortes en esas fechas.</p>
+      <div class="cc-pager">
+        <button type="button" id="ccSPrev" aria-label="Página anterior">‹</button>
+        <span>Página <b id="ccSPage">1</b> de <b id="ccSPages">1</b></span>
+        <button type="button" id="ccSNext" aria-label="Página siguiente">›</button>
+      </div>
+      <p class="cc-hint">Doble clic (o selecciónalo y presiona Enter) para abrir el corte.</p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close>Cerrar</button>
+        <button type="button" class="btn solid small" id="ccSSelect" disabled>Seleccionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: previa (reporte extendido) ================= -->
+<div class="admin-modal-overlay" id="ccPrevModal">
+  <div class="admin-modal-card cc-prev-card" role="dialog" aria-modal="true" aria-labelledby="ccPrevTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccPrevTitle">Reporte de corte de caja extendido</h3>
+      <div class="cc-prev-actions">
+        <button type="button" class="cc-tool is-mini" data-act="excel">Excel</button>
+        <button type="button" class="cc-tool is-mini" data-act="pdf">PDF</button>
+        <button type="button" class="cc-tool is-mini" data-act="email">Email</button>
+        <button type="button" class="cc-tool is-mini" data-act="imprimir">Imp</button>
+      </div>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body cc-prev-body">
+      <div class="cc-prev-scale" id="ccPrevScale"><div id="ccPrevDoc"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: email (F11) ================= -->
+<div class="admin-modal-overlay" id="ccMailModal">
+  <div class="admin-modal-card cc-mail-card" role="dialog" aria-modal="true" aria-labelledby="ccMailTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccMailTitle">Enviar reporte de corte</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="cc-mail-row"><span>De:</span><div class="cc-mail-from" id="ccMailFrom">—</div></div>
+      <div class="cc-mail-row"><span>Para:</span><div class="cc-chips-input" id="ccMailTo"><input type="email" placeholder="correo@ejemplo.com · Enter para agregar"></div></div>
+      <div class="cc-mail-row"><span>CCO:</span><div class="cc-chips-input" id="ccMailBcc"><input type="email" placeholder="(opcional)"></div></div>
+      <div class="cc-mail-row"><span>Asunto:</span><input type="text" id="ccMailSubject" maxlength="150" value="Corte de Caja"></div>
+      <div class="cc-subtabs cc-mail-tabs">
+        <button type="button" data-mtab="mensaje" class="is-on">Mensaje</button>
+        <button type="button" data-mtab="adjuntar">Adjuntar</button>
+      </div>
+      <div data-mpane="mensaje"><textarea id="ccMailBody" rows="7">Con el gusto de saludarle, le hacemos llegar nuestro reporte.
+
+Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textarea></div>
+      <div data-mpane="adjuntar" hidden>
+        <label class="cc-check"><input type="checkbox" id="ccMailPdf" checked><span><b>Corte de caja.pdf</b> — reporte extendido</span></label>
+        <label class="cc-check"><input type="checkbox" id="ccMailXls"><span><b>Corte de caja.xlsx</b> — reporte y detalle de movimientos</span></label>
+      </div>
+      <p class="staff-error" id="ccMailError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close>Cancelar</button>
+        <button type="button" class="btn solid small" id="ccMailSend">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: entrada / salida ================= -->
+<div class="admin-modal-overlay" id="ccMovModal">
+  <div class="admin-modal-card cc-mov-card" role="dialog" aria-modal="true" aria-labelledby="ccMovTitle">
+    <div class="admin-modal-head">
+      <h3 id="ccMovTitle">Nueva entrada / salida de caja</h3>
+      <button type="button" class="admin-modal-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="admin-modal-body">
+      <form class="staff-form" id="ccMovForm" novalidate autocomplete="off">
+        <div class="vt-seg cc-mov-tipo" id="ccMovTipo">
+          <button type="button" data-tipo="salida" class="is-on">Salida</button>
+          <button type="button" data-tipo="entrada">Entrada</button>
+        </div>
+        <label class="staff-field"><span>Concepto</span><select id="ccMovConcepto"></select></label>
+        <div class="staff-form-row">
+          <label class="staff-field"><span>Forma de pago</span><select id="ccMovForma"></select></label>
+          <label class="staff-field"><span>Monto</span><span class="cc-money"><span>$</span><input type="number" id="ccMovMonto" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span></label>
+        </div>
+        <label class="staff-field"><span>Comentario</span><input type="text" id="ccMovCom" maxlength="200" placeholder="Ej. Garrafón de agua, pago a proveedor de micas…"></label>
+        <label class="staff-field"><span>Referencia <em>(opcional)</em></span><input type="text" id="ccMovRef" maxlength="80" placeholder="Folio, factura, autorización…"></label>
+        <p class="cc-hint" id="ccMovHint"></p>
+        <p class="staff-error" id="ccMovError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small" data-close>Cancelar</button>
+          <button type="submit" class="btn solid small" id="ccMovSave">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Confirmación ================= -->
+<div class="admin-modal-overlay" id="ccConfirmModal">
+  <div class="admin-modal-card cc-confirm-card" role="dialog" aria-modal="true" aria-labelledby="ccConfirmTitle">
+    <div class="admin-modal-head"><h3 id="ccConfirmTitle">¿Confirmas?</h3></div>
+    <div class="admin-modal-body">
+      <p id="ccConfirmText"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="ccConfirmNo">No</button>
+        <button type="button" class="btn solid small" id="ccConfirmYes">Sí</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{end}}
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="/static/js/translations.js"></script>
+<script src="/static/js/client/sidebar.js"></script>
+<script src="/static/js/client/pos-ticket-render.js?v=1"></script>
+<script src="/static/js/client/pos.js?v=1"></script>
+</body>
+</html>

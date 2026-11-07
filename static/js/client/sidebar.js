@@ -61,12 +61,14 @@
         const ordersItem = document.getElementById('ordersMenuItem');
         const flowsItem  = document.getElementById('flowsMenuItem');
         const invItem    = document.getElementById('inventoryMenuItem');
+        const posItem    = document.getElementById('posMenuItem');
 
         if (bizItem)    bizItem.style.display    = isGov ? 'none' : '';
         if (agencyItem) agencyItem.style.display = isGov ? ''     : 'none';
         if (flowsItem)  flowsItem.style.display  = isGov ? ''     : 'none';
         // Inventario: todos los giros menos dependencias gubernamentales
         if (invItem)    invItem.style.display    = isGov ? 'none' : '';
+        if (posItem)    posItem.style.display    = isGov ? 'none' : '';
 
         // Para dependencias: ocultar Citas y Pedidos (no aplican)
         if (isGov) {

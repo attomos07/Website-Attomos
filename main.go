@@ -87,6 +87,11 @@ func main() {
 	if err := config.DB.AutoMigrate(models.InventoryModels()...); err != nil {
 		log.Fatal("❌ Error en migración del inventario:", err)
 	}
+	// Punto de venta (sidebar → Punto de venta): clientes, ventas, créditos,
+	// abonos, plantilla del ticket y corte de caja.
+	if err := config.DB.AutoMigrate(models.PosModels()...); err != nil {
+		log.Fatal("❌ Error en migración del punto de venta:", err)
+	}
 
 	log.Println("✅ Base de datos conectada y migrada")
 
@@ -411,6 +416,44 @@ func main() {
 		}
 
 		// ============================================
+		// 🧾 PUNTO DE VENTA — sidebar → Punto de venta (Punto de venta,
+		// Ventas, Corte de caja). Las ventas descuentan el Inventario.
+		// ============================================
+		pos := protected.Group("/pos")
+		{
+			pos.GET("/inventario", handlers.PosSearchInventory)
+			pos.GET("/clientes", handlers.PosListClients)
+			pos.GET("/clientes/siguiente", handlers.PosNextClientNumero)
+			pos.POST("/clientes", handlers.PosCreateClient)
+			pos.PUT("/clientes/:id", handlers.PosUpdateClient)
+			pos.GET("/clientes/:id/creditos", handlers.PosClientCredits)
+			pos.GET("/clientes/:id/ultima-venta", handlers.PosClientLastSale)
+			pos.GET("/ventas", handlers.PosListSales)
+			pos.GET("/ventas/:id", handlers.PosGetSale)
+			pos.POST("/ventas", handlers.PosCreateSale)
+			pos.POST("/ventas/:id/cancelar", handlers.PosCancelSale)
+			pos.POST("/creditos/:id/abonos", handlers.PosAddPayment)
+			pos.DELETE("/abonos/:id", handlers.PosCancelPayment)
+			pos.GET("/ticket-plantilla", handlers.PosGetTicketTemplate)
+			pos.PUT("/ticket-plantilla", handlers.PosSaveTicketTemplate)
+		}
+		caja := protected.Group("/caja")
+		{
+			caja.GET("/estado", handlers.CajaEstadoAPI)
+			caja.GET("/cortes", handlers.CajaListCortes)
+			caja.POST("/cortes", handlers.CajaSaveCorte)
+			caja.GET("/cortes/:id", handlers.CajaGetCorte)
+			caja.POST("/cortes/:id/email", handlers.CajaEmailCorte)
+			caja.GET("/propinas", handlers.CajaPropinasAPI)
+			caja.POST("/propinas", handlers.CajaSavePropinas)
+			caja.GET("/movimientos", handlers.CajaListMovimientos)
+			caja.POST("/movimientos", handlers.CajaCreateMovimiento)
+			caja.POST("/movimientos/:id/cancelar", handlers.CajaCancelMovimiento)
+			caja.GET("/config", handlers.CajaConfigAPI)
+			caja.PUT("/config", handlers.CajaSaveConfig)
+		}
+
+		// ============================================
 		// GEMINI AI INTEGRATION
 		// ============================================
 		protected.POST("/gemini/save-key/:agent_id", handlers.SaveGeminiKey)
@@ -610,6 +653,17 @@ func main() {
 	// Fotos de artículos (solo el dueño) y reporte público firmado de un ajuste.
 	router.GET("/media/inventario/foto/:fotoId", middleware.AuthRequired(), handlers.ServeInvPhoto)
 	router.GET("/inventory/ajuste/:id/:sig", handlers.PublicAdjustmentPage)
+
+	// Punto de venta (sidebar → Punto de venta): 3 pestañas.
+	router.GET("/pos", middleware.AuthRequired(), func(c *gin.Context) {
+		c.Redirect(302, "/pos/punto-de-venta")
+	})
+	router.GET("/pos/punto-de-venta", middleware.AuthRequired(), handlers.PosSalePage)
+	router.GET("/pos/ventas", middleware.AuthRequired(), handlers.PosSalesPage)
+	router.GET("/pos/corte-de-caja", middleware.AuthRequired(), handlers.PosCajaPage)
+	// Ticket digital (público, firmado) para mandarlo por WhatsApp.
+	router.GET("/pos/ticket/:uid/:folio/:sig", handlers.PublicTicketPage)
+	router.GET("/api/pos-ticket/:uid/:folio/:sig", handlers.PublicTicketData)
 
 	router.GET("/my-agency", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "my-agency.html", nil)

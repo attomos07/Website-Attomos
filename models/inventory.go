@@ -882,7 +882,7 @@ type InvMovement struct {
 	Antes       int    `json:"antes"`
 	Despues     int    `json:"despues"`
 	AjusteID    int64  `json:"ajuste_id,omitempty"` // folio del ajuste (el que ve el negocio)
-	VentaID     int64  `json:"venta_id,omitempty"`
+	VentaID     int64  `json:"venta_id,omitempty"`  // folio del ticket (Punto de venta)
 	Comentario  string `json:"comentario"`
 	Usuario     string `json:"usuario"`
 }
@@ -931,7 +931,7 @@ func ListInvMovements(userID uint, f InvMovementFilter, limit int) ([]InvMovemen
 		args = append(args, like, like, like, like)
 	}
 	cond := " WHERE " + strings.Join(where, " AND ")
-	from := " FROM inv_movimientos m LEFT JOIN inv_articulos i ON i.id = m.item_id LEFT JOIN inv_ajustes a ON a.id = m.ajuste_id"
+	from := " FROM inv_movimientos m LEFT JOIN inv_articulos i ON i.id = m.item_id LEFT JOIN inv_ajustes a ON a.id = m.ajuste_id LEFT JOIN pos_sales ps ON ps.id = m.venta_id"
 
 	db := invDB()
 	var t InvMovementTotals
@@ -946,7 +946,7 @@ func ListInvMovements(userID uint, f InvMovementFilter, limit int) ([]InvMovemen
 		SELECT m.id, DATE_FORMAT(m.created_at, '%Y-%m-%dT%H:%i:%s'), m.item_id,
 		       COALESCE(i.clave, ''), COALESCE(i.descripcion, '(artículo eliminado)'),
 		       m.tipo, m.cantidad, m.existencia_antes, m.existencia_despues,
-		       COALESCE(a.folio, 0), COALESCE(m.venta_id, 0), m.comentario, m.usuario`+from+cond+`
+		       COALESCE(a.folio, 0), COALESCE(ps.folio, 0), m.comentario, m.usuario`+from+cond+`
 		ORDER BY m.created_at DESC, m.id DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, t, err
