@@ -415,6 +415,21 @@ func main() {
 			inv.POST("/materiales", handlers.InvCreateMaterial)
 		}
 
+		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
+		citas := protected.Group("/citas")
+		{
+			citas.GET("/horarios", handlers.CitasHours)
+			citas.GET("/horarios/ocupadas", handlers.CitasOccupied)
+			citas.GET("/etiquetas", handlers.CitasTags)
+			citas.GET("/seguimiento", handlers.CitasFollowups)
+			citas.POST("", handlers.CitasCreate)
+			citas.PUT("/:id", handlers.CitasUpdate)
+			citas.PATCH("/:id/estado", handlers.CitasSetStatus)
+			citas.DELETE("/:id", handlers.CitasDelete)
+			citas.PUT("/:id/etiqueta", handlers.CitasSetTag)
+			citas.PUT("/:id/seguimiento", handlers.CitasSetFollowup)
+		}
+
 		// ============================================
 		// 🧾 PUNTO DE VENTA — sidebar → Punto de venta (Punto de venta,
 		// Ventas, Corte de caja). Las ventas descuentan el Inventario.
@@ -532,9 +547,8 @@ func main() {
 		c.HTML(200, "agent-details.html", nil)
 	})
 
-	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "appointments.html", nil)
-	})
+	// Mis citas: la página se arma en el servidor (handlers/appointments_panel.go).
+	router.GET("/appointments", middleware.AuthRequired(), handlers.AppointmentsPage)
 
 	router.GET("/orders", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "orders.html", nil)
@@ -661,6 +675,8 @@ func main() {
 	router.GET("/pos/punto-de-venta", middleware.AuthRequired(), handlers.PosSalePage)
 	router.GET("/pos/ventas", middleware.AuthRequired(), handlers.PosSalesPage)
 	router.GET("/pos/corte-de-caja", middleware.AuthRequired(), handlers.PosCajaPage)
+	router.GET("/pos/consultas", middleware.AuthRequired(), handlers.PosConsultasPage)
+	router.GET("/pos/plantillas", middleware.AuthRequired(), handlers.PosPlantillasPage)
 	// Ticket digital (público, firmado) para mandarlo por WhatsApp.
 	router.GET("/pos/ticket/:uid/:folio/:sig", handlers.PublicTicketPage)
 	router.GET("/api/pos-ticket/:uid/:folio/:sig", handlers.PublicTicketData)

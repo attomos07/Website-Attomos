@@ -23,6 +23,8 @@ const (
 	AppointmentStatusConfirmed AppointmentStatus = "confirmed"
 	AppointmentStatusCompleted AppointmentStatus = "completed"
 	AppointmentStatusCancelled AppointmentStatus = "cancelled"
+	// NoShow: no llegó a su cita (Mis citas → "No asistió").
+	AppointmentStatusNoShow AppointmentStatus = "no_show"
 )
 
 type Appointment struct {
@@ -44,6 +46,23 @@ type Appointment struct {
 	Worker  string    `gorm:"size:255" json:"worker"`     // Trabajador/Especialista asignado
 	Date    time.Time `gorm:"not null;index" json:"date"` // Fecha y hora de la cita
 	Notes   string    `gorm:"type:text" json:"notes"`     // Notas adicionales
+
+	// =============================================
+	// MIS CITAS (portado de Citas de Avante)
+	// =============================================
+	ClientEmail     string `gorm:"size:255" json:"clientEmail"`
+	ClientBirthDate string `gorm:"size:10" json:"clientBirthDate"` // "YYYY-MM-DD" o ""
+	// Questionnaire: JSON con "¿Cómo nos conoció?" ({"como_se_entero":"facebook"}).
+	Questionnaire string `gorm:"type:text" json:"questionnaire"`
+	CancelReason  string `gorm:"size:500" json:"cancelReason"`
+	// Tag: cómo llegó la cita — sin_cita | chequeo | telefono | whatsapp
+	// ("" = sin etiqueta; las del bot se muestran como "bot").
+	Tag string `gorm:"size:20" json:"tag"`
+	// Seguimiento al asistir (ópticas): ¿compró? y en cuántos meses le toca
+	// su próxima revisión (3, 6 o 12). FollowupSet = ya se registró.
+	FollowupSet    bool `gorm:"default:false" json:"followupSet"`
+	Bought         bool `gorm:"default:false" json:"bought"`
+	RevisionMonths int  `gorm:"default:0" json:"revisionMonths"`
 
 	// =============================================
 	// ESTADO Y ORIGEN

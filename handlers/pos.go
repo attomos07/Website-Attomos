@@ -4,7 +4,7 @@ package handlers
 // venta de Avante Optics. 3 pestañas: Punto de venta, Ventas y Corte de caja.
 //
 //	GET  /pos                                  → /pos/punto-de-venta
-//	GET  /pos/punto-de-venta | /pos/ventas | /pos/corte-de-caja
+//	GET  /pos/punto-de-venta | /pos/consultas | /pos/ventas | /pos/corte-de-caja | /pos/plantillas
 //
 //	GET    /api/pos/inventario?q=              buscar en el Inventario (para vender)
 //	GET    /api/pos/clientes?q=                buscar clientes (con su saldo)
@@ -116,6 +116,10 @@ var (
 	PosSalePage  = posPage("punto-de-venta")
 	PosSalesPage = posPage("ventas")
 	PosCajaPage  = posPage("corte-de-caja")
+	// Consultas: precio y existencia para el mostrador (usa /api/pos/inventario).
+	PosConsultasPage = posPage("consultas")
+	// Plantillas: editor del ticket (usa /api/pos/ticket-plantilla).
+	PosPlantillasPage = posPage("plantillas")
 )
 
 /* ---------------- inventario ---------------- */

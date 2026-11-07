@@ -110,11 +110,11 @@
       cliente: 'CLIENTE DE PRUEBA',
       cajero: cajero || 'Caja',
       productos: [
-        { descripcion: 'PROGRESIVO/AR CONVENCIONAL', cantidad: 1, precio: 3219, descuento: 0, rastreo: ['AVT000123'] }
+        { descripcion: 'PRODUCTO DE EJEMPLO', cantidad: 2, precio: 850, descuento: 0 },
+        { descripcion: 'SERVICIO DE EJEMPLO', cantidad: 1, precio: 1519, descuento: 0 }
       ],
       pagos: { efectivo: 0, cheque: 0, vales: 0, transferencia: 2000, tarjeta: 1219, credito: 0 },
-      cambio: 0,
-      pedido: 'AVT000123'
+      cambio: 0
     };
   }
 
@@ -247,7 +247,8 @@
 
     // Encabezado
     out.push('<div class="tk-head">');
-    if (e.logo) out.push('<img class="tk-logo" src="' + esc(e.logoSrc || '') + '" alt="">');
+    var logoSrc = biz().logo || e.logoSrc || '';  // siempre el logo actual de Mi Negocio
+    if (e.logo && logoSrc) out.push('<img class="tk-logo" src="' + esc(logoSrc) + '" alt="">');
     if (e.nombre) out.push('<div class="tk-c tk-name">' + esc(up(e.nombre)) + '</div>');
     out.push(line(e.rfc), line(e.direccion), line(e.ciudad), line(e.cp));
     if (e.correo) out.push('<div class="tk-c">' + esc(e.correo) + '</div>'); // el correo va tal cual
@@ -269,7 +270,7 @@
     out.push('<div class="tk-sep"></div>');
     (venta.productos || []).forEach(function (p) {
       out.push('<div class="tk-desc">' + esc(up(p.descripcion)) + '</div>');
-      // Números de rastreo de las piezas vendidas (AVT000123, …).
+      // Números de rastreo de las piezas vendidas (si los hay).
       if (m.rastreo && p.rastreo && p.rastreo.length) {
         out.push('<div class="tk-rastreo">RASTREO: ' + p.rastreo.map(function (r) { return esc(r); }).join(', ') + '</div>');
       }

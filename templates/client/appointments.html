@@ -1,20 +1,21 @@
+{{/* Mis citas (sidebar → Mis citas). Portado de Recepción → Citas de Avante
+     Optics con el diseño de Attomos. Las filas las arma el servidor
+     (handlers/appointments_panel.go) y static/js/client/citas.js trabaja
+     sobre ellas. Lo de óptica (revisiones / ¿compró?) solo sale en ópticas. */}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Citas - Attomos</title>
-
-    <!-- Favicon -->
+    <title>Mis citas — Attomos</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
-    
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/appointments.css?v=4">
-    <link rel="stylesheet" href="/static/css/client/sileo.css">
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/citas.css?v=1">
 </head>
-<body>
+<body class="inv-body citas-body" data-optica="{{if .Optica}}1{{end}}" data-cap="{{.Capacidad}}" data-biz-name="{{.BusinessName}}" data-services="{{.ServicesJSON}}" data-workers="{{.WorkersJSON}}">
     <div class="decorative-rings">
         <div class="ring ring-1"></div>
         <div class="ring ring-2"></div>
@@ -22,329 +23,800 @@
         <div class="ring ring-4"></div>
     </div>
 
-    <div class="app-container">
-        {{template "sidebar.html" .}}
+<div class="app-container">
+  {{template "sidebar.html" .}}
 
-        <div class="main-content">
-            {{template "userbar.html" .}}
+  <div class="main-content">
+  {{template "userbar.html" .}}
 
-            <div class="content-wrapper">
-                <div class="appointments-layout">
-                    <div class="page-header">
-                        <div class="header-title">
-                            <h1>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.75rem;height:1.75rem;color:#06b6d4;flex-shrink:0;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                    <line x1="16" y1="2" x2="16" y2="6"/>
-                                    <line x1="8" y1="2" x2="8" y2="6"/>
-                                    <line x1="3" y1="10" x2="21" y2="10"/>
-                                </svg>
-                                <span data-translate="appts_page_title">Mis Citas</span>
-                            </h1>
-                            <p data-translate="appts_subtitle">Gestiona todas tus citas agendadas</p>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn-primary" id="createAppointmentBtn" onclick="openAppointmentModal()">
-                                <i class="lni lni-plus"></i>
-                                <span data-translate="appts_new_btn">Nueva Cita</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ══ TAB: MIS CITAS ══ -->
-                    <div id="tab-mis-citas" class="orders-tab-panel active">
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon cyan">
-                                <i class="lni lni-calendar"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="totalAppointments">0</div>
-                                <div class="stat-label" data-translate="appts_stat_today">Citas para hoy</div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon green">
-                                <i class="lni lni-checkmark-circle"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="confirmedAppointments">0</div>
-                                <div class="stat-label" data-translate="appts_stat_confirmed">Citas Confirmadas</div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon orange">
-                                <i class="lni lni-timer"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="pendingAppointments">0</div>
-                                <div class="stat-label" data-translate="appts_stat_cancelled">Citas Canceladas</div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon purple">
-                                <i class="lni lni-users"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="totalClients">0</div>
-                                <div class="stat-label" data-translate="appts_stat_total">Total de citas</div>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon orange">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.4rem;height:1.4rem;">
-                                    <line x1="12" y1="1" x2="12" y2="23"/>
-                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                                </svg>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="apptTotalRevenue">$0.00</div>
-                                <div class="stat-label" data-translate="appts_stat_sales">Venta acumulada</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="controls-section">
-                        <div class="filters">
-                            
-                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
-                                <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedStatus" data-translate="appts_filter_all_status">Todos los Estados</span>
-                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
-                                </div>
-                                <div class="dropdown-menu">
-                                    <div class="dropdown-options">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span data-translate="appts_filter_all_status">Todos los Estados</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span class="status-dot confirmed"></span>
-                                            <span data-translate="appts_status_confirmed">Confirmadas</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span class="status-dot pending"></span>
-                                            <span data-translate="appts_status_pending">Pendientes</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span class="status-dot cancelled"></span>
-                                            <span data-translate="appts_status_cancelled">Canceladas</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
-                                            <span class="status-dot completed"></span>
-                                            <span data-translate="appts_status_completed">Completadas</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
-                                <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedAgent" data-translate="appts_filter_all_agents">Todos los Agentes</span>
-                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
-                                </div>
-                                <div class="dropdown-menu">
-                                    <div class="dropdown-options">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedAgent')">
-                                            <span data-translate="appts_filter_all_agents">Todos los Agentes</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 180px; min-width: 160px;">
-                                <div class="form-input form-dropdown filter-trigger">
-                                    <span id="selectedDate" data-translate="appts_all_dates">Todas las Fechas</span>
-                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
-                                </div>
-                                <div class="dropdown-menu">
-                                    <div class="dropdown-options">
-                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span data-translate="appts_all_dates">Todas las Fechas</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span data-translate="appts_filter_today">Hoy</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span data-translate="appts_filter_tomorrow">Mañana</span>
-                                        </div>
-                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
-                                            <span data-translate="appts_filter_week">Esta Semana</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="search-box">
-                                <i class="lni lni-search-alt"></i>
-                                <input type="text" id="searchInput" placeholder="Buscar por cliente o servicio...">
-                            </div>
-                        </div>
-
-                        <div class="view-controls">
-                            <button class="view-btn active" data-view="list">
-                                <i class="lni lni-list"></i>
-                            </button>
-                            <button class="view-btn" data-view="calendar">
-                                <i class="lni lni-calendar"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="appointments-container" id="appointmentsListView">
-                        <div class="table-wrapper">
-                            <table class="appointments-table">
-                                <thead>
-                                    <tr>
-                                        <th data-translate="th_client">Cliente</th>
-                                        <th data-translate="th_phone">Teléfono</th>
-                                        <th data-translate="th_service">Servicio</th>
-                                        <th data-translate="th_worker">Trabajador</th>
-                                        <th data-translate="th_date">Fecha</th>
-                                        <th data-translate="th_time">Hora</th>
-                                        <th data-translate="th_agent">Agente</th>
-                                        <th data-translate="appts_th_status">Estado</th>
-                                        <th data-translate="agents_th_actions">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="appointmentsList">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="calendar-container" id="calendarView" style="display: none;">
-                        <div class="calendar-header">
-                            <button class="calendar-nav-btn" id="prevMonth">
-                                <i class="lni lni-chevron-left"></i>
-                            </button>
-                            <h3 id="calendarMonth">Febrero 2026</h3>
-                            <button class="calendar-nav-btn" id="nextMonth">
-                                <i class="lni lni-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div class="calendar-grid" id="calendarGrid"></div>
-                    </div>
-
-                    <div class="empty-state" id="emptyState" style="display: none;">
-                        <div class="empty-icon">
-                            <i class="lni lni-calendar"></i>
-                        </div>
-                        <h3 data-translate="appts_empty_title">No hay citas agendadas</h3>
-                        <p data-translate="appts_empty_desc">Comienza creando tu primera cita o sincroniza con tus agentes</p>
-                        <button class="btn-primary" onclick="document.getElementById('createAppointmentBtn').click()">
-                            <i class="lni lni-plus"></i>
-                            <span data-translate="appts_create_first">Crear Primera Cita</span>
-                        </button>
-                    </div>
-                    </div><!-- /tab-mis-citas -->
-
-
-                    </div><!-- /appointments-layout -->
-
-    <div class="modal" id="appointmentModal">
-        <div class="modal-overlay" onclick="closeAppointmentModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle"><i class="lni lni-calendar"></i> Detalles de la Cita</h3>
-                <button class="modal-close" onclick="closeAppointmentModal()">
-                    <i class="lni lni-close"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <form class="appointment-form">
-                </form>
-            </div>
-        </div>
+  <div class="content-wrapper">
+  <main class="inv-page citas-page" id="citasPage">
+    <div class="page-header citas-header">
+      <div class="header-title">
+        <h1>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-ico"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span data-translate="appts_page_title">Mis Citas</span>
+        </h1>
+        <p data-translate="appts_subtitle">Gestiona todas tus citas agendadas</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-secondary ce-export-btn" id="ceExportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
+          <span>Exportar PDF</span>
+        </button>
+        <button type="button" class="btn-primary" id="crearCitaBtn">
+          <i class="lni lni-plus"></i>
+          <span data-translate="appts_new_btn">Nueva Cita</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Sileo viewport -->
-    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+    <!-- Periodo: filtra indicadores y tabla por el día de la cita -->
+    <div class="cf-bar" id="citasFiltro">
+      <span class="cf-label">Periodo</span>
+      <div class="cf-seg" role="tablist" aria-label="Periodo">
+        <span class="cf-seg-glow" aria-hidden="true"></span>
+        <button type="button" data-period="todas" class="is-on">Todas</button>
+        <button type="button" data-period="hoy">Hoy</button>
+        <button type="button" data-period="semana">Esta semana</button>
+        <button type="button" data-period="mes">Este mes</button>
+        <button type="button" data-period="mespasado">Mes pasado</button>
+        <button type="button" data-period="rango">Rango</button>
+      </div>
+      <div class="cf-range" hidden>
+        <div class="cf-range-field">
+          <span>Desde</span>
+          <div class="cb-datepicker cf-dp" id="cfDesdePicker" data-input="cfDesde">
+            <button type="button" class="cb-datepicker-trigger" aria-haspopup="dialog">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span class="cb-datepicker-value">dd/mm/aaaa</span>
+              <svg class="cf-dp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="cb-datepicker-menu">
+              <div class="cb-datepicker-nav">
+                <button type="button" data-nav="-1" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <span class="cf-dp-month">—</span>
+                <button type="button" data-nav="1" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              </div>
+              <div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
+              <div class="cb-datepicker-grid"></div>
+              <div class="cb-datepicker-actions"><button type="button" data-act="hoy">Hoy</button></div>
+            </div>
+          </div>
+          <input type="hidden" id="cfDesde">
+        </div>
+        <div class="cf-range-field">
+          <span>Hasta</span>
+          <div class="cb-datepicker cf-dp cf-dp--end" id="cfHastaPicker" data-input="cfHasta">
+            <button type="button" class="cb-datepicker-trigger" aria-haspopup="dialog">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span class="cb-datepicker-value">dd/mm/aaaa</span>
+              <svg class="cf-dp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="cb-datepicker-menu">
+              <div class="cb-datepicker-nav">
+                <button type="button" data-nav="-1" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <span class="cf-dp-month">—</span>
+                <button type="button" data-nav="1" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              </div>
+              <div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
+              <div class="cb-datepicker-grid"></div>
+              <div class="cb-datepicker-actions"><button type="button" data-act="hoy">Hoy</button></div>
+            </div>
+          </div>
+          <input type="hidden" id="cfHasta">
+        </div>
+      </div>
+      <span class="cf-caption" id="cfCaption"></span>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
-    <script src="/static/js/client/sileo.js"></script>
-    <script src="/static/js/translations.js"></script>
-    <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/appointments.js?v=4"></script>
-    <script src="/static/js/client/orders.js?v=2"></script>
-    <script>
-    /* ══════════════════════════════════════════════════
-       APPOINTMENTS PAGE — venta acumulada de citas
-       (el Punto de venta ahora vive en el sidebar → Punto de venta)
-    ══════════════════════════════════════════════════ */
+    <div class="stats-grid citas-stats">
+      <div class="stat-card">
+        <div class="stat-icon cyan"><i class="lni lni-calendar"></i></div>
+        <div class="stat-info"><div class="stat-value num" id="citasStatTotal">{{len .Citas}}</div><div class="stat-label">Citas totales</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="lni lni-timer"></i></div>
+        <div class="stat-info"><div class="stat-value num" id="citasStatVerificadas">0</div><div class="stat-label" title="Citas confirmadas que todavía no llegan">Por atender</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+        <div class="stat-info"><div class="stat-value num" id="citasStatAsistio">0</div><div class="stat-label">Asistieron</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="lni lni-ban"></i></div>
+        <div class="stat-info"><div class="stat-value num" id="citasStatNoAsistio">0</div><div class="stat-label">No asistieron</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="lni lni-close"></i></div>
+        <div class="stat-info"><div class="stat-value num" id="citasStatCanceladas">0</div><div class="stat-label">Canceladas</div></div>
+      </div>
+    </div>
 
-    // ── Venta acumulada de citas ────────────────────
-    async function fetchApptRevenue() {
-        try {
-            const resp = await fetch('/api/appointments', { credentials: 'include' });
-            if (!resp.ok) return;
-            const data = await resp.json();
-            const appointments = data.appointments || data || [];
-            const total = appointments.reduce((sum, a) => {
-                const amount = parseFloat(
-                    a.totalAmount || a.total || a.amount ||
-                    a.TotalAmount || a.Total || a.Amount || 0
-                );
-                return sum + amount;
-            }, 0);
-            const el = document.getElementById('apptTotalRevenue');
-            if (el) el.textContent = '$' + total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        } catch(_) {}
-    }
+    <!-- Tipo de cita (cómo llegó) — clic para filtrar la tabla -->
+    <div class="cf-tipos-head"><h3>Tipo de cita</h3><span>Toca uno para filtrar la tabla</span></div>
+    <div class="cf-tipos" id="citasTipos"></div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchApptRevenue();
-    });
+    <div class="admin-panel">
+      <div class="admin-panel-head admin-panel-head--stacked">
+        <div class="admin-panel-head-row">
+          <h2>Todas las citas</h2>
+          <div class="admin-panel-head-actions">
+            <button type="button" class="admin-icon-btn" id="citasFocusBtn" aria-label="Pantalla completa" title="Pantalla completa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="admin-panel-head-row">
+          <div class="view-switch view-switch--3" id="citasViewSwitch">
+            <span class="view-switch-glow" id="citasViewGlow"></span>
+            <button type="button" class="view-switch-btn active" data-view="dia">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h4"/></svg>
+              Día
+            </button>
+            <button type="button" class="view-switch-btn" data-view="calendario">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              Calendario
+            </button>
+            <button type="button" class="view-switch-btn" data-view="tabla">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Tabla
+            </button>
+          </div>
+          <div class="search-box">
+            <div class="search-box-glow"></div>
+            <div class="search-box-inner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="citasSearch" placeholder="Buscar por nombre, día, hora o estado...">
+            </div>
+          </div>
+        </div>
+      </div>
 
-    </script>
-    
-    <script>
-        // Lógica para abrir/cerrar los custom dropdowns
-        document.querySelectorAll('.custom-dropdown-wrapper').forEach(wrapper => {
-            wrapper.addEventListener('click', function(e) {
-                // Cerrar otros abiertos
-                document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(other => {
-                    if (other !== this) other.classList.remove('active');
-                });
-                this.classList.toggle('active');
-                e.stopPropagation();
-            });
-        });
+      <div id="citasTableView" hidden>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th>Teléfono</th>
+              <th>Servicio</th>
+              <th>Trabajador</th>
+              <th>Día</th>
+              <th>Hora</th>
+              <th>Estado</th>
+              <th>Agendada el</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="citasTableBody">
+            {{range .Citas}}
+            <tr data-id="{{.ID}}" data-status="{{.Status}}" data-date="{{.Date}}" data-time="{{.Time}}" data-nombre="{{.Nombre}} {{.Apellido}}" data-nombre-solo="{{.Nombre}}" data-apellido="{{.Apellido}}" data-celular="{{.Celular}}" data-correo="{{.Correo}}" data-fecha-nacimiento="{{.FechaNacimiento}}" data-cuestionario="{{.Cuestionario}}" data-cancel-reason="{{.CancelReason}}" data-origen="{{.Origen}}" data-servicio="{{.Servicio}}" data-trabajador="{{.Trabajador}}" data-notas="{{.Notas}}" data-agente="{{.Agente}}">
+              <td>{{.ID}}</td>
+              <td class="cita-cliente">{{with .Nombre}}{{.}}{{else}}—{{end}} {{.Apellido}}</td>
+              <td>{{with .Celular}}{{.}}{{else}}—{{end}}</td>
+              <td>{{with .Servicio}}{{.}}{{else}}—{{end}}</td>
+              <td>{{with .Trabajador}}{{.}}{{else}}—{{end}}</td>
+              <td class="cita-dia">{{.FechaEs}}</td>
+              <td>{{.Time}}</td>
+              <td>{{if eq .Status "verificada"}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion" title="La agendaste desde el panel">Desde el panel</span>{{else}}<span class="admin-badge verificada" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}{{else}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion cita-origen-badge" title="La agendaste desde el panel">Desde el panel</span>{{else}}<span class="admin-badge verificada cita-origen-badge" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}<span class="admin-badge {{.Status}}"{{if .CancelReason}} title="Motivo: {{.CancelReason}}"{{end}}>{{.StatusLabel}}</span>{{end}}</td>
+              <td>{{.CreadaEs}}</td>
+              <td>
+                <div class="row-menu" data-menu-id="{{.ID}}">
+                  <button type="button" class="row-menu-btn" data-action="toggle-menu" data-id="{{.ID}}" aria-label="Más acciones" aria-haspopup="true" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                  </button>
+                  <div class="row-menu-dropdown">
+                    <button type="button" class="row-menu-item" data-action="cliente" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Ver cliente
+                    </button>
+                    <button type="button" class="row-menu-item" data-action="editar" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar
+                    </button>
+                    <button type="button" class="row-menu-item" data-action="reagendar" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M10 15h5m-2-2 2 2-2 2"/></svg> Reagendar
+                    </button>
+                    <div class="row-menu-sep"></div>
+                    <button type="button" class="row-menu-item" data-action="cancel" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg> Cancelar
+                    </button>
+                    <div class="row-menu-sep"></div>
+                    <button type="button" class="row-menu-item" data-action="asistio" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Asistió
+                    </button>
+                    <button type="button" class="row-menu-item" data-action="no_asistio" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg> No asistió
+                    </button>
+                    <div class="row-menu-sep"></div>
+                    <button type="button" class="row-menu-item delete" data-action="delete" data-id="{{.ID}}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg> Eliminar
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        {{if .DBError}}
+        <div class="admin-empty" style="display:block;">{{.DBError}}</div>
+        {{else if not .Citas}}
+        <div class="admin-empty" id="citasEmpty" style="display:block;">
+          Todavía no hay citas registradas.<br>
+          Crea una con «Nueva cita» o deja que tu bot las agende por WhatsApp: aparecerán aquí solas.
+        </div>
+        {{end}}
+      </div>
 
-        // Lógica para seleccionar opción
-        function selectFilterOption(element, labelId) {
-            // Actualizar texto visual
-            const spanEl = element.querySelector('span:last-child');
-            const text = spanEl.innerText;
-            const labelEl = document.getElementById(labelId);
-            labelEl.innerText = text;
+      <div class="admin-panel-foot">
+        <span class="admin-panel-foot-count" id="citasFootCount">Mostrando 0 de 0 citas</span>
+        <div class="pagination">
+          <button type="button" class="page-arrow" id="citasPagPrev" aria-label="Página anterior" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="page-current" id="citasPagCurrent">Página 1</span>
+          <button type="button" class="page-arrow" id="citasPagNext" aria-label="Página siguiente" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+        <span class="admin-panel-foot-spacer"></span>
+      </div>
+      </div><!-- /citasTableView -->
 
-            // Si la opción elegida es traducible (tiene su propio data-translate,
-            // ej. "Todos los Estados" o una opción de estado/fecha concreta),
-            // el trigger hereda esa misma key para poder re-traducirse al
-            // cambiar de idioma. Si no tiene key (ej. nombre de un agente),
-            // se suelta del sistema de traducción.
-            const key = spanEl.getAttribute('data-translate');
-            if (key) {
-                labelEl.setAttribute('data-translate', key);
-            } else {
-                labelEl.removeAttribute('data-translate');
-            }
+      <div id="citasDayView" class="day-view">
+        <div class="cal-toolbar">
+          <div class="cal-toolbar-nav">
+            <button type="button" class="page-arrow" id="dayViewPrev" aria-label="Día anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="page-arrow" id="dayViewNext" aria-label="Día siguiente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <h3 class="cal-month-label day-view-label" id="dayViewLabel">—</h3>
+            <span class="day-view-today" id="dayViewTodayTag" hidden>Hoy</span>
+          </div>
+          <div class="day-view-toolbar-right">
+            <span class="day-view-count" id="dayViewCount"></span>
+            <button type="button" class="btn thin" id="dayViewTodayBtn">Hoy</button>
+          </div>
+        </div>
+        <div class="day-view-summary" id="dayViewSummary"></div>
+        <div class="day-view-list" id="dayViewList"></div>
+      </div>
 
-            // Gestionar clase 'selected'
-            const parent = element.closest('.dropdown-options');
-            parent.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));
-            element.classList.add('selected');
-        }
+      <div id="citasCalendarView" class="cal-view" hidden>
+        <div class="cal-toolbar">
+          <div class="cal-toolbar-nav">
+            <button type="button" class="page-arrow" id="calPrev" aria-label="Mes anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="page-arrow" id="calNext" aria-label="Mes siguiente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <h3 class="cal-month-label" id="calMonthLabel">—</h3>
+          </div>
+          <div class="cal-toolbar-right">
+            {{if .Optica}}
+            {{/* Revisiones: muestra a quién le toca volver (3 meses, 6 meses
+                 o 1 año después de su última cita, según lo que se eligió
+                 al marcar "Asistió"; si no compró, no aparece). */}}
+            <label class="cal-remind-toggle" title="Ver a quién le toca su próxima revisión">
+              <input type="checkbox" id="calRemindToggle">
+              <span class="cal-remind-track"></span>
+              <span class="cal-remind-text">Revisiones</span>
+              <span class="cal-remind-count" id="calRemindCount" hidden></span>
+            </label>
+            {{end}}
+            <button type="button" class="btn thin" id="calTodayBtn">Hoy</button>
+          </div>
+        </div>
+        <p class="cal-remind-bar" id="calRemindBar" hidden></p>
+        <div class="cal-weekdays">
+          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <span title="La agendó tu bot por WhatsApp"><i class="cal-dot verificada"></i> Por el bot</span>
+          <span title="La agendaste desde el panel"><i class="cal-dot recepcion"></i> Desde el panel</span>
+          <span><i class="cal-dot cancelada"></i> Cancelada</span>
+          <span><i class="cal-dot asistio"></i> Asistió</span>
+          <span><i class="cal-dot no_asistio"></i> No asistió</span>
+        </div>
+        <div class="cal-legend cal-legend--tags" id="calTagLegend"></div>
+        {{if .Optica}}
+        <div class="cal-legend cal-legend--remind" hidden>
+          <span><i class="cal-dot remind"></i> Le toca su revisión</span>
+          <span><i class="cal-dot remind-overdue"></i> Ya pasó la fecha y no ha agendado</span>
+        </div>
+        {{end}}
+      </div>
+    </div>
 
-        // Cerrar al hacer click fuera
-        document.addEventListener('click', () => {
-             document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(d => d.classList.remove('active'));
-        });
-    </script>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<div class="admin-modal-overlay" id="deleteCitaModalOverlay">
+  <div class="admin-modal-card admin-modal-card--sm">
+    <div class="admin-modal-head">
+      <h3>Eliminar cita</h3>
+      <button type="button" class="admin-modal-close" id="deleteCitaModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="admin-confirm-text">¿Eliminar la cita <strong id="deleteCitaWhen"></strong>? Esta acción no se puede deshacer.</p>
+      <div class="admin-confirm-actions">
+        <button type="button" class="btn small" id="deleteCitaCancel">Cancelar</button>
+        <button type="button" class="btn small danger" id="deleteCitaConfirm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{if .Optica}}
+<!-- Asistió: ¿compró? → cada cuánto le toca su próxima revisión -->
+<div class="admin-modal-overlay" id="asistioModalOverlay">
+  <div class="admin-modal-card asistio-card" role="dialog" aria-modal="true" aria-labelledby="asistioTitle">
+    <div class="admin-modal-head">
+      <h3 id="asistioTitle">Asistió a su cita</h3>
+      <button type="button" class="admin-modal-close" id="asistioClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="asistio-who"><strong id="asistioWho"></strong><span id="asistioWhen"></span></p>
+
+      <p class="asistio-note" id="asistioChequeoNote" hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.7 4.5c2.2 0 3.6 1.2 5.3 3.1 1.7-1.9 3.1-3.1 5.3-3.1 3.7 0 5.8 3.8 4.3 7.3C19.5 16.4 12 21 12 21Z"/></svg>
+        <span>Es un <strong>chequeo</strong>: ya compró antes, solo elige cuándo le toca su próxima revisión.</span>
+      </p>
+
+      <div class="asistio-step" id="asistioComproStep">
+        <span class="asistio-label">¿Compró algo?</span>
+        <div class="asistio-choice" id="asistioCompro">
+          <button type="button" class="asistio-opt is-yes" data-compro="1" aria-pressed="false">
+            <span class="asistio-opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+            <strong>Sí compró</strong>
+            <small>Se le programa su revisión</small>
+          </button>
+          <button type="button" class="asistio-opt is-no" data-compro="0" aria-pressed="false">
+            <span class="asistio-opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg></span>
+            <strong>No compró</strong>
+            <small>No se le programa revisión</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="asistio-step asistio-meses-wrap" id="asistioMesesWrap" hidden>
+        <span class="asistio-label">Próxima revisión</span>
+        <div class="asistio-meses" id="asistioMeses" role="radiogroup" aria-label="Próxima revisión">
+          <button type="button" data-meses="3" role="radio" aria-checked="false">3 meses</button>
+          <button type="button" data-meses="6" role="radio" aria-checked="false">6 meses</button>
+          <button type="button" data-meses="12" role="radio" aria-checked="true" class="is-on">1 año</button>
+        </div>
+        <p class="asistio-due" id="asistioDue"></p>
+      </div>
+
+      <p class="staff-error" id="asistioError"></p>
+      <div class="admin-confirm-actions">
+        <button type="button" class="btn small" id="asistioCancel">Cancelar</button>
+        <button type="button" class="btn small solid" id="asistioSave" disabled>Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<div class="admin-modal-overlay" id="cancelCitaModalOverlay">
+  <div class="admin-modal-card admin-modal-card--sm">
+    <div class="admin-modal-head">
+      <h3>Cancelar cita</h3>
+      <button type="button" class="admin-modal-close" id="cancelCitaModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="cancel-cita-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+      </div>
+      <p class="admin-confirm-text">¿Estás seguro de que quieres cancelar la cita de <strong id="cancelCitaWho"></strong>?</p>
+      <p class="cancel-cita-when" id="cancelCitaWhen"></p>
+      <div class="admin-confirm-actions">
+        <button type="button" class="btn small" id="cancelCitaBack">No, volver</button>
+        <button type="button" class="btn small danger" id="cancelCitaConfirm">Sí, cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-modal-overlay" id="calEventModalOverlay">
+  <div class="admin-modal-card cal-event-modal">
+    <div class="admin-modal-head">
+      <h3>Cita <span id="calEventId"></span></h3>
+      <button type="button" class="admin-modal-close" id="calEventModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      {{/* Datos de la cita en renglones (los llena citas-recepcion.js). */}}
+      <div class="cev-info">
+        <div class="cev-row cev-row--who">
+          <span class="cev-avatar" id="calEventAvatar"></span>
+          <div class="cev-txt"><small>{{if .Optica}}Paciente{{else}}Cliente{{end}}</small><strong id="calEventNombre">—</strong></div>
+          <span class="admin-badge" id="calEventStatus"></span>
+        </div>
+        <div class="cev-row">
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+          <div class="cev-txt"><small>Día</small><strong id="calEventDia">—</strong></div>
+        </div>
+        <div class="cev-row">
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+          <div class="cev-txt"><small>Hora</small><strong id="calEventHora">—</strong></div>
+        </div>
+        <div class="cev-row" id="calEventTelRow">
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+          <div class="cev-txt"><small>Celular</small><strong id="calEventTel">—</strong></div>
+        </div>
+        <div class="cev-row" id="calEventServRow" hidden>
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
+          <div class="cev-txt"><small>Servicio</small><strong id="calEventServ">—</strong></div>
+        </div>
+        <div class="cev-row" id="calEventWorkerRow" hidden>
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <div class="cev-txt"><small>Atiende</small><strong id="calEventWorker">—</strong></div>
+        </div>
+        <div class="cev-row" id="calEventNotesRow" hidden>
+          <span class="cev-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>
+          <div class="cev-txt"><small>Notas</small><strong id="calEventNotes">—</strong></div>
+        </div>
+      </div>
+      <span id="calEventWhen" hidden></span>
+      <p class="cal-event-reason" id="calEventReason" hidden></p>
+      {{/* Si asistió: si compró y cuándo le toca su revisión (lo llena citas-recepcion.js). */}}
+      <div class="cal-event-seg" id="calEventSeg" hidden>
+        <span id="calEventSegText"></span>
+        <button type="button" class="cal-event-seg-btn" id="calEventSegBtn">Cambiar</button>
+      </div>
+
+      {{/* Etiqueta de la cita: cómo llegó (vino sin cita, chequeo,
+           teléfono, WhatsApp). La llena citas-recepcion.js. */}}
+      <div class="cita-tag-pick">
+        <span class="cita-tag-pick-label">¿Cómo llegó?</span>
+        <div class="cita-tag-options" id="calEventTags"></div>
+      </div>
+
+      <div class="cal-event-actions">
+        <button type="button" class="cal-action cal-action-cliente" data-action="cliente" id="calEventCliente">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+          Ver cliente
+        </button>
+        <button type="button" class="cal-action cal-action-edit" data-action="editar" id="calEventEditar">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+          Editar cita
+        </button>
+        <button type="button" class="cal-action cal-action-reagendar" data-action="reagendar" id="calEventReagendar">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M10 15h5m-2-2 2 2-2 2"/></svg></span>
+          Reagendar
+        </button>
+        <button type="button" class="cal-action cal-action-cancel" data-action="cancel" id="calEventCancel">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></span>
+          Cancelar cita
+        </button>
+        <button type="button" class="cal-action cal-action-asistio" data-action="asistio" id="calEventAsistio">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          Marcar asistió
+        </button>
+        <button type="button" class="cal-action cal-action-noasistio" data-action="no_asistio" id="calEventNoAsistio">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg></span>
+          Marcar no asistió
+        </button>
+        <button type="button" class="cal-action cal-action-delete" data-action="delete" id="calEventDelete">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></span>
+          Eliminar cita
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-modal-overlay" id="dayEventsModalOverlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-head">
+      <h3 id="dayEventsModalTitle">Citas del día</h3>
+      <button type="button" class="admin-modal-close" id="dayEventsModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="day-events-list" id="dayEventsList"></div>
+    </div>
+  </div>
+</div>
+
+{{if .Optica}}
+<!-- Revisiones: a quién le toca volver -->
+<div class="admin-modal-overlay" id="remindModalOverlay">
+  <div class="admin-modal-card cal-event-modal remind-modal">
+    <div class="admin-modal-head">
+      <h3>Próxima revisión</h3>
+      <button type="button" class="admin-modal-close" id="remindModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="remind-who">
+        <span class="remind-avatar" id="remindAvatar"></span>
+        <div>
+          <strong id="remindName"></strong>
+          <small id="remindVisits"></small>
+        </div>
+      </div>
+      <span class="remind-when-badge" id="remindBadge"></span>
+      <dl class="remind-facts">
+        <div><dt>Le toca</dt><dd id="remindDue"></dd></div>
+        <div><dt>Última cita</dt><dd id="remindLast"></dd></div>
+        <div><dt>Celular</dt><dd id="remindPhone"></dd></div>
+        <div id="remindMailRow"><dt>Correo</dt><dd id="remindMail"></dd></div>
+      </dl>
+      <div class="cal-event-actions">
+        <button type="button" class="cal-action cal-action-asistio" id="remindAgendar">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span>
+          Agendar su cita
+        </button>
+        <a class="cal-action cal-action-cliente" id="remindCall" href="#">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+          Llamar
+        </a>
+        <button type="button" class="cal-action cal-action-cliente" id="remindCliente">
+          <span class="cal-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+          Ver datos de su última cita
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<div class="admin-modal-overlay" id="crearCitaModalOverlay">
+  <div class="admin-modal-card crear-cita-card">
+    <div class="admin-modal-head">
+      <h3 id="crearCitaTitle">Crear cita</h3>
+      <button type="button" class="admin-modal-close" id="crearCitaModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <form id="crearCitaForm" class="staff-form" novalidate>
+        {{/* Editar / Reagendar: dónde está la cita ahora (lo llena citas-recepcion.js). */}}
+        <div class="crear-cita-current" id="crearCitaCurrent" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <div>
+            <span id="crearCitaCurrentWho"></span>
+            <strong id="crearCitaCurrentWhen"></strong>
+          </div>
+          <p class="crear-cita-current-note" id="crearCitaCurrentNote" hidden></p>
+        </div>
+        <div class="crear-cita-tipo">
+          <span class="crear-cita-tipo-label">Tipo de cita <em>(opcional)</em></span>
+          <div class="cita-tag-options" id="crearCitaTags"></div>
+          <p class="crear-cita-tipo-hint" id="crearCitaTagHint" hidden>Vino sin cita: se registra hoy y puedes elegir una hora que ya pasó.</p>
+        </div>
+
+        <div class="form-section-title"><span class="form-section-num">1</span>Fecha y hora</div>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>Día</span>
+            <div class="cb-datepicker" id="crearCitaDatePicker">
+              <button type="button" class="cb-datepicker-trigger" id="crearCitaDateBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span class="cb-datepicker-value" id="crearCitaDateLabel">dd/mm/aaaa</span>
+                <svg class="time-picker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="cb-datepicker-menu" id="crearCitaDateMenu">
+                <div class="cb-datepicker-nav">
+                  <button type="button" id="crearCitaDatePrev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                  <span id="crearCitaDateMonthLabel">—</span>
+                  <button type="button" id="crearCitaDateNext" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                </div>
+                <div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
+                <div class="cb-datepicker-grid" id="crearCitaDateGrid"></div>
+                <div class="cb-datepicker-actions">
+                  <button type="button" id="crearCitaDateToday">Hoy</button>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="crearCitaDate" name="date" required>
+          </label>
+          <label class="staff-field">
+            <span>Hora</span>
+            <div class="time-picker" id="crearCitaTimePicker">
+              <button type="button" class="time-picker-trigger" id="crearCitaTimeBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+                <span class="time-picker-value" id="crearCitaTimeLabel">—</span>
+                <svg class="time-picker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="time-picker-menu" id="crearCitaTimeMenu"></div>
+            </div>
+            <input type="hidden" id="crearCitaTime" name="time" required>
+          </label>
+        </div>
+        <div class="crear-cita-extra" id="crearCitaExtra">
+        <div class="form-section-title"><span class="form-section-num">2</span>Datos del cliente</div>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>Nombre</span>
+            <input type="text" id="crearCitaNombre" name="nombre" required>
+          </label>
+          <label class="staff-field">
+            <span>Apellido</span>
+            <input type="text" id="crearCitaApellido" name="apellido" required>
+          </label>
+        </div>
+        <label class="staff-field">
+          <span>Celular</span>
+          <div class="staff-phone-row">
+            <div class="staff-lada-select" id="crearCitaLadaWrap">
+              <button type="button" class="staff-lada-btn" id="crearCitaLadaBtn">
+                <span id="crearCitaLadaLabel">+52</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="admin-role-select-menu staff-lada-menu" id="crearCitaLadaMenu">
+                <button type="button" class="admin-role-option active" data-lada="+52">+52 México</button>
+                <button type="button" class="admin-role-option" data-lada="+1">+1 EE. UU. / Canadá</button>
+              </div>
+            </div>
+            <input type="tel" id="crearCitaCelular" name="celular" inputmode="numeric" maxlength="10" placeholder="6621234567" required>
+          </div>
+        </label>
+        <label class="staff-field">
+          <span>Correo (opcional)</span>
+          <input type="email" id="crearCitaCorreo" name="correo">
+        </label>
+        <label class="staff-field">
+          <span>Fecha de nacimiento (opcional)</span>
+          <div class="cb-datepicker" id="crearCitaNacimientoPicker">
+            {{/* Se puede escribir la fecha (dd/mm/aaaa) o elegirla en el calendario. */}}
+            <div class="cb-datepicker-trigger cb-dp-typed" id="crearCitaNacimientoBtn">
+              <button type="button" class="cb-dp-cal" id="crearCitaNacimientoCal" aria-label="Abrir calendario" title="Elegir en el calendario">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              </button>
+              <input type="text" class="cb-dp-input" id="crearCitaNacimientoLabel" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off" aria-label="Fecha de nacimiento (dd/mm/aaaa)">
+              <svg class="time-picker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="cb-datepicker-menu" id="crearCitaNacimientoMenu">
+              <div class="cb-datepicker-nav">
+                <button type="button" id="crearCitaNacimientoPrev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <div class="cb-datepicker-yearpicker time-picker" id="crearCitaNacimientoYearWrap">
+                  <button type="button" class="cb-datepicker-navlabel" id="crearCitaNacimientoMonthYearBtn">—</button>
+                  <div class="time-picker-menu cb-datepicker-yearmenu" id="crearCitaNacimientoYearMenu"></div>
+                </div>
+                <button type="button" id="crearCitaNacimientoNext" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              </div>
+              <div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
+              <div class="cb-datepicker-grid" id="crearCitaNacimientoGrid"></div>
+              <div class="cb-datepicker-actions">
+                <button type="button" id="crearCitaNacimientoClear">Borrar</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="crearCitaNacimiento" name="fecha_nacimiento">
+        </label>
+        <div class="form-section-title"><span class="form-section-num">3</span>Servicio <small>opcional</small></div>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span>Servicio</span>
+            <input type="text" id="crearCitaServicio" name="servicio" maxlength="250" list="citaServiciosList" autocomplete="off" placeholder="{{if .Optica}}Ej. Examen de la vista{{else}}Ej. Corte de cabello{{end}}">
+          </label>
+          <label class="staff-field">
+            <span>Atiende</span>
+            <input type="text" id="crearCitaTrabajador" name="trabajador" maxlength="250" list="citaTrabajadoresList" autocomplete="off" placeholder="Quién lo atiende">
+          </label>
+        </div>
+        <label class="staff-field">
+          <span>Notas</span>
+          <textarea id="crearCitaNotas" name="notas" rows="2" maxlength="2000" placeholder="Algo que debas saber de esta cita"></textarea>
+        </label>
+        <datalist id="citaServiciosList"></datalist>
+        <datalist id="citaTrabajadoresList"></datalist>
+        <div class="form-section-title"><span class="form-section-num">4</span>¿Cómo nos conoció? <small>opcional</small></div>
+        <div class="staff-field">
+          <span>¿Cómo se enteró de nosotros?</span>
+          <div class="qchips" data-quest="como_se_entero">
+            <label class="qchip"><input type="radio" name="como_se_entero" value="facebook"><span>Facebook</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="instagram"><span>Instagram</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="television"><span>Televisión</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="tiktok"><span>TikTok</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="whatsapp"><span>WhatsApp</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="sitio_web"><span>Sitio web</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="google_maps"><span>Google Maps</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="familiares"><span>Familiares</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="amigos"><span>Amigos</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="recomendado"><span>Me recomendaron</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="casualidad"><span>Pasé por casualidad</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="recurrente"><span>Cliente recurrente</span></label>
+            <label class="qchip"><input type="radio" name="como_se_entero" value="por_empresa"><span>Por empresa</span></label>
+          </div>
+        </div>
+        </div>
+        <p class="staff-error" id="crearCitaError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small" id="crearCitaCancel">Cancelar</button>
+          <button type="submit" class="btn small solid" id="crearCitaSubmit">Crear cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="admin-modal-overlay" id="clienteDetalleModalOverlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-head">
+      <h3>Datos del cliente</h3>
+      <button type="button" class="admin-modal-close" id="clienteDetalleModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="cliente-detalle-grid">
+        <div class="cliente-detalle-row"><span>Nombre completo</span><strong id="clienteDetalleNombre"></strong></div>
+        <div class="cliente-detalle-row"><span>Celular</span><strong id="clienteDetalleCelular"></strong></div>
+        <div class="cliente-detalle-row"><span>Correo</span><strong id="clienteDetalleCorreo"></strong></div>
+        <div class="cliente-detalle-row"><span>Fecha de nacimiento</span><strong id="clienteDetalleNacimiento"></strong></div>
+        {{if .Optica}}
+        <div class="cliente-detalle-row"><span>¿Compró?</span><div class="cliente-compro" id="clienteDetalleCompro"></div></div>
+        {{end}}
+        <div class="cliente-detalle-row" id="clienteDetalleVisitasRow" hidden><span>Otras citas</span><div class="cliente-visitas" id="clienteDetalleVisitas"></div></div>
+        <div class="cliente-detalle-sep"></div>
+        <div class="cliente-detalle-row">
+          <span>¿Cómo nos conoció?</span>
+          <div class="cliente-quest-list" id="clienteDetalleCuestionario"></div>
+          <strong id="clienteDetalleCuestionarioEmpty" class="is-empty">No se registró.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Exportar reporte de citas en PDF -->
+<div class="admin-modal-overlay" id="ceExportModal">
+  <div class="admin-modal-card ce-export-card" role="dialog" aria-modal="true" aria-labelledby="ceExportTitle">
+    <div class="admin-modal-head">
+      <h3 id="ceExportTitle">Exportar reporte de citas</h3>
+      <button type="button" class="admin-modal-close" id="ceExportClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="ce-export-hint">Un PDF con las estadísticas del periodo: cuántas citas hubo, cuántos asistieron, cómo llegaron y cómo te conocieron, con gráfica de barras y de líneas.</p>
+      <div class="cf-seg ce-export-seg" id="ceExpTipo" role="tablist" aria-label="Periodo del reporte">
+        <span class="cf-seg-glow" aria-hidden="true"></span>
+        <button type="button" data-tipo="dia" class="is-on">Día</button>
+        <button type="button" data-tipo="semana">Semana</button>
+        <button type="button" data-tipo="mes">Mes</button>
+        <button type="button" data-tipo="actual">Periodo filtrado</button>
+      </div>
+      <div class="ce-export-pick">
+        <label data-for="dia"><span>Día</span><input type="date" id="ceExpDia"></label>
+        <label data-for="semana" hidden><span>Cualquier día de la semana</span><input type="date" id="ceExpSemana"></label>
+        <label data-for="mes" hidden><span>Mes</span><input type="month" id="ceExpMes"></label>
+        <p data-for="actual" hidden class="ce-export-actual" id="ceExpActual"></p>
+      </div>
+      <p class="ce-export-range" id="ceExpRange"></p>
+      <p class="staff-error" id="ceExpError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="ceExpCancel">Cancelar</button>
+        <button type="button" class="btn solid small" id="ceExpGo">Descargar PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="/static/js/translations.js"></script>
+<script src="/static/js/client/sidebar.js"></script>
+<script src="/static/js/client/citas.js?v=1"></script>
 </body>
 </html>
