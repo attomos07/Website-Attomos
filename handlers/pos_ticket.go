@@ -109,10 +109,13 @@ func PublicTicketData(c *gin.Context) {
 				"efectivo": d.EfectivoRecibido, "tarjeta": d.Tarjeta, "transferencia": d.Transferencia,
 				"vales": d.Vales, "cheque": d.Cheque, "credito": d.Credito,
 			},
-			"cambio":    d.Cambio,
-			"total":     d.Total,
-			"vence":     d.Vence,
-			"cancelada": d.Cancelada,
+			"cambio":        d.Cambio,
+			"total":         d.Total,
+			"vence":         d.Vence,
+			"cancelada":     d.Cancelada,
+			"pedido_code":   d.PedidoCode,
+			"pedido_status": d.PedidoStatus,
 		},
+		"estados": models.OrderStatusList(invIsOptica(uid)),
 	})
 }

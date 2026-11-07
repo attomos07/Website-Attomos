@@ -38,6 +38,7 @@ const (
 	OrderSourceManual OrderSource = "manual" // Creado manualmente desde el panel
 	OrderSourceAgent  OrderSource = "agent"  // Creado por el bot de WhatsApp
 	OrderSourceNinda  OrderSource = "ninda"  // Creado desde el marketplace Ninda
+	OrderSourcePOS    OrderSource = "pos"    // Abierto por una venta del Punto de venta (clave de rastreo)
 )
 
 // ============================================
@@ -49,6 +50,10 @@ type OrderItem struct {
 	Quantity int     `json:"quantity"`
 	Price    float64 `json:"price"`
 	Notes    string  `json:"notes,omitempty"`
+	// Inventario: artículo con el que se ligó (por id o por nombre) y
+	// cuántas piezas se le descontaron (para regresarlas si se cancela).
+	ItemID   int64 `json:"itemId,omitempty"`
+	StockOut int   `json:"stockOut,omitempty"`
 }
 
 type OrderItems []OrderItem
@@ -106,6 +111,18 @@ type Order struct {
 	CashReceived  float64    `gorm:"default:0" json:"cashReceived"`               // monto entregado en efectivo
 	Paid          bool       `gorm:"default:false;index" json:"paid"`
 	PaidAt        *time.Time `json:"paidAt"`
+
+	// ── Rastreo e inventario ─────────────────
+	// TrackingCode: clave para que el cliente consulte su pedido en /rastreo.
+	TrackingCode string `gorm:"size:20;index" json:"trackingCode"`
+	// PosSaleID: venta del Punto de venta que abrió el pedido (ópticas).
+	PosSaleID *int64 `gorm:"index" json:"posSaleId,omitempty"`
+	// ExternalRef: referencia externa (sesión de Stripe de Comy) para no
+	// duplicar el pedido si la confirmación llega dos veces.
+	ExternalRef string `gorm:"size:255;index" json:"-"`
+	// StockApplied: ya se descontó del Inventario (y hay que regresarlo si
+	// se cancela o se borra).
+	StockApplied bool `gorm:"default:false" json:"stockApplied"`
 
 	// ── Timestamps ───────────────────────────
 	CreatedAt time.Time      `json:"createdAt"`

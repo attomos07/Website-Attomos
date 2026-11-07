@@ -5,6 +5,7 @@ import (
 	"attomos/models"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -99,15 +100,12 @@ func APIGetStores(c *gin.Context) {
 
 		cfg := cfgMap[b.ID]
 
-		// Imagen del primer servicio disponible
+		// Imagen del primer producto con foto (Inventario o Mi Negocio)
+		catalog, _ := comyCatalog(b)
 		coverImg := ""
-		for _, svc := range b.Services {
-			if len(svc.ImageUrls) > 0 && svc.ImageUrls[0] != "" {
-				coverImg = svc.ImageUrls[0]
-				break
-			}
-			if svc.ImageURL != "" {
-				coverImg = svc.ImageURL
+		for _, p := range catalog {
+			if len(p.Images) > 0 && p.Images[0] != "" {
+				coverImg = p.Images[0]
 				break
 			}
 		}
@@ -120,7 +118,7 @@ func APIGetStores(c *gin.Context) {
 			"city":          b.Location.City,
 			"state":         b.Location.State,
 			"coverImage":    coverImg,
-			"servicesCount": len(b.Services),
+			"servicesCount": len(catalog),
 			"hasStripe":     cfg.StripeChargesEnabled,
 			"hasSPEI":       cfg.SPEIEnabled,
 		})
@@ -162,34 +160,26 @@ func APIGetDishes(c *gin.Context) {
 
 	dishes := make([]gin.H, 0)
 	for _, b := range branches {
-		for i, svc := range b.Services {
+		catalog, _ := comyCatalog(b)
+		for _, p := range catalog {
 			if search != "" {
-				haystack := strings.ToLower(svc.Title + " " + svc.Description + " " + b.BusinessName)
+				haystack := strings.ToLower(p.Title + " " + p.Description + " " + b.BusinessName)
 				if !strings.Contains(haystack, search) {
 					continue
 				}
 			}
-
-			imgs := svc.ImageUrls
-			if len(imgs) == 0 && svc.ImageURL != "" {
-				imgs = []string{svc.ImageURL}
-			}
-			isPromo := svc.PriceType == "promotion" && svc.PromoPrice > 0
-			price := svc.Price
-			if isPromo {
-				price = svc.PromoPrice
-			}
-
 			dishes = append(dishes, gin.H{
 				"branchId":      b.ID,
 				"branchName":    b.BusinessName,
-				"serviceIndex":  i,
-				"title":         svc.Title,
-				"description":   svc.Description,
-				"price":         price,
-				"originalPrice": svc.OriginalPrice,
-				"isPromo":       isPromo,
-				"images":        imgs,
+				"serviceIndex":  p.Index,
+				"itemId":        p.ItemID,
+				"title":         p.Title,
+				"description":   p.Description,
+				"price":         p.Price,
+				"originalPrice": p.OriginalPrice,
+				"isPromo":       p.PriceType == "promotion" && p.PromoPrice > 0,
+				"images":        p.Images,
+				"available":     p.Available,
 			})
 		}
 	}
@@ -230,29 +220,9 @@ func APIGetStore(c *gin.Context) {
 		}
 	}
 
-	// Construir servicios para el frontend
-	services := make([]gin.H, 0, len(branch.Services))
-	for i, svc := range branch.Services {
-		imgs := svc.ImageUrls
-		if len(imgs) == 0 && svc.ImageURL != "" {
-			imgs = []string{svc.ImageURL}
-		}
-		price := svc.Price
-		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-			price = svc.PromoPrice
-		}
-		services = append(services, gin.H{
-			"index":         i,
-			"title":         svc.Title,
-			"description":   svc.Description,
-			"price":         price,
-			"originalPrice": svc.OriginalPrice,
-			"promoPrice":    svc.PromoPrice,
-			"priceType":     svc.PriceType,
-			"images":        imgs,
-			"promoDays":     svc.PromoDays,
-		})
-	}
+	// Productos: del Inventario del negocio (o, si no tiene, de Mi Negocio)
+	catalog, _ := comyCatalog(branch)
+	services := comyProductsJSON(catalog)
 
 	response := gin.H{
 		"id":             branch.ID,
@@ -303,6 +273,7 @@ type NindaCheckoutRequest struct {
 }
 
 type NindaCartItem struct {
+	ItemID       int64   `json:"itemId"` // artículo del Inventario (0 = servicio de Mi Negocio)
 	ServiceIndex int     `json:"serviceIndex"`
 	Title        string  `json:"title"`
 	Price        float64 `json:"price"`
@@ -336,17 +307,21 @@ func APICreateCheckout(c *gin.Context) {
 		return
 	}
 
+	// Precios, nombres y existencia del servidor (no se confía en el navegador).
+	lines, msg := comyResolveCart(branch, req.Items)
+	if msg != "" {
+		c.JSON(http.StatusConflict, gin.H{"error": msg})
+		return
+	}
+
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 
 	// Construir line items de Stripe
-	lineItems := make([]*stripe.CheckoutSessionLineItemParams, 0, len(req.Items))
+	lineItems := make([]*stripe.CheckoutSessionLineItemParams, 0, len(lines))
 	totalAmount := int64(0)
 
-	for _, item := range req.Items {
-		if item.Quantity <= 0 {
-			item.Quantity = 1
-		}
-		amountCents := int64(item.Price * 100)
+	for _, item := range lines {
+		amountCents := int64(math.Round(item.Price * 100))
 		totalAmount += amountCents * int64(item.Quantity)
 
 		// Usar price_data inline — no requiere crear producto/precio previos
@@ -369,7 +344,7 @@ func APICreateCheckout(c *gin.Context) {
 	}
 
 	// Metadata para el webhook
-	itemsSummary := buildItemsSummary(req.Items)
+	itemsSummary := buildItemsSummary(lines)
 
 	// Determinar source: bot (viene de WhatsApp via ?item=) o ninda (directo)
 	source := req.Source
@@ -385,6 +360,7 @@ func APICreateCheckout(c *gin.Context) {
 		"items_summary":  itemsSummary,
 		"notes":          req.Notes,
 		"source":         source,
+		"cart":           comyCartMeta(lines),
 	}
 	if req.CustomerEmail != "" {
 		metadata["customer_email"] = req.CustomerEmail
@@ -475,6 +451,10 @@ func APIConfirmOrder(c *gin.Context) {
 
 	total := float64(sess.AmountTotal) / 100
 
+	// Abre el pedido en Mis ventas (una sola vez por pago) y descuenta del
+	// Inventario lo que se compró.
+	trackingCode := comyRegisterOrder(req.BranchID, sess.ID, sess.Metadata, total)
+
 	// Construir mensaje de WhatsApp (con contexto de bot si aplica)
 	waMsg := buildWhatsAppMessage(branchName, customerName, itemsSummary, total, notes, sess.ID, source)
 
@@ -500,17 +480,23 @@ func APIConfirmOrder(c *gin.Context) {
 		"customerPhone": customerPhone,
 		"whatsappUrl":   waURL,
 		"message":       waMsg,
+		"trackingCode":  trackingCode,
 	})
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-func buildItemsSummary(items []NindaCartItem) string {
+func buildItemsSummary(items []comyLine) string {
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
 		parts = append(parts, fmt.Sprintf("%dx %s ($%.0f)", item.Quantity, item.Title, item.Price))
 	}
-	return strings.Join(parts, ", ")
+	out := strings.Join(parts, ", ")
+	// Stripe acepta hasta 500 caracteres por dato de metadata.
+	if r := []rune(out); len(r) > 480 {
+		out = string(r[:477]) + "…"
+	}
+	return out
 }
 
 // buildWhatsAppMessage construye el mensaje pre-llenado para WhatsApp.

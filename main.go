@@ -437,6 +437,9 @@ func main() {
 		pos := protected.Group("/pos")
 		{
 			pos.GET("/inventario", handlers.PosSearchInventory)
+			pos.GET("/estados", handlers.PosOrderStatuses)
+			pos.POST("/ventas/:id/pedido", handlers.PosCreatePedido)
+			pos.PUT("/ventas/:id/pedido/estado", handlers.PosSetPedidoStatus)
 			pos.GET("/clientes", handlers.PosListClients)
 			pos.GET("/clientes/siguiente", handlers.PosNextClientNumero)
 			pos.POST("/clientes", handlers.PosCreateClient)
@@ -546,6 +549,10 @@ func main() {
 	router.GET("/agents/:id", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "agent-details.html", nil)
 	})
+
+	// Rastreo público de pedidos (clave en el ticket) — handlers/order_tracking.go
+	router.GET("/rastreo", handlers.TrackingPage)
+	router.GET("/api/rastreo", handlers.TrackingAPI)
 
 	// Mis citas: la página se arma en el servidor (handlers/appointments_panel.go).
 	router.GET("/appointments", middleware.AuthRequired(), handlers.AppointmentsPage)

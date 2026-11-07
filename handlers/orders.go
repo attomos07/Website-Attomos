@@ -31,6 +31,8 @@ type OrderResponse struct {
 	PaymentMethod   string            `json:"paymentMethod"`
 	CashReceived    float64           `json:"cashReceived"`
 	CreatedAt       string            `json:"createdAt"`
+	TrackingCode    string            `json:"trackingCode"`
+	StockApplied    bool              `json:"stockApplied"`
 }
 
 // GetOrders devuelve todos los pedidos del usuario
@@ -148,17 +150,21 @@ func CreateOrder(c *gin.Context) {
 		CashReceived:    req.CashReceived,
 	}
 
+	order.TrackingCode = orderNewTrackingCode()
 	if err := config.DB.Create(&order).Error; err != nil {
 		log.Printf("❌ [User %d] Error creando pedido: %v", user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error guardando el pedido"})
 		return
 	}
+	// Descuenta del Inventario lo que lleva el pedido (kárdex "pedido").
+	orderApplyStock(&order, "Mis ventas")
 
 	log.Printf("✅ [User %d] Pedido creado con ID: %d", user.ID, order.ID)
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"id":      order.ID,
-		"message": "Pedido creado exitosamente",
+		"success":      true,
+		"id":           order.ID,
+		"trackingCode": order.TrackingCode,
+		"message":      "Pedido creado exitosamente",
 	})
 }
 
@@ -180,17 +186,23 @@ func UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	result := config.DB.Model(&models.Order{}).
-		Where("id = ? AND user_id = ?", orderID, user.ID).
-		Update("status", req.Status)
-
-	if result.Error != nil {
+	var order models.Order
+	if err := config.DB.Where("id = ? AND user_id = ?", orderID, user.ID).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pedido no encontrado"})
+		return
+	}
+	prev := order.Status
+	if err := config.DB.Model(&order).Update("status", req.Status).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error actualizando estado"})
 		return
 	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Pedido no encontrado"})
-		return
+	order.Status = models.OrderStatus(req.Status)
+	// Inventario: cancelado → regresa lo que se había descontado;
+	// reactivado → se vuelve a descontar.
+	if order.Status == models.OrderStatusCancelled {
+		orderReturnStock(&order, "cancelado", "Mis ventas")
+	} else if prev == models.OrderStatusCancelled {
+		orderApplyStock(&order, "Mis ventas")
 	}
 
 	log.Printf("✅ [User %d] Pedido %s → %s", user.ID, orderID, req.Status)
@@ -206,6 +218,11 @@ func DeleteOrder(c *gin.Context) {
 	}
 	user := userInterface.(*models.User)
 	orderID := c.Param("id")
+
+	var existing models.Order
+	if err := config.DB.Where("id = ? AND user_id = ?", orderID, user.ID).First(&existing).Error; err == nil {
+		orderReturnStock(&existing, "eliminado", "Mis ventas")
+	}
 
 	result := config.DB.Where("id = ? AND user_id = ?", orderID, user.ID).
 		Delete(&models.Order{})
@@ -248,6 +265,8 @@ func orderToResponse(o models.Order, agentNames map[uint]string) OrderResponse {
 		PaymentMethod:   o.PaymentMethod,
 		CashReceived:    o.CashReceived,
 		CreatedAt:       o.CreatedAt.Format("2006-01-02 15:04"),
+		TrackingCode:    o.TrackingCode,
+		StockApplied:    o.StockApplied,
 	}
 }
 
@@ -308,12 +327,15 @@ func CreateBotOrder(c *gin.Context) {
 		EstimatedTime:   30,
 	}
 
+	order.TrackingCode = orderNewTrackingCode()
 	if err := config.DB.Create(&order).Error; err != nil {
 		log.Printf("❌ [Bot] Error guardando pedido: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error guardando pedido"})
 		return
 	}
+	// Descuenta del Inventario lo que pidió el cliente por WhatsApp.
+	orderApplyStock(&order, "Bot "+agent.Name)
 
 	log.Printf("✅ [Bot] Pedido creado ID=%d agente=%d cliente=%s", order.ID, req.AgentID, req.ClientName)
-	c.JSON(http.StatusOK, gin.H{"success": true, "id": order.ID})
+	c.JSON(http.StatusOK, gin.H{"success": true, "id": order.ID, "trackingCode": order.TrackingCode})
 }

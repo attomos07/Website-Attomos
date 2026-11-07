@@ -51,6 +51,7 @@ type InventoryItemRecord struct {
 	UnidadVenta    string    `gorm:"size:12;not null;default:'PZA'"`
 	Factor         float64   `gorm:"type:decimal(10,3);not null;default:1"`
 	Servicio       bool      `gorm:"not null;default:false"`
+	SinRastreo     bool      `gorm:"not null;default:false"`
 	IVA            bool      `gorm:"column:iva;not null;default:true"`
 	PrecioCompra   float64   `gorm:"type:decimal(12,2);not null;default:0"`
 	Precio1        float64   `gorm:"column:precio_1;type:decimal(12,2);not null;default:0"`
@@ -205,7 +206,8 @@ const (
 	InvMovIn      = "entrada" // Ajustar → entrada (compra, devolución…)
 	InvMovOut     = "salida"  // Ajustar → salida (merma, dañado…)
 	InvMovAdjust  = "ajuste"  // inventario físico / fijar existencia
-	InvMovSale    = "venta"   // venta (para cuando se conecte un punto de venta)
+	InvMovSale    = "venta"   // venta del Punto de venta
+	InvMovOrder   = "pedido"  // pedido del bot, de Comy o del panel (Mis ventas)
 )
 
 // MaxInvPhotos — fotos por artículo.
@@ -347,6 +349,7 @@ type InvItem struct {
 	UnidadVenta    string  `json:"unidad_venta"`
 	Factor         float64 `json:"factor"`
 	Servicio       bool    `json:"servicio"`
+	SinRastreo     bool    `json:"sin_rastreo"` // ópticas: no le abre pedido (clave de rastreo) al venderlo
 	IVA            bool    `json:"iva"`
 	PrecioCompra   float64 `json:"precio_compra"`
 	Precio1        float64 `json:"precio_1"`
@@ -380,7 +383,7 @@ const invItemSelect = `
 	SELECT i.id, i.clave, i.clave_alterna, i.descripcion,
 	       COALESCE(i.departamento_id, 0), COALESCE(d.nombre, ''),
 	       COALESCE(i.categoria_id, 0), COALESCE(c.nombre, ''),
-	       i.unidad_compra, i.unidad_venta, i.factor, i.servicio, i.iva,
+	       i.unidad_compra, i.unidad_venta, i.factor, i.servicio, i.sin_rastreo, i.iva,
 	       i.precio_compra, i.precio_1, i.precio_2, i.precio_3, i.precio_4,
 	       i.mayoreo_2, i.mayoreo_3, i.mayoreo_4,
 	       i.existencia, i.inv_minimo, i.inv_maximo, i.localizacion,
@@ -397,7 +400,7 @@ func scanInvItem(sc interface{ Scan(...interface{}) error }) (InvItem, error) {
 	var extra, mats string
 	err := sc.Scan(&a.ID, &a.Clave, &a.ClaveAlterna, &a.Descripcion,
 		&a.DepartamentoID, &a.Departamento, &a.CategoriaID, &a.Categoria,
-		&a.UnidadCompra, &a.UnidadVenta, &a.Factor, &a.Servicio, &a.IVA,
+		&a.UnidadCompra, &a.UnidadVenta, &a.Factor, &a.Servicio, &a.SinRastreo, &a.IVA,
 		&a.PrecioCompra, &a.Precio1, &a.Precio2, &a.Precio3, &a.Precio4,
 		&a.Mayoreo2, &a.Mayoreo3, &a.Mayoreo4,
 		&a.Existencia, &a.Minimo, &a.Maximo, &a.Localizacion,
@@ -489,12 +492,12 @@ func CreateInvItem(userID uint, a InvItem, usuario string) (*InvItem, error) {
 	res, err := tx.Exec(
 		`INSERT INTO inv_articulos
 		   (user_id, clave, clave_alterna, descripcion, departamento_id, categoria_id, unidad_compra, unidad_venta, factor,
-		    servicio, iva, precio_compra, precio_1, precio_2, precio_3, precio_4, mayoreo_2, mayoreo_3, mayoreo_4,
+		    servicio, sin_rastreo, iva, precio_compra, precio_1, precio_2, precio_3, precio_4, mayoreo_2, mayoreo_3, mayoreo_4,
 		    existencia, inv_minimo, inv_maximo, localizacion,
 		    tipo_armazon, color_principal, colores_extra, mica_tipo, materiales, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		userID, NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
-		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.IVA,
+		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
 		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4,
 		a.Existencia, a.Minimo, a.Maximo, a.Localizacion,
@@ -544,13 +547,13 @@ func UpdateInvItem(userID uint, a InvItem, keepCost bool) (*InvItem, error) {
 	_, err = invDB().Exec(
 		`UPDATE inv_articulos SET
 		   clave = ?, clave_alterna = ?, descripcion = ?, departamento_id = ?, categoria_id = ?,
-		   unidad_compra = ?, unidad_venta = ?, factor = ?, servicio = ?, iva = ?,
+		   unidad_compra = ?, unidad_venta = ?, factor = ?, servicio = ?, sin_rastreo = ?, iva = ?,
 		   precio_compra = ?, precio_1 = ?, precio_2 = ?, precio_3 = ?, precio_4 = ?,
 		   mayoreo_2 = ?, mayoreo_3 = ?, mayoreo_4 = ?, inv_minimo = ?, inv_maximo = ?, localizacion = ?,
 		   tipo_armazon = ?, color_principal = ?, colores_extra = ?, mica_tipo = ?, materiales = ?, updated_at = ?
 		 WHERE id = ? AND user_id = ?`,
 		NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
-		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.IVA,
+		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
 		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4, a.Minimo, a.Maximo, a.Localizacion,
 		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","), invNow(),

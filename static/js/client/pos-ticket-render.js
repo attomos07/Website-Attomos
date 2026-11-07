@@ -72,7 +72,7 @@
         folio: true, fecha: true, hora: true,
         formasPago: true, soloUsadas: false, cambio: true,
         caja: true, cliente: true, cajero: true,
-        rastreo: false, pedido: false
+        rastreo: false, pedido: !!b.optica
       },
       pagare: {
         activo: false,
@@ -114,7 +114,8 @@
         { descripcion: 'SERVICIO DE EJEMPLO', cantidad: 1, precio: 1519, descuento: 0 }
       ],
       pagos: { efectivo: 0, cheque: 0, vales: 0, transferencia: 2000, tarjeta: 1219, credito: 0 },
-      cambio: 0
+      cambio: 0,
+      pedido: biz().optica ? 'AT7K3P9Q' : ''
     };
   }
 
@@ -303,7 +304,7 @@
         '<div class="tk-c">CLAVE DE RASTREO</div>' +
         '<div class="tk-c tk-pedido-code">' + esc(venta.pedido) + '</div>' +
         barcodeSVG(String(venta.pedido || '').replace(/[^A-Za-z0-9]/g, ''), tpl.papel.ancho === 58 ? 58 : 80) +
-        '<div class="tk-c tk-pedido-hint">CONSULTA TU PEDIDO EN<br>' + esc(tpl.rastreoUrl || '') + '</div>' +
+        '<div class="tk-c tk-pedido-hint">CONSULTA TU PEDIDO EN<br>' + esc(tpl.rastreoUrl || (location.host + '/rastreo')) + '</div>' +
       '</div>');
     }
 

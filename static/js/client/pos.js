@@ -1386,8 +1386,12 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 
   /* ---------- estatus de los pedidos (los mismos de Laboratorio / Rastreo) ---------- */
   var estatus = {}, estatusList = [];
-  // Attomos: todavía sin pedidos de laboratorio (clave de rastreo).
-  var estatusReady = Promise.resolve();
+  // Ópticas: cada venta con productos abre un pedido con clave de rastreo.
+  var OPTICA = document.body.getAttribute('data-optica') === '1';
+  var estatusReady = OPTICA ? api('/api/pos/estados').then(function (list) {
+    estatusList = Array.isArray(list) ? list : [];
+    estatusList.forEach(function (st) { estatus[st.key] = st; });
+  }).catch(function () {}) : Promise.resolve();
   function pedidoChip(code, status) {
     if (!code) return '<span class="vt-zero">—</span>';
     var st = estatus[status] || { label: status || '—', color: '' };
@@ -1507,6 +1511,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
         '<td class="num">' + moneyCell(v.abonado) + '</td>' +
         '<td class="num vt-owes">' + (v.saldo > 0 ? '<b>' + money(v.saldo) + '</b>' : '<span class="vt-zero">—</span>') + '</td>' +
         '<td><span class="vt-chip is-' + v.estado + '"' + (v.vence && v.saldo > 0 ? ' title="Vence el ' + esc(fechaLarga(v.vence)) + '"' : '') + '>' + (ESTADO[v.estado] || v.estado) + '</span></td>' +
+        (OPTICA ? '<td class="vt-ped-cell">' + pedidoChip(v.pedido_code, v.pedido_status) + (v.pedido_code ? '<small>' + esc(v.pedido_code) + '</small>' : '') + '</td>' : '') +
       '</tr>';
     }).join('');
 
@@ -1584,8 +1589,10 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
         '<br><small>El dinero salió de la caja en el corte en que se canceló y el inventario regresó.</small></div>';
     }
 
-    // Clave = la del artículo en Inventario. Clave de rastreo = el número
-    // AVT de la pieza que se vendió (con ese se consulta el pedido).
+    // Ópticas: pedido con su clave de rastreo y su estatus.
+    if (OPTICA) html += '<div class="vt-d-pedido" id="vtPedido">' + pedidoBox(v) + '</div>';
+
+    // Clave = la del artículo en Inventario.
     html += '<div class="vt-d-section"><h4>Productos</h4><div class="vt-d-table-wrap"><table class="vt-d-table"><thead><tr><th>Cant.</th><th>Clave</th><th>Descripción</th><th class="num">P. unit.</th><th class="num">Importe</th></tr></thead><tbody>' +
       v.productos.map(function (p) {
         var rs = p.rastreo && p.rastreo.length

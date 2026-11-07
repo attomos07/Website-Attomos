@@ -1154,8 +1154,8 @@ window.InvLabels = (function () {
     var s = $('aServicio').checked;
     ['aExistencia', 'aMinimo', 'aMaximo'].forEach(function (id) { $(id).disabled = s || (id === 'aExistencia' && !!editing); });
     if (s) { $('aExistencia').value = ''; }
-    // Attomos: no hay claves de rastreo por compra; la opción no se muestra.
-    $('aSinRastreoWrap').hidden = true;
+    // Ópticas: la clave de rastreo se crea por compra; los servicios no la llevan.
+    $('aSinRastreoWrap').hidden = !I.optica || s;
   }
   $('aServicio').addEventListener('change', syncServicio);
   ['aClave', 'aClaveAlt'].forEach(function (id) {
@@ -1427,6 +1427,7 @@ window.InvLabels = (function () {
       unidad_venta: aUV.get(),
       factor: parseFloat($('aFactor').value) || 1,
       servicio: $('aServicio').checked,
+      sin_rastreo: I.optica && !$('aServicio').checked && $('aSinRastreo').checked,
       iva: $('aIva').checked,
       precio_compra: I.round2(compra()),
       existencia: editing ? 0 : intVal('aExistencia'),
@@ -3534,7 +3535,7 @@ window.InvEscaner = (function () {
   var I = window.Inv;
   if (!I || !I.$('invMovimientos')) return;
   var $ = I.$, esc = I.esc;
-  var TIPOS = { venta: 'Venta', entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', inicial: 'Alta' };
+  var TIPOS = { venta: 'Venta', pedido: 'Pedido', entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', inicial: 'Alta' };
 
   var f = { item: 0, q: '', tipo: '', per: '30d' };
   var arts = [];

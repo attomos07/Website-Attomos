@@ -213,6 +213,7 @@ type invItemBody struct {
 	UnidadVenta    string  `json:"unidad_venta"`
 	Factor         float64 `json:"factor"`
 	Servicio       bool    `json:"servicio"`
+	SinRastreo     bool    `json:"sin_rastreo"`
 	IVA            bool    `json:"iva"`
 	PrecioCompra   float64 `json:"precio_compra"`
 	Precio1        float64 `json:"precio_1"`
@@ -302,7 +303,7 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 		Clave: b.Clave, ClaveAlterna: b.ClaveAlterna, Descripcion: b.Descripcion,
 		DepartamentoID: b.DepartamentoID, CategoriaID: b.CategoriaID,
 		UnidadCompra: b.UnidadCompra, UnidadVenta: b.UnidadVenta, Factor: b.Factor,
-		Servicio: b.Servicio, IVA: b.IVA,
+		Servicio: b.Servicio, IVA: b.IVA, SinRastreo: b.SinRastreo,
 		PrecioCompra: b.PrecioCompra, Precio1: b.Precio1, Precio2: b.Precio2, Precio3: b.Precio3, Precio4: b.Precio4,
 		Mayoreo2: b.Mayoreo2, Mayoreo3: b.Mayoreo3, Mayoreo4: b.Mayoreo4,
 		Existencia: b.Existencia, Minimo: b.Minimo, Maximo: b.Maximo, Localizacion: b.Localizacion,

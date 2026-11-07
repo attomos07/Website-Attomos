@@ -410,6 +410,8 @@ type PosSale struct {
 	PropinaForma string        `json:"propina_forma"`
 	CreditID     int64         `json:"credit_id,omitempty"`
 	Vence        string        `json:"vence,omitempty"`
+	// Ópticas: pedido con su clave de rastreo (se abre al cobrar).
+	Pedido *PosPedido `json:"pedido,omitempty"`
 }
 
 // PosStockError: no alcanzó la existencia de un producto.
@@ -869,7 +871,9 @@ const posSaleRowSelect = `SELECT s.id, s.folio, DATE_FORMAT(s.created_at, '%Y-%m
 		COALESCE((SELECT SUM(i.cantidad) FROM pos_sale_items i WHERE i.sale_id = s.id), 0),
 		s.total, s.efectivo - s.cambio, s.tarjeta, s.transferencia, s.vales, s.cheque, s.credito,
 		COALESCE(cr.saldo, 0), COALESCE(DATE_FORMAT(cr.vence, '%Y-%m-%d'), ''), ` + posEstadoExpr + `,
-		s.cancelada, COALESCE(DATE_FORMAT(s.cancelada_at, '%Y-%m-%dT%H:%i:%s'), ''), s.cancelada_por, s.cancel_motivo, s.propina, s.propina_forma
+		s.cancelada, COALESCE(DATE_FORMAT(s.cancelada_at, '%Y-%m-%dT%H:%i:%s'), ''), s.cancelada_por, s.cancel_motivo, s.propina, s.propina_forma,
+		COALESCE((SELECT o.tracking_code FROM orders o WHERE o.pos_sale_id = s.id AND o.user_id = s.user_id AND o.deleted_at IS NULL ORDER BY o.id LIMIT 1), ''),
+		COALESCE((SELECT o.status FROM orders o WHERE o.pos_sale_id = s.id AND o.user_id = s.user_id AND o.deleted_at IS NULL ORDER BY o.id LIMIT 1), '')
 	FROM pos_sales s LEFT JOIN pos_credits cr ON cr.sale_id = s.id`
 
 func scanPosSaleRow(sc interface{ Scan(...interface{}) error }) (PosSaleRow, error) {
@@ -877,7 +881,8 @@ func scanPosSaleRow(sc interface{ Scan(...interface{}) error }) (PosSaleRow, err
 	err := sc.Scan(&r.ID, &r.Folio, &r.Fecha, &r.ClientID, &r.Cliente, &r.Cajero, &r.Articulos,
 		&r.Total, &r.Efectivo, &r.Tarjeta, &r.Transferencia, &r.Vales, &r.Cheque, &r.Credito,
 		&r.Saldo, &r.Vence, &r.Estado,
-		&r.Cancelada, &r.CanceladaAt, &r.CanceladaPor, &r.CancelMotivo, &r.Propina, &r.PropinaForma)
+		&r.Cancelada, &r.CanceladaAt, &r.CanceladaPor, &r.CancelMotivo, &r.Propina, &r.PropinaForma,
+		&r.PedidoCode, &r.PedidoStatus)
 	r.Efectivo = round2(r.Efectivo)
 	r.Pagado = round2(r.Total - r.Credito)
 	r.Saldo = round2(r.Saldo)
@@ -903,8 +908,9 @@ func ListPosSales(userID uint, f PosSalesFilter, limit int) ([]PosSaleRow, PosSa
 	}
 	for _, w := range strings.Fields(strings.ToLower(f.Q)) {
 		like := "%" + strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(w) + "%"
-		query += " AND (LOWER(s.cliente) LIKE ? OR CAST(s.folio AS CHAR) LIKE ? OR LOWER(s.cajero) LIKE ?)"
-		args = append(args, like, like, like)
+		query += " AND (LOWER(s.cliente) LIKE ? OR CAST(s.folio AS CHAR) LIKE ? OR LOWER(s.cajero) LIKE ?" +
+			" OR EXISTS (SELECT 1 FROM orders o WHERE o.pos_sale_id = s.id AND o.user_id = s.user_id AND LOWER(o.tracking_code) LIKE ?))"
+		args = append(args, like, like, like, like)
 	}
 	if f.Estado == "pagada" || f.Estado == "debe" || f.Estado == "vencida" || f.Estado == "cancelada" {
 		query += " AND (" + posEstadoExpr + ") = ?"

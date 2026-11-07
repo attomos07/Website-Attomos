@@ -82,10 +82,10 @@
   function parseISO(s) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):?(\d{2})?)?/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) : new Date(); }
   Promise.all([
     fetch('/api/pos-ticket/' + encodeURIComponent(uid) + '/' + encodeURIComponent(folio) + '/' + encodeURIComponent(sig)).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }),
-    Promise.resolve([])
+    Promise.resolve(null)
   ]).then(function (res) {
-    var d = res[0], estados = Array.isArray(res[1]) ? res[1] : [];
-    var v = d.venta, T = window.AvanteTicket;
+    var d = res[0], estados = Array.isArray(d.estados) ? d.estados : [];
+    var v = d.venta, T = window.PosTicket;
     window.POS_BIZ = d.negocio || window.POS_BIZ;
     var tpl = T.merge(d.plantilla);
     document.getElementById('tdTicket').innerHTML = T.html(tpl, {

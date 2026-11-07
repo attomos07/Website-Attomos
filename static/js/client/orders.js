@@ -147,7 +147,8 @@ function filterOrders() {
         f = f.filter(o =>
             o.clientName.toLowerCase().includes(s) ||
             (o.clientPhone && o.clientPhone.includes(s)) ||
-            (o.items && itemsToText(o.items).toLowerCase().includes(s))
+            (o.items && itemsToText(o.items).toLowerCase().includes(s)) ||
+            (o.trackingCode && o.trackingCode.toLowerCase().includes(s))
         );
     }
     return f;
@@ -210,7 +211,7 @@ function createRow(o) {
         <div class="table-client"><svg style="width:1em;height:1em;vertical-align:middle;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${escHtml(o.clientName)}</div>
         ${o.clientPhone ? `<div class="table-phone" style="margin-top:.25rem"><a href="tel:${o.clientPhone}">${escHtml(o.clientPhone)}</a></div>` : ''}
       </td>
-      <td><div class="table-items">${escHtml(itemsText)}</div></td>
+      <td><div class="table-items">${escHtml(itemsText)}</div>${o.trackingCode ? `<a class="order-track" href="/rastreo?pedido=${encodeURIComponent(o.trackingCode)}" target="_blank" rel="noopener" title="Clave de rastreo: el cliente ve cómo va su pedido">${escHtml(o.trackingCode)}</a>` : ''}${o.stockApplied ? `<span class="order-stock" title="Ya se descontó del Inventario; si lo cancelas, regresa">Inventario descontado</span>` : ''}</td>
       <td>
         <div class="table-total">$${(o.total||0).toFixed(2)}</div>
         ${payMethod ? `<span class="pay-badge ${payCls[payMethod]||''}">${payLabel[payMethod]||payMethod}</span>` : ''}
@@ -837,7 +838,7 @@ function statusLabel(s) {
 }
 
 function sourceLabel(s) {
-    return { manual: t('hist_source_manual','Manual'), agent:'WhatsApp Bot', ninda:'Ninda' }[s] || s;
+    return { manual: t('hist_source_manual','Manual'), agent:'WhatsApp Bot', ninda:'Comy', pos:'Punto de venta' }[s] || s;
 }
 
 function escHtml(t) {

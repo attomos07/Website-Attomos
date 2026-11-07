@@ -66,10 +66,12 @@ type posBusiness struct {
 	Correo    string `json:"correo"`
 	Telefono  string `json:"telefono"`
 	Logo      string `json:"logo"`
+	// Ópticas: el ticket lleva la clave de rastreo del pedido.
+	Optica bool `json:"optica"`
 }
 
 func posBusinessInfo(userID uint) posBusiness {
-	out := posBusiness{Nombre: invBusinessName(userID)}
+	out := posBusiness{Nombre: invBusinessName(userID), Optica: invIsOptica(userID)}
 	var b models.MyBusinessInfo
 	if err := config.DB.Where("user_id = ?", userID).Order("branch_number ASC").First(&b).Error; err == nil {
 		l := b.Location
@@ -338,6 +340,14 @@ func PosCreateSale(c *gin.Context) {
 		}
 		return
 	}
+	// Ópticas: la venta con productos abre su pedido con clave de rastreo.
+	if invIsOptica(uid) {
+		if p, err := models.CreatePosPedido(uid, sale.ID); err == nil {
+			sale.Pedido = p
+		} else if !errors.Is(err, models.ErrPosPedidoSinProductos) {
+			log.Printf("pos.CreateSale: pedido del ticket %d: %v", sale.Folio, err)
+		}
+	}
 	// La existencia cambió: los bots ofrecen el catálogo del Inventario.
 	invNotifyBots(uid)
 	c.JSON(http.StatusCreated, gin.H{"venta": sale})
@@ -396,6 +406,12 @@ func PosCancelSale(c *gin.Context) {
 	_ = c.ShouldBindJSON(&in)
 	uid := invUserID(c)
 	err := models.CancelPosSale(uid, folio, posCashier(c), in.Motivo)
+	if err == nil {
+		// Su pedido (clave de rastreo) también se cancela.
+		if sid, e := models.PosSaleInternalID(uid, folio); e == nil {
+			models.CancelPosPedido(uid, sid)
+		}
+	}
 	switch {
 	case errors.Is(err, models.ErrPosSaleNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "No existe ese ticket."})
@@ -507,4 +523,66 @@ func PosSaveTicketTemplate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+/* ---------------- pedido de la venta (clave de rastreo) ---------------- */
+
+// PosOrderStatuses — GET /api/pos/estados: los estatus de los pedidos.
+func PosOrderStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, models.OrderStatusList(invIsOptica(invUserID(c))))
+}
+
+// PosCreatePedido — POST /api/pos/ventas/:id/pedido (id = folio)
+func PosCreatePedido(c *gin.Context) {
+	folio, ok := posID(c)
+	if !ok {
+		return
+	}
+	uid := invUserID(c)
+	sid, err := models.PosSaleInternalID(uid, folio)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No existe ese ticket."})
+		return
+	}
+	p, err := models.CreatePosPedido(uid, sid)
+	switch {
+	case errors.Is(err, models.ErrPosPedidoSinProductos):
+		msg := err.Error()
+		c.JSON(http.StatusBadRequest, gin.H{"error": strings.ToUpper(msg[:1]) + msg[1:] + "."})
+	case err != nil:
+		posFail(c, "CreatePedido", err, "No se pudo crear el pedido.")
+	default:
+		c.JSON(http.StatusOK, gin.H{"pedido": p})
+	}
+}
+
+// PosSetPedidoStatus — PUT /api/pos/ventas/:id/pedido/estado {status}
+func PosSetPedidoStatus(c *gin.Context) {
+	folio, ok := posID(c)
+	if !ok {
+		return
+	}
+	var in struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil || !models.IsOrderStatusKey(in.Status) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Estatus inválido."})
+		return
+	}
+	uid := invUserID(c)
+	sid, err := models.PosSaleInternalID(uid, folio)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No existe ese ticket."})
+		return
+	}
+	p, err := models.SetPosPedidoStatus(uid, sid, in.Status)
+	if errors.Is(err, models.ErrPosSaleNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Esa venta no tiene pedido."})
+		return
+	}
+	if err != nil {
+		posFail(c, "SetPedidoStatus", err, "No se pudo cambiar el estatus.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"pedido": p})
 }

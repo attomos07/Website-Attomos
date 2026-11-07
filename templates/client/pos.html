@@ -20,10 +20,10 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
-    <link rel="stylesheet" href="/static/css/client/inventory.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=5">
     <link rel="stylesheet" href="/static/css/client/pos.css?v=2">
 </head>
-<body class="inv-body pos-body" data-biz="{{.BizJSON}}">
+<body class="inv-body pos-body" data-biz="{{.BizJSON}}" data-optica="{{if .Optica}}1{{end}}">
     <div class="decorative-rings">
         <div class="ring ring-1"></div>
         <div class="ring ring-2"></div>
@@ -463,7 +463,7 @@
             <div class="search-box-glow"></div>
             <div class="search-box-inner">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" id="vtSearch" placeholder="Buscar por cliente, ticket o cajero…" autocomplete="off">
+              <input type="search" id="vtSearch" placeholder="Buscar por cliente, ticket o cajero{{if .Optica}} o clave de rastreo{{end}}…" autocomplete="off">
             </div>
           </div>
           <div class="vt-chips" id="vtEstado" role="group" aria-label="Estado">
@@ -494,6 +494,7 @@
               <th class="num">Abonado</th>
               <th class="num">Debe</th>
               <th>Estado</th>
+              {{if .Optica}}<th title="Estatus del pedido y su clave de rastreo">Rastreo</th>{{end}}
             </tr>
           </thead>
           <tbody id="vtBody"></tbody>
@@ -510,6 +511,7 @@
               <td class="num" id="vtFtAbonado"></td>
               <td class="num" id="vtFtSaldo"></td>
               <td></td>
+              {{if .Optica}}<td></td>{{end}}
               <td></td>
             </tr>
           </tfoot>
@@ -1070,6 +1072,7 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.folio"><span class="tkp-switch-track"></span><span>No. de ticket</span></label>
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.fecha"><span class="tkp-switch-track"></span><span>Fecha</span></label>
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.hora"><span class="tkp-switch-track"></span><span>Hora</span></label>
+            {{if .Optica}}<label class="tkp-switch"><input type="checkbox" data-path="mostrar.pedido"><span class="tkp-switch-track"></span><span>Clave de rastreo (abajo, para consultar el pedido)</span></label>{{end}}
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.formasPago"><span class="tkp-switch-track"></span><span>Formas de pago</span></label>
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.soloUsadas"><span class="tkp-switch-track"></span><span>Solo las formas usadas</span></label>
             <label class="tkp-switch"><input type="checkbox" data-path="mostrar.cambio"><span class="tkp-switch-track"></span><span>Cambio</span></label>
@@ -1221,7 +1224,7 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-<script src="/static/js/client/pos-ticket-render.js?v=2"></script>
-<script src="/static/js/client/pos.js?v=2"></script>
+<script src="/static/js/client/pos-ticket-render.js?v=3"></script>
+<script src="/static/js/client/pos.js?v=3"></script>
 </body>
 </html>
