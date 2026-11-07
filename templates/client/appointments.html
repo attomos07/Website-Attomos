@@ -1,6 +1,6 @@
 {{/* Mis citas (sidebar → Mis citas). Portado de Recepción → Citas de Avante
      Optics con el diseño de Attomos. Las filas las arma el servidor
-     (handlers/appointments_panel.go) y static/js/client/citas.js trabaja
+     (handlers/appointments_panel.go) y static/js/client/appointments.js trabaja
      sobre ellas. Lo de óptica (revisiones / ¿compró?) solo sale en ópticas. */}}
 <!DOCTYPE html>
 <html lang="es">
@@ -13,7 +13,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=4">
-    <link rel="stylesheet" href="/static/css/client/citas.css?v=1">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=5">
 </head>
 <body class="inv-body citas-body" data-optica="{{if .Optica}}1{{end}}" data-cap="{{.Capacidad}}" data-biz-name="{{.BusinessName}}" data-services="{{.ServicesJSON}}" data-workers="{{.WorkersJSON}}">
     <div class="decorative-rings">
@@ -817,6 +817,6 @@
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-<script src="/static/js/client/citas.js?v=1"></script>
+<script src="/static/js/client/appointments.js?v=5"></script>
 </body>
 </html>
