@@ -506,6 +506,7 @@ func main() {
 		// ============================================
 		if metaWhatsAppHandler != nil {
 			protected.GET("/meta/connect", metaWhatsAppHandler.InitiateConnection)
+			protected.POST("/meta/embedded-signup/:agent_id", metaWhatsAppHandler.CompleteEmbeddedSignup)
 			router.GET("/api/meta/callback", metaWhatsAppHandler.HandleCallback)
 			protected.GET("/meta/status/:agent_id", metaWhatsAppHandler.GetConnectionStatus)
 			protected.POST("/meta/disconnect/:agent_id", metaWhatsAppHandler.DisconnectWhatsApp)

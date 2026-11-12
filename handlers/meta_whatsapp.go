@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,8 +26,10 @@ type MetaWhatsAppConfig struct {
 	AppSecret   string
 	RedirectURL string
 	// ConfigID es la configuración de "Inicio de sesión con Facebook para
-	// empresas" (developers.facebook.com → Inicio de sesión con Facebook →
-	// Configuraciones). Opcional: si está vacío se usa el flujo clásico con scope.
+	// empresas" creada con la variación "WhatsApp Embedded Signup"
+	// (developers.facebook.com → Inicio de sesión con Facebook → Configuraciones).
+	// Si está definida, el panel usa Embedded Signup (SDK de JavaScript);
+	// si está vacía, se usa el flujo OAuth clásico con scope.
 	ConfigID string
 }
 
@@ -55,7 +59,7 @@ func NewMetaWhatsAppHandler() (*MetaWhatsAppHandler, error) {
 	log.Printf("   - App ID: %s", clientID)
 	log.Printf("   - Redirect URL: %s", redirectURL)
 	if config.ConfigID != "" {
-		log.Printf("   - Facebook Login for Business config_id: %s", config.ConfigID)
+		log.Printf("   - WhatsApp Embedded Signup config_id: %s", config.ConfigID)
 	} else {
 		log.Printf("   - ⚠️  META_CONFIG_ID vacío: se usará el flujo OAuth clásico con scope")
 	}
@@ -94,6 +98,19 @@ func (h *MetaWhatsAppHandler) InitiateConnection(c *gin.Context) {
 		return
 	}
 
+	// Embedded Signup: el navegador abre el popup oficial de Meta con el SDK
+	// de JavaScript y luego manda el código a CompleteEmbeddedSignup.
+	if h.config.ConfigID != "" {
+		c.JSON(http.StatusOK, gin.H{
+			"mode":          "embedded_signup",
+			"app_id":        h.config.AppID,
+			"config_id":     h.config.ConfigID,
+			"graph_version": "v22.0",
+			"agent_id":      agentID,
+		})
+		return
+	}
+
 	// Generar state token para CSRF protection
 	// Formato: user_id:agent_id:timestamp
 	stateToken := fmt.Sprintf("%d:%d:%d", user.ID, agentID, time.Now().Unix())
@@ -116,14 +133,7 @@ func (h *MetaWhatsAppHandler) InitiateConnection(c *gin.Context) {
 	params.Set("redirect_uri", h.config.RedirectURL)
 	params.Set("state", stateEncoded)
 	params.Set("response_type", "code")
-	if h.config.ConfigID != "" {
-		// Facebook Login for Business: los permisos y el tipo de token
-		// (usuario del sistema, sin caducidad) vienen de la configuración.
-		params.Set("config_id", h.config.ConfigID)
-		params.Set("override_default_response_type", "true")
-	} else {
-		params.Set("scope", "business_management,whatsapp_business_management,whatsapp_business_messaging")
-	}
+	params.Set("scope", "business_management,whatsapp_business_management,whatsapp_business_messaging")
 	authURL := "https://www.facebook.com/v22.0/dialog/oauth?" + params.Encode()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -178,6 +188,15 @@ func (h *MetaWhatsAppHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
+	// El código del flujo con scope da un token de usuario de 1–2 horas:
+	// cambiarlo por uno de larga duración (~60 días). Los tokens de usuario
+	// del sistema (config_id) no lo necesitan; si falla se usa el original.
+	if longLived, err := h.exchangeForLongLivedToken(accessToken); err == nil {
+		accessToken = longLived
+	} else {
+		log.Printf("ℹ️  No se cambió a token de larga duración (se usa el original): %v", err)
+	}
+
 	// Datos del token: WABA autorizadas y caducidad (debug_token)
 	tokenInfo, err := h.debugToken(accessToken)
 	if err != nil {
@@ -188,6 +207,7 @@ func (h *MetaWhatsAppHandler) HandleCallback(c *gin.Context) {
 	// Obtener WABA ID: primero la que el usuario eligió en el diálogo de
 	// Facebook; si no viene, el método anterior (/me/businesses)
 	wabaID := tokenInfo.firstTarget("whatsapp_business_management")
+	log.Printf("🔎 debug_token: expires_at=%d, scopes=%+v", tokenInfo.ExpiresAt, tokenInfo.GranularScopes)
 	if wabaID == "" {
 		wabaID, err = h.getWABAID(accessToken)
 	}
@@ -288,6 +308,39 @@ func (h *MetaWhatsAppHandler) exchangeCodeForToken(code string) (string, error) 
 	return result.AccessToken, nil
 }
 
+// exchangeForLongLivedToken cambia un token de usuario de corta duración
+// por uno de larga duración (~60 días)
+func (h *MetaWhatsAppHandler) exchangeForLongLivedToken(shortToken string) (string, error) {
+	params := url.Values{}
+	params.Set("grant_type", "fb_exchange_token")
+	params.Set("client_id", h.config.AppID)
+	params.Set("client_secret", h.config.AppSecret)
+	params.Set("fb_exchange_token", shortToken)
+
+	resp, err := http.Get("https://graph.facebook.com/v22.0/oauth/access_token?" + params.Encode())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		AccessToken string `json:"access_token"`
+		Error       *struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.AccessToken == "" {
+		if result.Error != nil {
+			return "", fmt.Errorf("%s", result.Error.Message)
+		}
+		return "", fmt.Errorf("respuesta sin access_token")
+	}
+	return result.AccessToken, nil
+}
+
 // metaTokenInfo es lo que nos interesa de GET /debug_token
 type metaTokenInfo struct {
 	ExpiresAt      int64 `json:"expires_at"`
@@ -383,12 +436,18 @@ func (h *MetaWhatsAppHandler) getWABAID(accessToken string) (string, error) {
 		Data []struct {
 			ID string `json:"id"`
 		} `json:"data"`
+		Error *struct {
+			Message string `json:"message"`
+		} `json:"error"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
 
+	if result.Error != nil {
+		return "", fmt.Errorf("/me/businesses: %s", result.Error.Message)
+	}
 	if len(result.Data) == 0 {
 		return "", fmt.Errorf("no se encontraron negocios asociados")
 	}
@@ -412,10 +471,17 @@ func (h *MetaWhatsAppHandler) getWABAID(accessToken string) (string, error) {
 		Data []struct {
 			ID string `json:"id"`
 		} `json:"data"`
+		Error *struct {
+			Message string `json:"message"`
+		} `json:"error"`
 	}
 
 	if err := json.NewDecoder(resp2.Body).Decode(&wabaResult); err != nil {
 		return "", err
+	}
+
+	if wabaResult.Error != nil {
+		return "", fmt.Errorf("owned_whatsapp_business_accounts: %s", wabaResult.Error.Message)
 	}
 
 	if len(wabaResult.Data) == 0 {
@@ -566,4 +632,204 @@ func (h *MetaWhatsAppHandler) DisconnectWhatsApp(c *gin.Context) {
 		"message":  "WhatsApp desconectado exitosamente",
 		"agent_id": agent.ID,
 	})
+}
+
+// ============================================================================
+// WHATSAPP EMBEDDED SIGNUP (flujo oficial para proveedores de tecnología)
+// ============================================================================
+
+// CompleteEmbeddedSignup recibe lo que regresa el popup de Embedded Signup
+// (código + WABA + número que eligió el cliente) y conecta el agente.
+// POST /api/meta/embedded-signup/:agent_id
+// Body: { "code": "...", "wabaId": "...", "phoneNumberId": "..." }
+func (h *MetaWhatsAppHandler) CompleteEmbeddedSignup(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
+		return
+	}
+	user := userInterface.(*models.User)
+
+	agentID, err := strconv.ParseUint(c.Param("agent_id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id inválido"})
+		return
+	}
+
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	var req struct {
+		Code          string `json:"code"`
+		WABAID        string `json:"wabaId"`
+		PhoneNumberID string `json:"phoneNumberId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Code) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Falta el código de autorización de Meta"})
+		return
+	}
+
+	// 1. Código → token de integración comercial (usuario del sistema, no caduca).
+	//    En el flujo del SDK de JavaScript el intercambio va SIN redirect_uri.
+	accessToken, err := h.exchangeEmbeddedSignupCode(req.Code)
+	if err != nil {
+		log.Printf("❌ [Agent %d] Embedded Signup: error intercambiando código: %v", agent.ID, err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Meta rechazó la autorización: " + err.Error()})
+		return
+	}
+
+	tokenInfo, err := h.debugToken(accessToken)
+	if err != nil {
+		log.Printf("⚠️  [Agent %d] debug_token falló (se continúa): %v", agent.ID, err)
+		tokenInfo = &metaTokenInfo{}
+	}
+
+	// 2. WABA y número: los manda el popup (sessionInfo); si no, del token
+	wabaID := strings.TrimSpace(req.WABAID)
+	if wabaID == "" {
+		wabaID = tokenInfo.firstTarget("whatsapp_business_management")
+	}
+	if wabaID == "" {
+		log.Printf("❌ [Agent %d] Embedded Signup sin WABA. scopes=%+v", agent.ID, tokenInfo.GranularScopes)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se recibió la cuenta de WhatsApp Business. Vuelve a intentarlo y completa todos los pasos."})
+		return
+	}
+
+	phoneNumberID := strings.TrimSpace(req.PhoneNumberID)
+	var displayNumber, verifiedName string
+	if phoneNumberID == "" {
+		info, err := h.getPhoneNumberInfo(accessToken, wabaID)
+		if err != nil {
+			log.Printf("❌ [Agent %d] Embedded Signup: sin número en WABA %s: %v", agent.ID, wabaID, err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "La cuenta de WhatsApp Business no tiene números de teléfono"})
+			return
+		}
+		phoneNumberID, displayNumber, verifiedName = info.PhoneNumberID, info.DisplayNumber, info.VerifiedName
+	} else {
+		displayNumber, verifiedName, _ = fetchMetaPhoneNumberInfo(accessToken, phoneNumberID)
+	}
+
+	// 3. Suscribir la app al WABA (webhooks → /webhook/meta-app)
+	h.subscribeAppToWABA(accessToken, wabaID)
+
+	// 4. Registrar el número en la Cloud API (necesario para números nuevos;
+	//    si ya estaba registrado, Meta lo indica y se continúa)
+	h.registerPhoneNumber(accessToken, phoneNumberID)
+
+	// 5. Guardar en el agente
+	now := time.Now()
+	tokenExpires := now.AddDate(10, 0, 0) // token de usuario del sistema: no caduca
+	if tokenInfo.ExpiresAt > 0 {
+		tokenExpires = time.Unix(tokenInfo.ExpiresAt, 0)
+	}
+
+	agent.MetaAccessToken = accessToken
+	agent.MetaWABAID = wabaID
+	agent.MetaPhoneNumberID = phoneNumberID
+	agent.MetaDisplayNumber = displayNumber
+	agent.MetaVerifiedName = verifiedName
+	agent.MetaConnected = true
+	agent.MetaConnectedAt = &now
+	agent.MetaTokenExpiresAt = &tokenExpires
+
+	if err := config.DB.Save(&agent).Error; err != nil {
+		log.Printf("❌ [Agent %d] Embedded Signup: error guardando: %v", agent.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar la conexión"})
+		return
+	}
+
+	log.Printf("✅ [Agent %d] WhatsApp conectado con Embedded Signup: %s (%s) WABA=%s", agent.ID, displayNumber, verifiedName, wabaID)
+
+	// 6. Llevar credenciales al bot y reiniciarlo
+	if agent.IsOrbitalBot() {
+		go updateMetaCredentialsInBot(&agent, generateWebhookVerifyToken(agent.ID))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"displayNumber": displayNumber,
+		"verifiedName":  verifiedName,
+		"wabaId":        wabaID,
+		"phoneNumberId": phoneNumberID,
+	})
+}
+
+// exchangeEmbeddedSignupCode intercambia el código del SDK de JavaScript
+// (sin redirect_uri) por el token de integración comercial
+func (h *MetaWhatsAppHandler) exchangeEmbeddedSignupCode(code string) (string, error) {
+	params := url.Values{}
+	params.Set("client_id", h.config.AppID)
+	params.Set("client_secret", h.config.AppSecret)
+	params.Set("code", code)
+
+	resp, err := http.Get("https://graph.facebook.com/v22.0/oauth/access_token?" + params.Encode())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		AccessToken string `json:"access_token"`
+		Error       *struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.AccessToken == "" {
+		if result.Error != nil {
+			return "", fmt.Errorf("%s", result.Error.Message)
+		}
+		return "", fmt.Errorf("respuesta sin access_token")
+	}
+	return result.AccessToken, nil
+}
+
+// registerPhoneNumber registra el número en la Cloud API con un PIN de
+// verificación en dos pasos aleatorio (el cliente puede cambiarlo después
+// en WhatsApp Manager). No bloquea la conexión si falla.
+func (h *MetaWhatsAppHandler) registerPhoneNumber(accessToken, phoneNumberID string) {
+	pin := randomSixDigitPIN()
+	body, _ := json.Marshal(map[string]string{
+		"messaging_product": "whatsapp",
+		"pin":               pin,
+	})
+
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("https://graph.facebook.com/v22.0/%s/register", phoneNumberID),
+		bytes.NewReader(body))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 20 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("⚠️  Error registrando el número %s: %v", phoneNumberID, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var out map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&out)
+		log.Printf("ℹ️  Registro del número %s respondió %d (si ya estaba registrado es normal): %v", phoneNumberID, resp.StatusCode, out)
+		return
+	}
+	log.Printf("✅ Número %s registrado en la Cloud API", phoneNumberID)
+}
+
+func randomSixDigitPIN() string {
+	b := make([]byte, 4)
+	if _, err := rand.Read(b); err != nil {
+		return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	}
+	n := (uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])) % 1000000
+	return fmt.Sprintf("%06d", n)
 }

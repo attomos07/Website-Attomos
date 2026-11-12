@@ -885,8 +885,16 @@ async function connectMetaWithFacebook() {
     try {
         const response = await fetch(`/api/meta/connect?agent_id=${agentId}`, { credentials: 'include' });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.auth_url) {
+        if (!response.ok) {
             throw new Error(data.error || t('ad_meta_fb_unavailable', 'La conexión con Facebook no está disponible. Usa tus credenciales.'));
+        }
+        if (data.mode === 'embedded_signup') {
+            await runEmbeddedSignup(data);
+            btn.disabled = false;
+            return;
+        }
+        if (!data.auth_url) {
+            throw new Error(t('ad_meta_fb_unavailable', 'La conexión con Facebook no está disponible. Usa tus credenciales.'));
         }
         window.location.href = data.auth_url;
     } catch (error) {
@@ -1093,4 +1101,94 @@ function updateSendTestPreview() {
         tpl.headerText ? `<strong>${fill(tpl.headerText, collectSendTestParams('header'))}</strong>` : '',
         fill(tpl.bodyText, collectSendTestParams('body')),
     ].filter(Boolean).join('<br>');
+}
+
+// ============================================
+// WhatsApp Embedded Signup (popup oficial de Meta)
+// ============================================
+let fbSdkPromise = null;
+
+function loadFacebookSDK(appId, version) {
+    if (fbSdkPromise) return fbSdkPromise;
+    fbSdkPromise = new Promise((resolve, reject) => {
+        if (window.FB) {
+            window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version });
+            resolve(window.FB);
+            return;
+        }
+        window.fbAsyncInit = function () {
+            window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version });
+            resolve(window.FB);
+        };
+        const script = document.createElement('script');
+        script.src = 'https://connect.facebook.net/en_US/sdk.js';
+        script.async = true;
+        script.defer = true;
+        script.crossOrigin = 'anonymous';
+        script.onerror = () => {
+            fbSdkPromise = null;
+            reject(new Error(t('ad_meta_sdk_error', 'No se pudo cargar el SDK de Facebook. Desactiva bloqueadores de anuncios e inténtalo de nuevo.')));
+        };
+        document.body.appendChild(script);
+    });
+    return fbSdkPromise;
+}
+
+async function runEmbeddedSignup(cfg) {
+    const FB = await loadFacebookSDK(cfg.app_id, cfg.graph_version || 'v22.0');
+
+    // El popup avisa por postMessage qué WABA y número eligió el cliente
+    let sessionInfo = {};
+    let cancelled = false;
+    const onMessage = (event) => {
+        if (!/(^|\.)facebook\.com$/.test(new URL(event.origin).hostname)) return;
+        let msg = event.data;
+        try { if (typeof msg === 'string') msg = JSON.parse(msg); } catch (e) { return; }
+        if (!msg || msg.type !== 'WA_EMBEDDED_SIGNUP') return;
+        if (msg.event === 'CANCEL') {
+            cancelled = true;
+        } else if (msg.data) {
+            sessionInfo = {
+                wabaId: msg.data.waba_id || '',
+                phoneNumberId: msg.data.phone_number_id || '',
+            };
+        }
+    };
+    window.addEventListener('message', onMessage);
+
+    try {
+        const code = await new Promise((resolve, reject) => {
+            FB.login((response) => {
+                if (response && response.authResponse && response.authResponse.code) {
+                    resolve(response.authResponse.code);
+                } else {
+                    reject(new Error(cancelled
+                        ? t('ad_meta_es_cancelled', 'Conexión cancelada.')
+                        : t('ad_meta_es_not_completed', 'No se completó la conexión con Facebook.')));
+                }
+            }, {
+                config_id: cfg.config_id,
+                response_type: 'code',
+                override_default_response_type: true,
+                extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+            });
+        });
+
+        showMetaStatus(true, t('ad_meta_es_saving', 'Conectando tu número de WhatsApp Business...'));
+
+        const res = await fetch(`/api/meta/embedded-signup/${agentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, ...sessionInfo }),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.success) throw new Error(out.error || `HTTP ${res.status}`);
+
+        showMetaStatus(true, t('ad_meta_connected_ok', 'WhatsApp Business conectado correctamente'));
+        sendTestTemplatesLoaded = false;
+        await loadMetaConnection();
+    } finally {
+        window.removeEventListener('message', onMessage);
+    }
 }
