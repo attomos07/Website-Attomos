@@ -110,7 +110,7 @@
     var i = sortedStatuses().findIndex(function (s) { return s.key === key; });
     return i < 0 ? '#767b8a' : PALETTE[i % PALETTE.length];
   }
-  function origenTxt(o) { return { sucursal: 'Sucursal', linea: 'En línea', laboratorio: 'Laboratorio', panel: 'Mis ventas' }[o.origen] || 'Pedido'; }
+  function origenTxt(o) { return { sucursal: 'Sucursal', linea: 'Ecommerce', laboratorio: 'Laboratorio', panel: 'Mis ventas' }[o.origen] || 'Pedido'; }
   // Las órdenes hechas sin venta no tienen clave de rastreo: se nombran por su Nº.
   function codeOf(o) { return o.orderCode || (o.hoja && o.hoja.folio ? 'Orden Nº ' + o.hoja.folio : '#' + o.id); }
   function convTxt(o) { return ''; }
