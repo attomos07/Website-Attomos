@@ -38,27 +38,43 @@
   animation-delay: calc(var(--i, 0) * 60ms) !important;
 }
 
-/* Cambio de pestaña de sección (subnav-tabs.js): mismo resorte y desenfoque */
+/* Cambio de pestaña de sección (subnav-tabs.js). Las pestañas ya están
+   cargadas: el contenido solo se desliza un poco, todo junto y sin
+   desenfoque, para que se sienta como la misma página (no como recarga). */
 @keyframes subnavIn {
-  from { opacity: 0; transform: translateX(26px) scale(0.985); filter: blur(6px); }
-  to   { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes subnavInLeft {
-  from { opacity: 0; transform: translateX(-26px) scale(0.985); filter: blur(6px); }
-  to   { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: none; }
 }
 
 main.subnav-enter > *:not(.inv-subnav):not(.admin-modal-overlay):not(:has(.inv-subnav)),
 main.subnav-enter > :has(.inv-subnav) > *:not(.inv-subnav) {
-  animation-duration: 0.75s;
-  animation-timing-function: var(--ios-spring);
+  animation-duration: 0.38s !important;
+  animation-timing-function: var(--ios-spring-smooth) !important;
+  animation-delay: 0s !important;
 }
 
 main.subnav-leave > *:not(.inv-subnav):not(.admin-modal-overlay):not(:has(.inv-subnav)),
 main.subnav-leave > :has(.inv-subnav) > *:not(.inv-subnav) {
-  transition: opacity 0.17s ease, transform 0.17s ease, filter 0.17s ease;
-  filter: blur(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  transform: translateX(-8px);
+}
+
+main.subnav-leave.to-right > *:not(.inv-subnav):not(.admin-modal-overlay):not(:has(.inv-subnav)),
+main.subnav-leave.to-right > :has(.inv-subnav) > *:not(.inv-subnav) {
+  transform: translateX(8px);
+}
+
+/* Las listas que ya estaban pintadas no vuelven a entrar al mostrar la pestaña */
+main.subnav-enter .ios-row,
+main.subnav-enter tr.ios-row > td,
+main.subnav-enter .inv-stat,
+main.subnav-enter .inv-table tbody tr {
+  animation: none !important;
 }
 
 .inv-stat strong,
@@ -235,7 +251,7 @@ body.dark .ios-seg-light .ios-seg-thumb { background: var(--accent, #06b6d4); }
     transform 0.7s var(--ios-spring-smooth),
     width 0.7s var(--ios-spring-smooth),
     height 0.5s var(--ios-spring-smooth),
-    opacity 0.2s ease !important;
+    opacity 0.2s ease;
 }
 
 .inv-subnav > a:not(.is-on):active { opacity: 0.55; }

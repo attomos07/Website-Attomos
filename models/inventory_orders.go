@@ -211,15 +211,17 @@ type OrderStatusInfo struct {
 
 // OrderStatusList — los estatus en orden, con nombres según el giro.
 func OrderStatusList(optica bool) []OrderStatusInfo {
+	conf, confHint := "Recibido", "Tu pedido está confirmado."
 	prep, prepHint := "En preparación", "Estamos preparando tu pedido."
 	ready, readyHint := "Listo", "Tu pedido está listo."
 	if optica {
+		conf, confHint = "A autorizar", "Estamos revisando tu pedido antes de mandarlo al laboratorio."
 		prep, prepHint = "En laboratorio", "Tus lentes se están fabricando."
 		ready, readyHint = "Listo para recoger", "Ya puedes pasar por tus lentes."
 	}
 	return []OrderStatusInfo{
 		{Key: string(OrderStatusPending), Label: "Pendiente", Color: "#d97706", Hint: "Recibimos tu pedido; falta confirmarlo."},
-		{Key: string(OrderStatusConfirmed), Label: "Recibido", Color: "#2563eb", Hint: "Tu pedido está confirmado."},
+		{Key: string(OrderStatusConfirmed), Label: conf, Color: "#2563eb", Hint: confHint},
 		{Key: string(OrderStatusPreparing), Label: prep, Color: "#7c3aed", Hint: prepHint},
 		{Key: string(OrderStatusReady), Label: ready, Color: "#0891b2", Hint: readyHint},
 		{Key: string(OrderStatusDelivered), Label: "Entregado", Color: "#16a34a", Hint: "¡Listo! Ya se entregó."},

@@ -1,13 +1,13 @@
 /* =========================================================
    LABORATORIO — Trabajos
    - Trabajos: los pedidos (los mismos de Mis ventas, Ventas y Rastreo)
-     acomodados por paso: Recibido → En proceso → Corte → Control de
-     calidad. Al terminar pasan a «Listo para recoger» y salen del tablero. Se cambian de
-     estado arrastrando la tarjeta a otra columna, con "Avanzar" o
+     acomodados por paso: A autorizar → En proceso → Corte → Control de
+     calidad. Llegan solos del Punto de venta (como en Avante). Se cambian
+     de estado arrastrando la tarjeta a otra columna, con "Avanzar" o
      desde el detalle. Vista de Tablero o de Lista.
-   - Nuevo trabajo: el producto se elige del inventario (se descuenta su
-     existencia); el pedido recibe su clave (AT…) para que el cliente lo
-     rastree en /rastreo.
+   - Control de calidad se puede limpiar (salen del tablero sin borrarse);
+     "Ver limpiados" los vuelve a mostrar.
+   - Cada trabajo: fecha estimada de entrega y etiqueta «Express».
    API: /api/laboratorio/* (handlers/laboratorio.go)
    ========================================================= */
 (function () {
@@ -67,7 +67,7 @@
     $(id).classList.remove('open');
     if (!document.querySelector('.admin-modal-overlay.open')) document.body.style.overflow = '';
   }
-  ['labDetail', 'labNew'].forEach(function (p) {
+  ['labDetail'].forEach(function (p) {
     var ov = $(p + 'Modal');
     ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(p + 'Modal'); });
     $(p + 'Close').addEventListener('click', function () { closeModal(p + 'Modal'); });
@@ -75,7 +75,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     closeStatusMenu();
-    ['labNewModal', 'labDetailModal'].forEach(function (id) { if ($(id).classList.contains('open')) closeModal(id); });
+    ['labDetailModal'].forEach(function (id) { if ($(id).classList.contains('open')) closeModal(id); });
   });
   function trackURL(code) { return window.location.origin + '/rastreo?pedido=' + encodeURIComponent(code); }
   function copyText(text, okMsg) {
@@ -89,114 +89,11 @@
   }
 
   /* =======================================================
-     INVENTARIO (de aquí se elige el producto de "Nuevo trabajo")
-     ======================================================= */
-  var inv = [], invLoaded = null;
-  function loadInv() {
-    if (!invLoaded) {
-      invLoaded = api('/api/laboratorio/inventario').then(function (list) { inv = list || []; return inv; })
-        .catch(function (err) { invLoaded = null; throw err; });
-    }
-    return invLoaded;
-  }
-  function invById(id) { return inv.filter(function (a) { return String(a.id) === String(id); })[0]; }
-  function stockBadge(a) {
-    if (a.servicio) return '<span class="lab-stock is-service">Servicio</span>';
-    var cls = a.existencia <= 0 ? 'is-out' : (a.minimo && a.existencia <= a.minimo ? 'is-low' : 'is-ok');
-    return '<span class="lab-stock ' + cls + '">' + a.existencia + '</span>';
-  }
-
-  /* =======================================================
-     NUEVO TRABAJO
-     ======================================================= */
-  var picked = null;
-  function renderPicker() {
-    var q = norm($('labPickerSearch').value.trim());
-    var list = inv.filter(function (a) { return !q || norm(a.clave + ' ' + a.descripcion + ' ' + a.departamento + ' ' + a.categoria).indexOf(q) !== -1; }).slice(0, 60);
-    $('labPickerList').innerHTML = list.length ? list.map(function (a, i) {
-      return '<button type="button" class="lab-pick" data-id="' + a.id + '" style="--i:' + Math.min(i, 12) + '">' +
-        '<span class="lab-pick-main"><strong>' + esc(a.descripcion) + '</strong><small>' + esc([a.clave, a.departamento, a.categoria].filter(Boolean).join(' · ')) + '</small></span>' +
-        stockBadge(a) + '</button>';
-    }).join('') : '<p class="lab-empty-sm">' + (inv.length ? 'Ningún producto coincide.' : 'El inventario está vacío.') + '</p>';
-  }
-  function setPicked(a) {
-    picked = a || null;
-    $('labPicked').hidden = !picked;
-    $('labPicker').hidden = !!picked;
-    if (picked) {
-      $('labPicked').innerHTML =
-        '<div class="lab-picked-info"><strong>' + esc(picked.descripcion) + '</strong>' +
-        '<small>' + esc([picked.clave, picked.departamento, picked.categoria].filter(Boolean).join(' · ')) + ' · ' + money(picked.precio) + '</small></div>' +
-        stockBadge(picked) +
-        '<button type="button" class="btn small" id="labPickChange">Cambiar</button>';
-      $('labPickChange').addEventListener('click', function () { setPicked(null); $('labPickerSearch').focus(); });
-      if (!picked.servicio && picked.existencia <= 0) toast('Ojo: ese producto no tiene existencia en inventario.');
-    }
-  }
-  function newErr(msg) { $('labNewErr').textContent = msg || ''; $('labNewErr').hidden = !msg; }
-  function openNew(preId) {
-    $('labNewForm').reset();
-    $('labNewForm').hidden = false;
-    $('labCreated').hidden = true;
-    newErr('');
-    $('labNewSave').disabled = false;
-    $('labNewSave').textContent = 'Dar de alta';
-    setPicked(null);
-    $('labPickerList').innerHTML = '<p class="lab-empty-sm">Cargando inventario…</p>';
-    openModal('labNewModal');
-    loadInv().then(function () {
-      if (preId && invById(preId)) { setPicked(invById(preId)); $('labNewCliente').focus(); }
-      else { renderPicker(); $('labPickerSearch').focus(); }
-    }).catch(function (err) { $('labPickerList').innerHTML = '<p class="lab-empty-sm">' + esc(err.message) + '</p>'; });
-  }
-  document.addEventListener('click', function (e) { if (e.target.closest('[data-new-job]')) openNew(); });
-  $('labPickerSearch').addEventListener('input', renderPicker);
-  $('labPickerSearch').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); var f = $('labPickerList').querySelector('.lab-pick'); if (f) f.click(); }
-  });
-  $('labPickerList').addEventListener('click', function (e) {
-    var b = e.target.closest('.lab-pick');
-    if (!b) return;
-    setPicked(invById(b.dataset.id));
-    $('labNewCliente').focus();
-  });
-  $('labNewCancel').addEventListener('click', function () { closeModal('labNewModal'); });
-  $('labNewForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!picked) { newErr('Elige el producto del inventario.'); return; }
-    var cliente = $('labNewCliente').value.trim();
-    if (!cliente) { newErr('Escribe el nombre del cliente.'); $('labNewCliente').focus(); return; }
-    newErr('');
-    var btn = $('labNewSave');
-    btn.disabled = true; btn.textContent = 'Guardando…';
-    api('/api/laboratorio/pedidos', { method: 'POST', body: {
-      inventoryId: picked.id,
-      quantity: parseInt($('labNewCant').value, 10) || 1,
-      customerName: cliente,
-      rxOD: $('labNewOD').value.trim(),
-      rxOI: $('labNewOI').value.trim(),
-      notes: $('labNewNotas').value.trim()
-    } }).then(function (o) {
-      $('labNewForm').hidden = true;
-      $('labCreated').hidden = false;
-      $('labCreatedCode').textContent = o.orderCode;
-      $('labCreatedCopy').onclick = function () { copyText(trackURL(o.orderCode), 'Link de rastreo copiado.'); };
-      loadOrders(o.id);
-    }).catch(function (err) {
-      newErr(err.message);
-      btn.disabled = false; btn.textContent = 'Dar de alta';
-    });
-  });
-  $('labCreatedDone').addEventListener('click', function () {
-    closeModal('labNewModal');
-  });
-
-  /* =======================================================
      VISTA: TRABAJOS
      ======================================================= */
   var orders = [], statuses = [];
   var search = '', origen = '', empresaSel = '';
-  var IS_ADMIN = false;
+  var IS_ADMIN = false; // "Eliminar definitivamente" (de Avante) no aplica en Attomos
   var EMPRESAS = [];
   var verLimpios = false, limpiosN = 0;
   // "Listo para la entrega" y "Entregado" ya no llegan al laboratorio
@@ -240,7 +137,7 @@
       if (origen && o.origen !== origen) return false;
       if (hideDone && o.status === dk) return false;
       if (!q) return true;
-      return norm([codeOf(o), o.customerName, o.productName, (o.items || []).join(' '), o.clave, o.rxOD, o.rxOI, o.labNotes, o.notes].join(' ')).indexOf(q) !== -1;
+      return norm([codeOf(o), o.customerName, o.productName, (o.items || []).join(' '), o.clave, o.rxOD, o.rxOI, o.labNotes, o.notes, o.express ? 'express' : ''].join(' ')).indexOf(q) !== -1;
     });
   }
 
@@ -268,6 +165,41 @@
     return p.join(' · ');
   }
 
+  /* ---------- entrega estimada y lente express ----------
+     Cada trabajo tiene su propia fecha estimada de entrega (la pone el
+     laboratorio a mano) y puede marcarse como «Express». Express por
+     ahora es solo la etiqueta: no cambia el orden ni los tiempos. */
+  var BOLT_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg>';
+  var CLOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  var DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function isoDay(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function parseDay(iso) { var p = String(iso || '').split('-').map(Number); return p.length === 3 && p[0] ? new Date(p[0], p[1] - 1, p[2]) : null; }
+  function todayDay() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+  function capFirst(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  function shortDay(d) { return DIAS[d.getDay()] + ' ' + d.getDate() + ' ' + MESES[d.getMonth()]; }
+  // Cuántos días faltan (negativo = ya pasó).
+  function daysLeft(iso) { var d = parseDay(iso); return d ? Math.round((d - todayDay()) / 86400000) : null; }
+  // "+N días" desde hoy; si cae en domingo se pasa al lunes.
+  function plusDays(n) { var d = todayDay(); d.setDate(d.getDate() + n); if (d.getDay() === 0) d.setDate(d.getDate() + 1); return d; }
+  function entregaInfo(o) {
+    if (!o.entrega) return null;
+    var d = parseDay(o.entrega), n = daysLeft(o.entrega);
+    if (!d) return null;
+    if (n < 0) return { cls: 'is-late', txt: 'Atrasado ' + (n === -1 ? '1 día' : (-n) + ' días'), full: 'Se esperaba el ' + shortDay(d) };
+    if (n === 0) return { cls: 'is-today', txt: 'Entrega hoy', full: 'Entrega estimada: hoy, ' + shortDay(d) };
+    if (n === 1) return { cls: 'is-soon', txt: 'Entrega mañana', full: 'Entrega estimada: mañana, ' + shortDay(d) };
+    return { cls: '', txt: 'Entrega ' + shortDay(d), full: 'Entrega estimada en ' + n + ' días' };
+  }
+  function entregaTag(o, inline) {
+    var e = entregaInfo(o);
+    return e ? '<span class="lab-eta ' + e.cls + (inline ? ' is-inline' : '') + '" title="' + esc(e.full) + '">' + CLOCK_ICON + esc(e.txt) + '</span>' : '';
+  }
+  function expressTag(o, inline) {
+    return o.express ? '<span class="lab-express' + (inline ? ' is-inline' : '') + '" title="Lente express">' + BOLT_ICON + 'Express</span>' : '';
+  }
+  var ETA_CHIPS = [[1, '1 día'], [2, '2 días'], [3, '3 días'], [5, '5 días'], [7, '1 semana'], [14, '2 semanas']];
+
   var EXT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6v6M10 14 20 4"/></svg>';
   var DOC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>';
   function hojaBtn(o, big) {
@@ -278,7 +210,7 @@
   function cardHTML(o, i) {
     var nx = nextStatus(o.status);
     var rx = rxLine(o);
-    return '<article class="lab-card' + (String(o.id) === String(landedId) ? ' is-landed' : '') + (o.limpio ? ' is-limpio' : '') + '" draggable="true" data-id="' + o.id + '" tabindex="0" style="--i:' + Math.min(i, 12) + '">' +
+    return '<article class="lab-card' + (String(o.id) === String(landedId) ? ' is-landed' : '') + (o.limpio ? ' is-limpio' : '') + (o.express ? ' is-express' : '') + '" draggable="true" data-id="' + o.id + '" tabindex="0" style="--i:' + Math.min(i, 12) + '">' +
       '<div class="lab-card-top"><strong class="lab-code">' + esc(shortCode(o)) + '</strong>' +
         '<span class="lab-card-tags">' + hojaBtn(o) + '<span class="lab-origin is-' + o.origen + '">' + origenTxt(o) + '</span></span></div>' +
       (o.externo ? '<div class="lab-ext-tag" title="Este trabajo está en un laboratorio externo">' + EXT_ICON + 'Laboratorio externo</div>' : '') +
@@ -286,6 +218,7 @@
       '<div class="lab-card-client">' + esc(o.customerName || 'Cliente sin nombre') + '</div>' +
       '<div class="lab-card-prod">' + productLine(o) + (o.quantity > 1 ? ' <span class="lab-qty">×' + o.quantity + '</span>' : '') + '</div>' +
       (rx ? '<div class="lab-card-rx">' + esc(rx) + '</div>' : '') +
+      ((o.express || o.entrega) ? '<div class="lab-card-eta">' + expressTag(o) + entregaTag(o) + '</div>' : '') +
       (o.labNotes ? '<div class="lab-card-note" title="' + esc(o.labNotes) + '">' + esc(o.labNotes) + '</div>' : '') +
       '<div class="lab-card-foot"><span>' + (o.lastAt ? esc((o.lastBy || 'Alguien') + ' · ' + hace(o.lastAt)) : fecha(o.createdAt)) + '</span>' +
         '<span class="lab-split">' +
@@ -314,8 +247,8 @@
       html += '<section class="lab-col" data-status="' + esc(s.key) + '" style="--col-color:' + colorOf(s.key) + '">' +
         '<header class="lab-col-head"><span class="lab-col-dot"></span><strong>' + esc(s.label) + '</strong><span class="lab-col-n">' + mine.length + '</span></header>' +
         '<div class="lab-col-body">' +
-          (s.key === lastKey() && mine.length ? '<button type="button" class="lab-col-clear" data-clear="' + esc(s.key) + '" title="Pasar todos los trabajos de esta columna a «Listo para recoger» (salen del tablero)">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Todo listo para recoger</span></button>' : '') +
+          (s.key === lastKey() && mine.some(function (o) { return !o.limpio; }) ? '<button type="button" class="lab-col-clear" data-clear="' + esc(s.key) + '" title="Quitar del tablero los trabajos de esta columna (no se borran)">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5-9 9H7v-5z"/><path d="M3 21h18"/></svg><span>Limpiar columna</span></button>' : '') +
           (mine.length ? mine.map(cardHTML).join('') : '<p class="lab-col-empty">Suelta aquí un trabajo</p>') + '</div>' +
       '</section>';
     });
@@ -327,7 +260,7 @@
     $('labRows').innerHTML = list.map(function (o, i) {
       return '<tr data-id="' + o.id + '" style="--i:' + Math.min(i, 20) + '" class="' + (String(o.id) === String(landedId) ? 'is-landed' : '') + '">' +
         '<td><strong class="lab-code">' + esc(shortCode(o)) + '</strong><div class="lab-muted">' + fecha(o.createdAt) + '</div></td>' +
-        '<td>' + esc(o.customerName || 'Cliente sin nombre') + '<div><span class="lab-origin is-' + o.origen + '">' + origenTxt(o) + '</span>' + convTag(o) + hojaBtn(o) + (o.externo ? '<span class="lab-ext-tag is-inline">' + EXT_ICON + 'Externo</span>' : '') + '</div></td>' +
+        '<td>' + esc(o.customerName || 'Cliente sin nombre') + '<div><span class="lab-origin is-' + o.origen + '">' + origenTxt(o) + '</span>' + convTag(o) + hojaBtn(o) + (o.externo ? '<span class="lab-ext-tag is-inline">' + EXT_ICON + 'Externo</span>' : '') + expressTag(o, true) + entregaTag(o, true) + (o.limpio ? '<span class="lab-limpio-tag is-inline">Limpiado</span>' : '') + '</div></td>' +
         '<td>' + productLine(o) + (rxLine(o) ? '<div class="lab-muted">' + esc(rxLine(o)) + '</div>' : '') + '</td>' +
         '<td><button type="button" class="lab-status-btn" data-status-menu="' + o.id + '">' + badge(o.status) +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></td>' +
@@ -350,7 +283,7 @@
   }
 
   function loadOrders(highlight) {
-    return api('/api/laboratorio/pedidos').then(function (d) {
+    return api('/api/laboratorio/pedidos' + (verLimpios ? '?limpios=1' : '')).then(function (d) {
       orders = d.pedidos || [];
       statuses = d.estados || [];
       if (d.empresas) EMPRESAS = d.empresas;
@@ -527,6 +460,9 @@
       '<p class="lab-hint">Toca un paso para cambiar. El cliente lo ve igual en Rastreo.</p>' +
       '<label class="lab-ext-toggle"><input type="checkbox" id="labExtToggle"' + (o.externo ? ' checked' : '') + '><span class="lab-toggle-track"><span class="lab-toggle-thumb"></span></span>' +
         '<span><strong>Laboratorio externo</strong><small>Márcalo si este trabajo se mandó a otro laboratorio.</small></span></label>' +
+      '<label class="lab-ext-toggle lab-express-toggle"><input type="checkbox" id="labExpressToggle"' + (o.express ? ' checked' : '') + '><span class="lab-toggle-track"><span class="lab-toggle-thumb"></span></span>' +
+        '<span><strong>' + BOLT_ICON + 'Lente express</strong><small>Por ahora solo marca el trabajo con la etiqueta «Express».</small></span></label>' +
+      etaBoxHTML(o) +
       '<dl class="lab-info">' + info.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('') + '</dl>' +
       '<label class="lab-field lab-notes"><span>Notas del laboratorio</span><textarea id="labNotes" rows="3" maxlength="500" placeholder="Altura, tratamiento, observaciones…">' + esc(notesOld !== null && detailId === String(o.id) && document.activeElement && document.activeElement.id === 'labNotes' ? notesOld : (o.labNotes || '')) + '</textarea></label>' +
       '<div class="lab-detail-actions">' +
@@ -557,6 +493,15 @@
         toast(codeOf(o) + ' se eliminó definitivamente.');
       }).catch(function (err) { btn.disabled = false; toast(err.message); });
     });
+    wireEtaBox(o);
+    $('labExpressToggle').addEventListener('change', function () {
+      var on = this.checked, box = this;
+      box.disabled = true;
+      api('/api/laboratorio/pedidos/' + o.id + '/express', { method: 'PUT', body: { express: on } }).then(function () {
+        o.express = on; render();
+        toast(on ? codeOf(o) + ' marcado como express.' : 'Se quitó «Express».');
+      }).catch(function (err) { box.checked = !on; toast(err.message); }).finally(function () { box.disabled = false; });
+    });
     $('labExtToggle').addEventListener('change', function () {
       var on = this.checked, box = this;
       box.disabled = true;
@@ -573,8 +518,42 @@
     });
     if (historyCache[detailId]) paintHistory(historyCache[detailId]);
   }
+  function etaBoxHTML(o) {
+    var e = entregaInfo(o), d = parseDay(o.entrega);
+    return '<div class="lab-eta-box" id="labEtaBox">' +
+      '<div class="lab-eta-head"><span class="lab-conv-title">¿Cuánto tarda en entregarse?</span>' +
+        (e ? '<span class="lab-eta-now ' + e.cls + '">' + CLOCK_ICON + '<strong>' + esc(capFirst(shortDay(d))) + '</strong> · ' +
+          esc(e.cls === 'is-late' ? e.txt.toLowerCase() : (e.cls ? e.txt.replace('Entrega ', '') : 'en ' + daysLeft(o.entrega) + ' días')) + '</span>'
+          : '<span class="lab-eta-now is-none">Sin fecha</span>') + '</div>' +
+      '<div class="lab-conv-chips lab-eta-chips">' + ETA_CHIPS.map(function (c) {
+        var iso = isoDay(plusDays(c[0]));
+        return '<button type="button" data-eta="' + iso + '" class="' + (o.entrega === iso ? 'is-on' : '') + '" title="' + esc(shortDay(plusDays(c[0]))) + '">' + c[1] + '</button>';
+      }).join('') + '</div>' +
+      '<div class="lab-eta-row"><label class="lab-eta-date"><span>Otra fecha</span><input type="date" id="labEtaDate" min="' + isoDay(todayDay()) + '" value="' + esc(o.entrega || '') + '"></label>' +
+        (o.entrega ? '<button type="button" class="btn small" id="labEtaClear">Quitar fecha</button>' : '') + '</div>' +
+      '<small class="lab-eta-hint">Se cuenta desde hoy; si cae en domingo pasa al lunes. Es solo para este trabajo.</small>' +
+    '</div>';
+  }
+  function wireEtaBox(o) {
+    function save(iso) {
+      if ((o.entrega || '') === iso) return;
+      api('/api/laboratorio/pedidos/' + o.id + '/entrega', { method: 'PUT', body: { entrega: iso } }).then(function (r) {
+        o.entrega = r.entrega || ''; render(); refreshDetail();
+        var d = parseDay(o.entrega);
+        toast(d ? codeOf(o) + ': entrega el ' + shortDay(d) + '.' : 'Se quitó la fecha de entrega.');
+      }).catch(function (err) { toast(err.message); refreshDetail(); });
+    }
+    var box = $('labEtaBox');
+    if (!box) return;
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-eta]');
+      if (b) save(b.dataset.eta);
+      if (e.target.closest('#labEtaClear')) save('');
+    });
+    $('labEtaDate').addEventListener('change', function () { if (this.value) save(this.value); });
+  }
   var historyCache = {};
-  var OUT_LABELS = { pending: 'Pendiente', confirmed: 'Recibido', preparing: 'En laboratorio', ready: 'Listo para recoger', delivered: 'Entregado', cancelled: 'Cancelado' };
+  var OUT_LABELS = { pending: 'Pendiente', confirmed: 'A autorizar', preparing: 'En laboratorio', ready: 'Listo para recoger', delivered: 'Entregado', cancelled: 'Cancelado' };
   function paintHistory(list) {
     var el = $('labHistory');
     if (!el) return;
@@ -770,20 +749,20 @@
     var b = e.target.closest('[data-clear]');
     if (!b) return;
     e.stopPropagation();
-    var n = orders.filter(function (o) { return o.status === b.dataset.clear; }).length;
+    var n = orders.filter(function (o) { return o.status === b.dataset.clear && !o.limpio; }).length;
     if (!b.classList.contains('is-armed')) {
       b.classList.add('is-armed');
-      b.querySelector('span').textContent = n === 1 ? '¿1 trabajo listo? Toca otra vez' : '¿' + n + ' trabajos listos? Toca otra vez';
-      clearTimeout(b._t); b._t = setTimeout(function () { b.classList.remove('is-armed'); b.querySelector('span').textContent = 'Todo listo para recoger'; }, 4000);
+      b.querySelector('span').textContent = n === 1 ? '¿Limpiar 1 trabajo? Toca otra vez' : '¿Limpiar ' + n + ' trabajos? Toca otra vez';
+      clearTimeout(b._t); b._t = setTimeout(function () { b.classList.remove('is-armed'); b.querySelector('span').textContent = 'Limpiar columna'; }, 4000);
       return;
     }
     b.disabled = true;
     var col = b.closest('.lab-col');
     if (col) col.classList.add('is-clearing');
-    api('/api/laboratorio/listos', { method: 'POST', body: { status: b.dataset.clear } }).then(function (r) {
+    api('/api/laboratorio/limpiar', { method: 'POST', body: { status: b.dataset.clear } }).then(function (r) {
       setTimeout(function () {
         loadOrders();
-        toast(r.listos === 1 ? '1 trabajo pasó a «Listo para recoger».' : r.listos + ' trabajos pasaron a «Listo para recoger».');
+        toast(r.limpiados === 1 ? 'Se limpió 1 trabajo. No se borró: sigue en el sistema.' : 'Se limpiaron ' + r.limpiados + ' trabajos. No se borraron: siguen en el sistema.');
       }, 380);
     }).catch(function (err) { b.disabled = false; if (col) col.classList.remove('is-clearing'); toast(err.message); });
   });
@@ -796,7 +775,6 @@
 
   setView(view);
   loadOrders();
-  loadInv().catch(function () {});
   // Cada 20 s: así llegan solos los trabajos nuevos (ventas, bot, Comy) y
   // los cambios hechos desde Ventas o Mis ventas.
   setInterval(function () { if (!document.hidden && !dragId && !menuEl) loadOrders(); }, 20000);

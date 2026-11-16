@@ -1517,3 +1517,5 @@ main.subnav-leave.to-right > :has(.inv-subnav) > *:not(.inv-subnav){ transform:t
 .inv-promo-chip{ display:inline-block; margin-right:6px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; color:#c2410c; background:#fff1e6; }
 .inv-table tbody tr.is-selected .inv-promo-chip{ background:rgba(255,255,255,.22); color:#fff; }
 @media (max-width:560px){ .inv-promo-end{ grid-template-columns:1fr; } }
+/* Pestañas de sección ya cargadas pero escondidas (subnav-tabs.js) */
+.content-wrapper > [data-subnav-off]{ display:none !important; }

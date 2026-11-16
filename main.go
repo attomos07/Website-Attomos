@@ -420,14 +420,14 @@ func main() {
 		lab := protected.Group("/laboratorio")
 		{
 			lab.GET("/pedidos", handlers.LabListOrders)
-			lab.POST("/pedidos", handlers.LabCreateOrder)
 			lab.PATCH("/pedidos/:id/estado", handlers.LabSetStatus)
 			lab.PUT("/pedidos/:id/notas", handlers.LabSetNotes)
 			lab.PUT("/pedidos/:id/externo", handlers.LabSetExterno)
+			lab.PUT("/pedidos/:id/entrega", handlers.LabSetEntrega)
+			lab.PUT("/pedidos/:id/express", handlers.LabSetExpress)
 			lab.GET("/pedidos/:id/historial", handlers.LabOrderHistory)
-			lab.POST("/listos", handlers.LabReadyColumn)
+			lab.POST("/limpiar", handlers.LabClearColumn)
 			lab.POST("/escanear", handlers.LabScan)
-			lab.GET("/inventario", handlers.LabInventario)
 		}
 
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go

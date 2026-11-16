@@ -12,7 +12,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
-    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=2">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=3">
 </head>
 <body class="inv-body">
     <div class="decorative-rings">
@@ -623,7 +623,7 @@
           </div>
           <a class="inv-btn-ghost" id="catVerArts" href="{{.InvBase}}/articulos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Ver sus artículos</a>
         </div>
-        <form class="inv-cat-form" id="catForm" autocomplete="off">
+        <form class="inv-cat-form" id="depCatForm" autocomplete="off">
           <input type="text" id="catNombre" maxlength="60" placeholder="Nueva categoría (ej. {{if .Optica}}PASTA GUESS ROJO{{else}}BEBIDAS FRÍAS{{end}})">
           <input type="number" id="catComision" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Comisión %">
           <button type="submit" class="inv-add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar</button>
@@ -643,20 +643,20 @@
 </div><!-- /app-container -->
 
 <!-- ================= Modal: confirmar borrado ================= -->
-<div class="admin-modal-overlay" id="delModal">
-  <div class="admin-modal-card inv-confirm-card" role="dialog" aria-modal="true" aria-labelledby="delTitle">
+<div class="admin-modal-overlay" id="depDelModal">
+  <div class="admin-modal-card inv-confirm-card" role="dialog" aria-modal="true" aria-labelledby="depDelTitle">
     <div class="admin-modal-head">
-      <h3 id="delTitle">Borrar</h3>
+      <h3 id="depDelTitle">Borrar</h3>
       <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="admin-modal-body">
-      <p class="inv-confirm-text" id="delText"></p>
-      <p class="staff-error" id="delError"></p>
+      <p class="inv-confirm-text" id="depDelText"></p>
+      <p class="staff-error" id="depDelError"></p>
       <div class="staff-form-actions">
         <button type="button" class="btn small" data-close-modal>Cancelar</button>
-        <button type="button" class="btn solid small inv-btn-danger" id="delOk">Sí, borrar</button>
+        <button type="button" class="btn solid small inv-btn-danger" id="depDelOk">Sí, borrar</button>
       </div>
     </div>
   </div>
@@ -1019,7 +1019,7 @@
     <section class="admin-panel inv-count-panel">
       <div class="inv-kx-art" id="kxArt" hidden></div>
       <div class="inv-count-tools">
-        <div class="inv-pick" id="pick">
+        <div class="inv-pick" id="mvPick">
           <div class="search-box">
             <div class="search-box-glow"></div>
             <div class="search-box-inner">
@@ -1027,7 +1027,7 @@
               <input type="search" id="mvSearch" placeholder="Buscar artículo, comentario o usuario…" autocomplete="off" spellcheck="false">
             </div>
           </div>
-          <div class="inv-pick-results" id="pickResults" role="listbox"></div>
+          <div class="inv-pick-results" id="mvPickResults" role="listbox"></div>
         </div>
       </div>
       <div class="inv-chips" id="mvTipo" role="group" aria-label="Tipo de movimiento">
@@ -1040,7 +1040,7 @@
         <button type="button" data-tipo="inicial">Altas</button>
       </div>
       <div class="inv-period" style="margin-top:12px">
-        <div class="inv-seg" id="perSeg">
+        <div class="inv-seg" id="mvPerSeg">
           <button type="button" data-p="hoy">Hoy</button>
           <button type="button" data-p="7d">7 días</button>
           <button type="button" data-p="30d" class="is-on">30 días</button>
@@ -1049,9 +1049,9 @@
           <button type="button" data-p="todo">Todo</button>
           <button type="button" data-p="rango">Rango</button>
         </div>
-        <div class="inv-range" id="perRange" hidden>
-          <div class="inv-range-field"><span>Desde</span><div id="perDesde"></div></div>
-          <div class="inv-range-field"><span>Hasta</span><div id="perHasta"></div></div>
+        <div class="inv-range" id="mvPerRange" hidden>
+          <div class="inv-range-field"><span>Desde</span><div id="mvPerDesde"></div></div>
+          <div class="inv-range-field"><span>Hasta</span><div id="mvPerHasta"></div></div>
         </div>
       </div>
 
@@ -1089,8 +1089,8 @@
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-<script src="/static/js/client/subnav-tabs.js?v=2"></script>
-<script src="/static/js/client/inventory.js?v=11" data-subnav-page></script>
+<script src="/static/js/client/subnav-tabs.js?v=3"></script>
+<script src="/static/js/client/inventory.js?v=12" data-subnav-page></script>
 <script src="/static/js/client/ios27-panel.js?v=2"></script>
 </body>
 </html>

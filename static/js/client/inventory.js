@@ -88,6 +88,9 @@ window.Inv = window.Inv || (function () {
     if (open.length) closeModal(open[open.length - 1]);
   });
 
+  // ¿Está en pantalla? (las pestañas guardadas por subnav-tabs.js están ocultas)
+  function shown(el) { return !!(el && el.isConnected && el.offsetParent !== null); }
+
   function debounce(fn, ms) {
     var t;
     return function () { var a = arguments, self = this; clearTimeout(t); t = setTimeout(function () { fn.apply(self, a); }, ms); };
@@ -340,7 +343,7 @@ window.Inv = window.Inv || (function () {
     select: select,
     $: $, esc: esc, norm: norm, mxn: mxn, num: num, round2: round2, api: api, toast: toast,
     openModal: openModal, closeModal: closeModal, fecha: fecha, fechaHora: fechaHora,
-    hoyISO: hoyISO, iso: iso, periodo: periodo, datePicker: datePicker, debounce: debounce
+    hoyISO: hoyISO, iso: iso, periodo: periodo, datePicker: datePicker, debounce: debounce, shown: shown
   };
 })();
 /* ---------------------------------------------------------------- labels.js */
@@ -609,7 +612,8 @@ window.InvLabels = window.InvLabels || (function () {
    ========================================================= */
 (function () {
   var I = window.Inv;
-  if (!I || !I.$('invArticulos')) return;
+  if (!I || !I.$('invArticulos') || I.$('invArticulos')._booted) return; // una sola vez (subnav-tabs.js corre otra vez este archivo)
+  I.$('invArticulos')._booted = true;
   var $ = I.$, esc = I.esc, mxn = I.mxn;
 
   var PAGE = 60;
@@ -2012,7 +2016,7 @@ window.InvLabels = window.InvLabels || (function () {
   $('tbEtiquetas').addEventListener('click', function () { openEtiquetas(current()); });
 
   document.addEventListener('keydown', function (e) {
-    if (!I.$('invArticulos')) return; // otra pestaña en pantalla (subnav-tabs.js)
+    if (!I.shown(I.$('invArticulos'))) return; // otra pestaña en pantalla (subnav-tabs.js)
     var modal = document.querySelector('.admin-modal-overlay.open');
     var keys = { F2: 1, F3: 1, F4: 1, F5: 1, F6: 1, F7: 1, F8: 1, F9: 1 };
     if (keys[e.key]) {
@@ -2062,7 +2066,8 @@ window.InvLabels = window.InvLabels || (function () {
    ========================================================= */
 (function () {
   var I = window.Inv;
-  if (!I || !I.$('invDepartamentos')) return;
+  if (!I || !I.$('invDepartamentos') || I.$('invDepartamentos')._booted) return; // una sola vez (subnav-tabs.js corre otra vez este archivo)
+  I.$('invDepartamentos')._booted = true;
   var $ = I.$, esc = I.esc;
 
   var deps = [], selected = null, editDep = null, editCat = null;
@@ -2151,7 +2156,7 @@ window.InvLabels = window.InvLabels || (function () {
   /* ---------- categorías ---------- */
   function renderCats() {
     var d = dep();
-    $('catForm').hidden = !d;
+    $('depCatForm').hidden = !d;
     $('catVerArts').hidden = !d;
     if (!d) {
       $('catHead').textContent = 'Categorías';
@@ -2214,7 +2219,7 @@ window.InvLabels = window.InvLabels || (function () {
       .then(function (d) { I.toast('Categoría ' + d.categoria.nombre + ' guardada.'); editCat = null; return load().then(function () { return true; }); })
       .catch(function (err) { I.toast(err.message, 'error'); return false; });
   }
-  $('catForm').addEventListener('submit', function (e) {
+  $('depCatForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var d = dep();
     var nombre = $('catNombre').value.trim();
@@ -2258,25 +2263,25 @@ window.InvLabels = window.InvLabels || (function () {
   function askDelete(kind, obj) {
     if (!obj) return;
     del = { kind: kind, obj: obj };
-    $('delError').textContent = '';
-    $('delTitle').textContent = kind === 'dep' ? 'Borrar departamento' : 'Borrar categoría';
+    $('depDelError').textContent = '';
+    $('depDelTitle').textContent = kind === 'dep' ? 'Borrar departamento' : 'Borrar categoría';
     var blocked = obj.articulos > 0;
     var cats = kind === 'dep' ? obj.categorias.length : 0;
-    $('delText').innerHTML = blocked
+    $('depDelText').innerHTML = blocked
       ? 'No se puede borrar <strong>' + esc(obj.nombre) + '</strong>: tiene <strong>' + obj.articulos + '</strong> ' + (obj.articulos === 1 ? 'artículo' : 'artículos') + '. Primero cámbialos de ' + (kind === 'dep' ? 'departamento' : 'categoría') + ' (en Artículos → Editar).'
       : '¿Borrar <strong>' + esc(obj.nombre) + '</strong>?' + (cats ? ' También se borran sus ' + cats + ' categorías (no tienen artículos).' : '');
-    $('delOk').hidden = blocked;
-    I.openModal($('delModal'));
+    $('depDelOk').hidden = blocked;
+    I.openModal($('depDelModal'));
   }
-  $('delOk').addEventListener('click', function () {
+  $('depDelOk').addEventListener('click', function () {
     if (!del) return;
     var btn = this; btn.disabled = true;
     var url = del.kind === 'dep' ? '/api/inventario/departamentos/' + del.obj.id : '/api/inventario/categorias/' + del.obj.id;
     I.api(url, { method: 'DELETE' }).then(function () {
-      I.closeModal($('delModal'));
+      I.closeModal($('depDelModal'));
       I.toast((del.kind === 'dep' ? 'Departamento ' : 'Categoría ') + del.obj.nombre + ' borrado.');
       return load();
-    }).catch(function (err) { $('delError').textContent = err.message; })
+    }).catch(function (err) { $('depDelError').textContent = err.message; })
       .finally(function () { btn.disabled = false; });
   });
 
@@ -2304,7 +2309,8 @@ window.InvLabels = window.InvLabels || (function () {
    ========================================================= */
 (function () {
   var I = window.Inv;
-  if (!I || !I.$('invAjustes')) return;
+  if (!I || !I.$('invAjustes') || I.$('invAjustes')._booted) return; // una sola vez (subnav-tabs.js corre otra vez este archivo)
+  I.$('invAjustes')._booted = true;
   var $ = I.$, esc = I.esc;
   var DRAFT = 'attomosInvConteo';
   var TIPOS = { fisico: 'Inventario físico', entrada: 'Entrada', salida: 'Salida', fijar: 'Existencia fijada' };
@@ -3107,7 +3113,8 @@ window.InvLabels = window.InvLabels || (function () {
    ========================================================= */
 window.InvEscaner = (function () {
   var I = window.Inv, A = window.InvAjustes;
-  if (!I || !A || !I.$('paneEscaner')) return null;
+  if (!I || !A || !I.$('paneEscaner') || I.$('paneEscaner')._booted) return null;
+  I.$('paneEscaner')._booted = true;
   var $ = I.$, esc = I.esc;
   var KEY = 'attomosInvEscaneo';
 
@@ -3610,7 +3617,8 @@ window.InvEscaner = (function () {
    ========================================================= */
 (function () {
   var I = window.Inv;
-  if (!I || !I.$('invMovimientos')) return;
+  if (!I || !I.$('invMovimientos') || I.$('invMovimientos')._booted) return; // una sola vez (subnav-tabs.js corre otra vez este archivo)
+  I.$('invMovimientos')._booted = true;
   var $ = I.$, esc = I.esc;
   var TIPOS = { venta: 'Venta', pedido: 'Pedido', entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', inicial: 'Alta' };
 
@@ -3622,13 +3630,13 @@ window.InvEscaner = (function () {
   } catch (e) {}
 
   /* ---------- periodo ---------- */
-  var dpDesde = I.datePicker($('perDesde'), { onChange: load, range: function () { return [dpDesde.get(), dpHasta.get()]; } });
-  var dpHasta = I.datePicker($('perHasta'), { onChange: load, alignEnd: true, range: function () { return [dpDesde.get(), dpHasta.get()]; } });
+  var dpDesde = I.datePicker($('mvPerDesde'), { onChange: load, range: function () { return [dpDesde.get(), dpHasta.get()]; } });
+  var dpHasta = I.datePicker($('mvPerHasta'), { onChange: load, alignEnd: true, range: function () { return [dpDesde.get(), dpHasta.get()]; } });
   function syncPer() {
-    Array.prototype.forEach.call($('perSeg').querySelectorAll('button'), function (x) { x.classList.toggle('is-on', x.getAttribute('data-p') === f.per); });
-    $('perRange').hidden = f.per !== 'rango';
+    Array.prototype.forEach.call($('mvPerSeg').querySelectorAll('button'), function (x) { x.classList.toggle('is-on', x.getAttribute('data-p') === f.per); });
+    $('mvPerRange').hidden = f.per !== 'rango';
   }
-  $('perSeg').addEventListener('click', function (e) {
+  $('mvPerSeg').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-p]');
     if (!b) return;
     f.per = b.getAttribute('data-p');
@@ -3644,7 +3652,7 @@ window.InvEscaner = (function () {
   });
 
   /* ---------- buscador: sugiere artículos; Enter busca texto ---------- */
-  var pick = $('pick'), input = $('mvSearch'), res = $('pickResults'), hl = -1, results = [];
+  var pick = $('mvPick'), input = $('mvSearch'), res = $('mvPickResults'), hl = -1, results = [];
   function suggest() {
     var words = I.norm(input.value).split(/\s+/).filter(Boolean);
     if (!words.length || !arts.length) { pick.classList.remove('is-open'); return; }
@@ -3679,7 +3687,7 @@ window.InvEscaner = (function () {
     var o = e.target.closest('.inv-pick-opt');
     if (o) chooseItem(Number(o.getAttribute('data-id')));
   });
-  document.addEventListener('click', function (e) { if (!e.target.closest('#pick')) pick.classList.remove('is-open'); });
+  document.addEventListener('click', function (e) { if (!e.target.closest('#mvPick')) pick.classList.remove('is-open'); });
   function chooseItem(id) {
     f.item = id; f.q = ''; input.value = '';
     pick.classList.remove('is-open');

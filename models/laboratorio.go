@@ -2,8 +2,9 @@ package models
 
 // laboratorio.go — Laboratorio (ópticas), portado de Avante.
 //
-// El tablero acomoda los pedidos confirmados por paso: Recibido → En proceso
-// → Corte → Control de calidad. "Recibido" = estatus confirmed; los demás =
+// El tablero acomoda los pedidos confirmados por paso: A autorizar → En
+// proceso → Corte → Control de calidad. "A autorizar" (clave "recibido") =
+// estatus confirmed; los demás =
 // estatus preparing ("En laboratorio") con su LabStep. Al terminar, el
 // trabajo pasa a "Listo para recoger" (ready) y sale del tablero. El cliente
 // ve el paso en /rastreo.
@@ -37,7 +38,7 @@ const (
 )
 
 var labSteps = []LabStepInfo{
-	{ID: 1, SortOrder: 1, Key: LabStepRecibido, Label: "Recibido", Color: "#2563eb"},
+	{ID: 1, SortOrder: 1, Key: LabStepRecibido, Label: "A autorizar", Color: "#2563eb"},
 	{ID: 2, SortOrder: 2, Key: LabStepProceso, Label: "En proceso", Color: "#ea580c"},
 	{ID: 3, SortOrder: 3, Key: LabStepCorte, Label: "Corte", Color: "#7c3aed"},
 	{ID: 4, SortOrder: 4, Key: LabStepCalidad, Label: "Control de calidad", Color: "#0891b2"},
@@ -117,6 +118,9 @@ type LabOrder struct {
 	Externo      bool       `json:"externo"`
 	LastBy       string     `json:"lastBy,omitempty"`
 	LastAt       *time.Time `json:"lastAt,omitempty"`
+	Limpio       bool       `json:"limpio,omitempty"` // el laboratorio lo limpió de su columna
+	Entrega      string     `json:"entrega"`          // fecha estimada "AAAA-MM-DD" ("" = sin fecha)
+	Express      bool       `json:"express"`          // lente express (por ahora solo la etiqueta)
 }
 
 func labOrigen(src OrderSource) string {
@@ -132,8 +136,28 @@ func labOrigen(src OrderSource) string {
 }
 
 // ListLabOrders — los trabajos del tablero (confirmados o en laboratorio,
-// que lleven algún producto que no sea servicio).
-func ListLabOrders(userID uint) ([]LabOrder, error) {
+// que lleven algún producto que no sea servicio). Los que el laboratorio
+// limpió de su columna solo vienen con limpios = true; limpiosN cuenta
+// cuántos hay.
+func ListLabOrders(userID uint, limpios bool) (out []LabOrder, limpiosN int, err error) {
+	all, err := listLabOrders(userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	out = make([]LabOrder, 0, len(all))
+	for _, o := range all {
+		if o.Limpio {
+			limpiosN++
+			if !limpios {
+				continue
+			}
+		}
+		out = append(out, o)
+	}
+	return out, limpiosN, nil
+}
+
+func listLabOrders(userID uint) ([]LabOrder, error) {
 	var list []Order
 	if err := config.DB.Where("user_id = ? AND status IN ?", userID,
 		[]string{string(OrderStatusConfirmed), string(OrderStatusPreparing)}).
@@ -208,6 +232,10 @@ func ListLabOrders(userID uint) ([]LabOrder, error) {
 			ID: o.ID, OrderCode: o.TrackingCode, Total: o.Total, RxOD: o.RxOD, RxOI: o.RxOI,
 			CustomerName: o.ClientName, Status: labStepOf(o), CreatedAt: o.CreatedAt,
 			LabNotes: o.LabNotes, Notes: o.Notes, Origen: labOrigen(o.Source), Externo: o.LabExterno, Items: []string{},
+			Limpio: o.LabLimpio, Express: o.LabExpress,
+		}
+		if o.LabEntrega != nil {
+			lo.Entrega = o.LabEntrega.Format("2006-01-02")
 		}
 		for j, it := range o.Items {
 			q := it.Quantity
@@ -266,7 +294,7 @@ func SetLabStep(userID, id uint, step, by string) (*Order, error) {
 	if err != nil {
 		return nil, err
 	}
-	upd := map[string]interface{}{}
+	upd := map[string]interface{}{"lab_limpio": false} // al moverlo vuelve al tablero
 	switch {
 	case step == string(OrderStatusReady):
 		upd["status"] = OrderStatusReady
@@ -284,22 +312,48 @@ func SetLabStep(userID, id uint, step, by string) (*Order, error) {
 	return o, nil
 }
 
-// ReadyLabColumn — todos los trabajos de un paso pasan a "Listo para recoger".
-func ReadyLabColumn(userID uint, step, by string) (int, error) {
-	list, err := ListLabOrders(userID)
+// ClearLabColumn — "Limpiar columna": los trabajos de ese paso salen del
+// tablero del laboratorio (no se borran ni cambian de paso).
+func ClearLabColumn(userID uint, step string) (int, error) {
+	list, err := listLabOrders(userID)
 	if err != nil {
 		return 0, err
 	}
-	n := 0
+	var ids []uint
 	for _, o := range list {
-		if o.Status != step {
-			continue
-		}
-		if _, err := SetLabStep(userID, o.ID, string(OrderStatusReady), by); err == nil {
-			n++
+		if o.Status == step && !o.Limpio {
+			ids = append(ids, o.ID)
 		}
 	}
-	return n, nil
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	res := config.DB.Model(&Order{}).Where("user_id = ? AND id IN ?", userID, ids).Update("lab_limpio", true)
+	return int(res.RowsAffected), res.Error
+}
+
+// SetLabEntrega — fecha estimada de entrega ("AAAA-MM-DD"; "" la quita).
+func SetLabEntrega(userID, id uint, date string) error {
+	if _, err := labGetOrder(userID, id); err != nil {
+		return err
+	}
+	var v interface{}
+	if date != "" {
+		t, err := time.ParseInLocation("2006-01-02", date, time.Local)
+		if err != nil {
+			return err
+		}
+		v = t
+	}
+	return config.DB.Model(&Order{}).Where("id = ? AND user_id = ?", id, userID).Update("lab_entrega", v).Error
+}
+
+// SetLabExpress — marca o desmarca el trabajo como lente express.
+func SetLabExpress(userID, id uint, on bool) error {
+	if _, err := labGetOrder(userID, id); err != nil {
+		return err
+	}
+	return config.DB.Model(&Order{}).Where("id = ? AND user_id = ?", id, userID).Update("lab_express", on).Error
 }
 
 // SetLabNotes / SetLabExterno — datos del laboratorio.
@@ -320,53 +374,10 @@ func SetLabExterno(userID, id uint, on bool) error {
 	return config.DB.Model(&Order{}).Where("id = ? AND user_id = ?", id, userID).Update("lab_externo", on).Error
 }
 
-// LabOrderInput — trabajo nuevo con un producto del inventario.
-type LabOrderInput struct {
-	InventoryID  int64  `json:"inventoryId"`
-	Quantity     int    `json:"quantity"`
-	CustomerName string `json:"customerName"`
-	RxOD         string `json:"rxOD"`
-	RxOI         string `json:"rxOI"`
-	Notes        string `json:"notes"`
-}
-
-var ErrLabItemNotFound = errors.New("ese producto ya no está en el inventario")
-
-// NewLabOrder arma el trabajo (sin guardarlo): producto y precio del inventario.
-func NewLabOrder(userID uint, in LabOrderInput) (*Order, error) {
-	it, err := GetInvItem(userID, in.InventoryID)
-	if err != nil || it == nil {
-		return nil, ErrLabItemNotFound
-	}
-	q := in.Quantity
-	if q <= 0 {
-		q = 1
-	}
-	code, err := NewTrackingCode()
-	if err != nil {
-		return nil, err
-	}
-	return &Order{
-		UserID:        userID,
-		ClientName:    in.CustomerName,
-		Items:         OrderItems{{Name: it.Descripcion, Quantity: q, Price: it.Precio1, ItemID: it.ID}},
-		Total:         round2(it.Precio1 * float64(q)),
-		OrderType:     OrderTypeLocalPickup,
-		Status:        OrderStatusConfirmed,
-		Source:        OrderSourceLab,
-		PaymentMethod: "pos",
-		TrackingCode:  code,
-		LabStep:       LabStepRecibido,
-		LabNotes:      in.Notes,
-		RxOD:          in.RxOD,
-		RxOI:          in.RxOI,
-	}, nil
-}
-
 // FindLabOrderByCode — para el escáner (la clave del ticket).
 func FindLabOrderByCode(userID uint, code string) (*LabOrder, error) {
 	code = NormalizeTrackingCode(code)
-	list, err := ListLabOrders(userID)
+	list, err := listLabOrders(userID)
 	if err != nil {
 		return nil, err
 	}

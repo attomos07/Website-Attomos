@@ -2,19 +2,20 @@ package handlers
 
 // laboratorio.go — Laboratorio (sidebar → Laboratorio, solo ópticas).
 // Portado de Avante: tablero de trabajos por paso (arrastrar, avanzar,
-// escáner con la clave del ticket), detalle con historial y notas y
-// trabajo nuevo con un producto del inventario.
+// escáner con la clave del ticket), detalle con historial, notas, entrega
+// estimada y lente express. Los trabajos llegan del Punto de venta (como en
+// Avante: ya no se dan de alta aquí).
 //
 //	GET   /laboratorio
-//	GET   /api/laboratorio/pedidos
-//	POST  /api/laboratorio/pedidos            trabajo nuevo (descuenta del inventario)
-//	PATCH /api/laboratorio/pedidos/:id/estado {status: paso | "ready"}
-//	PUT   /api/laboratorio/pedidos/:id/notas  {notes}
-//	PUT   /api/laboratorio/pedidos/:id/externo {externo}
+//	GET   /api/laboratorio/pedidos?limpios=1     (limpios = incluir los limpiados)
+//	PATCH /api/laboratorio/pedidos/:id/estado    {status: paso | "ready"}
+//	PUT   /api/laboratorio/pedidos/:id/notas     {notes}
+//	PUT   /api/laboratorio/pedidos/:id/externo   {externo}
+//	PUT   /api/laboratorio/pedidos/:id/entrega   {entrega: "AAAA-MM-DD" | ""}
+//	PUT   /api/laboratorio/pedidos/:id/express   {express}
 //	GET   /api/laboratorio/pedidos/:id/historial
-//	POST  /api/laboratorio/listos             {status}: toda la columna → Listo para recoger
-//	POST  /api/laboratorio/escanear           {code}: el trabajo pasa al siguiente paso
-//	GET   /api/laboratorio/inventario       productos para "Nuevo trabajo" (sin costos)
+//	POST  /api/laboratorio/limpiar               {status}: limpia la última columna (no se borra nada)
+//	POST  /api/laboratorio/escanear              {code}: el trabajo pasa al siguiente paso
 
 import (
 	"errors"
@@ -22,8 +23,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
-	"attomos/config"
 	"attomos/models"
 
 	"github.com/gin-gonic/gin"
@@ -57,12 +58,12 @@ func labFail(c *gin.Context, where string, err error, msg string) {
 
 // LabListOrders — GET /api/laboratorio/pedidos
 func LabListOrders(c *gin.Context) {
-	list, err := models.ListLabOrders(invUserID(c))
+	list, limpios, err := models.ListLabOrders(invUserID(c), c.Query("limpios") == "1")
 	if err != nil {
 		labFail(c, "ListOrders", err, "No se pudieron cargar los trabajos.")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"pedidos": list, "estados": models.LabSteps()})
+	c.JSON(http.StatusOK, gin.H{"pedidos": list, "estados": models.LabSteps(), "limpios": limpios})
 }
 
 // LabSetStatus — PATCH /api/laboratorio/pedidos/:id/estado
@@ -156,97 +157,74 @@ func LabOrderHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// LabReadyColumn — POST /api/laboratorio/listos {status}
-func LabReadyColumn(c *gin.Context) {
+// LabClearColumn — POST /api/laboratorio/limpiar {status}
+// Solo la última columna (Control de calidad): sus trabajos salen del
+// tablero sin borrarse ni cambiar de paso ("Ver limpiados" los muestra).
+func LabClearColumn(c *gin.Context) {
 	var in struct {
 		Status string `json:"status"`
 	}
-	if err := c.ShouldBindJSON(&in); err != nil || models.LabStepLabel(in.Status) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Columna inválida."})
+	steps := models.LabSteps()
+	if err := c.ShouldBindJSON(&in); err != nil || len(steps) == 0 || strings.TrimSpace(in.Status) != steps[len(steps)-1].Key {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Solo se puede limpiar la columna de " + steps[len(steps)-1].Label + "."})
 		return
 	}
-	n, err := models.ReadyLabColumn(invUserID(c), in.Status, posCashier(c))
+	n, err := models.ClearLabColumn(invUserID(c), strings.TrimSpace(in.Status))
 	if err != nil {
-		labFail(c, "ReadyColumn", err, "No se pudo actualizar la columna.")
+		labFail(c, "ClearColumn", err, "No se pudo limpiar la columna.")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"listos": n})
+	c.JSON(http.StatusOK, gin.H{"limpiados": n})
 }
 
-// LabCreateOrder — POST /api/laboratorio/pedidos
-func LabCreateOrder(c *gin.Context) {
-	var in models.LabOrderInput
-	if err := c.ShouldBindJSON(&in); err != nil || in.InventoryID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige un producto del inventario."})
+// LabSetEntrega — PUT /api/laboratorio/pedidos/:id/entrega {entrega}
+// Fecha estimada de entrega de ese trabajo (una por lente, a mano).
+func LabSetEntrega(c *gin.Context) {
+	id, ok := labID(c)
+	if !ok {
 		return
 	}
-	in.CustomerName = strings.TrimSpace(in.CustomerName)
-	if in.CustomerName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Escribe el nombre del cliente."})
+	var in struct {
+		Entrega string `json:"entrega"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
 		return
 	}
-	if in.Quantity > 999 {
-		in.Quantity = 999
-	}
-	for _, s := range []*string{&in.CustomerName, &in.RxOD, &in.RxOI} {
-		*s = strings.TrimSpace(*s)
-		if r := []rune(*s); len(r) > 120 {
-			*s = string(r[:120])
+	date := strings.TrimSpace(in.Entrega)
+	if date != "" {
+		d, err := time.Parse("2006-01-02", date)
+		if err != nil || d.Year() < 2000 || d.Year() > 2100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Fecha inválida."})
+			return
 		}
 	}
-	in.Notes = strings.TrimSpace(in.Notes)
-	if r := []rune(in.Notes); len(r) > 500 {
-		in.Notes = string(r[:500])
-	}
-	uid := invUserID(c)
-	o, err := models.NewLabOrder(uid, in)
-	if errors.Is(err, models.ErrLabItemNotFound) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Ese producto ya no está en el inventario."})
+	if err := models.SetLabEntrega(invUserID(c), id, date); err != nil {
+		labFail(c, "SetEntrega", err, "No se pudo guardar.")
 		return
 	}
-	if err != nil {
-		labFail(c, "CreateOrder", err, "No se pudo crear el trabajo.")
-		return
-	}
-	if err := config.DB.Create(o).Error; err != nil {
-		labFail(c, "CreateOrder", err, "No se pudo crear el trabajo.")
-		return
-	}
-	models.LogOrderStatus(uid, o.ID, string(o.Status), models.LabStepRecibido, posCashier(c))
-	// Descuenta del Inventario (kárdex "pedido").
-	orderApplyStock(o, "Laboratorio")
-	c.JSON(http.StatusCreated, gin.H{"id": o.ID, "orderCode": o.TrackingCode})
+	c.JSON(http.StatusOK, gin.H{"entrega": date})
 }
 
-type labInvItem struct {
-	ID           int64   `json:"id"`
-	Clave        string  `json:"clave"`
-	Descripcion  string  `json:"descripcion"`
-	Departamento string  `json:"departamento"`
-	Categoria    string  `json:"categoria"`
-	Existencia   int     `json:"existencia"`
-	Minimo       int     `json:"minimo"`
-	Precio       float64 `json:"precio"`
-	Servicio     bool    `json:"servicio"`
-	Localizacion string  `json:"localizacion"`
-}
-
-// LabInventario — GET /api/laboratorio/inventario (sin costos)
-func LabInventario(c *gin.Context) {
-	list, err := models.ListInvItems(invUserID(c))
-	if err != nil {
-		labFail(c, "Inventario", err, "No se pudo cargar el inventario.")
+// LabSetExpress — PUT /api/laboratorio/pedidos/:id/express {express}
+// Por ahora solo la etiqueta «Express» en la tarjeta.
+func LabSetExpress(c *gin.Context) {
+	id, ok := labID(c)
+	if !ok {
 		return
 	}
-	out := make([]labInvItem, 0, len(list))
-	for _, a := range list {
-		out = append(out, labInvItem{
-			ID: a.ID, Clave: a.Clave, Descripcion: a.Descripcion, Departamento: a.Departamento,
-			Categoria: a.Categoria, Existencia: a.Existencia, Minimo: a.Minimo, Precio: a.Precio1,
-			Servicio: a.Servicio, Localizacion: a.Localizacion,
-		})
+	var in struct {
+		Express bool `json:"express"`
 	}
-	c.JSON(http.StatusOK, out)
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
+		return
+	}
+	if err := models.SetLabExpress(invUserID(c), id, in.Express); err != nil {
+		labFail(c, "SetExpress", err, "No se pudo guardar.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"express": in.Express})
 }
 
 // LabScan — POST /api/laboratorio/escanear {code}

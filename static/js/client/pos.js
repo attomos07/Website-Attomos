@@ -5,6 +5,13 @@
      AvSelect · AvDate · Punto de venta · Ventas · Corte de caja
    (el ticket vive en pos-ticket-render.js, que también usa el ticket público)
    ========================================================= */
+/* ¿Está en pantalla? Las pestañas que se guardan al cambiar de pestaña
+   (subnav-tabs.js) se quedan ocultas en la página. */
+function posShown(el) { return !!(el && el.isConnected && el.offsetParent !== null); }
+/* Cada módulo arranca una sola vez aunque subnav-tabs.js vuelva a correr
+   este archivo (lo hace al traer otra pestaña). */
+function posOnce(el) { if (!el || el._booted) return false; el._booted = true; return true; }
+
 /* Datos del negocio para el ticket (los pone el servidor en data-biz). */
 (function () {
   var el = document.querySelector('[data-biz]');
@@ -358,12 +365,12 @@ window.AvDate = window.AvDate || (function () {
 /* ---------------------------------------------------------------- calendarios (Ventas / Corte de caja) */
 (function () {
   function $(id) { return document.getElementById(id); }
-  if ($('vtPage')) {
+  if ($('vtDesde') && posOnce($('vtDesde'))) {
     AvDate.pair($('vtDesde'), $('vtHasta'));
     AvDate.enhance($('vtExpDia'));
     AvDate.enhance($('vtExpSemana'));
   }
-  if ($('ccPage')) {
+  if ($('ccMovDesde') && posOnce($('ccMovDesde'))) {
     AvDate.pair($('ccMovDesde'), $('ccMovHasta'));
     AvDate.pair($('ccSDesde'), $('ccSHasta'));
   }
@@ -389,7 +396,7 @@ window.AvDate = window.AvDate || (function () {
 (function () {
   'use strict';
   var page = document.getElementById('posPage');
-  if (!page) return;
+  if (!page || !posOnce(page)) return;
   var T = window.PosTicket;
   var cajero = page.getAttribute('data-cajero') || '';
 
@@ -583,7 +590,7 @@ window.AvDate = window.AvDate || (function () {
     renderCart(); renderProducts();
   });
   $('posMobileBar').addEventListener('click', function () {
-    document.querySelector('.pos-cart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    page.querySelector('.pos-cart').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('posClearBtn').addEventListener('click', function () { lines = []; renderCart(); renderProducts(); });
 
@@ -1317,7 +1324,7 @@ window.AvDate = window.AvDate || (function () {
   function closeModal(ov) { ov.classList.remove('open'); if (!document.querySelector('.admin-modal-overlay.open')) document.body.style.overflow = ''; }
 
   document.addEventListener('keydown', function (e) {
-    if (!page.isConnected) return; // otra pestaña en pantalla (subnav-tabs.js)
+    if (!posShown(page)) return; // otra pestaña en pantalla (subnav-tabs.js)
     var anyOpen = document.querySelector('.admin-modal-overlay.open');
     if (e.key === 'F2') { e.preventDefault(); if (!anyOpen) { searchInput.focus(); searchInput.select(); } }
     if (e.key === 'F12') { e.preventDefault(); if (!anyOpen) openPay(); }
@@ -1358,7 +1365,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 (function () {
   'use strict';
   var page = document.getElementById('vtPage');
-  if (!page) return;
+  if (!page || !posOnce(page)) return;
   var T = window.PosTicket;
   var cajero = page.getAttribute('data-cajero') || '';
 
@@ -1856,7 +1863,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     var b = e.target.closest('button[data-period]');
     if (!b) return;
     b.classList.remove('is-pop'); void b.offsetWidth; b.classList.add('is-pop');
-    var wrap = document.querySelector('.vt-table-wrap'), stats = $('vtStats');
+    var wrap = page.querySelector('.vt-table-wrap'), stats = $('vtStats');
     [wrap, stats].forEach(function (el) { if (!el) return; el.classList.remove('is-swap'); void el.offsetWidth; el.classList.add('is-swap'); });
   });
   window.addEventListener('resize', function () { movePeriod(true); });
@@ -2235,7 +2242,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 (function () {
   'use strict';
   var page = document.getElementById('ccPage');
-  if (!page) return;
+  if (!page || !posOnce(page)) return;
   var T = window.PosTicket;
   var VE = page.getAttribute('data-ve') === '1';
   var ADMIN = page.getAttribute('data-admin') === '1';
@@ -2314,7 +2321,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     if (m._onClose) { var f = m._onClose; m._onClose = null; f(); }
   }
   function topModal() { return openStack[openStack.length - 1] || null; }
-  document.querySelectorAll('.admin-modal-overlay').forEach(function (m) {
+  document.querySelectorAll('.admin-modal-overlay[id^="cc"]').forEach(function (m) {
     m.addEventListener('click', function (e) {
       if (e.target === m || e.target.closest('[data-close]')) closeModal(m);
     });
@@ -2339,7 +2346,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   function setTab(name) {
     tab = name;
     $('ccTabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-tab') === name); });
-    document.querySelectorAll('.cc-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== name; });
+    page.querySelectorAll('.cc-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== name; });
     try { localStorage.setItem('attomosCorteTab', name); } catch (e) {}
     if (name === 'estado') loadEstadoTab();
     if (name === 'movs') loadMovs();
@@ -2631,7 +2638,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     }).catch(function (err) { toast(err.message, 'error'); });
   }
   function syncTools() {
-    document.querySelectorAll('.cc-toolbar [data-need]').forEach(function (b) {
+    page.querySelectorAll('.cc-toolbar [data-need]').forEach(function (b) {
       var need = b.getAttribute('data-need');
       b.disabled = !current || (need === 'reporte' && !current.reporte);
     });
@@ -2700,7 +2707,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     if (!b) return;
     var sub = b.getAttribute('data-sub');
     $('ccSubtabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('is-on', x === b); });
-    document.querySelectorAll('[data-subpane]').forEach(function (p) { p.hidden = p.getAttribute('data-subpane') !== sub; });
+    page.querySelectorAll('[data-subpane]').forEach(function (p) { p.hidden = p.getAttribute('data-subpane') !== sub; });
   });
   function filteredMovs() {
     if (!current || !current.reporte) return [];
@@ -3112,7 +3119,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     ticket: function () { printTicket(); }
   };
   document.addEventListener('click', function (e) {
-    if (!page.isConnected) return;
+    if (!posShown(page)) return;
     var b = e.target.closest('[data-act]');
     if (b && ACTS[b.getAttribute('data-act')] && !b.disabled) ACTS[b.getAttribute('data-act')]();
   });
@@ -3265,7 +3272,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
      ATAJOS DE TECLADO (los de SICAR)
      ======================================================= */
   document.addEventListener('keydown', function (e) {
-    if (!page.isConnected) return;
+    if (!posShown(page)) return;
     var k = e.key, ctrl = e.ctrlKey || e.metaKey, alt = e.altKey;
     var top = topModal();
     if (k === 'Escape' && top) { closeModal(top); return; }
@@ -3294,9 +3301,9 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   page.addEventListener('subnav:show', function () { loadEstado(); });
   try {
     var saved = localStorage.getItem('attomosCorteTab');
-    if (saved && saved !== 'corte' && document.querySelector('[data-pane="' + saved + '"]')) setTab(saved);
+    if (saved && saved !== 'corte' && page.querySelector('[data-pane="' + saved + '"]')) setTab(saved);
   } catch (e) {}
-  if (!MAIL_ON) document.querySelectorAll('[data-act="email"]').forEach(function (b) { b.title = 'El correo del sistema no está configurado en el servidor'; });
+  if (!MAIL_ON) document.querySelectorAll('#ccPage [data-act="email"], .admin-modal-overlay[id^="cc"] [data-act="email"]').forEach(function (b) { b.title = 'El correo del sistema no está configurado en el servidor'; });
 })();
 
 /* =========================================================
@@ -3307,7 +3314,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 (function () {
   'use strict';
   var input = document.getElementById('cslSearch');
-  if (!input) return;
+  if (!input || !posOnce(input)) return;
   var results = document.getElementById('cslResults');
   var countEl = document.getElementById('cslCount');
   var emptyEl = document.getElementById('cslEmpty');
@@ -3424,7 +3431,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   'use strict';
   var T = window.PosTicket;
   var page = document.getElementById('tkpPage');
-  if (!T || !page) return;
+  if (!T || !page || !posOnce(page)) return;
 
   var API = '/api/pos/ticket-plantilla';
   var form = document.getElementById('tkpForm');
@@ -3553,7 +3560,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 
   // Variables del pagaré: se insertan donde está el cursor
   var pagareText = document.getElementById('tkpPagareText');
-  document.querySelector('.tkp-vars').addEventListener('click', function (e) {
+  page.querySelector('.tkp-vars').addEventListener('click', function (e) {
     var b = e.target.closest('[data-var]');
     if (!b) return;
     var token = '{' + b.getAttribute('data-var') + '}';
@@ -3618,7 +3625,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   }
   saveBtn.addEventListener('click', save);
   document.addEventListener('keydown', function (e) {
-    if (!page.isConnected) return;
+    if (!posShown(page)) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
   });
   window.addEventListener('beforeunload', function (e) {

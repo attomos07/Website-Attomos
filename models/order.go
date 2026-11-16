@@ -131,8 +131,15 @@ type Order struct {
 	LabStep    string `gorm:"size:30" json:"labStep"`
 	LabNotes   string `gorm:"type:text" json:"labNotes"`
 	LabExterno bool   `gorm:"default:false" json:"labExterno"`
-	RxOD       string `gorm:"size:120" json:"rxOD"`
-	RxOI       string `gorm:"size:120" json:"rxOI"`
+	// LabLimpio: el laboratorio lo quitó de su tablero ("Limpiar columna");
+	// sigue en su paso y se ve con "Ver limpiados".
+	LabLimpio bool `gorm:"default:false" json:"labLimpio"`
+	// LabEntrega: fecha estimada de entrega de este trabajo (la pone el
+	// laboratorio). LabExpress: lente express (por ahora solo la etiqueta).
+	LabEntrega *time.Time `gorm:"type:date" json:"labEntrega,omitempty"`
+	LabExpress bool       `gorm:"default:false" json:"labExpress"`
+	RxOD       string     `gorm:"size:120" json:"rxOD"`
+	RxOI       string     `gorm:"size:120" json:"rxOI"`
 
 	// ── Timestamps ───────────────────────────
 	CreatedAt time.Time      `json:"createdAt"`
