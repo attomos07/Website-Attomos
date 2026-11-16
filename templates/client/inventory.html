@@ -38,12 +38,14 @@
         <p>El catálogo del inventario: claves, precios, existencias y dónde está cada cosa.</p>
       </div>
 
+{{if not .Optica}}
     <nav class="inv-seg inv-subnav" aria-label="Secciones de inventario">
       <a href="/inventory/articulos" class="{{if eq .InvTab "articulos"}}is-on{{end}}">Artículos</a>
       <a href="/inventory/departamentos" class="{{if eq .InvTab "departamentos"}}is-on{{end}}">Departamentos</a>
       <a href="/inventory/ajustes" class="{{if eq .InvTab "ajustes"}}is-on{{end}}">Ajustes</a>
       <a href="/inventory/movimientos" class="{{if eq .InvTab "movimientos"}}is-on{{end}}">Movimientos</a>
     </nav>
+{{end}}
     </div>
 
     <!-- Resumen -->
@@ -594,12 +596,14 @@
         <p>Cómo se clasifican los artículos: cada departamento tiene sus categorías. Sirve para filtrar el catálogo, hacer conteos por partes y ver reportes.</p>
       </div>
 
+{{if not .Optica}}
     <nav class="inv-seg inv-subnav" aria-label="Secciones de inventario">
       <a href="/inventory/articulos" class="{{if eq .InvTab "articulos"}}is-on{{end}}">Artículos</a>
       <a href="/inventory/departamentos" class="{{if eq .InvTab "departamentos"}}is-on{{end}}">Departamentos</a>
       <a href="/inventory/ajustes" class="{{if eq .InvTab "ajustes"}}is-on{{end}}">Ajustes</a>
       <a href="/inventory/movimientos" class="{{if eq .InvTab "movimientos"}}is-on{{end}}">Movimientos</a>
     </nav>
+{{end}}
     </div>
 
     <div class="inv-two">
@@ -692,12 +696,14 @@
         <p>Inventario físico: cuenta lo que hay en {{if .Optica}}la óptica{{else}}el negocio{{end}} y el sistema corrige las existencias. Cada ajuste queda con su folio para consultarlo después.</p>
       </div>
 
+{{if not .Optica}}
     <nav class="inv-seg inv-subnav" aria-label="Secciones de inventario">
       <a href="/inventory/articulos" class="{{if eq .InvTab "articulos"}}is-on{{end}}">Artículos</a>
       <a href="/inventory/departamentos" class="{{if eq .InvTab "departamentos"}}is-on{{end}}">Departamentos</a>
       <a href="/inventory/ajustes" class="{{if eq .InvTab "ajustes"}}is-on{{end}}">Ajustes</a>
       <a href="/inventory/movimientos" class="{{if eq .InvTab "movimientos"}}is-on{{end}}">Movimientos</a>
     </nav>
+{{end}}
     </div>
 
     <div class="inv-seg inv-mode-switch" id="ajMode" role="tablist">
@@ -1002,12 +1008,14 @@
         <p>El kárdex: cada vez que cambia la existencia de un artículo queda aquí — ventas, entradas, salidas, ajustes y altas — con quién lo hizo y cuándo.</p>
       </div>
 
+{{if not .Optica}}
     <nav class="inv-seg inv-subnav" aria-label="Secciones de inventario">
       <a href="/inventory/articulos" class="{{if eq .InvTab "articulos"}}is-on{{end}}">Artículos</a>
       <a href="/inventory/departamentos" class="{{if eq .InvTab "departamentos"}}is-on{{end}}">Departamentos</a>
       <a href="/inventory/ajustes" class="{{if eq .InvTab "ajustes"}}is-on{{end}}">Ajustes</a>
       <a href="/inventory/movimientos" class="{{if eq .InvTab "movimientos"}}is-on{{end}}">Movimientos</a>
     </nav>
+{{end}}
     </div>
 
     <div class="inv-stats is-3">

@@ -1815,9 +1815,3 @@ td > .cita-origen-badge, #calEventOrigen{ margin-right:6px; }
 .cev-row--who{ flex-wrap:wrap; row-gap:8px; }
 .cev-row--who .cev-txt{ flex:1 1 150px; min-width:150px; }
 .cev-row--who .cev-txt strong{ overflow-wrap:break-word; word-break:normal; }
-/* Ópticas: Mis citas es la pestaña «Citas» de Recepción (barra de pestañas
-   igual que la del Punto de venta). */
-.citas-subnav-row{ display:flex; margin:-.75rem 0 1.4rem; }
-.citas-subnav-row .inv-subnav{ max-width:100%; }
-body.citas-focus-mode .citas-subnav-row{ display:none; }
-@media (max-width:768px){ .citas-subnav-row{ margin-top:-.25rem; } }

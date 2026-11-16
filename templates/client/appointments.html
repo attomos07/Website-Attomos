@@ -13,7 +13,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=6">
-    <link rel="stylesheet" href="/static/css/client/appointments.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=8">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
 </head>
 <body class="inv-body citas-body" data-optica="{{if .Optica}}1{{end}}" data-cap="{{.Capacidad}}" data-biz-name="{{.BusinessName}}" data-services="{{.ServicesJSON}}" data-workers="{{.WorkersJSON}}">
@@ -52,19 +52,6 @@
       </div>
     </div>
 
-    {{if .Optica}}
-    <!-- Ópticas: Mis citas es una pestaña de Recepción (las demás son el Punto de venta) -->
-    <div class="citas-subnav-row">
-      <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones de recepción">
-        <a href="/appointments" class="is-on">Citas</a>
-        <a href="/pos/punto-de-venta" data-subnav-hard>Punto de venta</a>
-        <a href="/pos/consultas" data-subnav-hard>Consultas</a>
-        <a href="/pos/ventas" data-subnav-hard>Ventas</a>
-        <a href="/pos/corte-de-caja" data-subnav-hard>Corte de caja</a>
-        <a href="/pos/plantillas" data-subnav-hard>Plantillas</a>
-      </nav>
-    </div>
-    {{end}}
 
     <!-- Periodo: filtra indicadores y tabla por el día de la cita -->
     <div class="cf-bar" id="citasFiltro">
@@ -832,7 +819,6 @@
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-{{if .Optica}}<script src="/static/js/client/subnav-tabs.js?v=4"></script>{{end}}
 <script src="/static/js/client/appointments.js?v=7"></script>
 <script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>

@@ -2,14 +2,16 @@
      pestañas de Avante (Punto de venta · Consultas · Ventas · Corte de caja ·
      Plantillas); cada ruta /pos/<pestaña> la renderiza con su .PosTab. */}}
 {{define "pos-subnav"}}
-    <nav class="inv-seg inv-subnav pos-subnav" aria-label="{{if .Optica}}Secciones de recepción{{else}}Secciones del punto de venta{{end}}">
-      {{if .Optica}}<a href="/appointments" data-subnav-hard>Citas</a>{{end}}
+{{/* Ópticas: estas pestañas son ítems del sidebar (grupo Recepción). */}}
+{{if not .Optica}}
+    <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones del punto de venta">
       <a href="/pos/punto-de-venta" class="{{if eq .PosTab "punto-de-venta"}}is-on{{end}}">Punto de venta</a>
       <a href="/pos/consultas" class="{{if eq .PosTab "consultas"}}is-on{{end}}">Consultas</a>
       <a href="/pos/ventas" class="{{if eq .PosTab "ventas"}}is-on{{end}}">Ventas</a>
       <a href="/pos/corte-de-caja" class="{{if eq .PosTab "corte-de-caja"}}is-on{{end}}">Corte de caja</a>
       <a href="/pos/plantillas" class="{{if eq .PosTab "plantillas"}}is-on{{end}}">Plantillas</a>
     </nav>
+{{end}}
 {{end}}
 <!DOCTYPE html>
 <html lang="es">

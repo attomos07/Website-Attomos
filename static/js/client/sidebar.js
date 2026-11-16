@@ -51,36 +51,36 @@
         if (ordersItem) ordersItem.style.display  = isFood ? ''     : 'none';
     }
 
-    // Laboratorio y Optometría: solo ópticas. En las ópticas el menú va
-    // por ROLES, cada uno con su título:
-    //   Recepción (Punto de venta, con Mis citas como pestaña) ·
-    //   Optometría (Examen de la vista, Historial clínico, Orden de
-    //   laboratorio, Garantía / reparación, Plantilla de examen) ·
-    //   Laboratorio · Inventario · y Gestión con lo demás (CRM…).
+    // Ópticas: el menú va por ROLES, cada uno con su título y sus vistas
+    // (lo que antes eran pestañas ahora son ítems):
+    //   Recepción   — Citas, Punto de venta, Consultas, Ventas, Corte de caja, Plantillas
+    //   Optometría  — Examen de la vista, Historial clínico, Orden de laboratorio,
+    //                 Garantía / reparación, Plantilla de examen
+    //   Laboratorio — Laboratorio
+    //   Inventario  — Artículos, Departamentos, Ajustes, Movimientos
+    //   Gestión     — lo demás (CRM…)
+    const REC_ITEMS = ['recCitasItem', 'recPosItem', 'recConsultasItem', 'recVentasItem', 'recCorteItem', 'recPlantillasItem'];
     const OPT_ITEMS = ['optExamItem', 'clientHistoryMenuItem', 'optOrdenesItem', 'optGarantiasItem', 'optPlantillaItem'];
+    const INV_ITEMS = ['invArticulosItem', 'invDepItem', 'invAjustesItem', 'invMovItem'];
     function isOpticaType(bt) { bt = normalizeStr(bt); return bt.includes('optica') || bt.includes('optic'); }
     function applyOpticaLogic(businessType) {
         const labItem = document.getElementById('labMenuItem');
         if (!labItem) return;
         const isOptica = isOpticaType(businessType);
         labItem.style.display = isOptica ? '' : 'none';
-        OPT_ITEMS.forEach((id) => {
+        REC_ITEMS.concat(OPT_ITEMS, INV_ITEMS).forEach((id) => {
             const el = document.getElementById(id);
             if (el && id !== 'clientHistoryMenuItem') el.style.display = isOptica ? '' : 'none';
         });
         if (!isOptica || sidebar.dataset.roles === '1') return;
         sidebar.dataset.roles = '1';
-        const posItem  = document.getElementById('posMenuItem');
-        const invItem  = document.getElementById('inventoryMenuItem');
-        const apptItem = document.getElementById('appointmentsMenuItem');
+        // Los ítems generales que ahora están repartidos por rol.
+        ['appointmentsMenuItem', 'posMenuItem', 'inventoryMenuItem'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
         const histItem = document.getElementById('clientHistoryMenuItem');
-        if (apptItem) apptItem.style.display = 'none'; // vive en Recepción → Citas
         if (histItem) histItem.style.display = '';
-        if (posItem) {
-            const lbl = posItem.querySelector('.sb-label');
-            if (lbl) { lbl.setAttribute('data-translate', 'dash_nav_reception'); lbl.textContent = t('dash_nav_reception', 'Recepción'); }
-            posItem.dataset.also = '/appointments';
-        }
         const manage = scroll.querySelector('.sb-group[data-group-key="dash_group_manage"]');
         if (manage) {
             const head = (key, fallback) => {
@@ -91,13 +91,12 @@
                 d.textContent = t(key, fallback);
                 return d;
             };
-            [
-                head('dash_group_reception', 'Recepción'), posItem,
-                head('dash_group_optometry', 'Optometría')
-            ].concat(OPT_ITEMS.map((id) => document.getElementById(id))).concat([
-                head('dash_group_lab', 'Laboratorio'), labItem,
-                head('dash_group_inventory', 'Inventario'), invItem
-            ]).forEach((el) => { if (el) manage.before(el); });
+            const ids = (list) => list.map((id) => document.getElementById(id));
+            [head('dash_group_reception', 'Recepción')].concat(ids(REC_ITEMS),
+                [head('dash_group_optometry', 'Optometría')], ids(OPT_ITEMS),
+                [head('dash_group_lab', 'Laboratorio'), labItem],
+                [head('dash_group_inventory', 'Inventario')], ids(INV_ITEMS)
+            ).forEach((el) => { if (el) manage.before(el); });
         }
         updateGroups();
         setActivePage();
