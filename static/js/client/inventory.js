@@ -14,7 +14,8 @@
                   openModal, closeModal, fecha, fechaHora, hoyISO,
                   periodo, datePicker, debounce }
    ========================================================= */
-window.Inv = (function () {
+// Si ya existe (al abrir otra pestaña sin recargar, ver subnav-tabs.js) se reutiliza.
+window.Inv = window.Inv || (function () {
   var mxn = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 });
   var numFmt = new Intl.NumberFormat('es-MX');
   var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -359,7 +360,7 @@ window.Inv = (function () {
 
    window.InvLabels = { config, setConfig, status, print, test, guess }
    ========================================================= */
-window.InvLabels = (function () {
+window.InvLabels = window.InvLabels || (function () {
   var AGENT = 'http://127.0.0.1:17771';
   var KEY = 'attomos.etiquetadora';
   var DEF = { printer: '', lang: 'tspl', w: 50, h: 25, gap: 2, enabled: true, priceImg: true };
@@ -1938,6 +1939,7 @@ window.InvLabels = (function () {
   $('tbEtiquetas').addEventListener('click', function () { openEtiquetas(current()); });
 
   document.addEventListener('keydown', function (e) {
+    if (!I.$('invArticulos')) return; // otra pestaña en pantalla (subnav-tabs.js)
     var modal = document.querySelector('.admin-modal-overlay.open');
     var keys = { F2: 1, F3: 1, F4: 1, F5: 1, F6: 1, F7: 1, F8: 1, F9: 1 };
     if (keys[e.key]) {
@@ -1971,6 +1973,8 @@ window.InvLabels = (function () {
   } catch (e) {}
   load(false);
   loadArmazonData();
+  // Al volver a esta pestaña (sin recargar la página) se actualiza la lista.
+  I.$('invArticulos').addEventListener('subnav:show', function () { load(true); });
 })();
 /* ---------------------------------------------------------------- departments.js */
 /* =========================================================
@@ -3522,7 +3526,7 @@ window.InvEscaner = (function () {
 
   load();
   return { show: show };
-})();
+})() || window.InvEscaner;
 /* ---------------------------------------------------------------- movements.js */
 /* =========================================================
    INVENTARIO → Movimientos (kárdex)
@@ -3816,4 +3820,5 @@ window.InvEscaner = (function () {
   syncPer();
   I.api('/api/inventario/articulos').then(function (d) { arts = d.items || []; }).catch(function () {});
   load();
+  I.$('invMovimientos').addEventListener('subnav:show', function () { load(); });
 })();

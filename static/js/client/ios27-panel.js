@@ -115,7 +115,8 @@
     // ====================================================================
     // 2. NÚMEROS DE LAS TARJETAS (también montos con $)
     // ====================================================================
-    var STAT_SEL = '.inv-stat strong, .vt-stat strong, .stat-value';
+    // Mis citas (.num) y Ventas (vtSt*) ya cuentan sus números: aquí se dejan en paz.
+    var STAT_SEL = '.inv-stat strong, .vt-stat strong:not([id^="vtSt"])';
     var counting = new WeakSet();
     var shownByKey = {};
     function parseStat(text) {
@@ -227,6 +228,8 @@
         }
         function render() {
             if (!group.isConnected) {
+                // Pestaña guardada por subnav-tabs.js: vuelve a aparecer después.
+                if (group.closest('[data-subnav-parked]')) return;
                 renderers.delete(render);
                 [X, Y, W, H, S].forEach(function (s) { springs.delete(s); });
                 return;
@@ -286,6 +289,7 @@
 
         function render() {
             if (!menu.isConnected) {
+                if (menu.closest('[data-subnav-parked]')) return;
                 renderers.delete(render);
                 [X, Y, W, H, V].forEach(function (s) { springs.delete(s); });
                 menus.delete(menu);

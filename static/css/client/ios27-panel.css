@@ -443,6 +443,195 @@ body.dark .ios-dd-ind { background: rgba(6, 182, 212, 0.16); }
 }
 
 /* ---------------------------------------------------------------
+   6b. Modales con el estilo del de Crear agente (onboarding):
+       blanco y redondo, campos en cápsula, íconos en círculo,
+       botones en cápsula con degradado cian.
+   --------------------------------------------------------------- */
+.inv-body {
+  --ios-ring: 0 0 0 1.5px rgba(15, 23, 42, 0.07);
+  --ios-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px -16px rgba(15, 23, 42, 0.28);
+  --ios-field-line: rgba(15, 23, 42, 0.1);
+}
+
+.inv-body .admin-modal-card {
+  border: 0;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.18);
+}
+
+.inv-body .admin-modal-head {
+  padding: 1rem 1.25rem 1rem 1.5rem;
+  border-bottom-color: #eef2f7;
+}
+
+.inv-body .admin-modal-head h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.inv-body .admin-modal-close {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: #f3f4f6;
+  color: #475569;
+}
+
+.inv-body .admin-modal-close:hover {
+  border: 0;
+  background: rgba(6, 182, 212, 0.12);
+  color: #0891b2;
+  transform: rotate(90deg);
+}
+
+/* Etiquetas como en onboarding (sin mayúsculas) */
+.inv-body .admin-modal-card .staff-field > span,
+.inv-body .admin-modal-card .crear-cita-tipo-label,
+.inv-body .admin-modal-card .cita-tag-pick-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #6b7280;
+}
+
+/* Campos en cápsula, sobre blanco */
+.inv-body .admin-modal-card .staff-field input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+.inv-body .admin-modal-card .staff-field select,
+.inv-body .admin-modal-card .cb-datepicker-trigger,
+.inv-body .admin-modal-card .time-picker-trigger,
+.inv-body .admin-modal-card .admin-role-select-btn,
+.inv-body .admin-modal-card .av-select-btn,
+.inv-body .admin-modal-card .staff-lada-btn,
+.inv-body .admin-modal-card .inv-pick input {
+  border: 1.5px solid var(--ios-field-line);
+  border-radius: 999px;
+  background-color: #ffffff;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+  min-height: 46px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  transition: border-color 0.2s ease, box-shadow 0.45s var(--ios-spring), background-color 0.2s ease, transform 0.5s var(--ios-spring);
+}
+
+.inv-body .admin-modal-card .staff-field textarea {
+  border: 1.5px solid var(--ios-field-line);
+  border-radius: 22px;
+  background: #ffffff;
+  padding: 0.85rem 1.1rem;
+  transition: border-color 0.2s ease, box-shadow 0.45s var(--ios-spring);
+}
+
+.inv-body .admin-modal-card .staff-field input:not([type="checkbox"]):not([type="radio"]):hover,
+.inv-body .admin-modal-card .staff-field select:hover,
+.inv-body .admin-modal-card .staff-field textarea:hover,
+.inv-body .admin-modal-card .cb-datepicker-trigger:hover,
+.inv-body .admin-modal-card .time-picker-trigger:hover,
+.inv-body .admin-modal-card .admin-role-select-btn:hover,
+.inv-body .admin-modal-card .av-select-btn:hover,
+.inv-body .admin-modal-card .staff-lada-btn:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+.inv-body .admin-modal-card .staff-field input:not([type="checkbox"]):not([type="radio"]):focus,
+.inv-body .admin-modal-card .staff-field select:focus,
+.inv-body .admin-modal-card .staff-field textarea:focus,
+.inv-body .admin-modal-card .cb-datepicker.is-open .cb-datepicker-trigger,
+.inv-body .admin-modal-card .time-picker.is-open .time-picker-trigger,
+.inv-body .admin-modal-card .admin-role-select.is-open .admin-role-select-btn,
+.inv-body .admin-modal-card .av-select.is-open .av-select-btn,
+.inv-body .admin-modal-card .staff-lada-select.is-open .staff-lada-btn {
+  outline: none;
+  border-color: #06b6d4;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+  transform: none;
+}
+
+/* Lada del celular: cápsula blanca como los demás campos */
+.inv-body .admin-modal-card .staff-lada-btn { color: #0891b2; font-weight: 700; }
+
+/* Números de sección e íconos: círculo con degradado */
+.inv-body .admin-modal-card .form-section-num {
+  background: linear-gradient(150deg, #22d3ee, #0891b2);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 6px 14px -6px rgba(6, 182, 212, 0.8);
+}
+
+.inv-body .admin-modal-card .form-section-title { color: #0f172a; font-weight: 800; letter-spacing: -0.01em; }
+
+/* Recuadros que eran cian claro: tarjeta blanca con anillo y sombra suave */
+.inv-body .admin-modal-card .crear-cita-tipo,
+.inv-body .admin-modal-card .inv-arm {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: var(--ios-ring), var(--ios-soft);
+}
+
+/* Chips: cápsulas blancas con anillo; la elegida, cian */
+.inv-body .admin-modal-card .qchip span {
+  border: 0;
+  background: #ffffff;
+  box-shadow: var(--ios-ring), var(--ios-soft);
+  transition: box-shadow 0.25s ease, background 0.2s ease, color 0.2s ease, transform 0.45s var(--ios-spring);
+}
+
+.inv-body .admin-modal-card .qchip:hover span { box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.45), var(--ios-soft); }
+.inv-body .admin-modal-card .qchip:active span { transform: scale(0.94); }
+
+.inv-body .admin-modal-card .qchip input:checked + span {
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 18px -8px rgba(6, 182, 212, 0.8);
+}
+
+.inv-body .admin-modal-card .qchip input:checked + span svg,
+.inv-body .admin-modal-card .qchip input:checked + span i { color: #fff !important; }
+
+/* Botones (en modales y en la página): cápsula. El principal con
+   degradado cian; el secundario blanco con anillo. */
+.inv-body .btn {
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.inv-body .btn.solid {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 22px -10px rgba(6, 182, 212, 0.8);
+}
+
+.inv-body .btn.solid:hover:not(:disabled) {
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 14px 28px -12px rgba(6, 182, 212, 0.85);
+}
+
+.inv-body .btn.solid:disabled {
+  background: rgba(6, 182, 212, 0.14);
+  color: rgba(8, 145, 178, 0.55);
+  box-shadow: none;
+}
+
+.inv-body .admin-modal-card .btn:not(.solid):not(.danger) {
+  border: 0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: var(--ios-ring), var(--ios-soft);
+}
+
+.inv-body .admin-modal-card .btn:not(.solid):not(.danger):hover {
+  background: #ffffff;
+  color: #0891b2;
+  box-shadow: 0 0 0 1.5px rgba(6, 182, 212, 0.45), var(--ios-soft);
+}
+
+.inv-body .admin-modal-body::-webkit-scrollbar-thumb { border-radius: 999px; }
+
+/* ---------------------------------------------------------------
    7. Movimiento reducido
    --------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

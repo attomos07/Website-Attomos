@@ -26,7 +26,8 @@
    Si el código cambia las <option> del select, el menú se
    actualiza solo.
    ========================================================= */
-window.AvSelect = (function(){
+// Si ya existe (al abrir otra pestaña sin recargar, ver subnav-tabs.js) se reutiliza.
+window.AvSelect = window.AvSelect || (function(){
   var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   var CHECK = '<svg class="av-select-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var openOne = null;
@@ -173,7 +174,7 @@ window.AvSelect = (function(){
      AvDate.enhanceAll(contenedor)             // todos los input[data-av-date]
    Respeta min / max del input. Estilos en citas-recepcion.css.
    ========================================================= */
-window.AvDate = (function () {
+window.AvDate = window.AvDate || (function () {
   'use strict';
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   var CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
@@ -1316,6 +1317,7 @@ window.AvDate = (function () {
   function closeModal(ov) { ov.classList.remove('open'); if (!document.querySelector('.admin-modal-overlay.open')) document.body.style.overflow = ''; }
 
   document.addEventListener('keydown', function (e) {
+    if (!page.isConnected) return; // otra pestaña en pantalla (subnav-tabs.js)
     var anyOpen = document.querySelector('.admin-modal-overlay.open');
     if (e.key === 'F2') { e.preventDefault(); if (!anyOpen) { searchInput.focus(); searchInput.select(); } }
     if (e.key === 'F12') { e.preventDefault(); if (!anyOpen) openPay(); }
@@ -1335,6 +1337,8 @@ window.AvDate = (function () {
   renderClient();
   renderCart();
   searchProducts();
+  // Al volver a esta pestaña (sin recargar) se actualizan existencias.
+  page.addEventListener('subnav:show', function () { searchProducts(); });
 })();
 
 // Forma de la propina: dropdown animado (av-select.js).
@@ -2211,6 +2215,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 
   syncFilters();
   load();
+  page.addEventListener('subnav:show', function () { load(); });
 })();
 /* ---------------------------------------------------------------- corte de caja */
 /* =========================================================
@@ -3107,6 +3112,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
     ticket: function () { printTicket(); }
   };
   document.addEventListener('click', function (e) {
+    if (!page.isConnected) return;
     var b = e.target.closest('[data-act]');
     if (b && ACTS[b.getAttribute('data-act')] && !b.disabled) ACTS[b.getAttribute('data-act')]();
   });
@@ -3259,6 +3265,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
      ATAJOS DE TECLADO (los de SICAR)
      ======================================================= */
   document.addEventListener('keydown', function (e) {
+    if (!page.isConnected) return;
     var k = e.key, ctrl = e.ctrlKey || e.metaKey, alt = e.altKey;
     var top = topModal();
     if (k === 'Escape' && top) { closeModal(top); return; }
@@ -3284,6 +3291,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 
   /* ---------- arranque ---------- */
   loadEstado();
+  page.addEventListener('subnav:show', function () { loadEstado(); });
   try {
     var saved = localStorage.getItem('attomosCorteTab');
     if (saved && saved !== 'corte' && document.querySelector('[data-pane="' + saved + '"]')) setTab(saved);
@@ -3610,6 +3618,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   }
   saveBtn.addEventListener('click', save);
   document.addEventListener('keydown', function (e) {
+    if (!page.isConnected) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
   });
   window.addEventListener('beforeunload', function (e) {
