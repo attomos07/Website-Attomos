@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/my-business.css?v=11">
+    <link rel="stylesheet" href="/static/css/client/my-business.css?v=12">
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
 
     <!-- Sileo toast system -->
@@ -813,33 +813,13 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                             </div>
                         </div>
 
-                        <!-- PRODUCTOS Y SERVICIOS: ahora viven en Inventario.
-                             La lista vieja se queda oculta para no perder lo que ya
-                             estaba guardado (se sigue mandando al guardar); el agente
-                             solo la usa si todavía no hay nada en Inventario
-                             (ver bots/bot_config.go). -->
-                        <div class="profile-card mybiz-catalog-card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <i class="lni lni-package"></i>
-                                    <h2>Productos y servicios</h2>
-                                </div>
-                            </div>
-                            <div class="card-content mybiz-catalog">
-                                <p class="card-hint">Lo que ofrece tu agente ahora se administra en <strong>Inventario</strong>: precio, existencias, fotos y, en la pestaña <strong>Venta</strong> de cada artículo, el nombre y la descripción para vender y las promociones.</p>
-                                <div class="mybiz-catalog-links">
-                                    <a class="mybiz-catalog-link" href="/inventory">
-                                        <span class="mybiz-catalog-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
-                                        <span><b>Ir a Inventario</b><small>Artículos, servicios, promociones y existencias</small></span>
-                                        <svg class="mybiz-catalog-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
-                                    </a>
-                                </div>
-                                <div hidden>
-                                    <button type="button" id="btnAddService"></button>
-                                    <div class="services-list" id="servicesList"></div>
-                                    <div class="empty-list-hint" id="servicesHint"></div>
-                                </div>
-                            </div>
+                        <!-- Productos y servicios: ahora viven en Inventario (pestaña Venta).
+                             La lista vieja se queda oculta para no perder lo guardado
+                             (my-business.js la sigue leyendo y mandando al guardar). -->
+                        <div hidden>
+                            <button type="button" id="btnAddService"></button>
+                            <div class="services-list" id="servicesList"></div>
+                            <div class="empty-list-hint" id="servicesHint"></div>
                         </div>
 
                         <!-- MENÚ -->

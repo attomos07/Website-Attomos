@@ -29,6 +29,10 @@ window.AvDate = (function () {
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
   function txt(s) { var d = parse(s); return d ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() : 'dd/mm/aaaa'; }
+  // <input type="month"> ("2026-11"): se elige el mes en una cuadrícula de 12.
+  function parseM(s) { var m = /^(\d{4})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, 1) : null; }
+  function isoM(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function txtM(s) { var d = parseM(s); return d ? MESES[d.getMonth()].charAt(0).toUpperCase() + MESES[d.getMonth()].slice(1) + ' de ' + d.getFullYear() : 'Elige el mes'; }
 
   function closeAll(except) {
     document.querySelectorAll('.av-date.is-open').forEach(function (w) { if (w !== except && w._av) w._av.close(); });
@@ -41,17 +45,18 @@ window.AvDate = (function () {
   function enhance(input, opts) {
     if (!input || input._avDate) return input && input._avDate;
     opts = opts || {};
+    var MONTH = input.type === 'month' || opts.month;
     var wrap = document.createElement('div');
-    wrap.className = 'cb-datepicker cf-dp av-date' + (opts.align === 'end' ? ' cf-dp--end' : '');
+    wrap.className = 'cb-datepicker cf-dp av-date' + (MONTH ? ' av-month' : '') + (opts.align === 'end' ? ' cf-dp--end' : '');
     wrap.innerHTML =
       '<button type="button" class="cb-datepicker-trigger" aria-haspopup="dialog" aria-expanded="false">' + CAL +
         '<span class="cb-datepicker-value"></span>' + CARET + '</button>' +
       '<div class="cb-datepicker-menu" role="dialog">' +
         '<div class="cb-datepicker-nav"><button type="button" data-nav="-1" aria-label="Mes anterior">' + PREV + '</button>' +
           '<span class="av-date-label"></span><button type="button" data-nav="1" aria-label="Mes siguiente">' + NEXT + '</button></div>' +
-        '<div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>' +
-        '<div class="cb-datepicker-grid"></div>' +
-        '<div class="cb-datepicker-actions"><button type="button" data-act="hoy">Hoy</button></div>' +
+        (MONTH ? '' : '<div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>') +
+        '<div class="cb-datepicker-grid' + (MONTH ? ' av-month-grid' : '') + '"></div>' +
+        '<div class="cb-datepicker-actions"><button type="button" data-act="hoy">' + (MONTH ? 'Este mes' : 'Hoy') + '</button></div>' +
       '</div>';
     input.parentNode.insertBefore(wrap, input);
     wrap.appendChild(input);
@@ -64,7 +69,7 @@ window.AvDate = (function () {
     var grid = wrap.querySelector('.cb-datepicker-grid');
     var label = wrap.querySelector('.av-date-label');
     var valEl = wrap.querySelector('.cb-datepicker-value');
-    var view = parse(input.value) || new Date();
+    var view = (MONTH ? parseM(input.value) : parse(input.value)) || new Date();
     view = new Date(view.getFullYear(), view.getMonth(), 1);
     var api = { wrap: wrap, partner: null, sync: sync, close: close, render: render };
     input._avDate = api;
@@ -79,13 +84,24 @@ window.AvDate = (function () {
 
     function sync() {
       var v = input.value;
-      valEl.textContent = txt(v);
+      valEl.textContent = MONTH ? txtM(v) : txt(v);
       wrap.classList.toggle('is-empty', !v);
       wrap.classList.toggle('is-disabled', input.disabled);
       btn.disabled = input.disabled;
       if (wrap.classList.contains('is-open')) render();
     }
     function render() {
+      if (MONTH) {
+        label.textContent = String(view.getFullYear());
+        var selM = input.value, nowM = isoM(new Date()), mh = '';
+        for (var mi = 0; mi < 12; mi++) {
+          var mk = view.getFullYear() + '-' + pad(mi + 1);
+          mh += '<button type="button" class="cb-datepicker-day av-month-cell' + (mk === nowM ? ' is-today' : '') + (mk === selM ? ' is-selected' : '') +
+            '" data-d="' + mk + '" style="--i:' + mi + '">' + MESES[mi].slice(0, 3) + '</button>';
+        }
+        grid.innerHTML = mh;
+        return;
+      }
       label.textContent = MESES[view.getMonth()] + ' ' + view.getFullYear();
       var first = new Date(view.getFullYear(), view.getMonth(), 1);
       var start = new Date(first); start.setDate(1 - first.getDay());
@@ -126,7 +142,7 @@ window.AvDate = (function () {
     }
     function openMenu() {
       closeAll(wrap);
-      var d = parse(input.value) || (api.partner && parse(api.partner.inputValue())) || new Date();
+      var d = (MONTH ? parseM(input.value) : parse(input.value)) || (api.partner && parse(api.partner.inputValue())) || new Date();
       view = new Date(d.getFullYear(), d.getMonth(), 1);
       render();
       wrap.classList.add('is-open');
@@ -162,13 +178,14 @@ window.AvDate = (function () {
       e.stopPropagation();
       var nav = e.target.closest('[data-nav]');
       if (nav) {
-        view = new Date(view.getFullYear(), view.getMonth() + Number(nav.getAttribute('data-nav')), 1);
+        view = MONTH ? new Date(view.getFullYear() + Number(nav.getAttribute('data-nav')), 0, 1)
+          : new Date(view.getFullYear(), view.getMonth() + Number(nav.getAttribute('data-nav')), 1);
         grid.classList.remove('is-slide-l', 'is-slide-r'); void grid.offsetWidth;
         grid.classList.add(nav.getAttribute('data-nav') === '1' ? 'is-slide-l' : 'is-slide-r');
         render();
         return;
       }
-      if (e.target.closest('[data-act="hoy"]')) { pick(iso(new Date())); return; }
+      if (e.target.closest('[data-act="hoy"]')) { pick(MONTH ? isoM(new Date()) : iso(new Date())); return; }
       var day = e.target.closest('[data-d]');
       if (day && !day.classList.contains('is-disabled')) pick(day.getAttribute('data-d'));
     });
@@ -236,6 +253,8 @@ window.CITAS_CAP = Math.max(1, parseInt(document.body.getAttribute('data-cap'), 
    ========================================================= */
 window.CitaTags = (function(){
   var TAGS = {
+    sitio: { label: 'La agendó desde la página web', short: 'Web', auto: true,
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="3"/><path d="M2.5 9h19M6 6.5h.01M8.5 6.5h.01"/><path d="m9 14 2 2 4-4"/></svg>' },
     bot: { label: 'La agendó el bot', short: 'Bot', auto: true,
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M8 4h8M9 14h.01M15 14h.01"/></svg>' },
     sin_cita: { label: 'Vino sin cita', short: 'Sin cita',
@@ -248,7 +267,7 @@ window.CitaTags = (function(){
       icon: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3Z"/></svg>' }
   };
   var ORDER = ['sin_cita', 'chequeo', 'telefono', 'whatsapp']; // las que se eligen a mano
-  var ALL = ['bot'].concat(ORDER);                          // leyendas y resúmenes
+  var ALL = ['bot', 'sitio'].concat(ORDER);                          // leyendas y resúmenes
   var byId = {};
   var loaded = false;
 
@@ -426,6 +445,10 @@ window.CitasFiltro = (function(){
   var STORE = 'attomosCitasFiltro';
 
   var TIPOS = {
+    // Por la web: citas que lleguen de la página web del negocio. Por ahora
+    // solo se muestra (todavía no hay página vinculada que las mande).
+    sitio: { label: 'Por la web', title: 'La agendó el cliente desde tu página web (pronto podrás vincularla)',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="3"/><path d="M2.5 9h19M6 6.5h.01M8.5 6.5h.01"/><path d="m9 14 2 2 4-4"/></svg>' },
     bot: { label: 'Bot', title: 'La agendó tu bot (se pone sola)',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M8 4h8M9 14h.01M15 14h.01"/></svg>' },
     web: { label: 'Sin etiqueta', title: 'Citas del panel sin marcar cómo llegaron',
@@ -439,7 +462,7 @@ window.CitasFiltro = (function(){
     whatsapp: { label: 'Por WhatsApp', title: 'Agendó por WhatsApp',
       icon: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3Z"/></svg>' }
   };
-  var ORDER = ['bot', 'sin_cita', 'chequeo', 'telefono', 'whatsapp', 'web'];
+  var ORDER = ['bot', 'sitio', 'sin_cita', 'chequeo', 'telefono', 'whatsapp', 'web'];
   var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
   var state = { period: 'todas', desde: '', hasta: '', tipo: '' };
@@ -522,7 +545,7 @@ window.CitasFiltro = (function(){
   }
   function renderTipos(rows){
     if (!tiposEl) return;
-    var counts = { bot: 0, web: 0, sin_cita: 0, chequeo: 0, telefono: 0, whatsapp: 0 };
+    var counts = { bot: 0, sitio: 0, web: 0, sin_cita: 0, chequeo: 0, telefono: 0, whatsapp: 0 };
     rows.forEach(function(r){ counts[tipoOf(r)]++; });
     var total = rows.length;
     ORDER.forEach(function(k){
@@ -3239,6 +3262,7 @@ if (window.feather) feather.replace();
 if (window.AvDate) {
   AvDate.enhance(document.getElementById('ceExpDia'));
   AvDate.enhance(document.getElementById('ceExpSemana'));
+  AvDate.enhance(document.getElementById('ceExpMes')); // mes en cuadrícula (igual que el calendario)
 }
 
 /* =========================================================

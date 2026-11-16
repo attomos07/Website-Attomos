@@ -648,6 +648,60 @@ body.dark .ios-dd-ind { background: rgba(6, 182, 212, 0.16); }
 .inv-body .admin-modal-body::-webkit-scrollbar-thumb { border-radius: 999px; }
 
 /* ---------------------------------------------------------------
+   6c. Mis citas: indicadores de "Tipo de cita" con resorte al pasar
+       el cursor (se levantan, el ícono rebota y brilla su color).
+   --------------------------------------------------------------- */
+.inv-body .cf-tipo {
+  border-radius: 20px;
+  transition: border-color 0.2s ease, box-shadow 0.35s ease, opacity 0.25s ease, transform 0.55s var(--ios-spring);
+}
+.inv-body .cf-tipo:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 30px -18px var(--tag), 0 0 0 1px color-mix(in srgb, var(--tag) 35%, transparent);
+}
+.inv-body .cf-tipo:active { transform: scale(0.96); transition-duration: 0.2s, 0.2s, 0.2s, 0.12s; }
+.inv-body .cf-tipo-ico { transition: transform 0.55s var(--ios-spring), box-shadow 0.3s ease, background 0.25s ease, color 0.25s ease; }
+.inv-body .cf-tipo:hover .cf-tipo-ico {
+  transform: scale(1.14) rotate(-8deg);
+  background: var(--tag);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px var(--tag);
+}
+.inv-body .cf-tipo-pct { transition: transform 0.5s var(--ios-spring); }
+.inv-body .cf-tipo:hover .cf-tipo-pct { transform: translateY(-2px) scale(1.08); }
+.inv-body .cf-tipo-bar i { transition: width 0.7s var(--ios-spring-smooth); }
+.inv-body .cf-tipo:hover .cf-tipo-bar { height: 5px; transition: height 0.3s ease; }
+
+/* Exportar reporte (Mis citas y Ventas): el campo de cada periodo entra
+   con resorte y el mes se elige en una cuadrícula con resorte. */
+.inv-body .ce-export-pick > :not([hidden]),
+.inv-body .vt-export-pick > :not([hidden]) {
+  animation: iosPaneIn 0.5s var(--ios-spring) both;
+}
+.inv-body .ce-export-range,
+.inv-body .vt-export-range { transition: background 0.25s ease; }
+.inv-body .av-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.inv-body .av-month-cell {
+  aspect-ratio: auto;
+  height: 42px;
+  border-radius: 999px;
+  text-transform: capitalize;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.45s var(--ios-spring);
+}
+.inv-body .av-month-cell:hover { transform: scale(1.05); }
+.inv-body .av-month-cell:active { transform: scale(0.92); }
+.inv-body .av-date.is-open .av-month-cell {
+  animation: iosCellIn 0.5s var(--ios-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+.inv-body .av-month-cell.is-selected { box-shadow: 0 6px 14px -6px rgba(6, 182, 212, 0.7); }
+.inv-body .av-date.is-open .cb-datepicker-day:not(.av-month-cell) {
+  animation: iosCellIn 0.45s var(--ios-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 5ms);
+}
+
+/* ---------------------------------------------------------------
    7. Movimiento reducido
    --------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -657,6 +711,9 @@ body.dark .ios-dd-ind { background: rgba(6, 182, 212, 0.16); }
   .inv-body .ios-cell,
   .inv-body .ios-item-in,
   .inv-body .ios-pop,
+  .inv-body .av-month-cell,
+  .inv-body .ce-export-pick > *,
+  .inv-body .vt-export-pick > *,
   .inv-body .inv-tabpane.is-on,
   .inv-body .cc-pane:not([hidden]),
   .inv-body .scn-pane:not([hidden]) {

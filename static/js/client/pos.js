@@ -195,6 +195,10 @@ window.AvDate = window.AvDate || (function () {
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
   function txt(s) { var d = parse(s); return d ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() : 'dd/mm/aaaa'; }
+  // <input type="month"> ("2026-11"): se elige el mes en una cuadrícula de 12.
+  function parseM(s) { var m = /^(\d{4})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, 1) : null; }
+  function isoM(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function txtM(s) { var d = parseM(s); return d ? MESES[d.getMonth()].charAt(0).toUpperCase() + MESES[d.getMonth()].slice(1) + ' de ' + d.getFullYear() : 'Elige el mes'; }
 
   function closeAll(except) {
     document.querySelectorAll('.av-date.is-open').forEach(function (w) { if (w !== except && w._av) w._av.close(); });
@@ -207,17 +211,18 @@ window.AvDate = window.AvDate || (function () {
   function enhance(input, opts) {
     if (!input || input._avDate) return input && input._avDate;
     opts = opts || {};
+    var MONTH = input.type === 'month' || opts.month;
     var wrap = document.createElement('div');
-    wrap.className = 'cb-datepicker cf-dp av-date' + (opts.align === 'end' ? ' cf-dp--end' : '');
+    wrap.className = 'cb-datepicker cf-dp av-date' + (MONTH ? ' av-month' : '') + (opts.align === 'end' ? ' cf-dp--end' : '');
     wrap.innerHTML =
       '<button type="button" class="cb-datepicker-trigger" aria-haspopup="dialog" aria-expanded="false">' + CAL +
         '<span class="cb-datepicker-value"></span>' + CARET + '</button>' +
       '<div class="cb-datepicker-menu" role="dialog">' +
         '<div class="cb-datepicker-nav"><button type="button" data-nav="-1" aria-label="Mes anterior">' + PREV + '</button>' +
           '<span class="av-date-label"></span><button type="button" data-nav="1" aria-label="Mes siguiente">' + NEXT + '</button></div>' +
-        '<div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>' +
-        '<div class="cb-datepicker-grid"></div>' +
-        '<div class="cb-datepicker-actions"><button type="button" data-act="hoy">Hoy</button></div>' +
+        (MONTH ? '' : '<div class="cb-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>') +
+        '<div class="cb-datepicker-grid' + (MONTH ? ' av-month-grid' : '') + '"></div>' +
+        '<div class="cb-datepicker-actions"><button type="button" data-act="hoy">' + (MONTH ? 'Este mes' : 'Hoy') + '</button></div>' +
       '</div>';
     input.parentNode.insertBefore(wrap, input);
     wrap.appendChild(input);
@@ -230,7 +235,7 @@ window.AvDate = window.AvDate || (function () {
     var grid = wrap.querySelector('.cb-datepicker-grid');
     var label = wrap.querySelector('.av-date-label');
     var valEl = wrap.querySelector('.cb-datepicker-value');
-    var view = parse(input.value) || new Date();
+    var view = (MONTH ? parseM(input.value) : parse(input.value)) || new Date();
     view = new Date(view.getFullYear(), view.getMonth(), 1);
     var api = { wrap: wrap, partner: null, sync: sync, close: close, render: render };
     input._avDate = api;
@@ -245,13 +250,24 @@ window.AvDate = window.AvDate || (function () {
 
     function sync() {
       var v = input.value;
-      valEl.textContent = txt(v);
+      valEl.textContent = MONTH ? txtM(v) : txt(v);
       wrap.classList.toggle('is-empty', !v);
       wrap.classList.toggle('is-disabled', input.disabled);
       btn.disabled = input.disabled;
       if (wrap.classList.contains('is-open')) render();
     }
     function render() {
+      if (MONTH) {
+        label.textContent = String(view.getFullYear());
+        var selM = input.value, nowM = isoM(new Date()), mh = '';
+        for (var mi = 0; mi < 12; mi++) {
+          var mk = view.getFullYear() + '-' + pad(mi + 1);
+          mh += '<button type="button" class="cb-datepicker-day av-month-cell' + (mk === nowM ? ' is-today' : '') + (mk === selM ? ' is-selected' : '') +
+            '" data-d="' + mk + '" style="--i:' + mi + '">' + MESES[mi].slice(0, 3) + '</button>';
+        }
+        grid.innerHTML = mh;
+        return;
+      }
       label.textContent = MESES[view.getMonth()] + ' ' + view.getFullYear();
       var first = new Date(view.getFullYear(), view.getMonth(), 1);
       var start = new Date(first); start.setDate(1 - first.getDay());
@@ -292,7 +308,7 @@ window.AvDate = window.AvDate || (function () {
     }
     function openMenu() {
       closeAll(wrap);
-      var d = parse(input.value) || (api.partner && parse(api.partner.inputValue())) || new Date();
+      var d = (MONTH ? parseM(input.value) : parse(input.value)) || (api.partner && parse(api.partner.inputValue())) || new Date();
       view = new Date(d.getFullYear(), d.getMonth(), 1);
       render();
       wrap.classList.add('is-open');
@@ -328,13 +344,14 @@ window.AvDate = window.AvDate || (function () {
       e.stopPropagation();
       var nav = e.target.closest('[data-nav]');
       if (nav) {
-        view = new Date(view.getFullYear(), view.getMonth() + Number(nav.getAttribute('data-nav')), 1);
+        view = MONTH ? new Date(view.getFullYear() + Number(nav.getAttribute('data-nav')), 0, 1)
+          : new Date(view.getFullYear(), view.getMonth() + Number(nav.getAttribute('data-nav')), 1);
         grid.classList.remove('is-slide-l', 'is-slide-r'); void grid.offsetWidth;
         grid.classList.add(nav.getAttribute('data-nav') === '1' ? 'is-slide-l' : 'is-slide-r');
         render();
         return;
       }
-      if (e.target.closest('[data-act="hoy"]')) { pick(iso(new Date())); return; }
+      if (e.target.closest('[data-act="hoy"]')) { pick(MONTH ? isoM(new Date()) : iso(new Date())); return; }
       var day = e.target.closest('[data-d]');
       if (day && !day.classList.contains('is-disabled')) pick(day.getAttribute('data-d'));
     });
@@ -369,6 +386,7 @@ window.AvDate = window.AvDate || (function () {
     AvDate.pair($('vtDesde'), $('vtHasta'));
     AvDate.enhance($('vtExpDia'));
     AvDate.enhance($('vtExpSemana'));
+    AvDate.enhance($('vtExpMes'));
   }
   if ($('ccMovDesde') && posOnce($('ccMovDesde'))) {
     AvDate.pair($('ccMovDesde'), $('ccMovHasta'));
