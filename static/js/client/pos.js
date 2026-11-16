@@ -311,16 +311,34 @@ window.AvDate = window.AvDate || (function () {
       var d = (MONTH ? parseM(input.value) : parse(input.value)) || (api.partner && parse(api.partner.inputValue())) || new Date();
       view = new Date(d.getFullYear(), d.getMonth(), 1);
       render();
+      // El menú se lleva al <body> mientras está abierto: dentro de un modal
+      // (que tiene transform/overflow) el position:fixed quedaba recortado.
+      shell.className = wrap.className.replace(/\bis-open\b/g, '') + ' av-date-portal';
+      shell.appendChild(menu);
+      if (!shell.parentNode) document.body.appendChild(shell);
       wrap.classList.add('is-open');
       btn.setAttribute('aria-expanded', 'true');
       place();
+      void menu.offsetWidth;
+      shell.classList.add('is-open');
       open = wrap;
     }
     function close() {
       wrap.classList.remove('is-open');
+      shell.classList.remove('is-open');
       btn.setAttribute('aria-expanded', 'false');
       if (open === wrap) open = null;
+      setTimeout(function () {
+        if (wrap.classList.contains('is-open')) return;
+        wrap.appendChild(menu);
+        if (shell.parentNode) shell.parentNode.removeChild(shell);
+      }, 260);
     }
+    var shell = document.createElement('div');
+    shell.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;';
+    function reflow() { if (wrap.classList.contains('is-open')) place(); }
+    window.addEventListener('resize', reflow);
+    window.addEventListener('scroll', reflow, true);
     function pick(k) {
       var changed = input.value !== k;
       input.value = k;
