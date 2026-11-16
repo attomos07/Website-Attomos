@@ -1,0 +1,537 @@
+{{/* Optometría (ópticas). Portado del panel del optometrista de Avante.
+     Cada vista es su propio ítem del sidebar (grupo «Optometría»): Examen de la
+     vista · Historial clínico · Orden de laboratorio · Garantía / reparación ·
+     Plantilla de examen. Una sola plantilla; cada ruta /optometria/<vista> la
+     renderiza con su .OptTab. Historial clínico también sale en clínicas.
+     Llenar un examen u hoja: optometria-nuevo.html.
+     JS: static/js/client/optometria/ · API: handlers/optometria.go */}}
+{{define "opt-doc-tab"}}
+{{/* Orden de laboratorio o Garantía / reparación: la lista de las hojas
+     llenadas. Los ids llevan prefijo ("" o "g") porque las dos pestañas
+     pueden estar en la página a la vez. */}}
+{{$g := eq .OptTab "garantias"}}{{$p := ""}}{{if $g}}{{$p = "g"}}{{end}}
+  <main class="inv-page opt-page" id="{{if $g}}optGarantias{{else}}optOrdenes{{end}}" data-doc="{{if $g}}garantia{{else}}laboratorio{{end}}" data-pfx="{{$p}}">
+    <div class="admin-header">
+      <div>
+        {{if $g}}
+        <h1>Garantía / reparación</h1>
+        <p>Las solicitudes de reparación y las garantías. Marca el tipo en cada hoja: las de GARANTÍA son las que se cuentan.</p>
+        {{else}}
+        <h1>Orden de laboratorio</h1>
+        <p>Las hojas que se mandan al laboratorio. Al elegir al paciente se trae la graduación de su último examen, y al guardarla le llega sola al Laboratorio.</p>
+        {{end}}
+      </div>
+      <div class="admin-header-actions">
+        <a href="/optometria/nuevo?doc={{if $g}}garantia{{else}}laboratorio{{end}}" class="btn solid small opt-new-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> {{if $g}}Nueva garantía{{else}}Nueva orden{{end}}</a>
+      </div>
+    </div>
+    <p class="tpl-status" id="{{$p}}docStatus"></p>
+
+    {{if not $g}}
+    <!-- Ventas del Punto de venta que esperan su orden de laboratorio -->
+    <section class="panel vp-panel" id="vpPanel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Ventas por hacer orden de laboratorio <span class="vp-count" id="vpCount">0</span></h2>
+          <p>Lo que se vendió en Recepción. Revisa el ticket y haz la orden: al guardarla le llega sola al Laboratorio en su tablero.</p>
+        </div>
+      </div>
+      <div class="vp-list" id="vpList"></div>
+    </section>
+    {{end}}
+
+    <div class="ev-stats ev-stats--doc">
+      <div class="ev-stat"><span class="ev-stat-label">Hoy</span><strong class="ev-stat-value" id="{{$p}}dsToday">—</strong><span class="ev-stat-sub" id="{{$p}}dsTodaySub"></span></div>
+      <div class="ev-stat"><span class="ev-stat-label">Este mes</span><strong class="ev-stat-value" id="{{$p}}dsMonth">—</strong><span class="ev-stat-sub" id="{{$p}}dsMonthSub"></span></div>
+      {{if $g}}
+      <div class="ev-stat ev-stat--gar"><span class="ev-stat-label">Garantías · este mes</span><strong class="ev-stat-value" id="{{$p}}dsGar">—</strong><span class="ev-stat-sub" id="{{$p}}dsGarSub"></span></div>
+      {{else}}
+      <div class="ev-stat"><span class="ev-stat-label">Total</span><strong class="ev-stat-value" id="{{$p}}dsTotal">—</strong><span class="ev-stat-sub">órdenes registradas</span></div>
+      {{end}}
+      <div class="ev-stat ev-stat--staff">
+        <span class="ev-stat-label">Este mes · por optometrista</span>
+        <ul class="ev-staff-list" id="{{$p}}dsStaff"><li class="ev-staff-empty">—</li></ul>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>{{if $g}}Garantías y reparaciones{{else}}Órdenes recientes{{end}}</h2>
+          <p id="{{$p}}docCount">Cargando…</p>
+        </div>
+      </div>
+
+      <div class="exam-search-row">
+        <div class="search-box">
+          <div class="search-box-glow"></div>
+          <div class="search-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="{{$p}}docSearch" placeholder="{{if $g}}Buscar por paciente…{{else}}Buscar por paciente o Nº…{{end}}" autocomplete="off">
+          </div>
+        </div>
+        <div class="ev-filters">
+          {{if $g}}
+          <label class="ev-select">
+            <span>Tipo</span>
+            <select id="{{$p}}docType" data-av-select>
+              <option value="">Todas</option>
+              <option value="garantia">Garantía</option>
+              <option value="reparacion">Reparación</option>
+            </select>
+          </label>
+          {{end}}
+          <label class="ev-select">
+            <span>Periodo</span>
+            <select id="{{$p}}docPeriod" data-av-select>
+              <option value="all">Todo</option>
+              <option value="today">Hoy</option>
+              <option value="week">Esta semana</option>
+              <option value="month">Este mes</option>
+            </select>
+          </label>
+          <label class="ev-select">
+            <span>Optometrista</span>
+            <select id="{{$p}}docStaff" data-av-select><option value="">Todos</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="exam-table doc-table">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Fecha</th>
+              {{if $g}}<th>Tipo</th>{{else}}<th>Graduación</th>{{end}}
+              <th>Realizó</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="{{$p}}docList"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="{{$p}}docEmpty" style="display:none;"></div>
+    </section>
+  </main>
+{{end}}
+{{define "opt-doc-modals"}}
+{{$g := eq .OptTab "garantias"}}{{$p := ""}}{{if $g}}{{$p = "g"}}{{end}}
+<div class="admin-modal-overlay" id="{{$p}}deleteDocModal">
+  <div class="admin-modal-card admin-modal-card--sm" role="dialog" aria-modal="true">
+    <div class="admin-modal-head">
+      <h3>Eliminar hoja</h3>
+      <button type="button" class="admin-modal-close" id="{{$p}}deleteDocClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="admin-confirm-text">¿Eliminar la hoja de <strong id="{{$p}}deleteDocName"></strong>? {{if not $g}}Si salió sin venta, su trabajo también se quita del Laboratorio. {{end}}Esta acción no se puede deshacer.</p>
+      <div class="admin-confirm-actions">
+        <button type="button" class="btn small" id="{{$p}}deleteDocCancel">Cancelar</button>
+        <button type="button" class="btn solid small danger" id="{{$p}}deleteDocConfirm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if eq .OptTab "historial-clinico"}}Historial clínico{{else if eq .OptTab "ordenes-lab"}}Orden de laboratorio{{else if eq .OptTab "garantias"}}Garantía / reparación{{else if eq .OptTab "plantilla-examen"}}Plantilla de examen{{else}}Examen de la vista{{end}} — Optometría · Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/client/sidebar.css">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/optometria.css?v=2">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+</head>
+<body class="inv-body opt-body" data-staff="{{.StaffName}}">
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+<div class="app-container">
+  {{template "sidebar.html" .}}
+
+  <div class="main-content">
+  {{template "userbar.html" .}}
+
+  <div class="content-wrapper">
+{{if eq .OptTab "historial-clinico"}}
+{{/* ===================== PESTAÑA: HISTORIAL CLÍNICO ===================== */}}
+  <main class="inv-page opt-page" id="optHistorial">
+    <div class="admin-header">
+      <div>
+        <h1>Historial clínico</h1>
+        <p>La ficha de cada paciente: cómo ha cambiado su graduación, sus antecedentes y cuándo le toca su revisión.</p>
+      </div>
+    </div>
+
+    <!-- Contadores: aquí se cuentan PACIENTES (en Examen de la vista, exámenes) -->
+    <div class="hc-stats" id="hcStats">
+      <button type="button" class="hc-stat" data-filter="all"><span class="hc-stat-label">Pacientes</span><strong class="hc-stat-value" id="statPatients">—</strong><span class="hc-stat-sub">con al menos un examen</span></button>
+      <button type="button" class="hc-stat" data-filter="new"><span class="hc-stat-label">Nuevos este mes</span><strong class="hc-stat-value" id="statNew">—</strong><span class="hc-stat-sub">primer examen este mes</span></button>
+      <button type="button" class="hc-stat" data-filter="recurrent"><span class="hc-stat-label">Recurrentes</span><strong class="hc-stat-value" id="statRecurrent">—</strong><span class="hc-stat-sub">2 exámenes o más</span></button>
+      <button type="button" class="hc-stat hc-stat--due" data-filter="due"><span class="hc-stat-label">Revisión vencida</span><strong class="hc-stat-value" id="statDue">—</strong><span class="hc-stat-sub">ya les tocaba volver</span></button>
+      <button type="button" class="hc-stat hc-stat--soon" data-filter="soon"><span class="hc-stat-label">Por vencer</span><strong class="hc-stat-value" id="statSoon">—</strong><span class="hc-stat-sub">en los próximos 30 días</span></button>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Pacientes</h2>
+          <p id="historialHint">Cargando…</p>
+        </div>
+      </div>
+
+      <div class="panel-toolbar">
+        <div class="search-box">
+          <div class="search-box-glow"></div>
+          <div class="search-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="historialSearch" placeholder="Buscar paciente por nombre o teléfono…" autocomplete="off">
+          </div>
+        </div>
+        <div class="hc-chips" id="hcChips" role="tablist" aria-label="Filtrar pacientes">
+          <button type="button" class="hc-chip active" data-filter="all">Todos</button>
+          <button type="button" class="hc-chip" data-filter="due">Revisión vencida</button>
+          <button type="button" class="hc-chip" data-filter="soon">Por vencer</button>
+          <button type="button" class="hc-chip" data-filter="new">Nuevos este mes</button>
+          <button type="button" class="hc-chip" data-filter="recurrent">Recurrentes</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="hc-table">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th class="num">Exámenes</th>
+              <th>Última visita</th>
+              <th>Revisión</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="patientRows"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="historialEmpty" style="display:none;"></div>
+    </section>
+  </main>
+{{else if eq .OptTab "ordenes-lab"}}
+{{/* ===================== PESTAÑA: ORDEN DE LABORATORIO ===================== */}}
+{{template "opt-doc-tab" .}}
+{{else if eq .OptTab "garantias"}}
+{{/* ===================== PESTAÑA: GARANTÍA / REPARACIÓN ===================== */}}
+{{template "opt-doc-tab" .}}
+{{else if eq .OptTab "plantilla-examen"}}
+{{/* ===================== PESTAÑA: PLANTILLA DE EXAMEN ===================== */}}
+  <main class="inv-page opt-page" id="optPlantilla">
+    <div class="admin-header">
+      <div>
+        <h1>Plantilla de examen</h1>
+        <p>Arrastra y acomoda el logo, el título, los textos, las líneas y las tablas: así se va a ver el formato al llenar un examen, una orden de laboratorio o una garantía.</p>
+      </div>
+    </div>
+
+    <div class="opt-actions-row opt-actions-row--tpl">
+      <p class="tpl-status" id="tplStatus"></p>
+      <div class="admin-header-actions">
+        <button type="button" class="btn small" id="fullViewBtn">Ver tamaño completo</button>
+        <button type="button" class="btn small" id="printBtn">Imprimir</button>
+        <button type="button" class="btn small" id="exportPdfBtn">Exportar PDF</button>
+        <button type="button" class="btn small" id="exportWordBtn">Exportar Word</button>
+        <button type="button" class="btn small" id="activateBtn">Activar esta plantilla</button>
+        <button type="button" class="btn solid small" id="saveBtn">Guardar</button>
+      </div>
+    </div>
+
+    <div class="tpl-editor">
+      <aside class="tpl-toolbar">
+        <h3>Agregar</h3>
+        <button type="button" class="tpl-tool-btn" data-add="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg> Título</button>
+        <button type="button" class="tpl-tool-btn" data-add="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6.1H3M21 12.1H3M15.1 18H3"/></svg> Texto / campo</button>
+        <button type="button" class="tpl-tool-btn" data-add="choice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="3"/><path d="M12 12h9M12 6h9M12 18h9"/></svg> Opciones</button>
+        <button type="button" class="tpl-tool-btn" data-add="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/></svg> Línea</button>
+        <button type="button" class="tpl-tool-btn" data-add="table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Tabla</button>
+        <button type="button" class="tpl-tool-btn" data-add="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> Logo / imagen</button>
+
+        <div class="tpl-toolbar-sep"></div>
+        <label class="tpl-guides-toggle" for="toggleGuidesInput">
+          <span>Mostrar márgenes</span>
+          <span class="ios-switch">
+            <input type="checkbox" id="toggleGuidesInput">
+            <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
+          </span>
+        </label>
+
+        <div class="tpl-toolbar-sep"></div>
+        <h3>Plantillas guardadas</h3>
+        <div id="tplList" class="tpl-list"></div>
+        <button type="button" class="tpl-tool-btn tpl-tool-btn--new" id="newTplBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nueva plantilla en blanco</button>
+      </aside>
+
+      <div class="tpl-canvas-wrap">
+        <div class="tpl-canvas" id="tplCanvas"></div>
+      </div>
+
+      <aside class="tpl-props" id="tplProps">
+        <p class="tpl-props-empty">Selecciona un elemento del lienzo para editarlo aquí.</p>
+      </aside>
+    </div>
+  </main>
+{{else}}
+{{/* ===================== PESTAÑA: EXAMEN DE LA VISTA ===================== */}}
+  <main class="inv-page opt-page" id="optExamen">
+    <div class="admin-header">
+      <div>
+        <h1>Examen de la vista</h1>
+        <p>El trabajo del día: las citas de hoy, los exámenes que se van haciendo y cuántos llevan.</p>
+      </div>
+      <div class="admin-header-actions">
+        <a href="/optometria/nuevo" class="btn solid small opt-new-btn" id="newExamBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nuevo examen</a>
+      </div>
+    </div>
+
+    <!-- Contadores (se calculan con la lista de exámenes) -->
+    <div class="ev-stats" id="evStats">
+      <div class="ev-stat"><span class="ev-stat-label">Hoy</span><strong class="ev-stat-value" id="statToday">—</strong><span class="ev-stat-sub" id="statTodaySub">exámenes</span></div>
+      <div class="ev-stat"><span class="ev-stat-label">Esta semana</span><strong class="ev-stat-value" id="statWeek">—</strong><span class="ev-stat-sub" id="statWeekSub">exámenes</span></div>
+      <div class="ev-stat"><span class="ev-stat-label">Este mes</span><strong class="ev-stat-value" id="statMonth">—</strong><span class="ev-stat-sub" id="statMonthSub">exámenes</span></div>
+      <div class="ev-stat ev-stat--gar"><span class="ev-stat-label">Garantías · este mes</span><strong class="ev-stat-value" id="statGar">—</strong><span class="ev-stat-sub" id="statGarSub">garantías</span></div>
+      <div class="ev-stat ev-stat--split">
+        <span class="ev-stat-label">Este mes · origen</span>
+        <div class="ev-split">
+          <div><strong id="statConCita">—</strong><span>con cita</span></div>
+          <div><strong id="statSinCita">—</strong><span>sin cita</span></div>
+        </div>
+        <div class="ev-split-bar" aria-hidden="true"><span id="statSplitBar"></span></div>
+      </div>
+      <div class="ev-stat ev-stat--staff">
+        <span class="ev-stat-label">Este mes · por optometrista <span class="ev-staff-legend"><i class="ev-dot-exam"></i>exámenes <i class="ev-dot-gar"></i>garantías</span></span>
+        <ul class="ev-staff-list" id="statStaff"><li class="ev-staff-empty">—</li></ul>
+      </div>
+    </div>
+
+    <!-- Citas de hoy (de Mis citas) -->
+    <section class="panel ev-today" id="todayPanel">
+      <div class="panel-head">
+        <div>
+          <h2>Citas de hoy</h2>
+          <p id="todayCount">Cargando…</p>
+        </div>
+        <div class="ev-today-legend" aria-hidden="true">
+          <span class="appt-chip is-pending">Pendiente</span>
+          <span class="appt-chip is-now">En consulta</span>
+          <span class="appt-chip is-done">Terminado</span>
+        </div>
+      </div>
+      <div class="ev-today-list" id="todayList"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Exámenes recientes</h2>
+          <p id="examCount">Cargando…</p>
+        </div>
+        <div class="view-switch" id="examViewSwitch">
+          <span class="view-switch-glow"></span>
+          <button type="button" class="view-switch-btn active" data-view="tabla">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            Tabla
+          </button>
+          <button type="button" class="view-switch-btn" data-view="grid">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Grid
+          </button>
+        </div>
+      </div>
+
+      <div class="exam-search-row">
+        <div class="search-box">
+          <div class="search-box-glow"></div>
+          <div class="search-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="examSearch" placeholder="Buscar por nombre o apellido…" autocomplete="off">
+          </div>
+        </div>
+        <div class="ev-filters">
+          <label class="ev-select">
+            <span>Periodo</span>
+            <select id="examPeriod" data-av-select>
+              <option value="all">Todo</option>
+              <option value="today">Hoy</option>
+              <option value="week">Esta semana</option>
+              <option value="month">Este mes</option>
+            </select>
+          </label>
+          <label class="ev-select">
+            <span>Optometrista</span>
+            <select id="examStaff" data-av-select><option value="">Todos</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div id="examTableView">
+        <div class="table-wrap">
+          <table class="exam-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Fecha</th>
+                <th>Realizó</th>
+                <th>Origen</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="examList"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="examGridView" class="exam-grid" hidden></div>
+
+      <div class="empty-state" id="examEmpty" style="display:none;">
+        Todavía no hay exámenes de la vista. Usa <strong>Nuevo examen</strong> o «Realizar examen» en una cita de hoy.
+      </div>
+    </section>
+  </main>
+{{end}}
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+{{if eq .OptTab "historial-clinico"}}
+<!-- ===================== Ficha del paciente ===================== -->
+<div class="admin-modal-overlay" id="patientModal" aria-hidden="true">
+  <div class="admin-modal-card pf-card" role="dialog" aria-modal="true" aria-labelledby="pfName">
+    <div class="pf-head">
+      <div class="pf-head-main">
+        <h3 id="pfName"></h3>
+        <p id="pfPhone"></p>
+        <span class="patient-account-badge" id="pfBadge"></span>
+      </div>
+      <div class="pf-head-actions">
+        <a href="#" class="btn small" id="pfWaBtn" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="#" class="btn solid small" id="pfNewExamBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nuevo examen
+        </a>
+        <button type="button" class="admin-modal-close" id="pfClose" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="pf-body" id="pfBody">
+      <div class="pf-summary" id="pfSummary"></div>
+      <div class="pf-revision" id="pfRevision" hidden></div>
+
+      <div class="pf-tabs" role="tablist">
+        <span class="pf-tabs-ink" aria-hidden="true"></span>
+        <button type="button" class="pf-tab active" data-tab="grad" role="tab">Graduación</button>
+        <button type="button" class="pf-tab" data-tab="exams" role="tab">Exámenes</button>
+        <button type="button" class="pf-tab" data-tab="compare" role="tab">Comparar</button>
+        <button type="button" class="pf-tab" data-tab="docs" role="tab">Lab y garantías</button>
+        <button type="button" class="pf-tab" data-tab="ante" role="tab">Antecedentes</button>
+      </div>
+
+      <section class="pf-pane" data-pane="grad" id="pfGrad"></section>
+      <section class="pf-pane" data-pane="exams" id="pfExams" hidden></section>
+      <section class="pf-pane" data-pane="compare" id="pfCompare" hidden></section>
+      <section class="pf-pane" data-pane="docs" id="pfDocs" hidden></section>
+      <section class="pf-pane" data-pane="ante" id="pfAnte" hidden>
+        <form class="ante-form" id="anteForm" autocomplete="off">
+          <p class="ante-intro">Lo que no cambia en cada examen. Se guarda una vez y aparece siempre en su ficha.</p>
+          <div class="ante-checks">
+            <label class="ante-check"><input type="checkbox" class="av-check" name="diabetes"><span>Diabetes</span></label>
+            <label class="ante-check"><input type="checkbox" class="av-check" name="hipertension"><span>Hipertensión</span></label>
+            <label class="ante-check"><input type="checkbox" class="av-check" name="glaucoma_familiar"><span>Glaucoma en la familia</span></label>
+            <label class="ante-check"><input type="checkbox" class="av-check" name="lentes_contacto"><span>Usa lentes de contacto</span></label>
+            <label class="ante-check"><input type="checkbox" class="av-check" name="usa_lentes"><span>Usa lentes actualmente</span></label>
+            <label class="ante-check"><input type="checkbox" class="av-check" name="pantallas"><span>Muchas horas de pantalla</span></label>
+          </div>
+          <div class="ante-grid">
+            <label class="ante-field"><span>Cirugías oculares</span><input type="text" name="cirugias" placeholder="Ej. LASIK 2019, catarata OD…"></label>
+            <label class="ante-field"><span>Alergias</span><input type="text" name="alergias" placeholder="Ej. penicilina, polvo…"></label>
+            <label class="ante-field"><span>Medicamentos</span><input type="text" name="medicamentos" placeholder="Lo que toma actualmente"></label>
+            <label class="ante-field"><span>Otras enfermedades</span><input type="text" name="otras" placeholder="Ej. tiroides, migraña…"></label>
+          </div>
+          <label class="ante-field ante-field--full"><span>Notas</span><textarea name="notas" rows="3" placeholder="Cualquier cosa que convenga tener a la mano en su siguiente examen"></textarea></label>
+          <div class="ante-actions">
+            <span class="ante-meta" id="anteMeta"></span>
+            <button type="submit" class="btn solid small" id="anteSaveBtn">Guardar antecedentes</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>
+{{else if eq .OptTab "ordenes-lab"}}
+{{template "opt-doc-modals" .}}
+<!-- Ticket digital de la venta -->
+<div class="vp-ticket-ov" id="vpTicketOv" hidden>
+  <div class="vp-ticket-card" role="dialog" aria-modal="true" aria-label="Ticket digital">
+    <div class="vp-ticket-head"><strong id="vpTicketTitle">Ticket</strong><button type="button" class="vp-x" id="vpTicketClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <iframe id="vpTicketFrame" title="Ticket digital" loading="lazy"></iframe>
+  </div>
+</div>
+{{else if eq .OptTab "garantias"}}
+{{template "opt-doc-modals" .}}
+{{else if eq .OptTab "plantilla-examen"}}
+<!-- Fuera de pantalla: solo para Imprimir / Exportar la plantilla -->
+<div id="printExportCanvas" class="tpl-print-export-hidden"></div>
+<div class="tpl-modal-overlay" id="deleteModalOverlay">
+  <div class="tpl-modal-card">
+    <h3>Eliminar plantilla</h3>
+    <p id="deleteModalText">¿Eliminar esta plantilla? Esta acción no se puede deshacer.</p>
+    <div class="tpl-modal-actions">
+      <button type="button" class="btn small" id="deleteModalCancel">Cancelar</button>
+      <button type="button" class="btn solid small tpl-modal-danger" id="deleteModalConfirm">Eliminar</button>
+    </div>
+  </div>
+</div>
+{{else}}
+<div class="admin-modal-overlay" id="deleteExamModalOverlay">
+  <div class="admin-modal-card admin-modal-card--sm" role="dialog" aria-modal="true">
+    <div class="admin-modal-head">
+      <h3>Eliminar examen</h3>
+      <button type="button" class="admin-modal-close" id="deleteExamModalClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="admin-confirm-text">¿Eliminar el examen de <strong id="deleteExamName"></strong>? Esta acción no se puede deshacer.</p>
+      <div class="admin-confirm-actions">
+        <button type="button" class="btn small" id="deleteExamCancel">Cancelar</button>
+        <button type="button" class="btn solid small danger" id="deleteExamConfirm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="/static/js/translations.js"></script>
+<script src="/static/js/client/sidebar.js"></script>
+<script src="/static/js/client/optometria/av-select.js?v=1"></script>
+<script src="/static/js/client/optometria/examen-render.js?v=1"></script>
+<script src="/static/js/client/optometria/examen-modal.js?v=1"></script>
+<script src="/static/js/client/optometria/examen-vista.js?v=1"></script>
+<script src="/static/js/client/optometria/historial-clinico.js?v=1"></script>
+<script src="/static/js/client/optometria/documentos.js?v=1"></script>
+<script src="/static/js/client/optometria/ventas-pendientes.js?v=1"></script>
+<script src="/static/js/client/optometria/plantilla-examen.js?v=1"></script>
+<script src="/static/js/client/ios27-panel.js?v=3"></script>
+</body>
+</html>

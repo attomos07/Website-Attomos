@@ -1,0 +1,112 @@
+{{/* Optometría → llenar una hoja: el examen (historia clínica, plantilla
+     activa) o, con ?doc=, la orden de laboratorio o la garantía. Con
+     ?edit=<id> abre una ya guardada. Portado de nuevo-examen.html de Avante.
+     JS: static/js/client/optometria/nuevo-examen.js */}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if eq .Doc "garantia"}}Nueva garantía{{else if eq .Doc "laboratorio"}}Nueva orden de laboratorio{{else}}Nuevo examen{{end}} — Optometría · Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/client/sidebar.css">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/optometria.css?v=2">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+</head>
+<body class="inv-body opt-body opt-nuevo-body" data-doc="{{.Doc}}" data-staff="{{.StaffName}}">
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+<div class="app-container">
+  {{template "sidebar.html" .}}
+
+  <div class="main-content">
+  {{template "userbar.html" .}}
+
+  <div class="content-wrapper">
+  <main class="inv-page opt-page opt-nuevo" id="optNuevo">
+    <div class="admin-header">
+      <div>
+        <a class="opt-back" href="{{if eq .Doc "garantia"}}/optometria/garantias{{else if eq .Doc "laboratorio"}}/optometria/ordenes-lab{{else}}/optometria/examen-vista{{end}}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          {{if eq .Doc "garantia"}}Garantía / reparación{{else if eq .Doc "laboratorio"}}Orden de laboratorio{{else}}Examen de la vista{{end}}
+        </a>
+        {{if eq .Doc "garantia"}}
+        <h1>Nueva garantía / reparación</h1>
+        <p>Llena la solicitud de reparación. Elige al paciente en el nombre para traer sus datos; marca si es garantía o reparación.</p>
+        {{else if eq .Doc "laboratorio"}}
+        <h1>Nueva orden de laboratorio</h1>
+        <p>Elige al paciente en el nombre y se trae la graduación de su último examen. Al guardarla le llega sola al Laboratorio.</p>
+        {{else}}
+        <h1>Nuevo examen</h1>
+        <p>Llena los datos sobre el formato activo de la historia clínica.</p>
+        {{end}}
+      </div>
+      <div class="admin-header-actions">
+        <a href="{{if eq .Doc "garantia"}}/optometria/garantias{{else if eq .Doc "laboratorio"}}/optometria/ordenes-lab{{else}}/optometria/examen-vista{{end}}" class="btn small">Cancelar</a>
+        <button type="button" class="btn small" id="wizardBackBtn">Atrás</button>
+        <button type="button" class="btn solid small" id="wizardNextBtn">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- Cómo llenar: una pregunta a la vez o directo sobre la hoja -->
+    <div class="exam-mode-row">
+      <div class="view-switch exam-mode-switch" id="examModeSwitch" hidden>
+        <span class="view-switch-glow"></span>
+        <button type="button" class="view-switch-btn active" data-mode="pasos" title="Una pregunta a la vez">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg>
+          Paso a paso
+        </button>
+        <button type="button" class="view-switch-btn" data-mode="hoja" title="Escribir directo sobre el formato">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+          Sobre la hoja
+        </button>
+      </div>
+    </div>
+
+    <p class="tpl-status" id="examStatus"></p>
+
+    <div class="exam-wizard-progress" id="examWizardProgress" style="display:none;">
+      <div class="exam-wizard-progress-track"><div class="exam-wizard-progress-fill" id="examWizardProgressFill"></div></div>
+      <span class="exam-wizard-progress-label" id="examWizardProgressLabel"></span>
+    </div>
+
+    <div id="noTemplateNotice" class="empty-state" style="display:none;">
+      Todavía no hay ninguna plantilla activa. Ve a <a href="/optometria/plantilla-examen">Plantilla de examen</a> y activa una antes de crear un examen.
+    </div>
+
+    <div id="examFormWrap" style="display:none;">
+      <div class="exam-wizard-card" id="examWizardStep"></div>
+      <p class="exam-keys-hint exam-keys-hint--pasos"><kbd>Enter</kbd> siguiente · <kbd>Shift</kbd> <kbd>Shift</kbd> terminar</p>
+
+      <!-- Sobre la hoja: el formato de la plantilla con los campos editables; Enter salta al siguiente. -->
+      <div class="exam-sheet" id="examSheetWrap" hidden>
+        <div class="exam-sheet-hint">
+          <p class="exam-keys-hint"><kbd>Enter</kbd> siguiente campo · <kbd>Shift</kbd>+<kbd>Enter</kbd> anterior · <kbd>Shift</kbd> <kbd>Shift</kbd> terminar</p>
+          <button type="button" class="exam-sheet-zoombtn" id="examSheetZoomBtn"></button>
+        </div>
+        <div class="exf-canvas-wrap exam-sheet-scroll">
+          <div class="exam-sheet-scale" id="examSheetScale"><div id="examSheetCanvas"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="/static/js/translations.js"></script>
+<script src="/static/js/client/sidebar.js"></script>
+<script src="/static/js/client/optometria/examen-render.js?v=1"></script>
+<script src="/static/js/client/optometria/nuevo-examen.js?v=1"></script>
+<script src="/static/js/client/ios27-panel.js?v=3"></script>
+</body>
+</html>

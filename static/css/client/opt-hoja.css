@@ -1,0 +1,436 @@
+/* =========================================================
+   HOJA DE OPTOMETRÍA (para Laboratorio) — Attomos
+   La orden de laboratorio dibujada sobre su plantilla y el modal para
+   verla / imprimirla / exportarla. Portado de examen-render.css y
+   examen-modal.css de Avante. Lo genera el mismo build que optometria.css.
+   ========================================================= */
+body.inv-body{ --serif:var(--sans); }
+
+
+/* ---------------- examen-render.css (Avante) ---------------- */
+/* ===========================================================
+   EXAMEN-RENDER — estilos compartidos por nuevo-examen.html y
+   ver-examen.html. Autocontenido, mismo patrón que el resto.
+   =========================================================== */
+.exf-canvas{
+  position:relative; background:var(--white); box-shadow:var(--shadow-lg);
+  border:1px solid var(--line); margin:0 auto;
+}
+.exf-el{ position:absolute; }
+.exf-el-title{ font-family:var(--serif); font-weight:600; color:var(--ink); overflow:hidden; white-space:nowrap; }
+.exf-el-static{
+  font-family:var(--sans); color:var(--ink); overflow:hidden; white-space:nowrap;
+  display:flex; align-items:flex-end;
+}
+.exf-el-line{ background:var(--ink); }
+/* Opciones para encerrar (como en el papel) */
+.exf-choice{ position:relative; display:flex; flex-wrap:wrap; align-content:flex-start; align-items:center; gap:2px 6px; width:100%; height:100%; }
+.exf-choice--col{ flex-direction:column; flex-wrap:nowrap; align-items:flex-start; gap:2px; }
+.exf-choice--pitch{ gap:0; }
+.exf-choice-row{ display:flex; align-items:center; flex:0 0 auto; }
+.exf-choice .exf-choice-input, .exf-choice .exf-choice-input:disabled, .exam-sheet .exf-choice .exf-choice-input:focus{
+  position:absolute; inset:0; width:100%; height:100%; padding:0;
+  opacity:0 !important; color:transparent !important; background:transparent !important;
+  border:none !important; box-shadow:none !important; pointer-events:none; caret-color:transparent;
+}
+.exf-choice-opt{
+  font:inherit; font-family:var(--sans); font-weight:600; color:var(--ink); line-height:1.25;
+  padding:1px .5em; border:1.5px solid transparent; border-radius:100px; background:transparent;
+  cursor:pointer; transition:border-color .15s var(--ease), background .15s var(--ease), transform .12s var(--ease);
+}
+.exf-choice-opt:hover:not(:disabled){ background:var(--blue-50); }
+.exf-choice-opt:active:not(:disabled){ transform:scale(.94); }
+.exf-choice-opt.is-on{ border-color:var(--ink); }
+.exf-choice-opt:disabled{ cursor:default; }
+.exam-sheet .exf-choice-opt.is-on{ border-color:var(--blue-600); background:var(--blue-50); color:var(--blue-700, #0a1fcc); }
+.exam-sheet .exf-el-choice:focus-within{ outline:2px solid var(--blue-600); outline-offset:3px; border-radius:8px; background:rgba(6,182,212,.04); }
+.exf-el-image{ overflow:hidden; }
+.exf-el-image img{ width:100%; height:100%; object-fit:contain; }
+.exf-input{
+  width:100%; height:100%; border:none; border-bottom:1.5px solid var(--ink);
+  background:transparent; font-family:var(--sans); color:var(--ink);
+  padding:0 2px 2px;
+}
+.exf-input:focus{ outline:none; border-bottom-color:var(--blue-600); }
+.exf-input:disabled{ color:var(--ink); border-bottom-color:var(--grey); opacity:1; }
+.exf-input::placeholder{ color:var(--grey); }
+.exf-el-table table{ width:100%; height:100%; border-collapse:collapse; table-layout:fixed; }
+.exf-el-table{ overflow:hidden; }
+.exf-el-table th, .exf-el-table td{ border:1px solid var(--ink); padding:0; height:100%; }
+.exf-cell-wrap{ display:flex; align-items:center; height:100%; line-height:1; }
+.exf-cell-prefix{ padding-left:4px; font-size:11px; line-height:1; color:var(--grey); font-weight:600; white-space:nowrap; flex-shrink:0; }
+.exf-el-table th{ background:var(--blue-50); font-size:10px; font-weight:700; padding:2px 4px; }
+.exf-table-corner{ width:34px; background:var(--line); }
+.exf-table-rowlabel{ width:34px; text-align:center; }
+.exf-cell-input{
+  flex:1; min-width:0; height:100%; border:none; background:transparent;
+  font-family:var(--sans); font-size:11px; line-height:1; color:var(--ink); padding:2px 4px; text-align:center;
+}
+.exf-cell-input:focus{ outline:none; background:var(--blue-50); }
+.exf-cell-input:disabled{ color:var(--ink); opacity:1; }
+/* ---------- Envoltorio de la página (paciente + acciones + lienzo) ---------- */
+.exf-patient-panel{
+  background:var(--white); border:1.5px solid var(--line); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); padding:18px 20px; margin-bottom:18px;
+  display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;
+}
+.exf-patient-panel label{ display:flex; flex-direction:column; gap:5px; font-size:11.5px; font-weight:600; color:var(--ink); flex:1; min-width:180px; }
+.exf-patient-panel input{
+  border:1.5px solid var(--line); border-radius:10px; padding:9px 12px;
+  font-family:var(--sans); font-size:13px; color:var(--ink);
+}
+.exf-patient-panel input:focus{ outline:none; border-color:var(--blue-300); }
+.exf-meta{ font-size:12px; color:var(--grey); margin-bottom:18px; }
+.exf-meta strong{ color:var(--ink); }
+.exf-canvas-wrap{ overflow:auto; padding:10px 0 40px; }
+.exf-hoja-meta{ text-align:center; margin-top:18px; }
+.exf-hoja-name{ font-family:var(--serif); font-weight:600; font-size:19px; color:var(--ink); }
+.exf-hoja-date{ font-size:13px; color:var(--grey); margin-top:4px; }
+/* ---------- Wizard de llenado (Nuevo examen) — tipo onboarding
+   de registro: una pregunta a la vez, sin el lienzo de la hoja. ---------- */
+.exam-wizard-progress{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+.exam-wizard-progress-track{ flex:1; height:6px; border-radius:100px; background:var(--line); overflow:hidden; }
+.exam-wizard-progress-fill{ height:100%; background:var(--blue-600); border-radius:100px; transition:width .35s var(--ease); }
+.exam-wizard-progress-label{ font-size:12px; font-weight:700; color:var(--grey); white-space:nowrap; }
+.exam-wizard-card{
+  max-width:520px; margin:40px auto; background:var(--white);
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); padding:48px 44px; min-height:180px;
+}
+.exam-wizard-question--table{ max-width:none; }
+.exam-wizard-card:has(.exam-wizard-question--table){ max-width:720px; }
+.exam-wizard-anim{ animation:examWizardIn .35s var(--ease); }
+@keyframes examWizardIn{
+  from{ opacity:0; transform:translateY(10px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.exam-wizard-label{
+  display:block; font-family:var(--serif); font-weight:600; font-size:22px; color:var(--ink);
+  margin-bottom:18px; line-height:1.3; text-transform:capitalize;
+}
+.exam-wizard-input{
+  width:100%; padding:16px 18px; font-size:16px; color:var(--ink);
+  background:var(--blue-50); border:1.5px solid var(--line); border-radius:14px;
+  transition:border-color .2s var(--ease), background .2s var(--ease);
+}
+.exam-wizard-input:focus{ outline:none; border-color:var(--blue-600); background:var(--white); }
+.exam-wizard-table{ width:100%; border-collapse:collapse; }
+.exam-wizard-table th{
+  font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--grey);
+  padding:8px; text-align:center; border-bottom:1.5px solid var(--line);
+}
+.exam-wizard-table td{ padding:6px; border-bottom:1px solid var(--line); }
+.exam-wizard-cell{
+  width:100%; padding:9px 8px; text-align:center; font-size:13.5px; color:var(--ink);
+  background:var(--blue-50); border:1.5px solid var(--line); border-radius:10px;
+}
+.exam-wizard-cell:focus{ outline:none; border-color:var(--blue-600); background:var(--white); }
+.exam-step-shake{ animation:examStepShake .4s var(--ease); }
+@keyframes examStepShake{
+  0%, 100%{ transform:translateX(0); }
+  20%, 60%{ transform:translateX(-6px); }
+  40%, 80%{ transform:translateX(6px); }
+}
+/* ---------- Paso a paso: opciones (FRAME, material, tipo de lente…) ---------- */
+.exam-wizard-choices{ display:flex; flex-wrap:wrap; gap:10px; outline:none; }
+.exam-wizard-choice{
+  display:inline-flex; align-items:center; gap:9px;
+  padding:12px 18px; border-radius:14px; border:1.5px solid var(--line); background:var(--white);
+  font-size:14px; font-weight:700; color:var(--ink);
+  transition:border-color .18s var(--ease), background .18s var(--ease), transform .12s var(--ease), box-shadow .18s var(--ease);
+}
+.exam-wizard-choice:hover{ border-color:var(--blue-300); background:var(--blue-50); }
+.exam-wizard-choice:active{ transform:scale(.95); }
+.exam-wizard-choice.is-on{ border-color:var(--blue-600); background:var(--blue-600); color:var(--on-accent, #fff); box-shadow:0 8px 18px -8px rgba(6,182,212,.55); }
+.exam-wizard-choice-n{
+  display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; border-radius:6px;
+  font-size:11px; font-weight:700; color:var(--grey); background:var(--blue-50); border:1px solid var(--line);
+}
+.exam-wizard-choice-n:empty{ display:none; }
+.exam-wizard-choice.is-on .exam-wizard-choice-n{ color:var(--blue-600); background:#fff; border-color:#fff; }
+.exam-wizard-choices:focus-visible{ outline:2px solid var(--blue-300); outline-offset:6px; border-radius:16px; }
+.exam-wizard-choice-hint{ font-size:12px; color:var(--grey); margin-top:12px; }
+@media (hover:none){
+.exam-wizard-choice-n{ display:none; }
+}
+.exf-choice-opt.is-cursor{ box-shadow:0 0 0 2px var(--blue-300); }
+/* ---------- Nuevo examen: toggle "Paso a paso | Sobre la hoja" ----------
+   Reusa el .view-switch de examen-vista.css; aquí solo se igualan las
+   dos mitades y se mueve el fondo azul a la segunda opción. */
+.exam-mode-switch[hidden]{ display:none; }
+.exam-mode-switch{ min-width:320px; }
+.exam-mode-switch .view-switch-btn{ flex:1; justify-content:center; }
+@media (max-width:520px){
+.exam-mode-switch{ min-width:0; }
+}
+.exam-mode-switch.on-hoja .view-switch-glow{ transform:translateX(100%); }
+/* ---------- Nuevo examen: modo "Sobre la hoja" ---------- */
+.exam-sheet[hidden], .exam-wizard-card[hidden]{ display:none; }
+.exam-sheet-hint kbd{
+  font-family:var(--sans); font-size:11px; font-weight:700; color:var(--ink);
+  background:var(--blue-50); border:1px solid var(--line); border-radius:6px; padding:1px 6px;
+}
+.exam-sheet-scroll{ overflow-x:hidden; }
+.exam-sheet-scale{ margin:0 auto; }
+.exam-sheet-scale .exf-canvas{ transform-origin:top left; margin:0; }
+/* Campos de la hoja: se nota dónde escribir sin ensuciar el formato */
+.exam-sheet .exf-input{ transition:background .15s var(--ease); border-radius:3px 3px 0 0; }
+.exam-sheet .exf-input:hover{ background:var(--blue-50); }
+.exam-sheet .exf-input:focus{ background:var(--blue-50); border-bottom-width:2px; }
+.exam-sheet .exf-cell-input:hover{ background:var(--blue-50); }
+.exam-sheet .exf-cell-input:focus{ box-shadow:inset 0 0 0 1.5px var(--blue-600); }
+.exam-sheet .exf-input.exf-auto{ background:transparent !important; cursor:default; font-weight:700; color:#c0392b; border-bottom-style:dashed; }
+.exam-sheet-missing .exf-input{ border-bottom-color:#c0392b; background:#fdecea; }
+.exam-mode-row{ display:flex; justify-content:center; margin:0 0 18px; }
+@media (max-width:520px){
+.exam-mode-row .exam-mode-switch{ width:100%; }
+}
+/* ---------- Nuevo examen: zoom automático al campo ("lupa") ----------
+   La hoja va dentro de un recuadro y se mueve/escala con transform
+   (ver aimAt en nuevo-examen.js): siempre se ve de cerca el campo
+   que se está llenando. */
+.exam-sheet-hint{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  margin:0 0 10px;
+}
+.exam-keys-hint{ font-size:12.5px; color:var(--grey); margin:0; }
+.exam-keys-hint kbd{
+  font-family:var(--sans); font-size:11px; font-weight:700; color:var(--ink);
+  background:var(--blue-50); border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:1px 6px;
+}
+.exam-keys-hint--pasos{ text-align:center; margin-top:14px; }
+.exam-wizard-card[hidden] + .exam-keys-hint--pasos{ display:none; }
+.exam-sheet-zoombtn{
+  display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+  padding:8px 14px; border-radius:100px; border:1.5px solid var(--line); background:var(--white);
+  font-size:12px; font-weight:700; color:var(--blue-600);
+  transition:transform .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+}
+.exam-sheet-zoombtn svg{ width:15px; height:15px; }
+.exam-sheet-zoombtn:hover{ background:var(--blue-50); border-color:var(--blue-300); transform:translateY(-1px); }
+.exam-sheet-zoombtn:active{ transform:scale(.95); }
+.exam-sheet.is-lupa .exam-sheet-scroll{ overflow:visible; padding:0; }
+.exam-sheet.is-lupa .exam-sheet-scale{
+  position:relative; width:100%; height:min(64vh, 620px); min-height:340px;
+  overflow:hidden; border-radius:20px;
+  background:var(--blue-50); border:1.5px solid var(--line);
+  cursor:grab; touch-action:none; overscroll-behavior:contain;
+}
+.exam-sheet.is-panning .exam-sheet-scale{ cursor:grabbing; }
+.exam-sheet.is-lupa .exam-sheet-scale .exf-canvas{ position:absolute; top:0; left:0; cursor:auto; }
+.exam-sheet-scale .exf-canvas{ transition:transform .42s cubic-bezier(.22,1,.36,1); will-change:transform; }
+.exam-sheet.is-panning .exam-sheet-scale .exf-canvas{ transition:none; }
+.exam-sheet.is-lupa .exf-el{ cursor:text; }
+/* Campo activo bien marcado para que se vea de lejos */
+.exam-sheet.is-lupa .exf-input:focus{ background:var(--blue-100, #E4E9FF); border-bottom-color:var(--blue-600); }
+.exam-sheet.is-lupa .exf-cell-input:focus{ background:var(--blue-100, #E4E9FF); box-shadow:inset 0 0 0 2px var(--blue-600); }
+/* Barra fija del celular (arriba del teclado). "Celular" = pantalla
+   angosta (celular o tablet vertical) o celular acostado (táctil y poca
+   altura) — el mismo corte que usa nuevo-examen.js. */
+.sheet-bar{ display:none; }
+@media (max-width:900px), (pointer:coarse) and (max-height:520px){
+.exam-sheet-hint{ display:none; }
+.exam-keys-hint--pasos{ display:none; }
+.exam-sheet.is-lupa .exam-sheet-scroll{ margin:0 -16px; }
+.exam-sheet.is-lupa .exam-sheet-scale{
+    height:calc(100svh - 150px); min-height:300px; border-radius:0; border-left:none; border-right:none;
+  }
+body.has-sheet-bar .sheet-bar:not([hidden]){
+    display:flex; align-items:center; gap:8px;
+    position:fixed; z-index:120;
+    left:max(10px, calc(50% - 320px), env(safe-area-inset-left));
+    right:max(10px, calc(50% - 320px), env(safe-area-inset-right));
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    padding:8px; border-radius:20px;
+    background:var(--white); border:1.5px solid var(--line);
+    box-shadow:0 18px 40px -12px rgba(15,23,42,.35);
+    animation:sheetBarIn .3s var(--ease);
+    transition:transform .2s var(--ease);
+  }
+.sheet-bar-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; padding:0 4px; }
+.sheet-bar-count{ font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--grey); }
+.sheet-bar-label{ font-size:14px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sheet-bar-btn{
+    width:44px; height:44px; flex-shrink:0; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    border:1.5px solid var(--line); background:var(--white); color:var(--ink);
+    transition:transform .15s var(--ease), background .2s var(--ease);
+    -webkit-tap-highlight-color:transparent;
+  }
+.sheet-bar-btn svg{ width:20px; height:20px; }
+.sheet-bar-btn:active{ transform:scale(.9); }
+.sheet-bar-next{ background:var(--blue-600); border-color:var(--blue-600); color:var(--on-accent, #fff); }
+.sheet-bar-next.is-done{ background:#1f9d55; border-color:#1f9d55; }
+.sheet-bar-zoom{ color:var(--blue-600); }
+.sheet-bar-zoom.is-on{ background:var(--blue-50); border-color:var(--blue-300); }
+}
+/* Escribiendo con el teclado abierto (celular): fuera lo de arriba y
+   barra delgada, para que quepa la hoja (sobre todo con la letra o el
+   zoom del teléfono aumentados). */
+@media (max-width:900px), (pointer:coarse) and (max-height:520px){
+.header-outer, .mnav-toggle{ transition:opacity .2s var(--ease), transform .25s var(--ease); }
+body.sheet-typing .header-outer, body.sheet-typing .mnav-toggle{ opacity:0; transform:translateY(-110%); pointer-events:none; }
+body.sheet-typing .sheet-bar:not([hidden]){ padding:4px 5px; gap:5px; border-radius:14px; bottom:4px; left:6px; right:6px; }
+body.sheet-typing .sheet-bar-btn{ width:34px; height:34px; border-radius:10px; }
+body.sheet-typing .sheet-bar-btn svg{ width:17px; height:17px; }
+body.sheet-typing .sheet-bar-count{ display:none; }
+body.sheet-typing .sheet-bar-label{ font-size:12.5px; }
+/* espacio abajo para poder subir la hoja hasta arriba de la pantalla */
+}
+/* Celular acostado: poca altura — recuadro a casi toda la pantalla y
+   barra más delgada. */
+@media (pointer:coarse) and (max-height:520px), (max-width:900px) and (max-height:520px){
+.exam-sheet.is-lupa .exam-sheet-scale{ height:calc(100svh - 72px); min-height:190px; }
+body.has-sheet-bar .sheet-bar:not([hidden]){ padding:5px 6px; gap:6px; border-radius:16px; bottom:calc(6px + env(safe-area-inset-bottom)); }
+.sheet-bar-btn{ width:38px; height:38px; border-radius:12px; }
+.sheet-bar-btn svg{ width:18px; height:18px; }
+.sheet-bar-count{ font-size:9.5px; }
+.sheet-bar-label{ font-size:13px; }
+}
+/* Tablet vertical: más alto el recuadro (hay espacio) */
+@media (min-width:600px) and (max-width:900px) and (min-height:700px){
+.exam-sheet.is-lupa .exam-sheet-scroll{ margin:0; }
+.exam-sheet.is-lupa .exam-sheet-scale{ border-radius:20px; border:1.5px solid var(--line); height:calc(100svh - 170px); }
+}
+@keyframes sheetBarIn{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){
+.sheet-bar{ animation:none !important; }
+.exam-sheet-scale .exf-canvas{ transition:none; }
+}
+@media print{
+.sheet-bar{ display:none !important; }
+}
+/* ---------- Autocompletado de paciente (Nuevo examen) ---------- */
+.patient-search-dropdown{
+  position:absolute; z-index:50;
+  background:var(--white); border:1.5px solid var(--line); border-radius:12px;
+  box-shadow:var(--shadow-md); overflow:hidden; max-height:220px; overflow-y:auto;
+}
+.patient-search-item{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; padding:9px 12px; font-size:12.5px; font-weight:600; color:var(--ink);
+  text-align:left; border-bottom:1px solid var(--line);
+  transition:background .15s var(--ease);
+}
+.patient-search-item:last-child{ border-bottom:none; }
+.patient-search-item:hover{ background:var(--blue-50); }
+.patient-search-phone{ font-size:11px; font-weight:500; color:var(--grey); flex-shrink:0; }
+/* ---------- Impresión (Nuevo examen / Ver examen) ---------- */
+@page{
+  size:816px 1056px;
+  margin:0;
+}
+@media print{
+.header-outer, .tpl-status{ display:none !important; }
+.exf-canvas-wrap{ padding:0 !important; overflow:visible !important; }
+.mnav-toggle, .mnav-backdrop{ display:none !important; }
+#examCanvas{ transform:none !important; margin:0 !important; }
+.exf-canvas, .exf-canvas *{
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+}
+/* Próxima cita (revisión de 3, 6 o 12 meses) al final de la hoja */
+.exf-next{
+  position:absolute; height:40px; box-sizing:border-box; display:flex; align-items:center; gap:14px;
+  padding:0 14px; border:1.5px solid #1b1464; border-radius:4px; background:#f3f2fb;
+  font-family:var(--sans, Arial, sans-serif); color:#1b1464;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.exf-next-lbl{ font-size:11px; font-weight:800; letter-spacing:.08em; }
+.exf-next strong{ font-size:15px; font-weight:800; letter-spacing:.02em; }
+.exf-next em{ margin-left:auto; font-style:normal; font-size:11.5px; font-weight:600; opacity:.8; }
+/* Al imprimir, la hoja SIEMPRE sale como papel (blanco), aunque el panel
+   esté en modo oscuro: se regresan los colores claros. */
+.exf-next.is-pending{ border-style:dashed; background:transparent; opacity:.75; }
+.exf-next.is-pending strong{ font-size:13px; }
+@media print{
+.exf-next.is-pending{ display:none !important; }
+}
+
+/* ---------------- examen-modal.css (Avante) ---------------- */
+/* ===========================================================
+   EXAMEN-MODAL — ver un examen en un modal, imprimir y exportar
+   sin salir de la página (examen-modal.js). Usa los tokens de la
+   página que lo carga, con valores de respaldo.
+   =========================================================== */
+.exm-overlay{
+  position:fixed; inset:0; z-index:300; background:rgba(15,23,42,.5);
+  display:flex; align-items:flex-start; justify-content:center; padding:28px 18px; overflow-y:auto;
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity .3s var(--ease, ease), visibility 0s linear .3s;
+}
+.exm-overlay.open{ opacity:1; visibility:visible; pointer-events:auto; transition:opacity .3s var(--ease, ease), visibility 0s linear; }
+.exm-card{
+  width:100%; max-width:900px; margin:auto; background:var(--white, #fff);
+  border:1px solid var(--line, #DDE3FA); border-radius:var(--radius-lg, 26px); box-shadow:var(--shadow-lg, 0 26px 48px -18px rgba(6,182,212,.28));
+  transform:translateY(18px) scale(.97); transition:transform .35s var(--ease, ease);
+  overflow:hidden;
+}
+.exm-overlay.open .exm-card{ transform:none; }
+.exm-head{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding:18px 22px; border-bottom:1px solid var(--line, #DDE3FA);
+}
+.exm-head-text{ min-width:0; }
+.exm-head h3{ font-family:var(--serif, serif); font-weight:600; font-size:20px; color:var(--ink, #0A0E38); line-height:1.2; }
+.exm-head p{ font-size:12.5px; color:var(--grey, #6b7280); margin-top:3px; }
+.exm-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.exm-btn{
+  display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:100px;
+  border:1.5px solid var(--line, #DDE3FA); background:var(--white, #fff); color:var(--ink, #0A0E38);
+  font-family:inherit; font-size:12px; font-weight:700; letter-spacing:.02em; text-decoration:none; cursor:pointer; white-space:nowrap;
+  transition:transform .2s var(--ease, ease), background .2s var(--ease, ease), border-color .2s var(--ease, ease), box-shadow .2s var(--ease, ease), color .2s var(--ease, ease);
+}
+.exm-btn svg{ width:15px; height:15px; flex-shrink:0; transition:transform .25s var(--ease, ease); }
+.exm-btn:hover{ transform:translateY(-2px); border-color:var(--blue-300, #67e8f9); box-shadow:0 10px 20px -12px rgba(6,182,212,.45); }
+.exm-btn:hover svg{ transform:translateY(-1px) scale(1.08); }
+.exm-btn:active{ transform:translateY(0) scale(.95); }
+.exm-btn:disabled{ opacity:.5; pointer-events:none; }
+.exm-btn--solid{ background:var(--blue-600, #06b6d4); border-color:var(--blue-600, #06b6d4); color:#fff; }
+.exm-btn--solid:hover{ background:var(--blue-700, #0891b2); border-color:var(--blue-700, #0891b2); }
+.exm-btn[hidden]{ display:none; }
+.exm-close{
+  width:34px; height:34px; border-radius:50%; border:1px solid var(--line, #DDE3FA); background:var(--white, #fff); color:var(--grey, #6b7280);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .2s var(--ease, ease), color .2s var(--ease, ease), transform .25s var(--ease, ease);
+}
+.exm-close svg{ width:15px; height:15px; }
+.exm-close:hover{ background:var(--blue-50, #F5F7FF); color:var(--blue-600, #06b6d4); transform:rotate(90deg); }
+.exm-body{ padding:20px; background:var(--blue-50, #F5F7FF); }
+.exm-scale{ margin:0 auto; min-height:120px; }
+.exm-scale.is-loading{
+  width:100%; height:420px; border-radius:12px;
+  background:linear-gradient(90deg, var(--white, #fff) 25%, rgba(137,146,255,.18) 50%, var(--white, #fff) 75%);
+  background-size:200% 100%; animation:exmShimmer 1.2s linear infinite;
+}
+@keyframes exmShimmer{ to{ background-position:-200% 0; } }
+.exm-scale .exf-canvas{ transform-origin:top left; margin:0; box-shadow:0 18px 40px -22px rgba(15,23,42,.45); }
+#exmSheet.exm-in{ animation:exmIn .4s var(--ease, ease); }
+@keyframes exmIn{ from{ opacity:0; } to{ opacity:1; } }
+.exm-missing{ padding:40px 20px; text-align:center; color:var(--grey, #6b7280); font-size:13.5px; line-height:1.6; }
+.exm-offscreen{ position:fixed !important; left:-12000px !important; top:0 !important; box-shadow:none !important; }
+.exm-toast{
+  position:fixed; left:50%; bottom:28px; z-index:400; transform:translate(-50%, 20px);
+  background:#0A0E38; color:#fff; padding:12px 18px; border-radius:14px; font-size:13px; font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.45); opacity:0; pointer-events:none;
+  transition:opacity .25s var(--ease, ease), transform .25s var(--ease, ease);
+}
+.exm-toast.is-on{ opacity:1; transform:translate(-50%, 0); }
+#exmPrintRoot{ display:none; }
+@media print{
+body.exm-printing > *:not(#exmPrintRoot){ display:none !important; }
+body.exm-printing #exmPrintRoot{ display:block !important; }
+body.exm-printing{ background:#fff !important; }
+body.exm-printing #exmPrintRoot .exf-canvas{ box-shadow:none !important; border:none !important; margin:0 !important; }
+body.exm-printing #exmPrintRoot .exf-canvas, body.exm-printing #exmPrintRoot .exf-canvas *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+@media (max-width:640px){
+.exm-overlay{ padding:0; }
+.exm-card{ border-radius:0; min-height:100%; }
+.exm-head{ padding:14px 16px; }
+.exm-btn span{ display:none; }
+.exm-btn{ padding:9px 11px; }
+.exm-body{ padding:12px; }
+}
+/* Tamaño de hoja al imprimir (igual que examen-render.css) */
+@page{ size:816px 1056px; margin:0; }

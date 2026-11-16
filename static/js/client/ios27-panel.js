@@ -116,7 +116,7 @@
     // 2. NÚMEROS DE LAS TARJETAS (también montos con $)
     // ====================================================================
     // Mis citas (.num) y Ventas (vtSt*) ya cuentan sus números: aquí se dejan en paz.
-    var STAT_SEL = '.inv-stat strong, .vt-stat strong:not([id^="vtSt"])';
+    var STAT_SEL = '.inv-stat strong, .vt-stat strong:not([id^="vtSt"]), .ev-stat-value, .ev-split strong, .hc-stat-value';
     var counting = new WeakSet();
     var shownByKey = {};
     function parseStat(text) {
@@ -159,8 +159,8 @@
     }
     function statKey(el) {
         if (el.id) return '#' + el.id;
-        var card = el.closest('.inv-stat, .vt-stat, .stat-card');
-        var label = card && card.querySelector('small, .stat-label');
+        var card = el.closest('.inv-stat, .vt-stat, .stat-card, .ev-stat, .hc-stat');
+        var label = card && card.querySelector('small, .stat-label, .ev-stat-label, .hc-stat-label');
         var box = card && card.parentElement;
         return (box && box.id ? box.id : '') + '|' + (label ? label.textContent.trim() : '');
     }
@@ -189,6 +189,7 @@
         ['.inv-tabs', 'tint'],
         ['.tkp-seg', 'light'],
         ['.cc-subtabs', 'line'],
+        ['.pf-tabs', 'tint'],
     ];
     var SEG_SEL = SEGMENTS.map(function (s) { return s[0]; }).join(', ');
     var segments = new WeakSet();
@@ -351,6 +352,13 @@
         ['.pos-client-list', 'ios-row'],
         ['.vt-stats', 'ios-row'],
         ['.cal-grid', 'ios-cell'],
+        // Optometría
+        ['.ev-today-list', 'ios-row'],
+        ['.exam-grid', 'ios-row'],
+        ['.vp-list', 'ios-row'],
+        ['.ev-stats', 'ios-row'],
+        ['.hc-stats', 'ios-row'],
+        ['.tpl-list', 'ios-item-in'],
     ];
     var LIST_SEL = LISTS.map(function (l) { return l[0]; }).join(', ');
     var seen = new WeakMap();

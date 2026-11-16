@@ -12,6 +12,8 @@
      contenido entra hacia el lado de la pestaña elegida.
    - Atrás / Adelante del navegador cambian de pestaña igual.
    Si algo falla, se navega normal (recarga), como antes.
+   - Una pestaña con data-subnav-hard es OTRA página (p. ej. Recepción →
+     Citas): la pastilla se desliza igual y luego se navega normal.
    Usa .inv-seg-glow / .has-glow y [data-subnav-off] de inventory.css.
    ========================================================= */
 (function () {
@@ -116,6 +118,15 @@
       write({ group: group, idx: idx, r: on ? rectOf(on) : null, t: Date.now() });
       if (!canSoft) { window.location.href = a.href; return; }
       var page = nav.closest('main');
+      if (a.hasAttribute('data-subnav-hard')) {
+        if (!reduce) {
+          put(rectOf(a), true);
+          links.forEach(function (l) { l.classList.toggle('is-on', l === a); });
+          if (page) page.classList.add('subnav-leave', links.indexOf(a) > idx ? 'to-left' : 'to-right');
+        }
+        setTimeout(function () { window.location.href = a.href; }, reduce ? 0 : 170);
+        return;
+      }
       var ready = !!tabs[pathOf(a.href)];
       if (!reduce) {
         put(rectOf(a), true);
@@ -260,7 +271,7 @@
   function preload() {
     var nav = visibleNav();
     if (!nav || !canSoft) return;
-    var hrefs = Array.prototype.slice.call(nav.querySelectorAll(':scope > a'))
+    var hrefs = Array.prototype.slice.call(nav.querySelectorAll(':scope > a:not([data-subnav-hard])'))
       .map(function (a) { return a.href; })
       .filter(function (h) { return !tabs[pathOf(h)]; });
     if (!hrefs.length) return;
@@ -278,7 +289,7 @@
     var nav = visibleNav();
     if (!nav || !nav._links) { location.reload(); return; }
     var target = nav._links.filter(function (l) { return pathOf(l.href) === p; })[0];
-    if (!target) { location.reload(); return; }
+    if (!target || target.hasAttribute('data-subnav-hard')) { location.reload(); return; }
     var on = nav.querySelector(':scope > a.is-on');
     write({ group: nav.getAttribute('aria-label') || 'nav', idx: nav._links.indexOf(on), r: null, t: Date.now() });
     go(location.href, false, 0);

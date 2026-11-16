@@ -2,7 +2,8 @@
      pestañas de Avante (Punto de venta · Consultas · Ventas · Corte de caja ·
      Plantillas); cada ruta /pos/<pestaña> la renderiza con su .PosTab. */}}
 {{define "pos-subnav"}}
-    <nav class="inv-seg inv-subnav pos-subnav" aria-label="Secciones del punto de venta">
+    <nav class="inv-seg inv-subnav pos-subnav" aria-label="{{if .Optica}}Secciones de recepción{{else}}Secciones del punto de venta{{end}}">
+      {{if .Optica}}<a href="/appointments" data-subnav-hard>Citas</a>{{end}}
       <a href="/pos/punto-de-venta" class="{{if eq .PosTab "punto-de-venta"}}is-on{{end}}">Punto de venta</a>
       <a href="/pos/consultas" class="{{if eq .PosTab "consultas"}}is-on{{end}}">Consultas</a>
       <a href="/pos/ventas" class="{{if eq .PosTab "ventas"}}is-on{{end}}">Ventas</a>
@@ -22,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
     <link rel="stylesheet" href="/static/css/client/pos.css?v=2">
-    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
 </head>
 <body class="inv-body pos-body" data-biz="{{.BizJSON}}" data-optica="{{if .Optica}}1{{end}}">
     <div class="decorative-rings">
@@ -1225,9 +1226,9 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-<script src="/static/js/client/subnav-tabs.js?v=3"></script>
+<script src="/static/js/client/subnav-tabs.js?v=4"></script>
 <script src="/static/js/client/pos-ticket-render.js?v=3"></script>
 <script src="/static/js/client/pos.js?v=7" data-subnav-page></script>
-<script src="/static/js/client/ios27-panel.js?v=2"></script>
+<script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>
 </html>

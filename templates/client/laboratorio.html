@@ -10,9 +10,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=6">
-    <link rel="stylesheet" href="/static/css/client/appointments.css?v=6">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=7">
     <link rel="stylesheet" href="/static/css/client/laboratorio.css?v=2">
-    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=4">
+    <link rel="stylesheet" href="/static/css/client/opt-hoja.css?v=1">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
 </head>
 <body class="inv-body lab-body">
     <div class="decorative-rings">
@@ -33,7 +34,7 @@
     <div class="admin-header">
       <div>
         <h1>Laboratorio</h1>
-        <p>Cómo va cada trabajo. Llegan solos del Punto de venta. Arrastra la tarjeta al siguiente paso, usa «Avanzar» o escanea la clave del ticket.</p>
+        <p>Cómo va cada trabajo. Llegan solos de Recepción (Punto de venta) con la orden de laboratorio que hace Optometría. Arrastra la tarjeta al siguiente paso, usa «Avanzar» o escanea la clave del ticket.</p>
       </div>
     </div>
     <div class="admin-panel lab-panel" id="labPanel">
@@ -81,6 +82,7 @@
             <button type="button" data-origen="" class="is-on">Todos</button>
             <button type="button" data-origen="sucursal">Sucursal</button>
             <button type="button" data-origen="linea">Ecommerce</button>
+            <button type="button" data-origen="optometria">Optometría</button>
           </div>
         </div>
       </div>
@@ -132,7 +134,9 @@
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
-<script src="/static/js/client/laboratorio.js?v=4"></script>
-<script src="/static/js/client/ios27-panel.js?v=2"></script>
+<script src="/static/js/client/optometria/examen-render.js?v=1"></script>
+<script src="/static/js/client/optometria/examen-modal.js?v=1"></script>
+<script src="/static/js/client/laboratorio.js?v=5"></script>
+<script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>
 </html>

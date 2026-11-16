@@ -51,14 +51,71 @@
         if (ordersItem) ordersItem.style.display  = isFood ? ''     : 'none';
     }
 
-    // Aplica visibilidad Mi Negocio vs Mi Dependencia según el giro recibido
-    // También muestra/oculta el ítem Flujos (solo gubernamental)
-    // Laboratorio: solo ópticas.
+    // Laboratorio y Optometría: solo ópticas. En las ópticas el menú va
+    // por ROLES, cada uno con su título:
+    //   Recepción (Punto de venta, con Mis citas como pestaña) ·
+    //   Optometría (Examen de la vista, Historial clínico, Orden de
+    //   laboratorio, Garantía / reparación, Plantilla de examen) ·
+    //   Laboratorio · Inventario · y Gestión con lo demás (CRM…).
+    const OPT_ITEMS = ['optExamItem', 'clientHistoryMenuItem', 'optOrdenesItem', 'optGarantiasItem', 'optPlantillaItem'];
+    function isOpticaType(bt) { bt = normalizeStr(bt); return bt.includes('optica') || bt.includes('optic'); }
     function applyOpticaLogic(businessType) {
         const labItem = document.getElementById('labMenuItem');
         if (!labItem) return;
+        const isOptica = isOpticaType(businessType);
+        labItem.style.display = isOptica ? '' : 'none';
+        OPT_ITEMS.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el && id !== 'clientHistoryMenuItem') el.style.display = isOptica ? '' : 'none';
+        });
+        if (!isOptica || sidebar.dataset.roles === '1') return;
+        sidebar.dataset.roles = '1';
+        const posItem  = document.getElementById('posMenuItem');
+        const invItem  = document.getElementById('inventoryMenuItem');
+        const apptItem = document.getElementById('appointmentsMenuItem');
+        const histItem = document.getElementById('clientHistoryMenuItem');
+        if (apptItem) apptItem.style.display = 'none'; // vive en Recepción → Citas
+        if (histItem) histItem.style.display = '';
+        if (posItem) {
+            const lbl = posItem.querySelector('.sb-label');
+            if (lbl) { lbl.setAttribute('data-translate', 'dash_nav_reception'); lbl.textContent = t('dash_nav_reception', 'Recepción'); }
+            posItem.dataset.also = '/appointments';
+        }
+        const manage = scroll.querySelector('.sb-group[data-group-key="dash_group_manage"]');
+        if (manage) {
+            const head = (key, fallback) => {
+                const d = document.createElement('div');
+                d.className = 'sb-group sb-role-group';
+                d.dataset.groupKey = key;
+                d.dataset.groupFallback = fallback;
+                d.textContent = t(key, fallback);
+                return d;
+            };
+            [
+                head('dash_group_reception', 'Recepción'), posItem,
+                head('dash_group_optometry', 'Optometría')
+            ].concat(OPT_ITEMS.map((id) => document.getElementById(id))).concat([
+                head('dash_group_lab', 'Laboratorio'), labItem,
+                head('dash_group_inventory', 'Inventario'), invItem
+            ]).forEach((el) => { if (el) manage.before(el); });
+        }
+        updateGroups();
+        setActivePage();
+        retarget(true);
+    }
+
+    // Historial clínico (la ficha de cada paciente): ópticas y clínicas.
+    // Reemplaza al historial de conversaciones del bot (/client-history).
+    const TIPOS_CLINICA = ['clinica', 'clínica', 'dental', 'medico', 'médico', 'salud', 'veterinaria', 'odontologia', 'odontología', 'optica', 'óptica'];
+    function applyClinicLogic(businessType) {
+        const item = document.getElementById('clientHistoryMenuItem');
+        if (!item) return;
         const bt = normalizeStr(businessType);
-        labItem.style.display = (bt.includes('optica') || bt.includes('optic')) ? '' : 'none';
+        const isClinic = TIPOS_CLINICA.some((tp) => bt.includes(normalizeStr(tp)));
+        if (isClinic) item.style.display = '';
+        else if (sidebar.dataset.roles !== '1' && !sidebar.dataset.clinic) item.style.display = 'none';
+        if (isClinic) sidebar.dataset.clinic = '1';
+        updateGroups();
     }
 
     function applyGovLogic(businessType) {
@@ -181,32 +238,11 @@
                 loadChatwootInfo();
             }
 
-            // Client History según giro
-            const clientHistoryItem    = document.getElementById('clientHistoryMenuItem');
-            const clientHistoryTooltip = document.getElementById('clientHistoryTooltip');
-            const TIPOS_CLINICA    = ['clinica','clínica','dental','medico','médico','salud','veterinaria','odontologia','odontología','optica','óptica'];
-            const TIPOS_PELUQUERIA = ['peluqueria','peluquería','salon','salón','barberia','barbería','spa','estetica','estética','belleza'];
-
-            if (clientHistoryItem && clientHistoryTooltip) {
-                const isClinic = TIPOS_CLINICA.some(tp => normalizeStr(userBizType).includes(normalizeStr(tp)));
-                const isSalon  = TIPOS_PELUQUERIA.some(tp => normalizeStr(userBizType).includes(normalizeStr(tp)));
-                if (isClinic) {
-                    clientHistoryItem.style.display  = '';
-                    clientHistoryTooltip.textContent = t('hist_title_clinic', 'Historial Clínico');
-                    clientHistoryTooltip.setAttribute('data-translate', 'hist_title_clinic');
-                } else if (isSalon) {
-                    clientHistoryItem.style.display  = '';
-                    clientHistoryTooltip.textContent = t('hist_title_salon', 'Historial de Cliente');
-                    clientHistoryTooltip.setAttribute('data-translate', 'hist_title_salon');
-                } else {
-                    clientHistoryItem.style.display  = 'none';
-                }
-            }
-
             // Paso 1: aplicar con User.BusinessType (inmediato, con normalización)
             applyFoodLogic(userBizType);
             applyGovLogic(userBizType);
             applyOpticaLogic(userBizType);
+            applyClinicLogic(userBizType);
 
             // Paso 2: MyBusinessInfo tiene PRIORIDAD (más específico que User.BusinessType)
             try {
@@ -221,6 +257,7 @@
                     if (branchType) applyFoodLogic(branchType);
                     if (branchType) applyGovLogic(branchType);
                     if (branchType) applyOpticaLogic(branchType);
+                    if (branchType) applyClinicLogic(branchType);
                 }
             } catch (_) {
                 // falla silenciosamente
@@ -236,16 +273,27 @@
 
     // ── Página activa ────────────────────────────────────────────────
     function setActivePage() {
-        const currentPath = window.location.pathname;
+        // Gana el enlace cuya ruta coincide más (data-also = otras rutas que
+        // también lo marcan, p. ej. Recepción ← Mis citas; si llevan "?",
+        // se compara también la búsqueda: /optometria/nuevo?doc=garantia).
+        const path = window.location.pathname, full = path + window.location.search;
+        let best = null, bestLen = 0;
         buttons.forEach(button => {
             button.classList.remove('active');
             button.removeAttribute('aria-current');
-            const buttonPath = button.getAttribute('href');
-            if (buttonPath && currentPath.includes(buttonPath) && buttonPath !== '#') {
-                button.classList.add('active');
-                button.setAttribute('aria-current', 'page');
-            }
+            if (button.style.display === 'none') return; // oculto (p. ej. Mis citas en ópticas)
+            const href = button.getAttribute('href');
+            let len = (href && href !== '#' && path.includes(href)) ? href.length : 0;
+            (button.dataset.also || '').split(',').filter(Boolean).forEach((p) => {
+                const hit = p.includes('?') ? full.startsWith(p) : path.startsWith(p);
+                if (hit && p.length > len) len = p.length;
+            });
+            if (len > bestLen) { best = button; bestLen = len; }
         });
+        if (best) {
+            best.classList.add('active');
+            best.setAttribute('aria-current', 'page');
+        }
     }
 
     // ── Textos que no tienen data-translate ──────────────────────────

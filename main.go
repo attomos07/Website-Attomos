@@ -93,6 +93,11 @@ func main() {
 	if err := config.DB.AutoMigrate(models.PosModels()...); err != nil {
 		log.Fatal("❌ Error en migración del punto de venta:", err)
 	}
+	// Optometría (sidebar → Optometría, ópticas): plantillas, exámenes,
+	// órdenes de laboratorio, garantías y antecedentes.
+	if err := config.DB.AutoMigrate(models.OptometriaModels()...); err != nil {
+		log.Fatal("❌ Error en migración de optometría:", err)
+	}
 
 	log.Println("✅ Base de datos conectada y migrada")
 
@@ -428,6 +433,43 @@ func main() {
 			lab.GET("/pedidos/:id/historial", handlers.LabOrderHistory)
 			lab.POST("/limpiar", handlers.LabClearColumn)
 			lab.POST("/escanear", handlers.LabScan)
+			// La orden de laboratorio (hoja del optometrista) de cada trabajo.
+			lab.GET("/hojas", handlers.LabSearchHojas)
+			lab.GET("/hojas/:id", handlers.LabGetHoja)
+			lab.PUT("/pedidos/:id/hoja", handlers.LabLinkHoja)
+		}
+
+		// Optometría (ópticas) — handlers/optometria.go
+		opt := protected.Group("/optometria")
+		{
+			opt.GET("/plantillas", handlers.OptListTemplates)
+			opt.GET("/plantillas/activa", handlers.OptActiveTemplate)
+			opt.GET("/plantillas/laboratorio", handlers.OptLabTemplate)
+			opt.GET("/plantillas/garantia", handlers.OptGarantiaTemplate)
+			opt.GET("/plantillas/:id", handlers.OptGetTemplate)
+			opt.POST("/plantillas", handlers.OptCreateTemplate)
+			opt.PUT("/plantillas/:id", handlers.OptUpdateTemplate)
+			opt.POST("/plantillas/:id/activar", handlers.OptActivateTemplate)
+			opt.DELETE("/plantillas/:id", handlers.OptDeleteTemplate)
+			opt.GET("/examenes", handlers.OptListExams)
+			opt.GET("/examenes/:id", handlers.OptGetExam)
+			opt.POST("/examenes", handlers.OptCreateExam)
+			opt.PUT("/examenes/:id", handlers.OptUpdateExam)
+			opt.DELETE("/examenes/:id", handlers.OptDeleteExam)
+			opt.GET("/pacientes", handlers.OptSearchPatients)
+			opt.GET("/pacientes/directorio", handlers.OptPatientDirectory)
+			opt.GET("/pacientes/ficha", handlers.OptPatientFile)
+			opt.PUT("/pacientes/antecedentes", handlers.OptSaveAntecedentes)
+			opt.GET("/ordenes-lab", handlers.OptListSheets)
+			opt.GET("/ordenes-lab/siguiente-folio", handlers.OptNextFolio)
+			opt.GET("/ordenes-lab/:id", handlers.OptGetSheet)
+			opt.POST("/ordenes-lab", handlers.OptCreateSheet)
+			opt.PUT("/ordenes-lab/:id", handlers.OptUpdateSheet)
+			opt.DELETE("/ordenes-lab/:id", handlers.OptDeleteSheet)
+			opt.GET("/garantias/resumen", handlers.OptGarantiasResumen)
+			opt.GET("/ventas-pendientes", handlers.OptVentasPendientes)
+			opt.POST("/ventas-pendientes/:id/sin-orden", handlers.OptVentaSinOrden)
+			opt.GET("/citas-hoy", handlers.OptCitasHoy)
 		}
 
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
@@ -571,6 +613,17 @@ func main() {
 	// Antes tenía pestañas: los links viejos llevan al tablero.
 	router.GET("/laboratorio/trabajos", middleware.AuthRequired(), func(c *gin.Context) { c.Redirect(302, "/laboratorio") })
 
+	// Optometría (ópticas) — handlers/optometria.go
+	router.GET("/optometria", middleware.AuthRequired(), func(c *gin.Context) { c.Redirect(302, "/optometria/examen-vista") })
+	router.GET("/optometria/examen-vista", middleware.AuthRequired(), handlers.OptExamPage)
+	router.GET("/optometria/historial-clinico", middleware.AuthRequired(), handlers.OptHistorialPage)
+	router.GET("/optometria/ordenes-lab", middleware.AuthRequired(), handlers.OptOrdenesPage)
+	router.GET("/optometria/garantias", middleware.AuthRequired(), handlers.OptGarantiasPage)
+	router.GET("/optometria/plantilla-examen", middleware.AuthRequired(), handlers.OptPlantillaPage)
+	router.GET("/optometria/nuevo", middleware.AuthRequired(), handlers.OptNuevoPage)
+	// Ver un examen: se abre en el modal de Examen de la vista.
+	router.GET("/optometria/examen/:id", middleware.AuthRequired(), handlers.OptExamRedirect)
+
 	// Rastreo público de pedidos (clave en el ticket) — handlers/order_tracking.go
 	router.GET("/rastreo", handlers.TrackingPage)
 	router.GET("/api/rastreo", handlers.TrackingAPI)
@@ -582,8 +635,9 @@ func main() {
 		c.HTML(200, "orders.html", nil)
 	})
 
+	// El historial del bot se reemplazó por Historial clínico (Optometría).
 	router.GET("/client-history", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "client_history.html", nil)
+		c.Redirect(302, "/optometria/historial-clinico")
 	})
 
 	router.GET("/integrations", middleware.AuthRequired(), func(c *gin.Context) {

@@ -110,7 +110,7 @@
     var i = sortedStatuses().findIndex(function (s) { return s.key === key; });
     return i < 0 ? '#767b8a' : PALETTE[i % PALETTE.length];
   }
-  function origenTxt(o) { return { sucursal: 'Sucursal', linea: 'Ecommerce', laboratorio: 'Laboratorio', panel: 'Mis ventas' }[o.origen] || 'Pedido'; }
+  function origenTxt(o) { return { sucursal: 'Sucursal', linea: 'Ecommerce', laboratorio: 'Laboratorio', panel: 'Mis ventas', optometria: 'Optometría' }[o.origen] || 'Pedido'; }
   // Las órdenes hechas sin venta no tienen clave de rastreo: se nombran por su Nº.
   function codeOf(o) { return o.orderCode || (o.hoja && o.hoja.folio ? 'Orden Nº ' + o.hoja.folio : '#' + o.id); }
   function convTxt(o) { return ''; }
@@ -457,12 +457,22 @@
           '<span class="lab-step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
           '<span class="lab-step-label">' + esc(s.label) + '</span></button>';
       }).join('') + '<span class="lab-steps-bar"><span style="width:' + (steps.length > 1 && cur > 0 ? (cur / (steps.length - 1) * 100) : 0) + '%"></span></span></div>' +
-      '<p class="lab-hint">Toca un paso para cambiar. El cliente lo ve igual en Rastreo.</p>' +
+      '<p class="lab-hint">Toca un paso para cambiar.' + (o.orderCode ? ' El cliente lo ve igual en Rastreo.' : ' Esta orden no tiene clave de rastreo (se hizo sin venta).') + '</p>' +
       '<label class="lab-ext-toggle"><input type="checkbox" id="labExtToggle"' + (o.externo ? ' checked' : '') + '><span class="lab-toggle-track"><span class="lab-toggle-thumb"></span></span>' +
         '<span><strong>Laboratorio externo</strong><small>Márcalo si este trabajo se mandó a otro laboratorio.</small></span></label>' +
       '<label class="lab-ext-toggle lab-express-toggle"><input type="checkbox" id="labExpressToggle"' + (o.express ? ' checked' : '') + '><span class="lab-toggle-track"><span class="lab-toggle-thumb"></span></span>' +
         '<span><strong>' + BOLT_ICON + 'Lente express</strong><small>Por ahora solo marca el trabajo con la etiqueta «Express».</small></span></label>' +
       etaBoxHTML(o) +
+      // La orden de laboratorio que hizo Optometría (ligada o encontrada sola).
+      '<div class="lab-hoja-box">' + (o.hoja
+        ? '<div class="lab-hoja-info">' + DOC_ICON + '<div><strong>Orden de laboratorio' + (o.hoja.folio ? ' Nº ' + o.hoja.folio : '') + '</strong><small>' + esc(o.hoja.paciente) + ' · ' + fecha(o.hoja.fecha) +
+            (o.directo ? ' · hecha en Optometría sin venta' : o.hoja.auto ? ' · encontrada por el nombre / celular del cliente' : ' · ligada desde la venta') + '</small></div></div>' +
+          '<div class="lab-hoja-actions"><button type="button" class="btn solid small" data-hoja="' + o.hoja.id + '">Ver hoja</button>' +
+            (o.directo ? '' : '<button type="button" class="btn small" id="labHojaPick">Cambiar</button>' + (o.hoja.auto ? '' : '<button type="button" class="btn small" id="labHojaUnlink">Quitar</button>')) + '</div>'
+        : '<div class="lab-hoja-info is-none">' + DOC_ICON + '<div><strong>Sin orden de laboratorio</strong><small>' + (o.sinHoja ? 'Optometría marcó que esta venta no lleva orden.' : 'Todavía no la hace Optometría (o no se encontró con el nombre o celular del cliente).') + '</small></div></div>' +
+          '<div class="lab-hoja-actions"><button type="button" class="btn small" id="labHojaPick">Ligar una orden</button></div>') +
+        '<div class="lab-hoja-picker" id="labHojaPicker" hidden><input type="search" id="labHojaQ" placeholder="Buscar por paciente, celular o Nº…" autocomplete="off"><div class="lab-hoja-list" id="labHojaList"></div></div>' +
+      '</div>' +
       '<dl class="lab-info">' + info.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('') + '</dl>' +
       '<label class="lab-field lab-notes"><span>Notas del laboratorio</span><textarea id="labNotes" rows="3" maxlength="500" placeholder="Altura, tratamiento, observaciones…">' + esc(notesOld !== null && detailId === String(o.id) && document.activeElement && document.activeElement.id === 'labNotes' ? notesOld : (o.labNotes || '')) + '</textarea></label>' +
       '<div class="lab-detail-actions">' +
@@ -479,6 +489,7 @@
     });
     if ($('labCopyTrack')) $('labCopyTrack').addEventListener('click', function () { copyText(trackURL(o.orderCode), 'Link de rastreo copiado.'); });
     $('labReady').addEventListener('click', function () { setStatus(o.id, 'ready'); });
+    wireHojaBox(o);
     if ($('labDelete')) $('labDelete').addEventListener('click', function () {
       var btn = this;
       if (!btn.classList.contains('is-armed')) {
@@ -573,7 +584,56 @@
     }).catch(function () {});
   }
 
-  function openHoja() {}
+  /* ---------- orden de laboratorio (la hoja de Optometría) ---------- */
+  var hojaCache = {};
+  $('labDetailBody').addEventListener('click', function (e) {
+    var hj = e.target.closest('.lab-hoja-actions [data-hoja]');
+    if (hj) openHoja(hj.dataset.hoja);
+  });
+  function openHoja(id) {
+    var go = function (d) {
+      if (!window.AvanteExamModal) { toast('No se pudo abrir la hoja.'); return; }
+      if (!d.plantilla) { toast('La plantilla de la orden de laboratorio ya no existe.'); return; }
+      var h = d.hoja;
+      var sub = [fecha(h.createdAt), h.createdByName ? 'Llenó ' + h.createdByName : '', 'Orden de laboratorio' + (h.folio ? ' Nº ' + h.folio : '')].filter(Boolean).join(' · ');
+      AvanteExamModal.open({ exam: h, template: d.plantilla }, { subtitle: sub });
+    };
+    if (hojaCache[id]) return go(hojaCache[id]);
+    api('/api/laboratorio/hojas/' + id).then(function (d) { hojaCache[id] = d; go(d); }).catch(function (err) { toast(err.message); });
+  }
+  function wireHojaBox(o) {
+    var pickBtn = $('labHojaPick'), unlink = $('labHojaUnlink');
+    function link(sheetId) {
+      return api('/api/laboratorio/pedidos/' + o.id + '/hoja', { method: 'PUT', body: { sheetId: sheetId } }).then(function () {
+        toast(sheetId ? 'Orden de laboratorio ligada.' : 'Se quitó la orden ligada.');
+        return loadOrders();
+      }).catch(function (err) { toast(err.message); });
+    }
+    if (unlink) unlink.addEventListener('click', function () { link(0); });
+    if (!pickBtn) return;
+    var t = null;
+    function search() {
+      api('/api/laboratorio/hojas?q=' + encodeURIComponent($('labHojaQ').value.trim())).then(function (d) {
+        var list = d.hojas || [];
+        $('labHojaList').innerHTML = list.length ? list.map(function (h) {
+          return '<button type="button" data-link-hoja="' + h.id + '">' + DOC_ICON + '<span><strong>' + esc(h.paciente) + '</strong><small>' +
+            (h.folio ? 'Nº ' + h.folio + ' · ' : '') + fecha(h.fecha) + '</small></span><em data-view-hoja="' + h.id + '">Ver</em></button>';
+        }).join('') : '<p class="lab-empty-sm">No hay órdenes de laboratorio con esa búsqueda.</p>';
+      }).catch(function (err) { $('labHojaList').innerHTML = '<p class="lab-empty-sm">' + esc(err.message) + '</p>'; });
+    }
+    pickBtn.addEventListener('click', function () {
+      var pk = $('labHojaPicker');
+      pk.hidden = !pk.hidden;
+      if (!pk.hidden) { $('labHojaQ').value = ''; search(); $('labHojaQ').focus(); }
+    });
+    $('labHojaQ').addEventListener('input', function () { clearTimeout(t); t = setTimeout(search, 220); });
+    $('labHojaList').addEventListener('click', function (e) {
+      var v = e.target.closest('[data-view-hoja]');
+      if (v) { e.stopPropagation(); openHoja(v.dataset.viewHoja); return; }
+      var b = e.target.closest('[data-link-hoja]');
+      if (b) link(Number(b.dataset.linkHoja));
+    });
+  }
 
   /* ---------- pantalla completa: solo el tablero ---------- */
   function setFull(on) {

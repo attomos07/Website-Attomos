@@ -121,6 +121,11 @@ type LabOrder struct {
 	Limpio       bool       `json:"limpio,omitempty"` // el laboratorio lo limpió de su columna
 	Entrega      string     `json:"entrega"`          // fecha estimada "AAAA-MM-DD" ("" = sin fecha)
 	Express      bool       `json:"express"`          // lente express (por ahora solo la etiqueta)
+	// Optometría: la orden de laboratorio (hoja) del trabajo.
+	Hoja      *LabHojaRef `json:"hoja,omitempty"`
+	PosSaleID int64       `json:"posSaleId,omitempty"`
+	SinHoja   bool        `json:"sinHoja,omitempty"` // el optometrista dijo que no lleva orden
+	Directo   bool        `json:"directo,omitempty"` // salió de una orden hecha sin venta
 }
 
 func labOrigen(src OrderSource) string {
@@ -214,6 +219,7 @@ func listLabOrders(userID uint) ([]LabOrder, error) {
 	}
 
 	out := make([]LabOrder, 0, len(list))
+	hojaInfo := make([]labOrderHojaInfo, 0, len(list))
 	for i := range list {
 		o := &list[i]
 		// Solo servicios (ej. examen de la vista): no va al laboratorio.
@@ -232,8 +238,15 @@ func listLabOrders(userID uint) ([]LabOrder, error) {
 			ID: o.ID, OrderCode: o.TrackingCode, Total: o.Total, RxOD: o.RxOD, RxOI: o.RxOI,
 			CustomerName: o.ClientName, Status: labStepOf(o), CreatedAt: o.CreatedAt,
 			LabNotes: o.LabNotes, Notes: o.Notes, Origen: labOrigen(o.Source), Externo: o.LabExterno, Items: []string{},
-			Limpio: o.LabLimpio, Express: o.LabExpress,
+			Limpio: o.LabLimpio, Express: o.LabExpress, SinHoja: o.LabSinHoja, Directo: o.LabDirecto,
 		}
+		if o.PosSaleID != nil {
+			lo.PosSaleID = *o.PosSaleID
+		}
+		if o.LabDirecto {
+			lo.Origen = "optometria"
+		}
+		hojaInfo = append(hojaInfo, labOrderHojaInfo{SheetID: i64(o.LabSheetID), Directo: o.LabDirecto, Name: o.ClientName, Phone: o.ClientPhone, CreatedAt: o.CreatedAt})
 		if o.LabEntrega != nil {
 			lo.Entrega = o.LabEntrega.Format("2006-01-02")
 		}
@@ -263,6 +276,10 @@ func listLabOrders(userID uint) ([]LabOrder, error) {
 			lo.LastBy, lo.LastAt = l.By, &at
 		}
 		out = append(out, lo)
+	}
+	// La orden de laboratorio de cada trabajo (ligada o encontrada sola).
+	for i, h := range matchLabHojas(userID, hojaInfo) {
+		out[i].Hoja = h
 	}
 	return out, nil
 }

@@ -140,6 +140,12 @@ type Order struct {
 	LabExpress bool       `gorm:"default:false" json:"labExpress"`
 	RxOD       string     `gorm:"size:120" json:"rxOD"`
 	RxOI       string     `gorm:"size:120" json:"rxOI"`
+	// Optometría: la orden de laboratorio (hoja) ligada al trabajo;
+	// LabSinHoja = el optometrista dijo que esa venta no lleva orden;
+	// LabDirecto = el trabajo salió de una orden hecha sin venta.
+	LabSheetID *int64 `gorm:"index" json:"labSheetId,omitempty"`
+	LabSinHoja bool   `gorm:"default:false" json:"labSinHoja"`
+	LabDirecto bool   `gorm:"default:false" json:"labDirecto"`
 
 	// ── Timestamps ───────────────────────────
 	CreatedAt time.Time      `json:"createdAt"`
