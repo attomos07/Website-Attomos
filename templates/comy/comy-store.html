@@ -143,6 +143,10 @@
     }
     .add-btn:hover { background: var(--accent); color: var(--ink); }
     .add-btn:active { transform: scale(.97); }
+    .add-btn:disabled, .qty-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .stock-tag { display:inline-block; margin-top:4px; font-size:11px; font-weight:700; color: var(--muted); }
+    .stock-tag.is-out { color:#dc2626; }
+    .product-card.is-out .product-img img { filter: grayscale(.7); opacity: .7; }
     .qty-ctrl {
       display: flex; align-items: center; gap: 6px;
       background: var(--cream); border-radius: 999px; padding: 4px 10px;
@@ -1035,8 +1039,11 @@
         : `<div class="product-img-placeholder"><i class="lni lni-shopping-basket"></i></div>`;
       const isPromo = svc.priceType === 'promotion' && svc.promoPrice > 0;
 
+      const out = svc.available === false;
+      const stockTag = out ? '<span class="stock-tag is-out">Agotado</span>'
+        : (svc.stock > 0 && svc.stock <= 5 ? `<span class="stock-tag">Quedan ${svc.stock}</span>` : '');
       return `
-        <div class="product-card" id="card-${i}" style="animation-delay:${i*.05}s">
+        <div class="product-card${out ? ' is-out' : ''}" id="card-${i}" style="animation-delay:${i*.05}s">
           <div class="product-img">
             ${imgHTML}
             ${isPromo ? '<span class="promo-tag">Promo</span>' : ''}
@@ -1044,6 +1051,7 @@
           <div class="product-body">
             <div class="product-title">${svc.title}</div>
             ${svc.description ? `<div class="product-desc">${svc.description}</div>` : ''}
+            ${stockTag}
             <div class="product-footer">
               <div class="price-wrap">
                 <span class="price-main">$${fmt(svc.price)} MXN</span>
@@ -1056,7 +1064,15 @@
     }).join('');
   }
 
+  // Máximo que se puede pedir (existencia del Inventario; -1 = sin límite).
+  function maxQty(i) {
+    const s = store.services[i] || {};
+    if (s.available === false) return 0;
+    return typeof s.stock === 'number' && s.stock >= 0 ? s.stock : Infinity;
+  }
+
   function renderAddBtn(i) {
+    if (maxQty(i) <= 0) return `<button class="add-btn" disabled>Agotado</button>`;
     return `<button class="add-btn" onclick="addItem(${i})">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Agregar
@@ -1067,19 +1083,20 @@
     return `<div class="qty-ctrl">
       <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
       <span class="qty-val">${qty}</span>
-      <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+      <button class="qty-btn" onclick="changeQty(${i},1)"${qty >= maxQty(i) ? ' disabled' : ''}>+</button>
     </div>`;
   }
 
   // ── Cart actions ───────────────────────────────────────────────────────────
   function addItem(i) {
+    if ((cart[i] || 0) + 1 > maxQty(i)) return;
     cart[i] = (cart[i] || 0) + 1;
     updateCtrl(i);
     renderCart();
   }
 
   function changeQty(i, delta) {
-    cart[i] = (cart[i] || 0) + delta;
+    cart[i] = Math.min((cart[i] || 0) + delta, maxQty(i));
     if (cart[i] <= 0) delete cart[i];
     updateCtrl(i);
     renderCart();
@@ -1102,6 +1119,7 @@
   function cartItems() {
     return Object.entries(cart).map(([i, qty]) => ({
       serviceIndex: parseInt(i),
+      itemId: store.services[i].itemId || 0,
       title: store.services[i].title,
       price: store.services[i].price,
       quantity: qty
@@ -1304,6 +1322,7 @@
       🛒 ${data.orderSummary}<br>
       💰 Total: $${fmt(data.total)} MXN<br>
       👤 ${data.customerName}
+      ${data.trackingCode ? `<br>📦 Clave de rastreo: <a href="/rastreo?pedido=${encodeURIComponent(data.trackingCode)}" target="_blank" rel="noopener"><strong>${data.trackingCode}</strong></a>` : ''}
     `;
 
     if (data.whatsappUrl) {

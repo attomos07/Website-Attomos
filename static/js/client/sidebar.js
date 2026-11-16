@@ -53,6 +53,14 @@
 
     // Aplica visibilidad Mi Negocio vs Mi Dependencia según el giro recibido
     // También muestra/oculta el ítem Flujos (solo gubernamental)
+    // Laboratorio: solo ópticas.
+    function applyOpticaLogic(businessType) {
+        const labItem = document.getElementById('labMenuItem');
+        if (!labItem) return;
+        const bt = normalizeStr(businessType);
+        labItem.style.display = (bt.includes('optica') || bt.includes('optic')) ? '' : 'none';
+    }
+
     function applyGovLogic(businessType) {
         const isGov      = normalizeStr(businessType).includes('gubernamental');
         const bizItem    = document.getElementById('myBusinessMenuItem');
@@ -197,6 +205,7 @@
             // Paso 1: aplicar con User.BusinessType (inmediato, con normalización)
             applyFoodLogic(userBizType);
             applyGovLogic(userBizType);
+            applyOpticaLogic(userBizType);
 
             // Paso 2: MyBusinessInfo tiene PRIORIDAD (más específico que User.BusinessType)
             try {
@@ -210,6 +219,7 @@
                                     || '';
                     if (branchType) applyFoodLogic(branchType);
                     if (branchType) applyGovLogic(branchType);
+                    if (branchType) applyOpticaLogic(branchType);
                 }
             } catch (_) {
                 // falla silenciosamente

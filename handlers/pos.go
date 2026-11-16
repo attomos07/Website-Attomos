@@ -576,6 +576,9 @@ func PosSetPedidoStatus(c *gin.Context) {
 		return
 	}
 	p, err := models.SetPosPedidoStatus(uid, sid, in.Status)
+	if err == nil {
+		models.LogOrderStatus(uid, p.ID, in.Status, "", posCashier(c))
+	}
 	if errors.Is(err, models.ErrPosSaleNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Esa venta no tiene pedido."})
 		return

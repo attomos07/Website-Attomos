@@ -65,6 +65,7 @@ func main() {
 		&models.Invoice{},                // ← Solicitudes de factura
 		&models.PaymentConfig{},          // ← Config de pagos del bot (CLABE + Stripe Connect)
 		&models.Order{},                  // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
+		&models.OrderStatusLog{},         // ← Historial de estatus de los pedidos (Laboratorio)
 		&models.MyAgencyInfo{},           // ← Perfil de dependencia gubernamental
 		&models.AgencyInscription{},      // ← Inscripciones ciudadanas a cursos
 		&models.ClickPaymeTransaction{},  // ← Transacciones Click/Payme (Uzbekistán, Telegram)
@@ -415,6 +416,20 @@ func main() {
 			inv.POST("/materiales", handlers.InvCreateMaterial)
 		}
 
+		// Laboratorio (ópticas) — handlers/laboratorio.go
+		lab := protected.Group("/laboratorio")
+		{
+			lab.GET("/pedidos", handlers.LabListOrders)
+			lab.POST("/pedidos", handlers.LabCreateOrder)
+			lab.PATCH("/pedidos/:id/estado", handlers.LabSetStatus)
+			lab.PUT("/pedidos/:id/notas", handlers.LabSetNotes)
+			lab.PUT("/pedidos/:id/externo", handlers.LabSetExterno)
+			lab.GET("/pedidos/:id/historial", handlers.LabOrderHistory)
+			lab.POST("/listos", handlers.LabReadyColumn)
+			lab.POST("/escanear", handlers.LabScan)
+			lab.GET("/inventario", handlers.LabInventario)
+		}
+
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
 		citas := protected.Group("/citas")
 		{
@@ -550,6 +565,11 @@ func main() {
 	router.GET("/agents/:id", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "agent-details.html", nil)
 	})
+
+	// Laboratorio (ópticas) — handlers/laboratorio.go
+	router.GET("/laboratorio", middleware.AuthRequired(), handlers.LabPage)
+	// Antes tenía pestañas: los links viejos llevan al tablero.
+	router.GET("/laboratorio/trabajos", middleware.AuthRequired(), func(c *gin.Context) { c.Redirect(302, "/laboratorio") })
 
 	// Rastreo público de pedidos (clave en el ticket) — handlers/order_tracking.go
 	router.GET("/rastreo", handlers.TrackingPage)

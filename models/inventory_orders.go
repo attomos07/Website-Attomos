@@ -372,7 +372,8 @@ func CancelPosPedido(userID uint, saleID int64) {
 type TrackedOrder struct {
 	Code      string            `json:"code"`
 	Status    string            `json:"status"`
-	Cliente   string            `json:"cliente"` // solo el primer nombre
+	Paso      string            `json:"paso,omitempty"` // laboratorio: en qué paso va
+	Cliente   string            `json:"cliente"`        // solo el primer nombre
 	Items     []TrackedItem     `json:"items"`
 	Total     float64           `json:"total"`
 	Tipo      string            `json:"tipo"`
@@ -420,6 +421,9 @@ func TrackOrder(code string) (*TrackedOrder, error) {
 	}
 	for _, it := range o.Items {
 		out.Items = append(out.Items, TrackedItem{Name: it.Name, Quantity: it.Quantity})
+	}
+	if o.Status == OrderStatusPreparing {
+		out.Paso = LabStepLabel(labStepOf(&o))
 	}
 	var b MyBusinessInfo
 	optica := false

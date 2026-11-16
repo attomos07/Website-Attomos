@@ -197,6 +197,7 @@ func UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 	order.Status = models.OrderStatus(req.Status)
+	models.LogOrderStatus(user.ID, order.ID, req.Status, "", "Mis ventas")
 	// Inventario: cancelado → regresa lo que se había descontado;
 	// reactivado → se vuelve a descontar.
 	if order.Status == models.OrderStatusCancelled {

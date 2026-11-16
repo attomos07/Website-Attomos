@@ -1,0 +1,470 @@
+/* ============================================================================
+   CAPA iOS 27 — Inventario · Punto de venta · Mis citas · Laboratorio
+   Las vistas que vienen de Avante traen sus propias animaciones; esta capa
+   les pone las mismas de Mis Pedidos / Mi Negocio (resortes, entrada con
+   desenfoque, cápsulas que se deslizan, menús con cápsula que sigue al
+   cursor, modales que brotan). Va DESPUÉS del CSS de cada página y trabaja
+   con ios27-panel.js. No cambia el diseño, solo el movimiento.
+   ============================================================================ */
+:root {
+  --ios-spring: linear(0, 0.04, 0.139, 0.271, 0.416, 0.56, 0.691, 0.805, 0.897, 0.969, 1.021, 1.055, 1.074, 1.082, 1.081, 1.075, 1.065, 1.053, 1.041, 1.03, 1.02, 1.011, 1.005, 1, 0.996, 0.994, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+  --ios-spring-smooth: linear(0, 0.028, 0.096, 0.186, 0.286, 0.387, 0.484, 0.572, 0.651, 0.72, 0.779, 0.828, 0.869, 0.902, 0.928, 0.948, 0.964, 0.977, 0.986, 0.992, 0.997, 1, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ios-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ios-spring-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* ---------------------------------------------------------------
+   1. Entrada de la página (encabezado, resumen, paneles)
+   --------------------------------------------------------------- */
+@keyframes iosRiseMove {
+  from { transform: translateY(26px) scale(0.965); }
+  to   { transform: none; }
+}
+
+@keyframes iosRiseFade {
+  from { opacity: 0; filter: blur(8px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.inv-body .ios-in {
+  animation:
+    iosRiseMove 0.8s var(--ios-spring) backwards,
+    iosRiseFade 0.45s cubic-bezier(0.2, 0, 0, 1) backwards !important;
+  animation-delay: calc(var(--i, 0) * 60ms) !important;
+}
+
+/* Cambio de pestaña de sección (subnav-tabs.js): mismo resorte y desenfoque */
+@keyframes subnavIn {
+  from { opacity: 0; transform: translateX(26px) scale(0.985); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes subnavInLeft {
+  from { opacity: 0; transform: translateX(-26px) scale(0.985); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+main.subnav-enter > *:not(.inv-subnav):not(.admin-modal-overlay):not(:has(.inv-subnav)),
+main.subnav-enter > :has(.inv-subnav) > *:not(.inv-subnav) {
+  animation-duration: 0.75s;
+  animation-timing-function: var(--ios-spring);
+}
+
+main.subnav-leave > *:not(.inv-subnav):not(.admin-modal-overlay):not(:has(.inv-subnav)),
+main.subnav-leave > :has(.inv-subnav) > *:not(.inv-subnav) {
+  transition: opacity 0.17s ease, transform 0.17s ease, filter 0.17s ease;
+  filter: blur(4px);
+}
+
+.inv-stat strong,
+.vt-stat strong,
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------
+   2. Botones en cápsula: se hunden con resorte al tocarlos
+   --------------------------------------------------------------- */
+.inv-body .btn,
+.inv-body .inv-tool,
+.inv-body .inv-btn-ghost,
+.inv-body .inv-add-btn,
+.inv-body .inv-pager-btn,
+.inv-body .admin-icon-btn,
+.inv-body .admin-modal-close,
+.inv-body .lab-new-btn,
+.inv-body .lab-full-btn,
+.inv-body .cc-tool,
+.inv-body .pos-method,
+.inv-body .pos-clear,
+.inv-body .pos-credits-btn,
+.inv-body .pos-client-new,
+.inv-body .pos-client-change,
+.inv-body .pos-client-edit,
+.inv-body .vt-export-btn,
+.inv-body .ce-export-btn,
+.inv-body .cal-action,
+.inv-body .page-arrow,
+.inv-body .row-menu-btn,
+.inv-body .qchip,
+.inv-body .inv-stat[data-goto],
+.inv-body .day-view-today,
+.inv-body .cal-event-seg-btn,
+.inv-body .asistio-opt {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: transform, background, background-color, color, box-shadow, border-color, opacity;
+  transition-duration: 0.5s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s;
+  transition-timing-function: var(--ios-spring), ease, ease, ease, ease, ease, ease;
+}
+
+.inv-body .btn:not(:disabled):active,
+.inv-body .inv-tool:not(:disabled):not([aria-disabled="true"]):active,
+.inv-body .inv-btn-ghost:not(:disabled):active,
+.inv-body .inv-add-btn:not(:disabled):active,
+.inv-body .inv-pager-btn:not(:disabled):active,
+.inv-body .lab-new-btn:active,
+.inv-body .lab-full-btn:active,
+.inv-body .cc-tool:not(:disabled):active,
+.inv-body .pos-method:not(:disabled):active,
+.inv-body .pos-clear:active,
+.inv-body .pos-credits-btn:active,
+.inv-body .pos-client-new:active,
+.inv-body .pos-client-change:active,
+.inv-body .pos-client-edit:active,
+.inv-body .vt-export-btn:active,
+.inv-body .ce-export-btn:active,
+.inv-body .cal-action:active,
+.inv-body .day-view-today:active,
+.inv-body .cal-event-seg-btn:active,
+.inv-body .asistio-opt:active,
+.inv-body .qchip:active,
+.inv-body .inv-stat[data-goto]:active {
+  transform: scale(0.95) !important;
+  transition-duration: 0.12s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s;
+}
+
+.inv-body .admin-icon-btn:active,
+.inv-body .admin-modal-close:active,
+.inv-body .page-arrow:not(:disabled):active,
+.inv-body .row-menu-btn:active {
+  transform: scale(0.86) !important;
+  transition-duration: 0.12s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s;
+}
+
+/* Campos: el anillo de foco crece con resorte */
+.inv-body .search-box,
+.inv-body .av-select-btn,
+.inv-body .cb-datepicker-trigger,
+.inv-body .time-picker-trigger,
+.inv-body .admin-role-select-btn {
+  transition-property: border-color, box-shadow, transform, background;
+  transition-duration: 0.2s, 0.45s, 0.5s, 0.2s;
+  transition-timing-function: ease, var(--ios-spring), var(--ios-spring), ease;
+}
+
+/* ---------------------------------------------------------------
+   3. Segmentados: la cápsula la mueve ios27-panel.js con resortes
+   --------------------------------------------------------------- */
+.ios-seg {
+  position: relative;
+  isolation: isolate;
+}
+
+/* El fondo que traían de Avante se oculta: ahora lo hace la cápsula */
+.ios-seg > .inv-seg-glow,
+.ios-seg > .vt-seg-glow,
+.ios-seg > .cf-seg-glow,
+.ios-seg > .lab-seg-glow,
+.ios-seg > .view-switch-glow,
+.ios-seg > .inv-tabs-glow {
+  display: none !important;
+}
+
+.ios-seg-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, width, height;
+}
+
+.ios-seg > button,
+.ios-seg > a {
+  position: relative;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-seg > button:not(.is-on):not(.active):active,
+.ios-seg > a:not(.is-on):active {
+  opacity: 0.55;
+  transform: none !important;
+}
+
+/* Cápsula cian con texto blanco */
+.ios-seg-tint .ios-seg-thumb {
+  background: var(--accent, #06b6d4);
+  box-shadow: 0 6px 16px -4px rgba(6, 182, 212, 0.45);
+}
+
+.ios-seg-tint > .is-on,
+.ios-seg-tint > .active {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+/* Cápsula blanca (opciones de la plantilla del ticket) */
+.ios-seg-light .ios-seg-thumb {
+  background: var(--white, #ffffff);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+.ios-seg-light > .is-on,
+.ios-seg-light > .active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.dark .ios-seg-light .ios-seg-thumb { background: var(--accent, #06b6d4); }
+
+/* Línea que se desliza (sub-pestañas del corte de caja) */
+.ios-seg-line .ios-seg-thumb {
+  top: auto;
+  border-radius: 3px;
+  background: var(--accent, #06b6d4);
+}
+
+.ios-seg-line > button,
+.ios-seg-line > button.is-on {
+  border-bottom-color: transparent !important;
+}
+
+/* Pastilla de las pestañas de sección (subnav-tabs.js): resorte suave para
+   que no se salga de la barra en las pestañas de las orillas */
+.inv-subnav .inv-seg-glow {
+  transition:
+    transform 0.7s var(--ios-spring-smooth),
+    width 0.7s var(--ios-spring-smooth),
+    height 0.5s var(--ios-spring-smooth),
+    opacity 0.2s ease !important;
+}
+
+.inv-subnav > a:not(.is-on):active { opacity: 0.55; }
+
+/* ---------------------------------------------------------------
+   4. Menús: nacen con resorte y una cápsula sigue al cursor
+   --------------------------------------------------------------- */
+.inv-body .av-select-menu,
+.inv-body .admin-role-select-menu,
+.inv-body .time-picker-menu,
+.inv-body .cb-datepicker-menu,
+.inv-body .inv-pick-results {
+  border-color: rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  transform: translateY(-6px) scale(0.9);
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.55s var(--ios-spring), filter 0.25s ease;
+  filter: blur(4px);
+}
+
+.inv-body .av-select.is-open .av-select-menu,
+.inv-body .admin-role-select.is-open .admin-role-select-menu,
+.inv-body .time-picker.is-open .time-picker-menu,
+.inv-body .cb-datepicker.is-open .cb-datepicker-menu,
+.inv-body .inv-pick.is-open .inv-pick-results,
+.inv-body .staff-lada-select.is-open .staff-lada-menu {
+  transform: none;
+  filter: none;
+}
+
+.inv-body .av-select.is-up .av-select-menu { transform: translateY(6px) scale(0.9); }
+.inv-body .av-select.is-up.is-open .av-select-menu { transform: none; }
+
+.inv-body .row-menu-dropdown {
+  border-color: rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+@keyframes rowMenuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.86); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes rowMenuInUp {
+  from { opacity: 0; transform: translateY(6px) scale(0.86); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.inv-body .row-menu.is-open .row-menu-dropdown {
+  animation-duration: 0.55s;
+  animation-timing-function: var(--ios-spring);
+}
+
+/* Cápsula que sigue al cursor dentro del menú (ios27-panel.js).
+   Los menús ya son position:absolute, así que la cápsula se acomoda en ellos. */
+
+.ios-dd-on > :not(.ios-dd-ind) {
+  position: relative;
+  z-index: 1;
+}
+
+.ios-dd-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--accent-soft, #ecfeff);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, width, height;
+}
+
+.ios-dd-on .av-select-option,
+.ios-dd-on .admin-role-option,
+.ios-dd-on .time-picker-option,
+.ios-dd-on .row-menu-item {
+  border-radius: 999px;
+}
+
+.ios-dd-on .av-select-option:hover,
+.ios-dd-on .av-select-option.is-hover,
+.ios-dd-on .admin-role-option:hover,
+.ios-dd-on .time-picker-option:hover,
+.ios-dd-on .row-menu-item:hover,
+.ios-dd-on .row-menu-item.delete:hover {
+  background: transparent;
+  padding-left: 11px;
+}
+
+.ios-dd-on .time-picker-option:hover,
+.ios-dd-on .admin-role-option:hover { padding-left: 12px; }
+
+.ios-dd-on .ios-hover { color: var(--accent-hover, #0891b2); }
+.ios-dd-on .row-menu-item.delete.ios-hover { color: #dc2626; }
+.ios-dd-ind[data-tone="danger"] { background: rgba(239, 68, 68, 0.1); }
+
+body.dark .ios-dd-ind { background: rgba(6, 182, 212, 0.16); }
+
+/* ---------------------------------------------------------------
+   5. Listas: renglones, tarjetas y días que entran escalonados
+   --------------------------------------------------------------- */
+@keyframes iosRowIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes iosCellIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes iosItemIn {
+  from { opacity: 0; transform: translateX(-14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.inv-body tr.ios-row > td,
+.inv-body .ios-row:not(tr) {
+  animation: iosRowIn 0.6s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 40ms);
+}
+
+.inv-body .ios-cell {
+  animation: iosCellIn 0.5s var(--ios-spring) backwards;
+  animation-delay: calc(var(--r, 0) * 8ms);
+}
+
+.inv-body .ios-item-in {
+  animation: iosItemIn 0.5s var(--ios-spring) backwards;
+}
+
+/* Paneles internos que cambian (pestañas del artículo, del corte, de la plantilla) */
+@keyframes iosPaneIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.inv-body .inv-tabpane.is-on,
+.inv-body .cc-pane:not([hidden]),
+.inv-body .scn-pane:not([hidden]) {
+  animation: iosPaneIn 0.6s var(--ios-spring) both;
+}
+
+.inv-body .ios-pop {
+  animation: iosPaneIn 0.6s var(--ios-spring) both;
+}
+
+/* ---------------------------------------------------------------
+   6. Modales: brotan con resorte y se van hacia abajo
+   --------------------------------------------------------------- */
+.inv-body .admin-modal-overlay {
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.inv-body .admin-modal-overlay.open {
+  transition: opacity 0.3s ease, visibility 0s linear;
+}
+
+.inv-body .admin-modal-card {
+  border-radius: 28px;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(14px) scale(0.94);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 1, 1), opacity 0.22s ease, filter 0.22s ease;
+}
+
+.inv-body .admin-modal-overlay.open .admin-modal-card {
+  opacity: 1;
+  filter: none;
+  transform: none;
+  transition: transform 0.6s var(--ios-spring), opacity 0.3s cubic-bezier(0.2, 0, 0, 1), filter 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.inv-body .admin-modal-overlay.open .admin-confirm-icon,
+.inv-body .admin-modal-overlay.open .pos-done-check,
+.inv-body .admin-modal-overlay.open .pos-abono-check,
+.inv-body .admin-modal-overlay.open .cancel-cita-icon {
+  animation: iosIconPop 0.6s var(--ios-spring) 0.12s both;
+}
+
+@keyframes iosIconPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+@media (max-width: 560px) {
+  /* En celular el modal es una hoja que sube desde abajo */
+  .inv-body .admin-modal-card {
+    border-radius: 24px 24px 0 0;
+    opacity: 1;
+    filter: none;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .inv-body .admin-modal-overlay.open .admin-modal-card {
+    transform: none;
+    transition: transform 0.6s var(--ios-spring);
+  }
+}
+
+/* ---------------------------------------------------------------
+   7. Movimiento reducido
+   --------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .inv-body .ios-in,
+  .inv-body .ios-row,
+  .inv-body tr.ios-row > td,
+  .inv-body .ios-cell,
+  .inv-body .ios-item-in,
+  .inv-body .ios-pop,
+  .inv-body .inv-tabpane.is-on,
+  .inv-body .cc-pane:not([hidden]),
+  .inv-body .scn-pane:not([hidden]) {
+    animation: none !important;
+  }
+
+  .inv-body .admin-modal-card,
+  .inv-body .admin-modal-overlay.open .admin-modal-card,
+  .inv-body .av-select-menu,
+  .inv-body .admin-role-select-menu,
+  .inv-body .time-picker-menu,
+  .inv-body .cb-datepicker-menu {
+    transition: opacity 0.15s ease !important;
+    filter: none !important;
+  }
+}

@@ -35,10 +35,11 @@ const (
 type OrderSource string
 
 const (
-	OrderSourceManual OrderSource = "manual" // Creado manualmente desde el panel
-	OrderSourceAgent  OrderSource = "agent"  // Creado por el bot de WhatsApp
-	OrderSourceNinda  OrderSource = "ninda"  // Creado desde el marketplace Ninda
-	OrderSourcePOS    OrderSource = "pos"    // Abierto por una venta del Punto de venta (clave de rastreo)
+	OrderSourceManual OrderSource = "manual"      // Creado manualmente desde el panel
+	OrderSourceAgent  OrderSource = "agent"       // Creado por el bot de WhatsApp
+	OrderSourceNinda  OrderSource = "ninda"       // Creado desde el marketplace Ninda
+	OrderSourcePOS    OrderSource = "pos"         // Abierto por una venta del Punto de venta (clave de rastreo)
+	OrderSourceLab    OrderSource = "laboratorio" // Trabajo dado de alta en Laboratorio (ópticas)
 )
 
 // ============================================
@@ -123,6 +124,15 @@ type Order struct {
 	// StockApplied: ya se descontó del Inventario (y hay que regresarlo si
 	// se cancela o se borra).
 	StockApplied bool `gorm:"default:false" json:"stockApplied"`
+
+	// ── Laboratorio (ópticas) ────────────────
+	// LabStep: paso del tablero (recibido, en_proceso, corte,
+	// control_calidad). Con status "preparing" dice en cuál va.
+	LabStep    string `gorm:"size:30" json:"labStep"`
+	LabNotes   string `gorm:"type:text" json:"labNotes"`
+	LabExterno bool   `gorm:"default:false" json:"labExterno"`
+	RxOD       string `gorm:"size:120" json:"rxOD"`
+	RxOI       string `gorm:"size:120" json:"rxOI"`
 
 	// ── Timestamps ───────────────────────────
 	CreatedAt time.Time      `json:"createdAt"`
