@@ -1493,3 +1493,27 @@ main.subnav-leave.to-right > :has(.inv-subnav) > *:not(.inv-subnav){ transform:t
 @media (prefers-reduced-motion:reduce){
   main.subnav-enter > *, main.subnav-leave > *{ animation:none !important; transition:none !important; opacity:1 !important; transform:none !important; }
 }
+/* ---------- Artículo → Venta: cómo lo ofrecen el agente y Comy ---------- */
+.inv-tab-dot{ display:inline-block; width:7px; height:7px; margin-left:4px; border-radius:50%; background:#ea580c; vertical-align:middle; box-shadow:0 0 0 3px rgba(234,88,12,.18); }
+.inv-tab.is-on .inv-tab-dot{ background:#fff; box-shadow:none; }
+.inv-venta-switch{ padding:12px 14px; border-radius:20px; background:#fff; box-shadow:0 0 0 1.5px rgba(15,23,42,.07), 0 10px 24px -16px rgba(15,23,42,.28); }
+.inv-venta-body{ display:flex; flex-direction:column; gap:14px; transition:opacity .25s ease, filter .25s ease; }
+.inv-venta-body.is-off{ opacity:.45; filter:grayscale(.6); pointer-events:none; }
+.inv-venta-body textarea{ resize:vertical; min-height:80px; font-family:var(--sans); font-size:14px; color:var(--ink); border:1.5px solid var(--line); border-radius:14px; padding:11px 13px; background:#fff; }
+.inv-venta-body textarea:focus{ outline:none; border-color:var(--accent); }
+.inv-promo-box{ display:flex; flex-direction:column; padding:12px 14px; border-radius:22px; background:#fff; box-shadow:0 0 0 1.5px rgba(234,88,12,.25), 0 10px 24px -16px rgba(234,88,12,.4); }
+.inv-promo-fields{ display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows .45s var(--ios-spring, cubic-bezier(.22,1,.36,1)), opacity .25s ease, margin-top .3s ease; }
+.inv-promo-fields.is-open{ grid-template-rows:1fr; opacity:1; margin-top:12px; }
+.inv-promo-fields:not(.is-open){ pointer-events:none; }
+.inv-promo-fields.no-anim{ transition:none !important; }
+.inv-promo-inner{ min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:12px; }
+.inv-promo-fields.is-open .inv-promo-inner{ overflow:visible; }
+.inv-promo-normal{ margin:0; padding:11px 0; font-size:15px; font-weight:700; color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(234,88,12,.6); }
+.inv-promo-end{ display:grid; grid-template-columns:1.2fr 1fr; gap:10px; }
+.inv-promo-end .cb-datepicker, .inv-promo-end .admin-role-select{ width:100%; }
+.inv-hint.is-good{ color:#157a43; }
+.inv-hint.is-good strong{ color:#c2410c; }
+.inv-hint.is-bad{ color:#b42318; }
+.inv-promo-chip{ display:inline-block; margin-right:6px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; color:#c2410c; background:#fff1e6; }
+.inv-table tbody tr.is-selected .inv-promo-chip{ background:rgba(255,255,255,.22); color:#fff; }
+@media (max-width:560px){ .inv-promo-end{ grid-template-columns:1fr; } }

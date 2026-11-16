@@ -73,11 +73,20 @@ func comyCatalog(b models.MyBusinessInfo) (out []comyProduct, fromInventory bool
 				if it.Servicio {
 					stock = -1
 				}
-				out = append(out, comyProduct{
-					Index: i, ItemID: it.ID, Title: it.Descripcion, Description: strings.Join(det, " · "),
+				desc := strings.Join(det, " · ")
+				if it.VentaDesc != "" {
+					desc = it.VentaDesc
+				}
+				p := comyProduct{
+					Index: i, ItemID: it.ID, Title: it.Nombre(), Description: desc,
 					Price: it.Precio, PriceType: "normal", Images: imgs, PromoDays: []string{},
 					Stock: stock, Available: it.Servicio || it.Existencia > 0,
-				})
+				}
+				// Promoción vigente (pestaña "Venta" del Inventario): se cobra ese precio.
+				if it.PromoEstado == "activa" {
+					p.PriceType, p.OriginalPrice, p.PromoPrice, p.Price = "promotion", it.Precio, it.PromoPrecio, it.PromoPrecio
+				}
+				out = append(out, p)
 			}
 			return out, true
 		}

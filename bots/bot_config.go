@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 // BusinessConfig estructura que consume el bot (idéntica al struct
@@ -197,10 +198,14 @@ func GenerateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) 
 		config.Workers = convertBranchWorkers(branch.Workers)
 	}
 
-	// Productos y servicios de la sección Inventario (sidebar → Inventario).
-	// Se agregan a "services" con el mismo formato, así el bot los ofrece sin
-	// cambios de su lado.
-	config.Services = append(config.Services, inventoryServices(agent.UserID)...)
+	// Productos y servicios de la sección Inventario (sidebar → Inventario),
+	// con su pestaña "Venta" (nombre, descripción, etiqueta y promoción). Van
+	// en "services" con el mismo formato, así el bot los ofrece sin cambios de
+	// su lado. Los servicios que se capturaban en Mi Negocio solo se usan si
+	// el negocio todavía no tiene nada en Inventario.
+	if inv := inventoryServices(agent.UserID); len(inv) > 0 {
+		config.Services = inv
+	}
 
 	return config
 }
@@ -247,6 +252,9 @@ func inventoryServices(userID uint) []Service {
 		if !it.Servicio && it.Existencia > 0 {
 			det = append(det, fmt.Sprintf("%d en existencia", it.Existencia))
 		}
+		if it.Etiqueta != "" {
+			det = append(det, it.Etiqueta)
+		}
 		desc := strings.Join(det, " · ")
 		if it.Clave != "" {
 			if desc != "" {
@@ -255,18 +263,34 @@ func inventoryServices(userID uint) []Service {
 				desc = "Clave " + it.Clave
 			}
 		}
+		if it.VentaDesc != "" {
+			desc = it.VentaDesc + " (" + desc + ")"
+		}
 		var imgs []string
 		for _, k := range it.PhotoKeys {
 			imgs = append(imgs, inventoryPhotoURL(k))
 		}
-		out = append(out, Service{
-			Title:       it.Descripcion,
+		s := Service{
+			Title:       it.Nombre(),
 			Description: desc,
 			ImageUrls:   imgs,
 			PriceType:   "normal",
 			Price:       it.Precio,
 			InStock:     it.Servicio || it.Existencia > 0,
-		})
+		}
+		// Promoción vigente: precio 1 → precio de promoción (hasta su fin).
+		if it.PromoEstado == "activa" {
+			s.PriceType = "promotion"
+			s.OriginalPrice = it.Precio
+			s.PromoPrice = it.PromoPrecio
+			s.Price = it.PromoPrecio
+			if it.PromoFin != "" {
+				s.PromoPeriodType = "range"
+				s.PromoDateStart = time.Now().Format("2006-01-02")
+				s.PromoDateEnd = it.PromoFin[:10]
+			}
+		}
+		out = append(out, s)
 	}
 	return out
 }

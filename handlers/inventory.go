@@ -233,7 +233,16 @@ type invItemBody struct {
 	ColoresExtra   []string `json:"colores_extra"`
 	MicaTipo       string   `json:"mica_tipo"`
 	Materiales     []string `json:"materiales"`
+	// Venta (agente y Comy)
+	VentaOculta      bool    `json:"venta_oculta"`
+	VentaTitulo      string  `json:"venta_titulo"`
+	VentaDescripcion string  `json:"venta_descripcion"`
+	VentaEtiqueta    string  `json:"venta_etiqueta"`
+	PromoPrecio      float64 `json:"promo_precio"`
+	PromoFin         string  `json:"promo_fin"`
 }
+
+var invPromoFinRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$`)
 
 func invMoneyOK(vs ...float64) bool {
 	for _, v := range vs {
@@ -298,6 +307,27 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 	case len([]rune(b.Localizacion)) > 60:
 		return bad("La localización es muy larga (máximo 60 caracteres).")
 	}
+	b.VentaTitulo = strings.Join(strings.Fields(b.VentaTitulo), " ")
+	b.VentaDescripcion = strings.TrimSpace(b.VentaDescripcion)
+	b.VentaEtiqueta = strings.Join(strings.Fields(b.VentaEtiqueta), " ")
+	b.PromoFin = strings.TrimSpace(b.PromoFin)
+	switch {
+	case len([]rune(b.VentaTitulo)) > 160:
+		return bad("El nombre para vender es muy largo (máximo 160 caracteres).")
+	case len([]rune(b.VentaDescripcion)) > 1000:
+		return bad("La descripción para vender es muy larga (máximo 1000 caracteres).")
+	case len([]rune(b.VentaEtiqueta)) > 40:
+		return bad("La etiqueta es muy larga (máximo 40 caracteres).")
+	case !invMoneyOK(b.PromoPrecio):
+		return bad("Revisa el precio de promoción.")
+	case b.PromoPrecio > 0 && b.PromoPrecio >= b.Precio1:
+		return bad("El precio de promoción debe ser menor al precio de venta (precio 1).")
+	case b.PromoFin != "" && !invPromoFinRe.MatchString(b.PromoFin):
+		return bad("Revisa la fecha de fin de la promoción.")
+	}
+	if b.PromoPrecio <= 0 {
+		b.PromoPrecio, b.PromoFin = 0, ""
+	}
 
 	a := models.InvItem{
 		Clave: b.Clave, ClaveAlterna: b.ClaveAlterna, Descripcion: b.Descripcion,
@@ -308,6 +338,8 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 		Mayoreo2: b.Mayoreo2, Mayoreo3: b.Mayoreo3, Mayoreo4: b.Mayoreo4,
 		Existencia: b.Existencia, Minimo: b.Minimo, Maximo: b.Maximo, Localizacion: b.Localizacion,
 		ColoresExtra: []string{}, Materiales: []string{},
+		VentaOculta: b.VentaOculta, VentaTitulo: b.VentaTitulo, VentaDescripcion: b.VentaDescripcion,
+		VentaEtiqueta: b.VentaEtiqueta, PromoPrecio: b.PromoPrecio, PromoFin: b.PromoFin,
 	}
 
 	// Los datos de armazón solo aplican a ópticas; para otros giros se ignoran.

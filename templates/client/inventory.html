@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
-    <link rel="stylesheet" href="/static/css/client/inventory.css?v=6">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=2">
 </head>
 <body class="inv-body">
@@ -144,6 +144,7 @@
       <button type="button" class="inv-tab" data-tab="precios" role="tab">Precios</button>
       <button type="button" class="inv-tab" data-tab="inventario" role="tab">Inventario</button>
       <button type="button" class="inv-tab" data-tab="fotos" role="tab">Fotos <span class="inv-tab-count" id="aFotosCount" hidden></span></button>
+      <button type="button" class="inv-tab" data-tab="venta" role="tab">Venta <span class="inv-tab-dot" id="aVentaDot" hidden></span></button>
     </div>
     <div class="admin-modal-body">
       <form class="staff-form inv-art-form" id="artForm" novalidate autocomplete="off">
@@ -295,7 +296,62 @@
             <!-- se llena con JS -->
           </div>
           <input type="file" id="aFotoInput" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
-          <p class="inv-hint" id="aFotosHint">Hasta 6 fotos por artículo (JPG, PNG o WEBP). También puedes <strong>arrastrarlas y soltarlas</strong> aquí. La <strong>principal</strong> es la que se muestra primero; toca la estrella para cambiarla.</p>
+          <p class="inv-hint" id="aFotosHint">Las fotos también las enseñan tu agente y Comy. Hasta 6 fotos por artículo (JPG, PNG o WEBP). También puedes <strong>arrastrarlas y soltarlas</strong> aquí. La <strong>principal</strong> es la que se muestra primero; toca la estrella para cambiarla.</p>
+        </div>
+
+        <!-- Venta: cómo lo ofrecen tu agente y Comy -->
+        <div class="inv-tabpane" data-pane="venta">
+          <label class="inv-check inv-venta-switch">
+            <input type="checkbox" id="aVentaOn" checked>
+            <span class="inv-check-box"></span>
+            <span><strong>Lo ofrecen tu agente y Comy</strong><small>Apágalo para venderlo solo en el Punto de venta.</small></span>
+          </label>
+          <div class="inv-venta-body" id="aVentaBody">
+            <div class="staff-form-row">
+              <label class="staff-field">
+                <span>Nombre para vender <em>(opcional)</em></span>
+                <input type="text" id="aVentaTitulo" maxlength="160" placeholder="Se usa la descripción si lo dejas vacío">
+              </label>
+              <label class="staff-field">
+                <span>Etiqueta <em>(opcional)</em></span>
+                <input type="text" id="aVentaEtiqueta" maxlength="40" placeholder="Ej. Nuevo, Más vendido">
+              </label>
+            </div>
+            <label class="staff-field">
+              <span>Descripción para vender <em>(opcional — tu agente la usa para explicarlo)</em></span>
+              <textarea id="aVentaDesc" rows="3" maxlength="1000" placeholder="Qué es, materiales, medidas, qué incluye, garantía…"></textarea>
+            </label>
+
+            <div class="inv-promo-box" id="aPromoBox">
+              <label class="inv-check is-inline">
+                <input type="checkbox" id="aPromoOn">
+                <span class="inv-check-box"></span>
+                <span><strong>Promoción</strong><small>Tu agente y Comy la ofrecen a este precio hasta la fecha de fin.</small></span>
+              </label>
+              <div class="inv-promo-fields" id="aPromoFields">
+                <div class="inv-promo-inner">
+                  <div class="staff-form-row">
+                    <div class="staff-field">
+                      <span>Precio normal <em>(precio 1)</em></span>
+                      <p class="inv-promo-normal" id="aPromoNormal">—</p>
+                    </div>
+                    <label class="staff-field">
+                      <span>Precio con promoción</span>
+                      <span class="inv-money"><span>$</span><input type="number" id="aPromoPrecio" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+                    </label>
+                  </div>
+                  <div class="staff-field">
+                    <span>Fin de la promoción <em>(opcional — sin fecha no vence)</em></span>
+                    <div class="inv-promo-end">
+                      <div id="aPromoFecha"></div>
+                      <div id="aPromoHora"></div>
+                    </div>
+                  </div>
+                  <p class="inv-hint" id="aPromoInfo"></p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <p class="staff-error" id="artError"></p>
@@ -1034,7 +1090,7 @@
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
 <script src="/static/js/client/subnav-tabs.js?v=2"></script>
-<script src="/static/js/client/inventory.js?v=10" data-subnav-page></script>
+<script src="/static/js/client/inventory.js?v=11" data-subnav-page></script>
 <script src="/static/js/client/ios27-panel.js?v=2"></script>
 </body>
 </html>

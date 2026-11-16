@@ -90,6 +90,7 @@
     const indicator       = document.getElementById('sbInd');
     const hoverPill       = document.getElementById('sbHov');
     const toggleBtn       = document.getElementById('sbToggle');
+    const pinBtn          = document.getElementById('sbPin');
     const searchBox       = document.getElementById('sbSearchBox');
     const searchInput     = document.getElementById('sbSearch');
     const emptyMsg        = document.getElementById('sbEmpty');
@@ -476,14 +477,40 @@
         toggleBtn.setAttribute('aria-expanded', String(exp));
         toggleBtn.setAttribute('aria-label', exp ? t('dash_collapse_menu', 'Contraer menú') : t('dash_expand_menu', 'Expandir menú'));
     }
-    function setExpanded(exp, save = true) {
+    // Abierto, el contenido se recorre a la derecha (sidebar.css: html.sb-pushed).
+    // "Fijar" lo deja abierto en todas las páginas; sin fijar, al cambiar de
+    // página regresa cerrado.
+    const isPinned = () => pinBtn?.classList.contains('is-on');
+    function setPinned(on, save = true) {
+        if (!pinBtn) return;
+        pinBtn.classList.toggle('is-on', on);
+        pinBtn.setAttribute('aria-pressed', String(on));
+        const label = on ? t('dash_unpin_menu', 'Desfijar menú') : t('dash_pin_menu', 'Fijar menú');
+        pinBtn.setAttribute('aria-label', label);
+        pinBtn.title = label;
+        if (save) { try { localStorage.setItem('sidebarPinned', on ? '1' : '0'); } catch (_) {} }
+    }
+    function setExpanded(exp) {
         sidebar.classList.toggle('expanded', exp);
+        document.documentElement.classList.toggle('sb-pushed', exp && !isMobile());
         updateToggleLabel();
         hideTip();
-        if (save) { try { localStorage.setItem('sidebarExpanded', exp ? '1' : '0'); } catch (_) {} }
+        if (!exp && isPinned()) setPinned(false);
     }
-    try { if (localStorage.getItem('sidebarExpanded') === '1') setExpanded(true, false); } catch (_) {}
+    try {
+        // Antes se guardaba "sidebarExpanded": se toma como fijado.
+        if (localStorage.getItem('sidebarPinned') === '1' || localStorage.getItem('sidebarExpanded') === '1') {
+            localStorage.removeItem('sidebarExpanded');
+            document.documentElement.classList.add('sb-no-anim');
+            setPinned(true);
+            setExpanded(true);
+            requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('sb-no-anim')));
+        }
+    } catch (_) {}
+    setPinned(isPinned(), false);
     toggleBtn?.addEventListener('click', () => { setExpanded(!isExpanded()); hoverTo(null); });
+    pinBtn?.addEventListener('click', () => { setPinned(!isPinned()); });
+    mqMobile.addEventListener?.('change', () => document.documentElement.classList.toggle('sb-pushed', isExpanded() && !isMobile()));
 
     // ── Buscador: filtra las opciones del menú ───────────────────────
     function updateGroups() {

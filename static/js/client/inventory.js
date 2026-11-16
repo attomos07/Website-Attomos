@@ -782,7 +782,7 @@ window.InvLabels = window.InvLabels || (function () {
           '<strong>' + esc(a.descripcion) + '</strong></div></div></td>' +
         '<td class="c-dep"><span>' + esc(a.departamento || 'Sin departamento') + '</span>' + (a.categoria ? '<small>' + esc(a.categoria) + '</small>' : '') + '</td>' +
         '<td class="num">' + existCell(a) + '</td>' +
-        '<td class="num inv-price">' + mxn.format(a.precio_1) + '</td>' +
+        '<td class="num inv-price">' + (a.promo_estado === 'activa' ? '<span class="inv-promo-chip" title="Promoción para el agente y Comy">' + mxn.format(a.promo_precio) + '</span>' : '') + mxn.format(a.precio_1) + '</td>' +
       '</tr>';
     }).join('');
     var empty = $('invEmpty');
@@ -896,6 +896,7 @@ window.InvLabels = window.InvLabels || (function () {
         '<div class="inv-d-row"><span>Departamento</span><strong>' + esc(a.departamento || '—') + '</strong></div>' +
         '<div class="inv-d-row"><span>Categoría</span><strong>' + esc(a.categoria || '—') + '</strong></div>' +
         '<div class="inv-d-row"><span>Localización</span><strong>' + esc(a.localizacion || '—') + '</strong></div>' +
+        '<div class="inv-d-row"><span>Agente y Comy</span><strong>' + ventaTxt(a) + '</strong></div>' +
         (a.tipo_armazon ? '<div class="inv-d-row"><span>Tipo de armazón</span><strong>' + esc(tipoNombre(a.tipo_armazon)) + '</strong></div>' : '') +
         (a.materiales && a.materiales.length ? '<div class="inv-d-row"><span>Material</span><strong>' + esc(matsTxt(a.materiales)) + '</strong></div>' : '') +
         (a.mica_tipo ? '<div class="inv-d-row"><span>Mica</span><strong>' + esc(MICA_TXT[a.mica_tipo] || a.mica_tipo) + '</strong></div>' : '') +
@@ -1000,6 +1001,13 @@ window.InvLabels = window.InvLabels || (function () {
     if (b) setMica(b.getAttribute('data-mica'));
   });
   var aTipo = I.select($('aTipoArm'), { placeholder: 'Sin tipo', onChange: function (v) { formTipo = v; } });
+  // Cómo lo ofrecen el agente y Comy (panel de detalle).
+  function ventaTxt(a) {
+    if (a.venta_oculta) return 'No lo ofrecen';
+    if (a.promo_estado === 'activa') return 'Promoción ' + mxn.format(a.promo_precio) + (a.promo_fin ? ' hasta ' + I.fecha(a.promo_fin) : '');
+    if (a.promo_estado === 'vencida') return 'Sí · promoción vencida';
+    return 'Sí';
+  }
   function tipoNombre(slug) { var t = tiposArm.filter(function (x) { return x.slug === slug; })[0]; return t ? t.nombre : (slug ? slug + ' (ya no está en la lista)' : ''); }
   function buildTipos() {
     var opts = [{ value: '', label: 'Sin tipo' }].concat(tiposArm.map(function (t) { return { value: t.slug, label: t.nombre }; }));
@@ -1108,6 +1116,60 @@ window.InvLabels = window.InvLabels || (function () {
     if (on && glow) { glow.style.width = on.offsetWidth + 'px'; glow.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
   }
   tabs.forEach(function (t) { t.addEventListener('click', function () { setTab(t.getAttribute('data-tab')); }); });
+
+  /* ---------- Venta: cómo lo ofrecen el agente y Comy ----------
+     Nombre y descripción para vender, etiqueta y promoción (precio menor
+     al precio 1 hasta una fecha). El Punto de venta sigue con el precio 1. */
+  var promoFecha = I.datePicker($('aPromoFecha'), { onChange: promoInfo });
+  var HORAS = [{ value: '', label: 'Fin del día' }];
+  for (var hm = 0; hm < 24 * 60; hm += 30) {
+    var hh = Math.floor(hm / 60), h12 = hh % 12 || 12, mm = hm % 60 ? '30' : '00';
+    HORAS.push({ value: (hh < 10 ? '0' : '') + hh + ':' + mm, label: h12 + ':' + mm + (hh < 12 ? ' a. m.' : ' p. m.') });
+  }
+  var promoHora = I.select($('aPromoHora'), { options: HORAS, placeholder: 'Fin del día', onChange: promoInfo });
+  function precio1() { var r = priceRow(1); return r ? (parseFloat(r.querySelector('[data-precio]').value) || 0) : 0; }
+  function promoFin() { var f = promoFecha.get(); return f ? f + 'T' + (promoHora.get() || '23:59') : ''; }
+  function syncVenta() {
+    var on = $('aVentaOn').checked, promo = $('aPromoOn').checked;
+    $('aVentaBody').classList.toggle('is-off', !on);
+    $('aPromoFields').classList.toggle('is-open', promo);
+    $('aVentaDot').hidden = !(on && promo);
+    promoInfo();
+  }
+  function promoInfo() {
+    var p1 = precio1(), pp = parseFloat($('aPromoPrecio').value) || 0, info = $('aPromoInfo');
+    $('aPromoNormal').textContent = p1 > 0 ? mxn.format(p1) : 'Primero pon el precio 1 (pestaña Precios)';
+    if (!$('aPromoOn').checked) { info.textContent = ''; return; }
+    if (!(pp > 0)) { info.textContent = 'Escribe el precio con promoción.'; info.className = 'inv-hint'; return; }
+    if (pp >= p1) { info.textContent = 'Debe ser menor al precio normal.'; info.className = 'inv-hint is-bad'; return; }
+    var fin = promoFin(), vencida = fin && fin.replace('T', ' ') <= I.ahoraLocal().replace('T', ' ').slice(0, 16);
+    info.className = 'inv-hint' + (vencida ? ' is-bad' : ' is-good');
+    info.innerHTML = vencida ? 'Esa fecha ya pasó: la promoción no se ofrecería.'
+      : '<strong>' + Math.round((1 - pp / p1) * 100) + ' % de descuento</strong> · ' + (fin ? 'hasta el ' + I.fechaHora(fin) : 'sin fecha de fin');
+  }
+  ['aVentaOn', 'aPromoOn'].forEach(function (id) { $(id).addEventListener('change', function () {
+    syncVenta();
+    if (id === 'aPromoOn' && this.checked && !$('aPromoPrecio').value) setTimeout(function () { $('aPromoPrecio').focus(); }, 200);
+  }); });
+  $('aPromoPrecio').addEventListener('input', promoInfo);
+  artModal.addEventListener('input', function (e) { if (e.target.matches('[data-precio]')) promoInfo(); });
+  function fillVenta(a) {
+    $('aVentaOn').checked = !(a && a.venta_oculta);
+    $('aVentaTitulo').value = a ? (a.venta_titulo || '') : '';
+    $('aVentaEtiqueta').value = a ? (a.venta_etiqueta || '') : '';
+    $('aVentaDesc').value = a ? (a.venta_descripcion || '') : '';
+    var promo = !!(a && a.promo_precio > 0);
+    $('aPromoOn').checked = promo;
+    $('aPromoPrecio').value = promo ? a.promo_precio.toFixed(2) : '';
+    var fin = promo ? (a.promo_fin || '') : '';
+    promoFecha.set(fin ? fin.slice(0, 10) : '');
+    var hora = fin ? fin.slice(11, 16) : '';
+    promoHora.set(hora === '23:59' ? '' : hora, true);
+    $('aPromoFields').classList.add('no-anim');
+    syncVenta();
+    void $('aPromoFields').offsetWidth;
+    $('aPromoFields').classList.remove('no-anim');
+  }
 
   // Precios 1 a 4: % utilidad ↔ precio de venta neto
   var pricesEl = $('aPrices');
@@ -1403,6 +1465,7 @@ window.InvLabels = window.InvLabels || (function () {
     buildTipos(); renderPalette();
     syncServicio();
     resetFotos(a, mode);
+    fillVenta(a);
   }
   function openAdd() { editing = null; $('artTitle').textContent = 'Agregar artículo'; fillForm(null, 'add'); openArt(); }
   function openEdit(a) { if (!a) return; editing = a; $('artTitle').textContent = 'Editar artículo'; fillForm(a, 'edit'); openArt(); }
@@ -1439,7 +1502,13 @@ window.InvLabels = window.InvLabels || (function () {
       color_principal: colPrin,
       colores_extra: colExtra.slice(),
       mica_tipo: formMica,
-      materiales: formMats.slice()
+      materiales: formMats.slice(),
+      venta_oculta: !$('aVentaOn').checked,
+      venta_titulo: $('aVentaTitulo').value.trim(),
+      venta_descripcion: $('aVentaDesc').value.trim(),
+      venta_etiqueta: $('aVentaEtiqueta').value.trim(),
+      promo_precio: $('aPromoOn').checked ? I.round2(parseFloat($('aPromoPrecio').value) || 0) : 0,
+      promo_fin: $('aPromoOn').checked ? promoFin() : ''
     };
     [1, 2, 3, 4].forEach(function (n) {
       var row = priceRow(n);
@@ -1452,6 +1521,10 @@ window.InvLabels = window.InvLabels || (function () {
     if (body.precio_1 <= 0 && !body.servicio) return bad('Escribe el precio de venta (precio 1).', 'precios');
     if (body.maximo > 0 && body.minimo > body.maximo) return bad('El mínimo no puede ser mayor que el máximo.', 'inventario', 'aMinimo');
     if (body.existencia < 0) return bad('La existencia no puede ser negativa.', 'inventario', 'aExistencia');
+    if ($('aPromoOn').checked) {
+      if (!(body.promo_precio > 0)) return bad('Escribe el precio con promoción (o apaga la promoción).', 'venta', 'aPromoPrecio');
+      if (body.promo_precio >= body.precio_1) return bad('El precio con promoción debe ser menor al precio 1.', 'venta', 'aPromoPrecio');
+    }
     var btn = $('artSave');
     btn.disabled = true; btn.textContent = 'Guardando…'; err.textContent = '';
     var req = editing

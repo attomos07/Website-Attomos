@@ -40,38 +40,45 @@ type InventorySettingsRecord struct {
 func (InventorySettingsRecord) TableName() string { return "inv_settings" }
 
 type InventoryItemRecord struct {
-	ID             int64     `gorm:"primaryKey;autoIncrement"`
-	UserID         uint      `gorm:"not null;uniqueIndex:uq_inv_art_clave,priority:1;index:idx_inv_art_user"`
-	Clave          string    `gorm:"size:60;not null;uniqueIndex:uq_inv_art_clave,priority:2"`
-	ClaveAlterna   string    `gorm:"size:60;not null;default:''"`
-	Descripcion    string    `gorm:"size:200;not null"`
-	DepartamentoID *int64    `gorm:"index"`
-	CategoriaID    *int64    `gorm:"index"`
-	UnidadCompra   string    `gorm:"size:12;not null;default:'PZA'"`
-	UnidadVenta    string    `gorm:"size:12;not null;default:'PZA'"`
-	Factor         float64   `gorm:"type:decimal(10,3);not null;default:1"`
-	Servicio       bool      `gorm:"not null;default:false"`
-	SinRastreo     bool      `gorm:"not null;default:false"`
-	IVA            bool      `gorm:"column:iva;not null;default:true"`
-	PrecioCompra   float64   `gorm:"type:decimal(12,2);not null;default:0"`
-	Precio1        float64   `gorm:"column:precio_1;type:decimal(12,2);not null;default:0"`
-	Precio2        float64   `gorm:"column:precio_2;type:decimal(12,2);not null;default:0"`
-	Precio3        float64   `gorm:"column:precio_3;type:decimal(12,2);not null;default:0"`
-	Precio4        float64   `gorm:"column:precio_4;type:decimal(12,2);not null;default:0"`
-	Mayoreo2       int       `gorm:"column:mayoreo_2;not null;default:0"`
-	Mayoreo3       int       `gorm:"column:mayoreo_3;not null;default:0"`
-	Mayoreo4       int       `gorm:"column:mayoreo_4;not null;default:0"`
-	Existencia     int       `gorm:"not null;default:0"`
-	InvMinimo      int       `gorm:"not null;default:0"`
-	InvMaximo      int       `gorm:"not null;default:0"`
-	Localizacion   string    `gorm:"size:60;not null;default:''"`
-	TipoArmazon    string    `gorm:"size:60;not null;default:''"`
-	ColorPrincipal string    `gorm:"size:40;not null;default:''"`
-	ColoresExtra   string    `gorm:"size:120;not null;default:''"`
-	MicaTipo       string    `gorm:"size:12;not null;default:''"`
-	Materiales     string    `gorm:"size:160;not null;default:''"`
-	CreatedAt      time.Time `gorm:"type:datetime"`
-	UpdatedAt      time.Time `gorm:"type:datetime"`
+	ID             int64   `gorm:"primaryKey;autoIncrement"`
+	UserID         uint    `gorm:"not null;uniqueIndex:uq_inv_art_clave,priority:1;index:idx_inv_art_user"`
+	Clave          string  `gorm:"size:60;not null;uniqueIndex:uq_inv_art_clave,priority:2"`
+	ClaveAlterna   string  `gorm:"size:60;not null;default:''"`
+	Descripcion    string  `gorm:"size:200;not null"`
+	DepartamentoID *int64  `gorm:"index"`
+	CategoriaID    *int64  `gorm:"index"`
+	UnidadCompra   string  `gorm:"size:12;not null;default:'PZA'"`
+	UnidadVenta    string  `gorm:"size:12;not null;default:'PZA'"`
+	Factor         float64 `gorm:"type:decimal(10,3);not null;default:1"`
+	Servicio       bool    `gorm:"not null;default:false"`
+	SinRastreo     bool    `gorm:"not null;default:false"`
+	IVA            bool    `gorm:"column:iva;not null;default:true"`
+	PrecioCompra   float64 `gorm:"type:decimal(12,2);not null;default:0"`
+	Precio1        float64 `gorm:"column:precio_1;type:decimal(12,2);not null;default:0"`
+	Precio2        float64 `gorm:"column:precio_2;type:decimal(12,2);not null;default:0"`
+	Precio3        float64 `gorm:"column:precio_3;type:decimal(12,2);not null;default:0"`
+	Precio4        float64 `gorm:"column:precio_4;type:decimal(12,2);not null;default:0"`
+	Mayoreo2       int     `gorm:"column:mayoreo_2;not null;default:0"`
+	Mayoreo3       int     `gorm:"column:mayoreo_3;not null;default:0"`
+	Mayoreo4       int     `gorm:"column:mayoreo_4;not null;default:0"`
+	Existencia     int     `gorm:"not null;default:0"`
+	InvMinimo      int     `gorm:"not null;default:0"`
+	InvMaximo      int     `gorm:"not null;default:0"`
+	Localizacion   string  `gorm:"size:60;not null;default:''"`
+	TipoArmazon    string  `gorm:"size:60;not null;default:''"`
+	ColorPrincipal string  `gorm:"size:40;not null;default:''"`
+	ColoresExtra   string  `gorm:"size:120;not null;default:''"`
+	MicaTipo       string  `gorm:"size:12;not null;default:''"`
+	Materiales     string  `gorm:"size:160;not null;default:''"`
+	// Venta (pestaña "Venta" del artículo): cómo lo ofrecen el agente y Comy.
+	VentaOculta      bool       `gorm:"not null;default:false"` // true = el agente y Comy no lo ofrecen
+	VentaTitulo      string     `gorm:"size:160;not null;default:''"`
+	VentaDescripcion string     `gorm:"size:1000;not null;default:''"`
+	VentaEtiqueta    string     `gorm:"size:40;not null;default:''"`
+	PromoPrecio      float64    `gorm:"type:decimal(12,2);not null;default:0"`
+	PromoFin         *time.Time `gorm:"type:datetime"` // hora de Hermosillo; nil = no vence
+	CreatedAt        time.Time  `gorm:"type:datetime"`
+	UpdatedAt        time.Time  `gorm:"type:datetime"`
 }
 
 func (InventoryItemRecord) TableName() string { return "inv_articulos" }
@@ -370,7 +377,15 @@ type InvItem struct {
 	ColoresExtra   []string `json:"colores_extra"`
 	MicaTipo       string   `json:"mica_tipo"`
 	Materiales     []string `json:"materiales"`
-	UpdatedAt      string   `json:"updated_at"`
+	// Venta: lo que usan el agente y Comy (vacío = se usa la descripción).
+	VentaOculta      bool    `json:"venta_oculta"`
+	VentaTitulo      string  `json:"venta_titulo"`
+	VentaDescripcion string  `json:"venta_descripcion"`
+	VentaEtiqueta    string  `json:"venta_etiqueta"`
+	PromoPrecio      float64 `json:"promo_precio"` // 0 = sin promoción
+	PromoFin         string  `json:"promo_fin"`    // "2006-01-02T15:04" (Hermosillo) o "" = no vence
+	PromoEstado      string  `json:"promo_estado"` // "activa" | "vencida" | ""
+	UpdatedAt        string  `json:"updated_at"`
 	// Foto principal (URL) y, al traer uno solo, todas sus fotos.
 	Foto  string     `json:"foto"`
 	Fotos []InvPhoto `json:"fotos,omitempty"`
@@ -388,6 +403,8 @@ const invItemSelect = `
 	       i.mayoreo_2, i.mayoreo_3, i.mayoreo_4,
 	       i.existencia, i.inv_minimo, i.inv_maximo, i.localizacion,
 	       i.tipo_armazon, i.color_principal, i.colores_extra, i.mica_tipo, i.materiales,
+	       i.venta_oculta, i.venta_titulo, i.venta_descripcion, i.venta_etiqueta, i.promo_precio,
+	       COALESCE(DATE_FORMAT(i.promo_fin, '%Y-%m-%dT%H:%i'), ''),
 	       COALESCE(DATE_FORMAT(i.updated_at, '%Y-%m-%dT%H:%i:%s'), ''),
 	       COALESCE(` + invPhotoMainSQL + `, 0)
 	FROM inv_articulos i
@@ -404,11 +421,36 @@ func scanInvItem(sc interface{ Scan(...interface{}) error }) (InvItem, error) {
 		&a.PrecioCompra, &a.Precio1, &a.Precio2, &a.Precio3, &a.Precio4,
 		&a.Mayoreo2, &a.Mayoreo3, &a.Mayoreo4,
 		&a.Existencia, &a.Minimo, &a.Maximo, &a.Localizacion,
-		&a.TipoArmazon, &a.ColorPrincipal, &extra, &a.MicaTipo, &mats, &a.UpdatedAt, &photoID)
+		&a.TipoArmazon, &a.ColorPrincipal, &extra, &a.MicaTipo, &mats,
+		&a.VentaOculta, &a.VentaTitulo, &a.VentaDescripcion, &a.VentaEtiqueta, &a.PromoPrecio, &a.PromoFin,
+		&a.UpdatedAt, &photoID)
+	a.PromoEstado = InvPromoEstado(a.PromoPrecio, a.Precio1, a.PromoFin)
 	a.Foto = InvPhotoURL(photoID)
 	a.ColoresExtra = splitInvList(extra)
 	a.Materiales = splitInvList(mats)
 	return a, err
+}
+
+// InvPromoEstado — "activa" si hay precio de promoción menor al precio 1 y
+// no ha llegado su fin; "vencida" si ya pasó; "" si no tiene promoción.
+// fin va en hora de Hermosillo ("2006-01-02T15:04").
+func InvPromoEstado(promo, precio float64, fin string) string {
+	if promo <= 0 || promo >= precio {
+		return ""
+	}
+	if fin != "" && strings.Replace(fin, "T", " ", 1)+":00" <= invNow() {
+		return "vencida"
+	}
+	return "activa"
+}
+
+// invPromoFinSQL — "2006-01-02T15:04" → valor para la columna (nil = sin fin).
+// Se guarda como texto para que MySQL no le cambie la zona horaria.
+func invPromoFinSQL(fin string) interface{} {
+	if fin == "" {
+		return nil
+	}
+	return strings.Replace(fin, "T", " ", 1) + ":00"
 }
 
 // ListInvItems regresa todo el catálogo del negocio (la página filtra y
@@ -494,14 +536,16 @@ func CreateInvItem(userID uint, a InvItem, usuario string) (*InvItem, error) {
 		   (user_id, clave, clave_alterna, descripcion, departamento_id, categoria_id, unidad_compra, unidad_venta, factor,
 		    servicio, sin_rastreo, iva, precio_compra, precio_1, precio_2, precio_3, precio_4, mayoreo_2, mayoreo_3, mayoreo_4,
 		    existencia, inv_minimo, inv_maximo, localizacion,
-		    tipo_armazon, color_principal, colores_extra, mica_tipo, materiales, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		    tipo_armazon, color_principal, colores_extra, mica_tipo, materiales,
+		    venta_oculta, venta_titulo, venta_descripcion, venta_etiqueta, promo_precio, promo_fin, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		userID, NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
 		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
 		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4,
 		a.Existencia, a.Minimo, a.Maximo, a.Localizacion,
-		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","), now, now,
+		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","),
+		a.VentaOculta, a.VentaTitulo, a.VentaDescripcion, a.VentaEtiqueta, invRound2(a.PromoPrecio), invPromoFinSQL(a.PromoFin), now, now,
 	)
 	if isInvDuplicateKey(err) {
 		return nil, ErrInvClaveTaken
@@ -550,13 +594,15 @@ func UpdateInvItem(userID uint, a InvItem, keepCost bool) (*InvItem, error) {
 		   unidad_compra = ?, unidad_venta = ?, factor = ?, servicio = ?, sin_rastreo = ?, iva = ?,
 		   precio_compra = ?, precio_1 = ?, precio_2 = ?, precio_3 = ?, precio_4 = ?,
 		   mayoreo_2 = ?, mayoreo_3 = ?, mayoreo_4 = ?, inv_minimo = ?, inv_maximo = ?, localizacion = ?,
-		   tipo_armazon = ?, color_principal = ?, colores_extra = ?, mica_tipo = ?, materiales = ?, updated_at = ?
+		   tipo_armazon = ?, color_principal = ?, colores_extra = ?, mica_tipo = ?, materiales = ?,
+		   venta_oculta = ?, venta_titulo = ?, venta_descripcion = ?, venta_etiqueta = ?, promo_precio = ?, promo_fin = ?, updated_at = ?
 		 WHERE id = ? AND user_id = ?`,
 		NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
 		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
 		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4, a.Minimo, a.Maximo, a.Localizacion,
-		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","), invNow(),
+		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","),
+		a.VentaOculta, a.VentaTitulo, a.VentaDescripcion, a.VentaEtiqueta, invRound2(a.PromoPrecio), invPromoFinSQL(a.PromoFin), invNow(),
 		a.ID, userID,
 	)
 	if isInvDuplicateKey(err) {
@@ -1474,6 +1520,29 @@ type InvBotItem struct {
 	MicaTipo    string
 	Materiales  []string
 	PhotoKeys   []string // llaves en el bucket, la principal primero
+	// Pestaña "Venta"
+	Titulo      string  // nombre para vender ("" = la descripción)
+	VentaDesc   string  // descripción para vender
+	Etiqueta    string  // ej. "Nuevo"
+	PromoPrecio float64 // precio con promoción (si PromoEstado = "activa")
+	PromoFin    string  // "2006-01-02T15:04" o ""
+	PromoEstado string  // "activa" | "vencida" | ""
+}
+
+// Nombre — cómo se ofrece: el nombre para vender o la descripción.
+func (it InvBotItem) Nombre() string {
+	if it.Titulo != "" {
+		return it.Titulo
+	}
+	return it.Descripcion
+}
+
+// PrecioVenta — lo que se cobra hoy: el de promoción si está activa.
+func (it InvBotItem) PrecioVenta() float64 {
+	if it.PromoEstado == "activa" {
+		return it.PromoPrecio
+	}
+	return it.Precio
 }
 
 // ListInvItemsForBot — artículos con precio para que el bot los ofrezca
@@ -1490,12 +1559,14 @@ func ListInvItemsForBot(userID uint, limit int) ([]InvBotItem, error) {
 	rows, err := db.Query(`
 		SELECT i.id, i.clave, i.descripcion, COALESCE(d.nombre, ''), COALESCE(c.nombre, ''),
 		       i.servicio, i.precio_1, i.existencia,
-		       COALESCE(t.nombre, i.tipo_armazon), i.color_principal, i.colores_extra, i.mica_tipo, i.materiales
+		       COALESCE(t.nombre, i.tipo_armazon), i.color_principal, i.colores_extra, i.mica_tipo, i.materiales,
+		       i.venta_titulo, i.venta_descripcion, i.venta_etiqueta, i.promo_precio,
+		       COALESCE(DATE_FORMAT(i.promo_fin, '%Y-%m-%dT%H:%i'), '')
 		FROM inv_articulos i
 		LEFT JOIN inv_departamentos d ON d.id = i.departamento_id
 		LEFT JOIN inv_categorias c ON c.id = i.categoria_id
 		LEFT JOIN inv_tipos_armazon t ON t.user_id = i.user_id AND t.slug = i.tipo_armazon
-		WHERE i.user_id = ? AND i.precio_1 > 0
+		WHERE i.user_id = ? AND i.precio_1 > 0 AND i.venta_oculta = 0
 		ORDER BY (i.servicio = 0 AND i.existencia <= 0), i.descripcion
 		LIMIT ?`, userID, limit)
 	if err != nil {
@@ -1509,9 +1580,11 @@ func ListInvItemsForBot(userID uint, limit int) ([]InvBotItem, error) {
 		var extras, mats string
 		if err := rows.Scan(&it.ID, &it.Clave, &it.Descripcion, &it.Depto, &it.Categoria,
 			&it.Servicio, &it.Precio, &it.Existencia,
-			&it.TipoArmazon, &it.Color, &extras, &it.MicaTipo, &mats); err != nil {
+			&it.TipoArmazon, &it.Color, &extras, &it.MicaTipo, &mats,
+			&it.Titulo, &it.VentaDesc, &it.Etiqueta, &it.PromoPrecio, &it.PromoFin); err != nil {
 			return nil, err
 		}
+		it.PromoEstado = InvPromoEstado(it.PromoPrecio, it.Precio, it.PromoFin)
 		it.Extras, it.Materiales = splitInvList(extras), splitInvList(mats)
 		idx[it.ID] = len(out)
 		out = append(out, it)
