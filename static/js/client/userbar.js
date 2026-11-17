@@ -364,7 +364,7 @@ document.addEventListener('attomos:langchange', function () {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Userbar flotante cargado correctamente');
     
-    initUserbar();
+    window.userbarReady = initUserbar();
     initNotifications();
     initUserDropdown();
     
@@ -633,6 +633,10 @@ function getBusinessTypeLabel(businessType) {
 // ============================================
 
 async function loadAppointmentNotifications() {
+    // Cuentas del equipo: las citas solo las ven Recepción y Optometría.
+    try { await window.userbarReady; } catch (_) {}
+    const st = (getUserData() || {}).staff;
+    if (st && !(st.roles || []).some(r => r === 'recepcion' || r === 'optometria')) return [];
     try {
         const res = await fetch('/api/appointments', { credentials: 'include' });
         if (!res.ok) return [];

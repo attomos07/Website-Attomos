@@ -1,190 +1,66 @@
 {{define "staff-login.html"}}
+{{/* Entrada del equipo (ópticas): cuentas que crea el dueño en Usuarios.
+     Mismo diseño que el login del panel de Avante. API: POST /api/equipo/login */}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.title}} - Entrada del equipo</title>
-    <link rel="stylesheet" href="https://cdn.lineicons.com/4.0/lineicons.css" />
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
-    
-    <link rel="stylesheet" href="/static/css/partials/navbar.css?v=10">
-    <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
-    <link rel="stylesheet" href="/static/css/auth/login.css?v=3">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrada del equipo — Attomos</title>
+<link rel="icon" type="image/png" href="/static/images/attomos-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/auth/staff-login.css?v=1">
 </head>
-<body>
-    {{template "partials/navbar.html" .}}
+<body class="admin-body">
 
-    <div class="auth-container">
-        <div class="auth-background">
-            <div class="auth-shape auth-shape-1"></div>
-            <div class="auth-shape auth-shape-2"></div>
-            <div class="auth-shape auth-shape-3"></div>
+<div class="admin-login-wrap is-solo">
+  <div class="admin-login-form-side">
+    <div class="admin-login-card">
+      <div class="admin-login-brand">
+        <img src="/static/images/attomos-favicon.png" alt="" width="56" height="56">
+        <span>Attomos</span>
+      </div>
+      <div class="eyebrow">Entrada del equipo</div>
+      <h1>Bienvenido de vuelta</h1>
+      <p class="sub">Entra con el usuario y la contraseña que te dio el dueño del negocio</p>
+
+      <form id="staffLoginForm" novalidate>
+        <div class="admin-field">
+          <label for="staffUser">Usuario</label>
+          <div class="admin-field-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <input type="text" id="staffUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="p. ej. ana.recepcion" required>
+          </div>
         </div>
-
-        <div class="auth-content">
-            <div class="orbital-container">
-                <svg id="animated-blob" viewBox="-5 -5 210 210" xmlns="http://www.w3.org/2000/svg" aria-labelledby="blobTitle">
-                    <title id="blobTitle">Animated Blob</title>
-                    
-                    <!-- Imágenes rotativas dentro del clip path -->
-                    <image id="blobImage1" href="https://images.pexels.com/photos/3268732/pexels-photo-3268732.jpeg?auto=compress&cs=tinysrgb&w=764"
-                           x="-5" y="-5" width="210" height="210"
-                           preserveAspectRatio="xMidYMid slice"
-                           clip-path="url(#blobClip)"
-                           style="opacity:1; transition: opacity 0.8s ease;"/>
-                    <image id="blobImage2" href="https://images.pexels.com/photos/3998415/pexels-photo-3998415.jpeg?auto=compress&cs=tinysrgb&w=764"
-                           x="-5" y="-5" width="210" height="210"
-                           preserveAspectRatio="xMidYMid slice"
-                           clip-path="url(#blobClip)"
-                           style="opacity:0; transition: opacity 0.8s ease;"/>
-                    <image id="blobImage3" href="https://images.pexels.com/photos/3845765/pexels-photo-3845765.jpeg?auto=compress&cs=tinysrgb&w=764"
-                           x="-5" y="-5" width="210" height="210"
-                           preserveAspectRatio="xMidYMid slice"
-                           clip-path="url(#blobClip)"
-                           style="opacity:0; transition: opacity 0.8s ease;"/>
-                    
-                    <!-- Definición del clip path -->
-                    <clipPath id="blobClip">
-                        <path d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
-                              transform="translate(100 100)"/>
-                    </clipPath>
-                    
-                    <!-- Path para el texto (invisible) -->
-                    <path id="textPath"
-                          d="M43.1,-68.5C56.2,-58.6,67.5,-47.3,72.3,-33.9C77.2,-20.5,75.5,-4.9,74.2,11.3C72.9,27.6,71.9,44.5,63.8,57.2C55.7,69.8,40.6,78.2,25.5,79.2C10.4,80.1,-4.7,73.6,-20.9,69.6C-37.1,65.5,-54.5,63.9,-66,54.8C-77.5,45.8,-83.2,29.3,-85.7,12.3C-88.3,-4.8,-87.7,-22.3,-79.6,-34.8C-71.5,-47.3,-55.8,-54.9,-41.3,-64.2C-26.7,-73.6,-13.4,-84.7,0.8,-86C15,-87.2,29.9,-78.5,43.1,-68.5Z"
-                          transform="translate(100 100)"
-                          fill="none" stroke="none"
-                          pathLength="100"/>
-                    
-                    <!-- Texto animado -->
-                    <text class="text-content">
-                        <textPath href="#textPath" startOffset="0%">
-                            · WELCOME TO ATTOMOS · WELCOME TO ATTOMOS · WELCOME TO ATTOMOS
-                            <animate attributeName="startOffset" from="0%" to="100%" dur="15s" repeatCount="indefinite" />
-                        </textPath>
-                        <textPath href="#textPath" startOffset="100%">
-                            · BIENVENIDO A ATTOMOS · BIENVENIDO A ATTOMOS · BIENVENIDO A ATTOMOS
-                            <animate attributeName="startOffset" from="-100%" to="0%" dur="15s" repeatCount="indefinite" />
-                        </textPath>
-                    </text>
-                </svg>
-
-                <script>
-                    (function() {
-                        const images = [
-                            document.getElementById('blobImage1'),
-                            document.getElementById('blobImage2'),
-                            document.getElementById('blobImage3')
-                        ];
-                        let current = 0;
-
-                        setInterval(function() {
-                            images[current].style.opacity = '0';
-                            current = (current + 1) % images.length;
-                            images[current].style.opacity = '1';
-                        }, 4000);
-                    })();
-                </script>
-            </div>
-
-            <div class="auth-form-container">
-                <div class="auth-form-content">
-                    <div class="auth-header">
-                        <h2 class="auth-title" data-translate="staff_login_title">Entrada del equipo</h2>
-                        <p class="auth-subtitle" data-translate="staff_login_subtitle">Entra con el usuario y la contraseña que te dio el dueño del negocio</p>
-                    </div>
-
-                    <form class="auth-form" id="staffLoginForm" novalidate>
-                        <div class="form-group">
-                            <label for="usuario" class="form-label" data-translate="staff_label_user">Usuario</label>
-                            <div class="input-container">
-                                <i class="lni lni-user input-icon"></i>
-                                <input type="text" id="usuario" name="usuario" class="form-input" autocomplete="username" autocapitalize="none" spellcheck="false" required>
-                            </div>
-                            <small class="input-hint" data-translate="staff_hint_user">p. ej. ana.recepcion</small>
-                            <div class="form-error" id="usuarioError"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password" class="form-label" data-translate="label_password">Contraseña</label>
-                            <div class="input-container">
-                                <i class="lni lni-lock input-icon"></i>
-                                <input type="password" id="password" name="password" class="form-input" autocomplete="current-password" required>
-                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
-                                    <svg id="passwordToggleIcon" width="22" height="22" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 7.625C9.60719 7.625 7.64844 9.58375 7.64844 12C7.64844 14.4162 9.60719 16.375 12.0234 16.375C14.4397 16.375 16.3984 14.4162 16.3984 12C16.3984 9.58375 14.4397 7.625 12.0234 7.625ZM9.14844 12C9.14844 10.4122 10.4356 9.125 12.0234 9.125C13.6113 9.125 14.8984 10.4122 14.8984 12C14.8984 13.5878 13.6113 14.875 12.0234 14.875C10.4356 14.875 9.14844 13.5878 9.14844 12Z" fill="#9CA3AF"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0234 4.5C7.71145 4.5 3.99772 7.05632 2.30101 10.7351C1.93091 11.5375 1.93091 12.4627 2.30101 13.2652C3.99772 16.9439 7.71145 19.5002 12.0234 19.5002C16.3353 19.5002 20.049 16.9439 21.7458 13.2652C22.1159 12.4627 22.1159 11.5375 21.7458 10.7351C20.049 7.05633 16.3353 4.5 12.0234 4.5ZM3.66311 11.3633C5.12472 8.19429 8.32017 6 12.0234 6C15.7266 6 18.922 8.19429 20.3836 11.3633C20.5699 11.7671 20.5699 12.2331 20.3836 12.6369C18.922 15.8059 15.7266 18.0002 12.0234 18.0002C8.32017 18.0002 5.12472 15.8059 3.66311 12.6369C3.47688 12.2331 3.47688 11.7671 3.66311 11.3633Z" fill="#9CA3AF"/></svg>
-                                </button>
-                            </div>
-                            <small class="input-hint" data-translate="hint_password">Tu contraseña</small>
-                            <div class="form-error" id="passwordError"></div>
-                        </div>
-
-                        <button type="submit" class="auth-btn primary-btn" id="loginBtn">
-                            <span class="btn-text" data-translate="login_btn">Iniciar Sesión</span>
-                            <div class="btn-loading" style="display: none;">
-                                <div class="loading-spinner"></div>
-                                <span data-translate="login_loading">Iniciando...</span>
-                            </div>
-                        </button>
-
-                        <div class="form-footer">
-                            <p><span data-translate="staff_login_owner">¿Eres el dueño del negocio?</span> <a href="/login" class="auth-link" data-translate="staff_login_owner_link">Entra aquí</a></p>
-                        </div>
-                    </form>
-                </div>
-            </div>
+        <div class="admin-field">
+          <label for="staffPassword">Contraseña</label>
+          <div class="admin-field-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input type="password" id="staffPassword" autocomplete="current-password" required>
+            {{/* Ojo animado: parpadea al tocarlo y una línea lo tacha cuando la contraseña se ve. */}}
+            <button type="button" class="admin-field-toggle pw-eye" id="staffPasswordToggle" aria-label="Mostrar contraseña" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <g class="pw-eye-ball">
+                  <path class="pw-eye-shape" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+                  <circle class="pw-eye-pupil" cx="12" cy="12" r="3"/>
+                </g>
+                <path class="pw-eye-slash" d="M3 3l18 18"/>
+              </svg>
+            </button>
+          </div>
         </div>
+        <div class="admin-login-error" id="staffLoginError"></div>
+        <button type="submit" class="btn solid">INICIAR SESIÓN</button>
+      </form>
+      <p class="admin-login-foot">¿Eres el dueño del negocio? <a href="/login">Entra aquí</a></p>
     </div>
+  </div>
+</div>
 
-    {{template "partials/footer.html" .}}
+<script src="/static/js/auth/staff-login.js?v=1"></script>
 
-    <script src="/static/js/index.js"></script>
-    <script src="/static/js/auth/login.js?v=2"></script>
-    <script>
-    // Entrada del equipo: usuario + contraseña → su primera página.
-    (function () {
-        try { localStorage.removeItem('userData'); } catch (_) {}
-        var form = document.getElementById('staffLoginForm');
-        var btn = document.getElementById('loginBtn');
-        function fieldError(id, msg) {
-            var input = document.getElementById(id), box = document.getElementById(id + 'Error');
-            if (input) input.classList.toggle('error', !!msg);
-            if (box) { box.textContent = msg || ''; box.classList.toggle('show', !!msg); }
-        }
-        ['usuario', 'password'].forEach(function (id) {
-            var el = document.getElementById(id);
-            if (el) el.addEventListener('input', function () { fieldError(id, ''); });
-        });
-        form.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var usuario = document.getElementById('usuario').value.trim();
-            var password = document.getElementById('password').value;
-            fieldError('usuario', usuario ? '' : 'Escribe tu usuario');
-            fieldError('password', password ? '' : 'Escribe tu contraseña');
-            if (!usuario || !password) return;
-            setButtonLoading(btn, true);
-            try {
-                var res = await fetch('/api/equipo/login', {
-                    method: 'POST', credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: usuario, password: password })
-                });
-                var data = await res.json().catch(function () { return {}; });
-                if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión.');
-                showNotificationIOS('¡Hola, ' + (data.name || usuario).split(' ')[0] + '!', 'success');
-                setTimeout(function () { window.location.href = data.redirect || '/'; }, 700);
-            } catch (err) {
-                setButtonLoading(btn, false);
-                showNotificationIOS(err.message, 'error');
-                var pw = document.getElementById('password');
-                if (pw) { pw.select(); pw.focus(); }
-            }
-        });
-    })();
-    </script>
 </body>
 </html>
 {{end}}
