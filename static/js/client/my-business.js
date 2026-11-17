@@ -383,14 +383,17 @@ function applySchedule(schedule) {
 }
 
 function applyHolidays(holidays = []) {
+    hdItems = [];
     holidays.forEach(h => {
-        addHoliday();
-
-        const last = document.querySelector('.holiday-item:last-child');
-        last.querySelector('[data-field="month"]').value = h.month;
-        last.querySelector('[data-field="day"]').value = h.day;
-        last.querySelector('[data-field="name"]').value = h.name;
+        let m = h.month, d = h.day;
+        if ((!m || !d) && h.date) {
+            const p = String(h.date).split(/[\/-]/);
+            if (p.length === 2) { d = p[0]; m = p[1]; }
+            else if (p.length === 3) { m = p[1]; d = p[2]; }
+        }
+        if (m && d) hdItems.push({ month: String(m).padStart(2, '0'), day: String(d).padStart(2, '0'), name: h.name || '' });
     });
+    hdRender();
 }
 
 function setLocationDropdown(inputId, value) {
@@ -897,180 +900,208 @@ function createTimePicker(input, defaultValue = '09:00') {
 }
 
 // ============================================
-// HOLIDAYS FUNCTIONALITY
+// HOLIDAYS FUNCTIONALITY — días cerrados (como Avante)
+// Día/mes (sin año: se repiten cada año) · motivo · "Cerrar día".
+// Abajo, la lista. Se guardan con "Guardar cambios".
+// En computadora el día también se puede escribir (20/11, 20 nov…).
 // ============================================
 
-let holidayCounter = 0;
+let hdItems = [];                 // [{ month:'11', day:'20', name:'' }]
+let hdSel = null;                 // { month, day } elegido
+let hdViewM = new Date().getMonth();
 
-function initHolidays() {
-    const btnAddHoliday = document.getElementById('btnAddHoliday');
-    if (btnAddHoliday) {
-        btnAddHoliday.addEventListener('click', addHoliday);
+const HD_FINE_POINTER = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)').matches : true;
+
+function hdEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function hdMonthName(m) { return (MONTHS[m - 1] || {}).name || ''; }
+function hdDaysIn(m) { return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]; }
+// Año de la próxima vez que cae ese mes (para acomodar los días de la semana).
+function hdYearFor(m) {
+    const now = new Date();
+    return (m - 1) < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear();
+}
+function hdLabel(month, day) {
+    const m = +month, d = +day;
+    return getLang() === 'en' ? `${hdMonthName(m)} ${d}` : `${d} de ${hdMonthName(m).toLowerCase()}`;
+}
+function hdMsg(text, kind) {
+    const el = document.getElementById('hdMsg');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'hd-msg' + (kind ? ' ' + kind : '');
+    el.hidden = !text;
+}
+
+// "20/11", "20-11", "20 11", "20 nov", "20 de noviembre", "nov 20"
+function hdParse(txt) {
+    const s = String(txt || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\bde\b/g, ' ');
+    if (!s) return null;
+    let m, d;
+    let r = s.match(/^(\d{1,2})\s*[\/\-. ]\s*(\d{1,2})$/);
+    if (r) { d = +r[1]; m = +r[2]; }
+    else {
+        const names = MONTHS.map(x => x.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''));
+        const esShort = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const enShort = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+        const findM = w => {
+            for (let i = 0; i < 12; i++) {
+                if (w.length >= 3 && (names[i].startsWith(w) || esShort[i] === w.slice(0, 3) || enShort[i] === w.slice(0, 3))) return i + 1;
+            }
+            return 0;
+        };
+        r = s.match(/^(\d{1,2})\s+([a-z]+)\.?$/) || null;
+        if (r) { d = +r[1]; m = findM(r[2]); }
+        else {
+            r = s.match(/^([a-z]+)\.?\s+(\d{1,2})$/);
+            if (r) { m = findM(r[1]); d = +r[2]; }
+        }
     }
+    if (!m || m < 1 || m > 12 || !d || d < 1 || d > hdDaysIn(m)) return null;
+    return { month: String(m).padStart(2, '0'), day: String(d).padStart(2, '0') };
+}
+
+function hdSetSel(sel, fromTyping) {
+    hdSel = sel;
+    const inp = document.getElementById('hdDateInput');
+    if (inp && !fromTyping) inp.value = sel ? `${sel.day}/${sel.month}` : '';
+    if (sel) hdViewM = +sel.month - 1;
+    hdRenderGrid();
+}
+
+function hdRenderGrid() {
+    const picker = document.getElementById('hdPicker');
+    if (!picker) return;
+    const m = hdViewM + 1, y = hdYearFor(m);
+    picker.querySelector('.hd-month').textContent = hdMonthName(m);
+    const wd = getLang() === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá'];
+    picker.querySelector('.hd-weekdays').innerHTML = wd.map(w => `<span>${w}</span>`).join('');
+    const first = new Date(y, m - 1, 1).getDay(), total = hdDaysIn(m);
+    const taken = new Set(hdItems.filter(h => +h.month === m).map(h => +h.day));
+    const now = new Date();
+    let html = '';
+    for (let i = 0; i < first; i++) html += '<span class="hd-day is-empty"></span>';
+    for (let d = 1; d <= total; d++) {
+        const cls = ['hd-day'];
+        if (hdSel && +hdSel.month === m && +hdSel.day === d) cls.push('is-selected');
+        if (now.getMonth() + 1 === m && now.getDate() === d) cls.push('is-today');
+        if (taken.has(d)) cls.push('is-closed');
+        html += `<button type="button" class="${cls.join(' ')}" data-day="${d}" style="--i:${d}">${d}</button>`;
+    }
+    const grid = picker.querySelector('.hd-grid');
+    grid.innerHTML = html;
+    grid.classList.remove('is-anim'); void grid.offsetWidth; grid.classList.add('is-anim');
+}
+
+function hdRender() {
+    const list = document.getElementById('holidaysList');
+    if (!list) return;
+    hdItems.sort((a, b) => (a.month + a.day).localeCompare(b.month + b.day));
+    if (!hdItems.length) {
+        list.innerHTML = `<li class="hd-empty">${hdEsc(t('mybiz_holiday_empty', 'No hay días cerrados.'))}</li>`;
+    } else {
+        list.innerHTML = hdItems.map((h, i) => `
+            <li class="hd-item" style="--i:${i}">
+                <span class="hd-item-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4"/></svg></span>
+                <span class="hd-item-text"><b>${hdEsc(hdLabel(h.month, h.day))}</b><small>${h.name ? hdEsc(h.name) : hdEsc(t('mybiz_holiday_none', 'Sin motivo'))}</small></span>
+                <button type="button" class="hd-item-del" data-del="${h.month}-${h.day}" title="${hdEsc(t('mybiz_holiday_open', 'Volver a abrir este día'))}" aria-label="${hdEsc(t('mybiz_holiday_open', 'Volver a abrir este día'))}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </li>`).join('');
+    }
+    hdRenderGrid();
 }
 
 function addHoliday() {
-    const container = document.getElementById('holidaysList');
-    if (!container) return;
-
-    holidayCounter++;
-    const id = `holiday-${holidayCounter}`;
-
-    const div = document.createElement('div');
-    div.className = 'holiday-item';
-    div.dataset.id = id;
-
-    div.innerHTML = `
-        <div class="holiday-date-selector">
-            <div class="holiday-dropdown-group" id="month-${id}"></div>
-            <div class="holiday-dropdown-group" id="day-${id}"></div>
-            <div class="holiday-name-group">
-                <input type="text" class="holiday-name-input" data-field="name" placeholder="${t('mybiz_holiday_name','Nombre del día festivo')}">
-            </div>
-        </div>
-        <button type="button" class="btn-remove-holiday" data-remove="${id}">
-            <i class="lni lni-trash-can"></i>
-        </button>
-    `;
-
-    container.appendChild(div);
-
-    createHolidayDropdown(`month-${id}`, MONTHS, t('mybiz_month','Mes'), id);
-
-    const days = [];
-    for (let i = 1; i <= 31; i++) {
-        days.push({ value: String(i).padStart(2, '0'), name: String(i) });
+    const inp = document.getElementById('hdDateInput');
+    if (!hdSel && inp && inp.value.trim()) hdSel = hdParse(inp.value);
+    if (!hdSel) {
+        hdMsg(inp && inp.value.trim() ? t('mybiz_holiday_invalid', 'Ese día no existe. Escríbelo como 20/11.') : t('mybiz_holiday_pick', 'Elige el día que va a estar cerrado.'), 'error');
+        return;
     }
-    createHolidayDropdown(`day-${id}`, days, t('mybiz_day','Día'), id);
-
-    div.querySelector('.btn-remove-holiday').addEventListener('click', function () {
-        removeHoliday(id);
-    });
-
-    console.log(`✅ Día festivo agregado: ${id}`);
+    if (hdItems.some(h => h.month === hdSel.month && h.day === hdSel.day)) {
+        hdMsg(t('mybiz_holiday_dup', 'Ese día ya está cerrado.'), 'error');
+        return;
+    }
+    const reason = document.getElementById('hdReason');
+    const item = { month: hdSel.month, day: hdSel.day, name: reason ? reason.value.trim() : '' };
+    hdItems.push(item);
+    hdMsg(`${t('mybiz_holiday_ok', 'Listo:')} ${hdLabel(item.month, item.day)} — ${t('mybiz_holiday_save_hint', 'guarda los cambios para aplicarlo.')}`, 'ok');
+    if (reason) reason.value = '';
+    hdSetSel(null);
+    hdRender();
+    const li = [...document.querySelectorAll('#holidaysList .hd-item')].find(x => x.querySelector('[data-del]').dataset.del === `${item.month}-${item.day}`);
+    if (li) li.classList.add('is-new');
 }
 
-function createHolidayDropdown(containerId, options, placeholder, holidayId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+function initHolidays() {
+    const picker = document.getElementById('hdPicker');
+    const inp = document.getElementById('hdDateInput');
+    const btn = document.getElementById('btnAddHoliday');
+    const reason = document.getElementById('hdReason');
+    if (!picker || !inp) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'custom-select-wrapper';
+    // En celular no se escribe: se elige en el calendario.
+    if (!HD_FINE_POINTER) { inp.readOnly = true; inp.inputMode = 'none'; }
 
-    const displayInput = document.createElement('input');
-    displayInput.type = 'text';
-    displayInput.className = 'info-input form-select';
-    displayInput.placeholder = placeholder;
-    displayInput.readOnly = true;
-    displayInput.dataset.holidayId = holidayId;
-    displayInput.dataset.field = containerId.includes('month') ? 'month' : 'day';
+    const open = () => { picker.classList.add('is-open'); hdRenderGrid(); };
+    const close = () => picker.classList.remove('is-open');
 
-    const arrow = document.createElement('i');
-    arrow.className = 'lni lni-chevron-down select-arrow';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'select-dropdown';
-
-    const optionsContainer = document.createElement('div');
-    optionsContainer.className = 'select-options-container';
-
-    options.forEach(opt => {
-        const option = document.createElement('div');
-        option.className = 'select-option';
-        option.setAttribute('data-value', opt.value);
-        option.innerHTML = `
-            <i class="lni lni-calendar"></i>
-            <span>${opt.name}</span>
-        `;
-        optionsContainer.appendChild(option);
-    });
-
-    dropdown.appendChild(optionsContainer);
-    wrapper.appendChild(displayInput);
-    wrapper.appendChild(arrow);
-    wrapper.appendChild(dropdown);
-    container.appendChild(wrapper);
-
-    const selectOptions = optionsContainer.querySelectorAll('.select-option');
-
-    displayInput.addEventListener('click', function (e) {
+    picker.querySelector('.hd-trigger').addEventListener('click', e => {
         e.stopPropagation();
-        toggleHolidayDropdown(wrapper);
+        if (picker.classList.contains('is-open') && e.target !== inp) close(); else open();
+    });
+    inp.addEventListener('focus', open);
+    inp.addEventListener('input', () => {
+        hdMsg('');
+        const p = hdParse(inp.value);
+        hdSel = p;
+        if (p) { hdViewM = +p.month - 1; hdRenderGrid(); }
+    });
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); close(); if (hdSel) (reason || btn).focus(); }
+        if (e.key === 'Escape') close();
+        if (e.key === 'Tab') close();
+    });
+    inp.addEventListener('blur', () => {
+        if (hdSel) inp.value = `${hdSel.day}/${hdSel.month}`;
+    });
+    picker.querySelector('.hd-menu').addEventListener('click', e => e.stopPropagation());
+    picker.querySelectorAll('.hd-nav [data-nav]').forEach(b => b.addEventListener('click', () => {
+        hdViewM = (hdViewM + Number(b.dataset.nav) + 12) % 12;
+        hdRenderGrid();
+    }));
+    picker.querySelector('.hd-grid').addEventListener('click', e => {
+        const b = e.target.closest('[data-day]');
+        if (!b) return;
+        hdMsg('');
+        hdSetSel({ month: String(hdViewM + 1).padStart(2, '0'), day: String(b.dataset.day).padStart(2, '0') });
+        setTimeout(close, 160);
+    });
+    document.addEventListener('click', close);
+
+    if (btn) btn.addEventListener('click', addHoliday);
+    if (reason) reason.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addHoliday(); } });
+
+    document.getElementById('holidaysList').addEventListener('click', e => {
+        const b = e.target.closest('[data-del]');
+        if (!b) return;
+        const [m, d] = b.dataset.del.split('-');
+        const li = b.closest('.hd-item');
+        li.classList.add('is-leaving');
+        setTimeout(() => {
+            hdItems = hdItems.filter(h => !(h.month === m && h.day === d));
+            hdMsg(`${hdLabel(m, d)} ${t('mybiz_holiday_reopened', 'vuelve a estar abierto — guarda los cambios.')}`, 'ok');
+            hdRender();
+        }, 260);
     });
 
-    selectOptions.forEach(option => {
-        option.addEventListener('click', function (e) {
-            e.stopPropagation();
-            selectHolidayOption(this, displayInput, wrapper, selectOptions);
-        });
-    });
-
-    document.addEventListener('click', function (e) {
-        if (!wrapper.contains(e.target)) {
-            closeHolidayDropdown(wrapper);
-        }
-    });
-}
-
-function toggleHolidayDropdown(wrapper) {
-    const isActive = wrapper.classList.contains('active');
-
-    document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
-        if (w !== wrapper) { w.classList.remove('active'); }
-    });
-
-    if (isActive) {
-        closeHolidayDropdown(wrapper);
-    } else {
-        wrapper.classList.add('active');
-    }
-}
-
-function closeHolidayDropdown(wrapper) {
-    wrapper.classList.remove('active');
-}
-
-function selectHolidayOption(option, displayInput, wrapper, allOptions) {
-    const value = option.getAttribute('data-value');
-    const text = option.querySelector('span')?.textContent;
-
-    displayInput.value = text;
-    displayInput.setAttribute('data-value', value);
-
-    allOptions.forEach(opt => opt.classList.remove('selected'));
-    option.classList.add('selected');
-
-    closeHolidayDropdown(wrapper);
-}
-
-function removeHoliday(id) {
-    const element = document.querySelector(`[data-id="${id}"]`);
-    if (element) {
-        element.style.animation = 'fadeOut 0.3s ease';
-        setTimeout(() => element.remove(), 300);
-        console.log(`🗑️ Día festivo eliminado: ${id}`);
-    }
+    hdRender();
 }
 
 function collectHolidaysData() {
-    const holidayItems = document.querySelectorAll('.holiday-item');
-    const holidays = [];
-
-    holidayItems.forEach(item => {
-        const monthInput = item.querySelector('[data-field="month"]');
-        const dayInput = item.querySelector('[data-field="day"]');
-        const nameInput = item.querySelector('[data-field="name"]');
-
-        const month = monthInput?.getAttribute('data-value');
-        const day = dayInput?.getAttribute('data-value');
-        const name = nameInput?.value;
-
-        if (month && day && name) {
-            holidays.push({ month, day, name, date: `${day}/${month}` });
-        }
-    });
-
-    return holidays;
+    return hdItems.map(h => ({ month: h.month, day: h.day, name: h.name, date: `${h.day}/${h.month}` }));
 }
 
 // ============================================

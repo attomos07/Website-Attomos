@@ -75,20 +75,59 @@ type bookingClosed struct {
 	Motivo string `json:"motivo,omitempty"`
 }
 
-// bookingClosedDays — días feriados de Mi Negocio de hoy en adelante.
+// bookingHolidayMD — mes y día de un día cerrado de Mi Negocio. Se guarda
+// como "AAAA-MM-DD" (el año es el de cuando se guardó) o "DD/MM"; en los
+// dos casos se repite cada año.
+func bookingHolidayMD(raw string) (int, int, bool) {
+	raw = strings.TrimSpace(raw)
+	var m, d int
+	if p := strings.Split(raw, "-"); len(p) == 3 {
+		m, _ = strconv.Atoi(p[1])
+		d, _ = strconv.Atoi(strings.TrimSpace(p[2])[:minInt(2, len(strings.TrimSpace(p[2])))])
+	} else if p := strings.Split(raw, "/"); len(p) >= 2 {
+		d, _ = strconv.Atoi(strings.TrimSpace(p[0]))
+		m, _ = strconv.Atoi(strings.TrimSpace(p[1]))
+	}
+	if m < 1 || m > 12 || d < 1 || d > 31 {
+		return 0, 0, false
+	}
+	return m, d, true
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// bookingClosedDays — días cerrados de Mi Negocio (se repiten cada año)
+// que caen de hoy a los próximos bookingMaxDays días.
 func bookingClosedDays(b *models.MyBusinessInfo) []bookingClosed {
 	out := []bookingClosed{}
 	if b == nil {
 		return out
 	}
-	today := time.Now().In(time.Local).Format("2006-01-02")
+	now := time.Now().In(time.Local)
+	today := now.Format("2006-01-02")
+	limit := now.AddDate(0, 0, bookingMaxDays+1).Format("2006-01-02")
+	seen := map[string]bool{}
 	for _, h := range b.Holidays {
-		d := strings.TrimSpace(h.Date)
-		if len(d) >= 10 {
-			d = d[:10]
+		m, d, ok := bookingHolidayMD(h.Date)
+		if !ok {
+			continue
 		}
-		if citaBirthRe.MatchString(d) && d >= today {
-			out = append(out, bookingClosed{Fecha: d, Motivo: bookingCut(strings.TrimSpace(h.Name), 80)})
+		for _, y := range []int{now.Year(), now.Year() + 1} {
+			t := time.Date(y, time.Month(m), d, 0, 0, 0, 0, time.Local)
+			if t.Day() != d { // 29 de febrero en año no bisiesto
+				continue
+			}
+			f := t.Format("2006-01-02")
+			if f < today || f > limit || seen[f] {
+				continue
+			}
+			seen[f] = true
+			out = append(out, bookingClosed{Fecha: f, Motivo: bookingCut(strings.TrimSpace(h.Name), 80)})
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Fecha < out[j].Fecha })

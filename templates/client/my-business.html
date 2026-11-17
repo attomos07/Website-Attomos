@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/my-business.css?v=12">
+    <link rel="stylesheet" href="/static/css/client/my-business.css?v=13">
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
 
     <!-- Sileo toast system -->
@@ -703,11 +703,33 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <i class="lni lni-calendar"></i>
                                         <span data-translate="mybiz_holidays_title">Días Festivos / Inhábiles</span>
                                     </label>
-                                    <button type="button" class="btn-add-holiday" id="btnAddHoliday">
-                                        <i class="lni lni-plus"></i>
-                                        <span data-translate="mybiz_add_holiday">Agregar Día Festivo</span>
-                                    </button>
-                                    <div class="holidays-list" id="holidaysList"></div>
+                                    <!-- Días cerrados (como Avante): día/mes · motivo · botón; abajo la lista.
+                                         Se repiten cada año. Se guardan con "Guardar cambios". -->
+                                    <div class="hd-add">
+                                        <div class="hd-picker" id="hdPicker">
+                                            <div class="hd-trigger">
+                                                <svg class="hd-trigger-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                                <input type="text" class="hd-date-input" id="hdDateInput" placeholder="dd/mm" maxlength="12" autocomplete="off" spellcheck="false" aria-label="Día y mes">
+                                                <svg class="hd-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                            </div>
+                                            <div class="hd-menu" role="dialog" aria-label="Elige el día">
+                                                <div class="hd-nav">
+                                                    <button type="button" data-nav="-1" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                                                    <span class="hd-month"></span>
+                                                    <button type="button" data-nav="1" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                                </div>
+                                                <div class="hd-weekdays"></div>
+                                                <div class="hd-grid"></div>
+                                            </div>
+                                        </div>
+                                        <input type="text" class="info-input hd-reason" id="hdReason" maxlength="120" placeholder="Motivo (opcional)" data-translate-placeholder="mybiz_holiday_reason_ph">
+                                        <button type="button" class="hd-add-btn" id="btnAddHoliday">
+                                            <i class="lni lni-plus"></i>
+                                            <span data-translate="mybiz_holiday_add_btn">Cerrar día</span>
+                                        </button>
+                                    </div>
+                                    <p class="hd-msg" id="hdMsg" hidden></p>
+                                    <ul class="hd-list" id="holidaysList"></ul>
                                     <div class="info-example" data-translate="mybiz_holiday_hint">Los días festivos agregados serán días en que el negocio permanecerá cerrado</div>
                                 </div>
                             </div>
@@ -1203,6 +1225,6 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
     <script src="/static/js/client/sileo.js"></script>
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/my-business.js?v=11"></script>
+    <script src="/static/js/client/my-business.js?v=12"></script>
 </body>
 </html>
