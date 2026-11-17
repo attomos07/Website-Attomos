@@ -13,6 +13,7 @@ const (
 	AppointmentSourceManual AppointmentSource = "manual" // Creada desde el panel
 	AppointmentSourceSheets AppointmentSource = "sheets" // Sincronizada desde Google Sheets
 	AppointmentSourceAgent  AppointmentSource = "agent"  // Creada por el agente de WhatsApp
+	AppointmentSourceWeb    AppointmentSource = "web"    // La agendó el cliente en /agendar/:id
 )
 
 // AppointmentStatus indica el estado de la cita

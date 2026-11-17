@@ -492,6 +492,7 @@ func main() {
 		citas := protected.Group("/citas", handlers.LiveNotify("citas", "optometria"))
 		{
 			citas.GET("/horarios", handlers.CitasHours)
+			citas.GET("/compartir", handlers.CitasShareLinks)
 			citas.GET("/horarios/ocupadas", handlers.CitasOccupied)
 			citas.GET("/etiquetas", handlers.CitasTags)
 			citas.GET("/seguimiento", handlers.CitasFollowups)
@@ -642,6 +643,11 @@ func main() {
 
 	// Rastreo público de pedidos (clave en el ticket) — handlers/order_tracking.go
 	router.GET("/rastreo", handlers.TrackingPage)
+	// Página pública para agendar cita en un negocio (Citas → ⚙ Compartir)
+	router.GET("/agendar/:id", handlers.BookingPage)
+	router.GET("/api/agendar/:id", handlers.BookingInfo)
+	router.GET("/api/agendar/:id/ocupadas", handlers.BookingOccupied)
+	router.POST("/api/agendar/:id", handlers.BookingCreate)
 	// Entrada del equipo (ópticas) y la página Usuarios del dueño
 	router.GET("/equipo/login", handlers.StaffLoginPage)
 	router.POST("/api/equipo/login", handlers.StaffLogin)

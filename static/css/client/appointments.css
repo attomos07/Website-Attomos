@@ -1778,6 +1778,8 @@ body.dark .cev-row--who{ background:rgba(137,146,255,.1); }
 /* Cita agendada por recepción (estado "verificada" hecha desde el panel) */
 .admin-badge.verificada.recepcion{ background:#efe7fd; color:#6d28d9; }
 body.dark .admin-badge.verificada.recepcion{ background:rgba(139,92,246,.2); color:#c4b5fd; }
+.admin-badge.verificada.sitio{ background:#ecfeff; color:#0e7490; }
+body.dark .admin-badge.verificada.sitio{ background:rgba(6,182,212,.18); color:#67e8f9; }
 .cal-dot.recepcion{ background:#7c3aed; }
 /* "Por la web" / "Por recepción": se escriben tal cual (sin mayúscula en cada palabra) */
 .admin-badge.verificada{ text-transform:none; }
@@ -1815,3 +1817,69 @@ td > .cita-origen-badge, #calEventOrigen{ margin-right:6px; }
 .cev-row--who{ flex-wrap:wrap; row-gap:8px; }
 .cev-row--who .cev-txt{ flex:1 1 150px; min-width:150px; }
 .cev-row--who .cev-txt strong{ overflow-wrap:break-word; word-break:normal; }
+/* =========================================================
+   ⚙ Compartir con tus clientes (citas-compartir.js):
+   página para agendar y rastreo — iOS 27
+   ========================================================= */
+.cs-gear-btn svg{ transition:transform .7s cubic-bezier(.34,1.56,.64,1); }
+.cs-gear-btn:hover svg{ transform:rotate(90deg); }
+.cs-gear-btn:active{ transform:scale(.9); }
+.cs-card{ max-width:520px; }
+.cs-body{ padding-top:16px; }
+.cs-intro{ margin:0 0 14px; font-size:13px; color:var(--muted); line-height:1.5; }
+.cs-list{ display:flex; flex-direction:column; gap:12px; }
+.cs-skel{ height:150px; border-radius:20px; background:linear-gradient(90deg, #f1f5f9 0%, #ecfeff 50%, #f1f5f9 100%); background-size:200% 100%; animation:csShimmer 1.2s linear infinite; }
+@keyframes csShimmer{ to{ background-position:-200% 0; } }
+.cs-item{
+  border:1px solid var(--line); border-radius:20px; padding:16px; background:var(--white);
+  animation:csRise .6s cubic-bezier(.34,1.35,.64,1) backwards; animation-delay:calc(var(--i, 0) * 70ms);
+  transition:box-shadow .3s var(--ease), border-color .3s var(--ease);
+}
+.cs-item:hover{ border-color:#a5f3fc; box-shadow:0 14px 30px -18px rgba(8,145,178,.45); }
+@keyframes csRise{ from{ opacity:0; transform:translateY(14px) scale(.97); filter:blur(6px); } }
+.cs-item-head{ display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+.cs-ic{ width:40px; height:40px; border-radius:13px; flex-shrink:0; display:grid; place-items:center; color:#fff; transition:transform .5s cubic-bezier(.34,1.56,.64,1); }
+.cs-ic svg{ width:19px; height:19px; }
+.cs-ic-agendar{ background:linear-gradient(140deg, #22d3ee, #0891b2); }
+.cs-ic-rastreo{ background:linear-gradient(140deg, #818cf8, #4f46e5); }
+.cs-item:hover .cs-ic{ transform:rotate(-6deg) scale(1.06); }
+.cs-item-head strong{ display:block; font-size:14.5px; color:var(--ink); }
+.cs-item-head small{ display:block; margin-top:3px; font-size:12.5px; color:var(--muted); line-height:1.45; }
+.cs-url{
+  display:flex; align-items:center; gap:8px; padding:6px 6px 6px 12px; border-radius:12px;
+  background:#f8fafc; border:1px solid var(--line);
+}
+.cs-url span{ flex:1; min-width:0; font:600 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; color:#0e7490; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cs-copy{
+  width:32px; height:32px; border-radius:9px; border:none; background:var(--white); color:var(--muted); flex-shrink:0;
+  display:grid; place-items:center; cursor:pointer; box-shadow:0 1px 2px rgba(15,23,42,.08);
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1), color .2s, background .2s;
+}
+.cs-copy svg{ width:15px; height:15px; }
+.cs-copy:hover{ color:#0891b2; }
+.cs-copy:active{ transform:scale(.85); }
+.cs-copy.is-ok{ background:#06b6d4; color:#fff; animation:csPop .45s cubic-bezier(.34,1.56,.64,1); }
+@keyframes csPop{ from{ transform:scale(.6); } }
+.cs-actions{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; }
+.cs-act{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; height:38px; border-radius:11px;
+  border:1px solid var(--line); background:var(--white); color:var(--ink); font-size:12.5px; font-weight:600;
+  text-decoration:none; cursor:pointer;
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1), border-color .2s, color .2s, background .2s;
+}
+.cs-act svg{ width:15px; height:15px; flex-shrink:0; }
+.cs-act:hover{ border-color:#67e8f9; color:#0e7490; background:#ecfeff; }
+.cs-act:active{ transform:scale(.93); }
+.cs-act-wa:hover{ border-color:#86efac; color:#15803d; background:#f0fdf4; }
+.cs-act.is-on{ border-color:#06b6d4; color:#0e7490; background:#ecfeff; }
+.cs-qr{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:12px; padding-top:14px; border-top:1px dashed var(--line); animation:csRise .5s cubic-bezier(.34,1.35,.64,1); }
+.cs-qr[hidden]{ display:none; }
+.cs-qr-box{ padding:12px; border-radius:18px; background:#fff; border:1px solid var(--line); min-width:246px; min-height:246px; display:grid; place-items:center; }
+.cs-qr-box img, .cs-qr-box canvas{ display:block; border-radius:6px; }
+.cs-qr-wait{ width:22px; height:22px; border-radius:50%; border:2.4px solid #cffafe; border-top-color:#06b6d4; animation:csSpin .7s linear infinite; }
+@keyframes csSpin{ to{ transform:rotate(360deg); } }
+.cs-qr .cs-act{ padding:0 16px; }
+body.dark .cs-item, body.dark .cs-act, body.dark .cs-copy{ background:#111827; }
+body.dark .cs-url{ background:#0b1220; }
+body.dark .cs-url span{ color:#67e8f9; }
+@media (max-width:480px){ .cs-actions{ grid-template-columns:1fr 1fr; } .cs-actions .cs-act:last-child{ grid-column:1 / -1; } }

@@ -360,20 +360,22 @@ window.CitaTags = (function(){
    muestra junto al estado. La lógica sigue usando el estado.
    ========================================================= */
 window.CitaOrigen = window.CitaOrigen || (function(){
-  var LABELS = { pendiente: 'Pendiente', verificada: 'Por el bot', recepcion: 'Desde el panel', cancelada: 'Cancelada', asistio: 'Asistió', no_asistio: 'No asistió' };
+  var LABELS = { pendiente: 'Pendiente', verificada: 'Por el bot', recepcion: 'Desde el panel', sitio: 'Por la web', cancelada: 'Cancelada', asistio: 'Asistió', no_asistio: 'No asistió' };
   var TITLES = {
     pendiente: 'Falta confirmar la cita',
     verificada: 'La agendó tu bot por WhatsApp',
-    recepcion: 'La agendaste desde el panel'
+    recepcion: 'La agendaste desde el panel',
+    sitio: 'La agendó el cliente en tu página para agendar'
   };
-  // Clave para mostrar: "recepcion" si es una verificada hecha por recepción.
-  function key(status, origen){ return status === 'verificada' && origen === 'recepcion' ? 'recepcion' : status; }
+  // Clave para mostrar: "recepcion" / "sitio" si es una verificada hecha
+  // por recepción o desde la página para agendar.
+  function key(status, origen){ return status === 'verificada' && (origen === 'recepcion' || origen === 'sitio') ? origen : status; }
   function ofRow(row){ return key(row.dataset.status, row.dataset.origen); }
   // Clases del badge: la verificada de recepción lleva las dos.
-  function badgeClass(k){ return 'admin-badge ' + (k === 'recepcion' ? 'verificada recepcion' : k); }
+  function badgeClass(k){ return 'admin-badge ' + (k === 'recepcion' || k === 'sitio' ? 'verificada ' + k : k); }
   // El origen se queda visible aunque la cita cambie de estado (asistió,
   // no asistió, cancelada…). En "verificada" el propio estado ya lo dice.
-  function originKey(row){ return row.dataset.origen === 'recepcion' ? 'recepcion' : 'verificada'; }
+  function originKey(row){ var o = row.dataset.origen; return o === 'recepcion' || o === 'sitio' ? o : 'verificada'; }
   function showOrigin(row){ return row.dataset.status !== 'verificada'; }
   function originHTML(row){
     if (!showOrigin(row)) return '';
@@ -465,7 +467,7 @@ window.CitasFiltro = (function(){
   var TIPOS = {
     // Por la web: citas que lleguen de la página web del negocio. Por ahora
     // solo se muestra (todavía no hay página vinculada que las mande).
-    sitio: { label: 'Por la web', title: 'La agendó el cliente desde tu página web (pronto podrás vincularla)',
+    sitio: { label: 'Por la web', title: 'La agendó el cliente en tu página para agendar',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="3"/><path d="M2.5 9h19M6 6.5h.01M8.5 6.5h.01"/><path d="m9 14 2 2 4-4"/></svg>' },
     bot: { label: 'Bot', title: 'La agendó tu bot (se pone sola)',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M8 4h8M9 14h.01M15 14h.01"/></svg>' },
@@ -3420,7 +3422,7 @@ if (window.AvDate) {
         como: q && q.como_se_entero ? String(q.como_se_entero) : '', procedencia: q && q.procedencia ? String(q.procedencia) : '',
         celular: (r.dataset.celular || '').trim(),
         compra: compraDe(r.dataset.id, r.dataset.status || 'pendiente', r.dataset.tag || ''),
-        origen: r.dataset.origen === 'recepcion' ? 'recepcion' : 'web'
+        origen: r.dataset.origen === 'recepcion' || r.dataset.origen === 'sitio' ? r.dataset.origen : 'web'
       };
     });
   }
@@ -3750,8 +3752,8 @@ if (window.AvDate) {
         '<div><h2>Por estado</h2><p class="cr-note">Cómo quedó cada cita del periodo.</p>' + hbars(porEstado, s.total) + '</div>' +
         '<div><h2>Cómo llegaron</h2><p class="cr-note">La etiqueta de la cita.</p>' + hbars(porTipo, s.total) + '</div>' +
       '</div>' +
-      '<div class="cr-sec"><h2>¿Quién hizo la cita?</h2><p class="cr-note">Por el bot = la agendó tu bot por WhatsApp. Desde el panel = la capturaste aquí.</p>' +
-        hbars([['Por el bot', list.filter(function (r) { return r.origen === 'web'; }).length], ['Desde el panel', list.filter(function (r) { return r.origen === 'recepcion'; }).length]], s.total) + '</div>' +
+      '<div class="cr-sec"><h2>¿Quién hizo la cita?</h2><p class="cr-note">Por el bot = la agendó tu bot por WhatsApp. Por la web = el cliente la agendó en tu página. Desde el panel = la capturaste aquí.</p>' +
+        hbars([['Por el bot', list.filter(function (r) { return r.origen === 'web'; }).length], ['Por la web', list.filter(function (r) { return r.origen === 'sitio'; }).length], ['Desde el panel', list.filter(function (r) { return r.origen === 'recepcion'; }).length]], s.total) + '</div>' +
       '<div class="cr-sec"><h2>¿Cómo nos conocieron?</h2><p class="cr-note">Del cuestionario inicial' + (conCuest ? ' (' + conCuest + ' de ' + s.total + ' lo contestaron)' : '') + '.</p>' +
         (porComo.length ? hbars(porComo, conCuest) : '<div class="cr-empty">Nadie contestó el cuestionario en este periodo.</div>') + '</div>' +
       (OPTICA ? '<div class="cr-sec"><h2>¿Compraron?</h2><p class="cr-note">De los que asistieron. Los chequeos no cuentan como venta.</p>' +

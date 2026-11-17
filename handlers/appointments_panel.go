@@ -88,12 +88,18 @@ var citaTags = map[string]bool{"sin_cita": true, "chequeo": true, "telefono": tr
 
 const citaTagBot = "bot"
 
+// citaTagSitio — la agendó el cliente en la página para agendar (/agendar/:id).
+const citaTagSitio = "sitio"
+
 func citaTagOf(a *models.Appointment) string {
 	if a.Tag != "" {
 		return a.Tag
 	}
 	if citaFromBot(a) {
 		return citaTagBot
+	}
+	if a.Source == models.AppointmentSourceWeb {
+		return citaTagSitio
 	}
 	return ""
 }
@@ -134,6 +140,8 @@ func citaRowOf(a *models.Appointment, agents map[uint]string) CitaRow {
 	origen := "recepcion"
 	if citaFromBot(a) {
 		origen = "web"
+	} else if a.Source == models.AppointmentSourceWeb {
+		origen = "sitio"
 	}
 	return CitaRow{
 		ID:              a.ID,
@@ -675,7 +683,7 @@ func CitasSetTag(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
 		return
 	}
-	if body.Tag == citaTagBot {
+	if body.Tag == citaTagBot || body.Tag == citaTagSitio {
 		body.Tag = ""
 	}
 	if body.Tag != "" && !citaTags[body.Tag] {

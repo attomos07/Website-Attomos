@@ -13,7 +13,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=6">
-    <link rel="stylesheet" href="/static/css/client/appointments.css?v=8">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=9">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
 </head>
 <body class="inv-body citas-body" data-optica="{{if .Optica}}1{{end}}" data-cap="{{.Capacidad}}" data-biz-name="{{.BusinessName}}" data-services="{{.ServicesJSON}}" data-workers="{{.WorkersJSON}}">
@@ -147,6 +147,10 @@
             <button type="button" class="admin-icon-btn" id="citasFocusBtn" aria-label="Pantalla completa" title="Pantalla completa">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
             </button>
+            <!-- ⚙ Compartir: liga para agendar y liga de rastreo (citas-compartir.js) -->
+            <button type="button" class="admin-icon-btn cs-gear-btn" id="citasShareBtn" aria-label="Compartir con tus clientes" title="Compartir con tus clientes">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+            </button>
           </div>
         </div>
         <div class="admin-panel-head-row">
@@ -202,7 +206,7 @@
               <td>{{with .Trabajador}}{{.}}{{else}}—{{end}}</td>
               <td class="cita-dia">{{.FechaEs}}</td>
               <td>{{.Time}}</td>
-              <td>{{if eq .Status "verificada"}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion" title="La agendaste desde el panel">Desde el panel</span>{{else}}<span class="admin-badge verificada" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}{{else}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion cita-origen-badge" title="La agendaste desde el panel">Desde el panel</span>{{else}}<span class="admin-badge verificada cita-origen-badge" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}<span class="admin-badge {{.Status}}"{{if .CancelReason}} title="Motivo: {{.CancelReason}}"{{end}}>{{.StatusLabel}}</span>{{end}}</td>
+              <td>{{if eq .Status "verificada"}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion" title="La agendaste desde el panel">Desde el panel</span>{{else if eq .Origen "sitio"}}<span class="admin-badge verificada sitio" title="La agendó el cliente en tu página para agendar">Por la web</span>{{else}}<span class="admin-badge verificada" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}{{else}}{{if eq .Origen "recepcion"}}<span class="admin-badge verificada recepcion cita-origen-badge" title="La agendaste desde el panel">Desde el panel</span>{{else if eq .Origen "sitio"}}<span class="admin-badge verificada sitio cita-origen-badge" title="La agendó el cliente en tu página para agendar">Por la web</span>{{else}}<span class="admin-badge verificada cita-origen-badge" title="La agendó tu bot{{with .Agente}} ({{.}}){{end}}">Por el bot</span>{{end}}<span class="admin-badge {{.Status}}"{{if .CancelReason}} title="Motivo: {{.CancelReason}}"{{end}}>{{.StatusLabel}}</span>{{end}}</td>
               <td>{{.CreadaEs}}</td>
               <td>
                 <div class="row-menu" data-menu-id="{{.ID}}">
@@ -339,6 +343,24 @@
   </div><!-- /content-wrapper -->
   </div><!-- /main-content -->
 </div><!-- /app-container -->
+
+<!-- ⚙ Compartir con tus clientes: página para agendar y rastreo -->
+<div class="admin-modal-overlay" id="citasShareOverlay">
+  <div class="admin-modal-card cs-card" role="dialog" aria-modal="true" aria-labelledby="citasShareTitle">
+    <div class="admin-modal-head">
+      <h3 id="citasShareTitle">Compartir con tus clientes</h3>
+      <button type="button" class="admin-modal-close" data-cs-close aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body cs-body">
+      <p class="cs-intro">Comparte estas ligas en tu WhatsApp, redes o imprime el código QR para el mostrador.</p>
+      <div class="cs-list" id="citasShareList">
+        <div class="cs-skel"></div><div class="cs-skel"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="admin-modal-overlay" id="deleteCitaModalOverlay">
   <div class="admin-modal-card admin-modal-card--sm">
@@ -820,7 +842,8 @@
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
 <script src="/static/js/client/live.js?v=1"></script>
-<script src="/static/js/client/appointments.js?v=7"></script>
+<script src="/static/js/client/appointments.js?v=8"></script>
+<script src="/static/js/client/citas-compartir.js?v=1"></script>
 <script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>
 </html>
