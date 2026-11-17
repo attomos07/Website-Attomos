@@ -62,6 +62,8 @@
   }
   load();
   setInterval(function () { if (ROOT.offsetParent) load(); }, 60000);
+  // Al instante: una venta nueva en Recepción aparece sola.
+  if (window.AttomosLive) AttomosLive.on(['pos', 'optometria'], function () { if (ROOT.offsetParent) load(); });
   ROOT.addEventListener('subnav:show', load);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && ROOT.offsetParent) load(); });
 

@@ -3845,3 +3845,13 @@ if (window.AvDate) {
       .finally(function () { btn.disabled = false; btn.textContent = 'Descargar PDF'; });
   });
 })();
+/* Tiempo real: la lista de citas viene en la página, así que cuando otra
+   pantalla (o el bot) agenda o cambia una cita se ofrece actualizar (si el
+   cambio lo hizo esta misma pantalla, no se avisa). */
+(function () {
+  if (!window.AttomosLive) return;
+  AttomosLive.on(['citas'], function () {
+    if (AttomosLive.recentWrite(5000)) return;
+    AttomosLive.notice('Hay cambios en las citas', 'Actualizar', function () { location.reload(); });
+  });
+})();

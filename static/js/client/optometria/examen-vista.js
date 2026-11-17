@@ -402,6 +402,10 @@
   // optometrista guardó un examen se ve reflejado (sin tocar la tabla
   // para no cerrar menús abiertos).
   setInterval(function(){ if (ROOT.offsetParent) refreshAll(false); }, 60000);
+  // Al instante: un examen, una cita o una orden nueva de otra pantalla.
+  if (window.AttomosLive) AttomosLive.on(['optometria', 'citas', 'lab'], function(){
+    if (ROOT.offsetParent) { refreshAll(false); loadGarantias(); }
+  });
 
   // Al regresar a la ventana también se recarga (sin esperar el minuto).
   var rtTimer = null;

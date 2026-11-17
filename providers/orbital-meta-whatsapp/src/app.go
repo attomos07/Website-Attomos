@@ -82,6 +82,11 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 		return processEmailReminderResponse(state, messageText, phoneNumber)
 	}
 
+	// Ópticas: "¿ya están mis lentes?" → paso del laboratorio (como Rastreo)
+	if reply, ok := tryLensStatusReply(state, messageText, phoneNumber); ok {
+		return reply
+	}
+
 	// --- FLUJO DE CANCELACIÓN ---
 	messageLower := strings.ToLower(messageText)
 	cancelKeywords := []string{

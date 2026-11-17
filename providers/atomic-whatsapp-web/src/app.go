@@ -435,6 +435,11 @@ func ProcessMessage(message, userID, userName string) string {
 		return processEmailReminderResponse(state, message, userID)
 	}
 
+	// Ópticas: "¿ya están mis lentes?" → paso del laboratorio (como Rastreo)
+	if reply, ok := tryLensStatusReply(state, message, userID); ok {
+		return reply
+	}
+
 	// Flujo de pedido (pizzeria / comida)
 	if isPizzeriaMode() {
 		if state.IsOrdering {

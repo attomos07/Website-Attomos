@@ -12,6 +12,9 @@ import (
 type Claims struct {
 	UserID uint   `json:"userId"`
 	Email  string `json:"email"`
+	// StaffID > 0: es una cuenta del equipo (recepción, optometría…) de ese
+	// negocio. UserID es el dueño: todo lo que haga cae en su negocio.
+	StaffID uint `json:"staffId,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -43,6 +46,25 @@ func GenerateToken(userID uint, email string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+// GenerateStaffToken — token de una cuenta del equipo (ver models/staff.go).
+func GenerateStaffToken(ownerID, staffID uint, username string) (string, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", errors.New("JWT_SECRET no está configurado")
+	}
+	claims := Claims{
+		UserID:  ownerID,
+		Email:   username,
+		StaffID: staffID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
 }
 
 // ValidateToken valida un JWT token y retorna los claims

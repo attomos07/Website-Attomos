@@ -68,6 +68,8 @@
         if (!labItem) return;
         const isOptica = isOpticaType(businessType);
         labItem.style.display = isOptica ? '' : 'none';
+        const staffItem = document.getElementById('staffMenuItem');
+        if (staffItem) staffItem.style.display = isOptica ? '' : 'none';
         REC_ITEMS.concat(OPT_ITEMS, INV_ITEMS).forEach((id) => {
             const el = document.getElementById(id);
             if (el && id !== 'clientHistoryMenuItem') el.style.display = isOptica ? '' : 'none';
@@ -97,6 +99,27 @@
                 [head('dash_group_lab', 'Laboratorio'), labItem],
                 [head('dash_group_inventory', 'Inventario')], ids(INV_ITEMS)
             ).forEach((el) => { if (el) manage.before(el); });
+        }
+        updateGroups();
+        setActivePage();
+        retarget(true);
+    }
+
+    // Cuentas del equipo (/equipo/login): solo ven los ítems de sus roles.
+    // El dueño lo ve todo. La clase sb-staff-off oculta (con !important)
+    // sin tocar style.display, que usan las reglas de giro de arriba.
+    const STAFF_ROLE_ITEMS = { recepcion: REC_ITEMS, optometria: OPT_ITEMS, laboratorio: ['labMenuItem'], inventario: INV_ITEMS };
+    const isShown = (el) => el.style.display !== 'none' && !el.classList.contains('sb-staff-off');
+    function applyStaff(staff) {
+        const items = scroll.querySelectorAll('.sb-item');
+        if (!staff) {
+            sidebar.classList.remove('sb-staff');
+            items.forEach((el) => el.classList.remove('sb-staff-off'));
+        } else {
+            const allow = new Set();
+            (staff.roles || []).forEach((r) => (STAFF_ROLE_ITEMS[r] || []).forEach((id) => allow.add(id)));
+            sidebar.classList.add('sb-staff');
+            items.forEach((el) => el.classList.toggle('sb-staff-off', !allow.has(el.id)));
         }
         updateGroups();
         setActivePage();
@@ -217,6 +240,7 @@
             const data        = await response.json();
             const plan        = data.subscription?.plan || 'gratuito';
             const userBizType = (data.user?.businessType || '').toLowerCase();
+            applyStaff(data.user?.staff || null);
 
             const portfolioItem  = document.getElementById('portfolioMenuItem');
             const myBusinessItem = document.getElementById('myBusinessMenuItem');
@@ -280,7 +304,7 @@
         buttons.forEach(button => {
             button.classList.remove('active');
             button.removeAttribute('aria-current');
-            if (button.style.display === 'none') return; // oculto (p. ej. Mis citas en ópticas)
+            if (!isShown(button)) return; // oculto (p. ej. Mis citas en ópticas, o no es de su rol)
             const href = button.getAttribute('href');
             let len = (href && href !== '#' && path.includes(href)) ? href.length : 0;
             (button.dataset.also || '').split(',').filter(Boolean).forEach((p) => {
@@ -566,7 +590,7 @@
         const flush = () => { if (group) group.classList.toggle('sb-filtered', !hasItems); };
         [...scroll.children].forEach((el) => {
             if (el.classList.contains('sb-group')) { flush(); group = el; hasItems = false; }
-            else if (el.classList.contains('sb-item') && el.style.display !== 'none' && !el.classList.contains('sb-filtered')) hasItems = true;
+            else if (el.classList.contains('sb-item') && isShown(el) && !el.classList.contains('sb-filtered')) hasItems = true;
         });
         flush();
     }
@@ -576,7 +600,7 @@
         scroll.querySelectorAll('.sb-item').forEach((el) => {
             const match = !n || normalizeStr(labelOf(el)).includes(n);
             el.classList.toggle('sb-filtered', !match);
-            if (match && el.style.display !== 'none') any = true;
+            if (match && isShown(el)) any = true;
         });
         updateGroups();
         if (emptyMsg) emptyMsg.hidden = any;
@@ -812,11 +836,21 @@
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
         try {
             const response = await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-            if (response.ok) window.location.href = '/login';
+            if (response.ok) {
+                const data = await response.json().catch(() => ({}));
+                try { localStorage.removeItem('userData'); } catch (_) {}
+                window.location.href = data.redirect || '/login';
+            }
         } catch (error) { console.error('Error:', error); }
     });
 
     // ── Init ─────────────────────────────────────────────────────────
+    // Cuenta del equipo: se aplica desde el caché para que no se asome el
+    // menú completo mientras llega /api/me.
+    try {
+        const cached = JSON.parse(localStorage.getItem('userData') || 'null');
+        if (cached && cached.staff) applyStaff(cached.staff);
+    } catch (_) {}
     setActivePage();
     applyUiTexts();
     updateGroups();

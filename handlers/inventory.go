@@ -60,9 +60,13 @@ func invUserID(c *gin.Context) uint {
 }
 
 // invUser — nombre con el que queda registrado quien hace un movimiento.
-// Por ahora es el dueño (empresa o correo); cuando existan empleados, aquí
-// irá el nombre del empleado.
+// Si entra una cuenta del equipo es su nombre; si no, el dueño (empresa o
+// correo).
 func invUser(c *gin.Context) string {
+	// Cuenta del equipo: su nombre.
+	if s := currentStaff(c); s != nil {
+		return s.Name
+	}
 	var u models.User
 	if err := config.DB.Select("id, email, company").First(&u, invUserID(c)).Error; err == nil {
 		if s := strings.TrimSpace(u.Company); s != "" {
@@ -76,6 +80,16 @@ func invUser(c *gin.Context) string {
 		}
 	}
 	return ""
+}
+
+// currentStaff — la cuenta del equipo que hace la petición (nil = el dueño).
+func currentStaff(c *gin.Context) *models.StaffUser {
+	if v, ok := c.Get("staff"); ok {
+		if s, ok := v.(*models.StaffUser); ok {
+			return s
+		}
+	}
+	return nil
 }
 
 // invBusinessName — nombre del negocio (para reportes).

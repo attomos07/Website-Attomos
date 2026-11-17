@@ -397,6 +397,11 @@ async function initUserbar() {
             const data = await response.json();
             const user = { ...data.user };
             updateUserbarUI(user);
+            if (user.staff) {
+                // El giro sale del dueño; el menú del dueño no aplica.
+                localStorage.setItem('userData', JSON.stringify(user));
+                return;
+            }
 
             // ── Segunda llamada: obtener giro real de MyBusinessInfo ──────────
             // User.businessType (tabla users) es el del registro y nunca se
@@ -433,7 +438,9 @@ async function initUserbar() {
 
         } else {
             if (response.status === 401) {
-                window.location.href = '/login';
+                const wasStaff = !!(getUserData() || {}).staff;
+                localStorage.removeItem('userData');
+                window.location.href = wasStaff ? '/equipo/login' : '/login';
             }
         }
     } catch (error) {
@@ -472,7 +479,19 @@ function applyBusinessTypeMenu(businessType) {
 
 let lastRawBusinessType = null;
 
+var STAFF_ROLE_LABELS = { recepcion: 'Recepción', optometria: 'Optometría', laboratorio: 'Laboratorio', inventario: 'Inventario' };
+
 function updateUserbarUI(user) {
+    // Cuenta del equipo: su nombre, sus roles y el negocio; sin el menú del
+    // dueño (Mi Negocio, agentes, planes, facturación…).
+    if (user.staff) {
+        updateStaffUserbarUI(user);
+        localStorage.setItem('userData', JSON.stringify(user));
+        return;
+    }
+    const menuList = document.querySelector('#userDropdown .dropdown-menu-list');
+    if (menuList) menuList.style.display = '';
+
     const userNameElement = document.getElementById('userName');
     if (userNameElement) {
         const businessName = user.firstName || user.company || 'Mi Empresa';
@@ -513,6 +532,29 @@ function updateUserbarUI(user) {
     }
 
     localStorage.setItem('userData', JSON.stringify(user));
+}
+
+function updateStaffUserbarUI(user) {
+    const staff = user.staff;
+    const nameEl = document.getElementById('userName');
+    if (nameEl) { nameEl.textContent = staff.name || staff.username; nameEl.style.visibility = 'visible'; }
+    const roleEl = document.getElementById('userRole');
+    if (roleEl) {
+        roleEl.textContent = (staff.roles || []).map(r => t('staff_role_' + r, STAFF_ROLE_LABELS[r] || r)).join(' · ');
+        roleEl.style.visibility = 'visible';
+    }
+    const planEl = document.getElementById('userPlan');
+    if (planEl) planEl.textContent = user.company || '';
+    const menuList = document.querySelector('#userDropdown .dropdown-menu-list');
+    if (menuList) menuList.style.display = 'none';
+    const img = document.getElementById('userAvatarImg');
+    if (img) img.style.display = 'none';
+    const ini = document.getElementById('userInitials');
+    if (ini) {
+        ini.textContent = (staff.name || staff.username || 'U').split(/\s+/).map(w => w[0]).join('').toUpperCase().substring(0, 2);
+        ini.style.display = '';
+        ini.style.visibility = 'visible';
+    }
 }
 
 // ============================================
@@ -863,9 +905,10 @@ function setupLogout() {
                 credentials: 'include'
             });
             if (response.ok) {
+                const data = await response.json().catch(() => ({}));
                 localStorage.removeItem('sidebarPinned');
                 localStorage.removeItem('userData');
-                window.location.href = '/login';
+                window.location.href = data.redirect || '/login';
             } else {
                 showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
             }

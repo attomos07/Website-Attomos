@@ -12,6 +12,7 @@ import (
 	"attomos/models"
 
 	"attomos/google"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -350,6 +351,7 @@ func CreateBotAppointment(c *gin.Context) {
 
 	log.Printf("✅ [BotAppointment] Cita creada ID=%d | %s | %s | %s %s",
 		appointment.ID, req.ClientName, req.Service, req.Date, req.Time)
+	LivePublish(req.UserID, "citas", "optometria")
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

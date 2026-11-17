@@ -68,6 +68,15 @@ func labStepOf(o *Order) string {
 	return LabStepRecibido
 }
 
+// LabStepLabelOf — el paso del tablero en que va el trabajo, como lo ve el
+// cliente en Rastreo ("" si no está en laboratorio).
+func LabStepLabelOf(o *Order) string {
+	if o.Status != OrderStatusPreparing {
+		return ""
+	}
+	return LabStepLabel(labStepOf(o))
+}
+
 /* ---------------- historial ---------------- */
 
 // OrderStatusLog — cada cambio de estatus / paso de un pedido.

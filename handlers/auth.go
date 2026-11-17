@@ -9,6 +9,7 @@ import (
 	"attomos/models"
 
 	"attomos/auth"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -207,11 +208,19 @@ func Login(c *gin.Context) {
 	})
 }
 
-// Logout cierra la sesión del usuario
+// Logout cierra la sesión del usuario. Las cuentas del equipo vuelven a
+// su propia página de entrada (/equipo/login).
 func Logout(c *gin.Context) {
+	redirect := "/login"
+	if tok, err := c.Cookie("auth_token"); err == nil && tok != "" {
+		if claims, err := auth.ValidateToken(tok); err == nil && claims.StaffID > 0 {
+			redirect = "/equipo/login"
+		}
+	}
 	c.SetCookie("auth_token", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Sesión cerrada exitosamente",
+		"message":  "Sesión cerrada exitosamente",
+		"redirect": redirect,
 	})
 }
 
@@ -240,18 +249,24 @@ func GetCurrentUser(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"company":       user.Company,
-			"businessType":  user.BusinessType,
-			"businessSize":  user.BusinessSize,
-			"phoneNumber":   user.PhoneNumber,
-			"projectStatus": user.GetGCPProjectStatus(),
-			"currentPlan":   currentPlan,
-		},
-	})
+	out := gin.H{
+		"id":            user.ID,
+		"email":         user.Email,
+		"company":       user.Company,
+		"businessType":  user.BusinessType,
+		"businessSize":  user.BusinessSize,
+		"phoneNumber":   user.PhoneNumber,
+		"projectStatus": user.GetGCPProjectStatus(),
+		"currentPlan":   currentPlan,
+	}
+	// Cuenta del equipo: su nombre y sus roles (el sidebar solo le muestra
+	// lo suyo). No se manda el correo del dueño.
+	if s := currentStaff(c); s != nil {
+		out["email"] = s.Username
+		out["phoneNumber"] = ""
+		out["staff"] = gin.H{"id": s.ID, "name": s.Name, "username": s.Username, "roles": s.RoleList(), "home": s.Home()}
+	}
+	c.JSON(http.StatusOK, gin.H{"user": out})
 }
 
 // GetProjectStatus retorna el estado del proyecto GCP del usuario

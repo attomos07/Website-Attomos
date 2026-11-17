@@ -2050,6 +2050,10 @@ window.InvLabels = window.InvLabels || (function () {
   } catch (e) {}
   load(false);
   loadArmazonData();
+  // Al instante: una venta descuenta existencias, otro usuario ajusta…
+  if (window.AttomosLive) AttomosLive.on(['inventario'], function () {
+    if (!document.querySelector('.admin-modal-overlay.open')) load(true);
+  });
   // Al volver a esta pestaña (sin recargar la página) se actualiza la lista.
   I.$('invArticulos').addEventListener('subnav:show', function () { load(true); });
 })();

@@ -838,6 +838,8 @@
   // Cada 20 s: así llegan solos los trabajos nuevos (ventas, bot, Comy) y
   // los cambios hechos desde Ventas o Mis ventas.
   setInterval(function () { if (!document.hidden && !dragId && !menuEl) loadOrders(); }, 20000);
+  // Al instante: en cuanto alguien vende, hace la orden o mueve un paso.
+  if (window.AttomosLive) AttomosLive.on(['lab'], function () { if (!dragId && !menuEl) loadOrders(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !dragId && !menuEl) loadOrders(); });
   if (window.feather) feather.replace();
 })();

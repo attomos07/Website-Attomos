@@ -221,6 +221,7 @@ function initDocs(ROOT){
   if (window.AvSelect) AvSelect.enhanceAll(ROOT);
   load(true);
   setInterval(function(){ if (ROOT.offsetParent) load(false); }, 60000);
+  if (window.AttomosLive) AttomosLive.on(['optometria', 'lab'], function(){ if (ROOT.offsetParent) load(false); });
   // Al volver a la pestaña (subnav-tabs) se recarga en silencio.
   ROOT.addEventListener('subnav:show', function(){ load(false); });
 

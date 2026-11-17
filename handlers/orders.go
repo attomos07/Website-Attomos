@@ -338,5 +338,6 @@ func CreateBotOrder(c *gin.Context) {
 	orderApplyStock(&order, "Bot "+agent.Name)
 
 	log.Printf("✅ [Bot] Pedido creado ID=%d agente=%d cliente=%s", order.ID, req.AgentID, req.ClientName)
+	LivePublish(order.UserID, "pos", "lab")
 	c.JSON(http.StatusOK, gin.H{"success": true, "id": order.ID, "trackingCode": order.TrackingCode})
 }

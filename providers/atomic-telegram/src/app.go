@@ -127,6 +127,12 @@ func ProcessMessage(message, userID, userName string) string {
 		return processEmailReminderResponse(state, message, userID)
 	}
 
+	// Ópticas: "¿ya están mis lentes?" → paso del laboratorio (como Rastreo).
+	// En Telegram no hay número de teléfono: se busca por la clave AT…
+	if reply, ok := tryLensStatusReply(state, message, ""); ok {
+		return reply
+	}
+
 	// Flujo de pedido (comida)
 	if isPizzeriaMode() {
 		if state.IsOrdering {

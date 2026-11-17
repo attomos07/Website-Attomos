@@ -1033,6 +1033,7 @@
   /* ---------- arranque ---------- */
   // Al volver a la pestaña (subnav-tabs) se recarga en silencio.
   ROOT.addEventListener('subnav:show', function(){ loadDirectory(); });
+  if (window.AttomosLive) AttomosLive.on(['optometria'], function(){ if (ROOT.offsetParent) loadDirectory(); });
   loadDirectory().then(function(){
     // ?paciente=<key> abre directo la ficha (p. ej. desde otro lado del panel)
     var key = new URLSearchParams(window.location.search).get('paciente');

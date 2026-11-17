@@ -2259,6 +2259,8 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   syncFilters();
   load();
   page.addEventListener('subnav:show', function () { load(); });
+  // Al instante: ventas de otra caja, abonos o el laboratorio que cambia el estatus.
+  if (window.AttomosLive) AttomosLive.on(['pos', 'lab'], function () { if (page.offsetParent) load(); });
 })();
 /* ---------------------------------------------------------------- corte de caja */
 /* =========================================================
@@ -3335,6 +3337,7 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
   /* ---------- arranque ---------- */
   loadEstado();
   page.addEventListener('subnav:show', function () { loadEstado(); });
+  if (window.AttomosLive) AttomosLive.on(['pos'], function () { if (page.offsetParent) loadEstado(); });
   try {
     var saved = localStorage.getItem('attomosCorteTab');
     if (saved && saved !== 'corte' && page.querySelector('[data-pane="' + saved + '"]')) setTab(saved);

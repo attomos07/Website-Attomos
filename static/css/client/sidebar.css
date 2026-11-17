@@ -601,3 +601,5 @@
     animation: none;
   }
 }
+/* Cuentas del equipo: solo los ítems de sus roles (sidebar.js → applyStaff) */
+.sb-item.sb-staff-off { display: none !important; }

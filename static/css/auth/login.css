@@ -1117,4 +1117,4 @@ html {
   .checkbox-container input[type="checkbox"]:checked + .checkmark::after {
     animation: none;
   }
-}
+}.staff-login-link { margin-top: .5rem; }
