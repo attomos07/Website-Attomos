@@ -1,0 +1,214 @@
+{{/* Usuarios (sidebar → Gestión → Usuarios, ópticas, solo el dueño).
+     Cuentas del equipo con usuario, contraseña y roles; entran por
+     /equipo/login y solo ven lo de sus roles.
+     JS: static/js/client/equipo.js · API: handlers/staff.go */}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios — Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/client/sidebar.css">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/equipo.css?v=1">
+    <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+</head>
+<body class="inv-body eq-body">
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+<div class="app-container">
+  {{template "sidebar.html" .}}
+
+  <div class="main-content">
+  {{template "userbar.html" .}}
+
+  <div class="content-wrapper">
+  <main class="inv-page eq-page" id="eqPage">
+    <div class="admin-header">
+      <div>
+        <h1 data-translate="staff_page_title">Usuarios</h1>
+        <p data-translate="staff_page_desc">Las cuentas de tu equipo. Cada quien entra con su usuario y contraseña y solo ve lo de su rol; lo que hace queda a su nombre.</p>
+      </div>
+      <button type="button" class="btn solid thin eq-new-btn" id="eqNew">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-translate="staff_new">Nuevo usuario</span>
+      </button>
+    </div>
+
+    <div class="inv-stats eq-stats" id="eqStats">
+      <div class="inv-stat"><small data-translate="staff_stat_total">Usuarios</small><strong id="eqStTotal">0</strong></div>
+      <div class="inv-stat"><small data-translate="staff_stat_active">Activos</small><strong id="eqStActive">0</strong></div>
+      <div class="inv-stat"><small data-translate="staff_role_recepcion">Recepción</small><strong id="eqSt_recepcion">0</strong></div>
+      <div class="inv-stat"><small data-translate="staff_role_optometria">Optometría</small><strong id="eqSt_optometria">0</strong></div>
+      <div class="inv-stat"><small data-translate="staff_role_laboratorio">Laboratorio</small><strong id="eqSt_laboratorio">0</strong></div>
+      <div class="inv-stat"><small data-translate="staff_role_inventario">Inventario</small><strong id="eqSt_inventario">0</strong></div>
+    </div>
+
+    <section class="admin-panel eq-panel">
+      <div class="eq-link-box">
+        <div class="eq-link-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg></div>
+        <div class="eq-link-txt">
+          <strong data-translate="staff_link_title">Tu equipo entra aquí</strong>
+          <span id="eqLoginUrl">/equipo/login</span>
+        </div>
+        <button type="button" class="btn small" id="eqCopy" data-translate="staff_copy_link">Copiar liga</button>
+      </div>
+
+      <div class="eq-toolbar">
+        <div class="search-box inv-search-box">
+          <div class="search-box-glow"></div>
+          <div class="search-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="eqSearch" placeholder="Buscar por nombre o usuario…" data-translate-placeholder="staff_search" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+        <div class="inv-chips" id="eqFilter" role="group" aria-label="Rol">
+          <button type="button" data-role="" class="is-on" data-translate="staff_all">Todos</button>
+          <button type="button" data-role="recepcion" data-translate="staff_role_recepcion">Recepción</button>
+          <button type="button" data-role="optometria" data-translate="staff_role_optometria">Optometría</button>
+          <button type="button" data-role="laboratorio" data-translate="staff_role_laboratorio">Laboratorio</button>
+          <button type="button" data-role="inventario" data-translate="staff_role_inventario">Inventario</button>
+        </div>
+      </div>
+
+      <div class="inv-table-wrap eq-table-wrap">
+        <table class="inv-table eq-table">
+          <thead>
+            <tr>
+              <th data-translate="staff_th_user">Usuario</th>
+              <th data-translate="staff_th_roles">Roles</th>
+              <th data-translate="staff_th_last">Última entrada</th>
+              <th data-translate="staff_th_status">Estado</th>
+              <th class="eq-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="eqBody"></tbody>
+        </table>
+        <div class="eq-empty" id="eqEmpty" hidden>
+          <div class="eq-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+          <strong data-translate="staff_empty_title">Todavía no hay usuarios</strong>
+          <p data-translate="staff_empty_desc">Crea una cuenta para cada persona de tu equipo: recepción, optometría, laboratorio o inventario.</p>
+          <button type="button" class="btn solid small" id="eqEmptyNew" data-translate="staff_new">Nuevo usuario</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  </div><!-- /content-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- ===================== Alta / cambios ===================== -->
+<div class="admin-modal-overlay" id="eqModal">
+  <div class="admin-modal-card eq-card" role="dialog" aria-modal="true" aria-labelledby="eqTitle">
+    <div class="admin-modal-head">
+      <h3 id="eqTitle">Nuevo usuario</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <form class="staff-form" id="eqForm" novalidate autocomplete="off">
+        <label class="staff-field">
+          <span data-translate="staff_f_name">Nombre</span>
+          <input type="text" id="eqName" maxlength="120" required placeholder="Ej. Ana Ramírez">
+        </label>
+        <div class="staff-form-row">
+          <label class="staff-field">
+            <span data-translate="staff_f_user">Usuario</span>
+            <input type="text" id="eqUser" maxlength="40" required placeholder="Ej. ana.recepcion" autocapitalize="none" spellcheck="false" autocomplete="off">
+          </label>
+          <label class="staff-field">
+            <span><span data-translate="staff_f_password">Contraseña</span> <em id="eqPwHint"></em></span>
+            <div class="eq-pw">
+              <input type="password" id="eqPw" minlength="6" maxlength="72" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+              <button type="button" class="eq-pw-btn" id="eqPwGen" title="Generar una contraseña" aria-label="Generar una contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg>
+              </button>
+              <button type="button" class="eq-pw-btn" id="eqPwEye" title="Ver contraseña" aria-label="Ver contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </label>
+        </div>
+        <small class="eq-hint" data-translate="staff_f_user_hint">El usuario va en minúsculas, sin espacios (letras, números, punto o guion). Es único en Attomos.</small>
+
+        <div class="staff-field">
+          <span data-translate="staff_f_roles">Roles <em>(uno o varios)</em></span>
+          <div class="eq-roles" id="eqRoles"></div>
+        </div>
+
+        <label class="inv-check eq-active" id="eqActiveWrap" hidden>
+          <input type="checkbox" id="eqActive" checked>
+          <span class="inv-check-box"></span>
+          <span><strong data-translate="staff_f_active">Cuenta activa</strong><small data-translate="staff_f_active_hint">Si la desactivas, ya no puede entrar (su historial se queda).</small></span>
+        </label>
+
+        <p class="staff-error" id="eqError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small inv-btn-danger eq-del-btn" id="eqDelete" hidden data-translate="staff_delete">Eliminar</button>
+          <span class="eq-spacer"></span>
+          <button type="button" class="btn small" data-close-modal data-translate="staff_cancel">Cancelar</button>
+          <button type="submit" class="btn solid small" id="eqSave" data-translate="staff_save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Datos para entregar ===================== -->
+<div class="admin-modal-overlay" id="eqDoneModal">
+  <div class="admin-modal-card eq-card eq-done-card" role="dialog" aria-modal="true" aria-labelledby="eqDoneTitle">
+    <div class="admin-modal-head">
+      <h3 id="eqDoneTitle" data-translate="staff_done_title">Listo: dale estos datos</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="eq-done-text" data-translate="staff_done_desc">La contraseña no se vuelve a mostrar. Si se le olvida, aquí le pones otra.</p>
+      <div class="eq-cred">
+        <div><small data-translate="staff_done_where">Entra en</small><strong id="eqDoneUrl"></strong></div>
+        <div><small data-translate="staff_f_user">Usuario</small><strong id="eqDoneUser"></strong></div>
+        <div><small data-translate="staff_f_password">Contraseña</small><strong id="eqDonePw"></strong></div>
+      </div>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" id="eqDoneCopy" data-translate="staff_copy_data">Copiar datos</button>
+        <button type="button" class="btn solid small" data-close-modal data-translate="staff_done_ok">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Confirmar baja ===================== -->
+<div class="admin-modal-overlay" id="eqDelModal">
+  <div class="admin-modal-card inv-confirm-card" role="dialog" aria-modal="true" aria-labelledby="eqDelTitle">
+    <div class="admin-modal-head">
+      <h3 id="eqDelTitle" data-translate="staff_del_title">Eliminar usuario</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="inv-confirm-text" id="eqDelText"></p>
+      <p class="staff-error" id="eqDelError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close-modal data-translate="staff_cancel">Cancelar</button>
+        <button type="button" class="btn solid small inv-btn-danger" id="eqDelOk" data-translate="staff_del_ok">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/translations.js"></script>
+<script src="/static/js/client/sidebar.js"></script>
+<script src="/static/js/client/equipo.js?v=1"></script>
+<script src="/static/js/client/ios27-panel.js?v=3"></script>
+</body>
+</html>

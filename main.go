@@ -98,6 +98,10 @@ func main() {
 	if err := config.DB.AutoMigrate(models.OptometriaModels()...); err != nil {
 		log.Fatal("❌ Error en migración de optometría:", err)
 	}
+	// Usuarios del equipo (ópticas): cuentas con contraseña y roles.
+	if err := config.DB.AutoMigrate(models.StaffModels()...); err != nil {
+		log.Fatal("❌ Error en migración de usuarios del equipo:", err)
+	}
 
 	log.Println("✅ Base de datos conectada y migrada")
 
@@ -265,6 +269,16 @@ func main() {
 	{
 		// Usuario
 		protected.GET("/me", handlers.GetCurrentUser)
+		// Tiempo real del panel (Recepción, Optometría, Laboratorio, Inventario)
+		protected.GET("/live", handlers.LiveStream)
+		// Usuarios del equipo (solo el dueño)
+		equipo := protected.Group("/equipo")
+		{
+			equipo.GET("", handlers.StaffList)
+			equipo.POST("", handlers.StaffCreate)
+			equipo.PUT("/:id", handlers.StaffUpdate)
+			equipo.DELETE("/:id", handlers.StaffDelete)
+		}
 		protected.GET("/project-status", handlers.GetProjectStatus)
 		protected.PUT("/user/password", handlers.UpdatePassword)
 		protected.PUT("/user/email", handlers.UpdateEmail)
@@ -310,9 +324,9 @@ func main() {
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
 		// ============================================
 		protected.GET("/appointments", handlers.GetAppointments)
-		protected.POST("/appointments", handlers.CreateManualAppointment)
-		protected.PATCH("/appointments/:id/status", handlers.UpdateAppointmentStatus)
-		protected.DELETE("/appointments/:id", handlers.DeleteAppointment)
+		protected.POST("/appointments", handlers.LiveNotify("citas", "optometria"), handlers.CreateManualAppointment)
+		protected.PATCH("/appointments/:id/status", handlers.LiveNotify("citas", "optometria"), handlers.UpdateAppointmentStatus)
+		protected.DELETE("/appointments/:id", handlers.LiveNotify("citas", "optometria"), handlers.DeleteAppointment)
 
 		// ============================================
 		// 🍕 ORDERS — Pedidos (giros de comida)
@@ -326,6 +340,8 @@ func main() {
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
 		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
+		// Ópticas: "¿ya están mis lentes?" → en qué paso va su trabajo
+		router.GET("/api/bot/lab-status", handlers.BotLabStatus)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
 		router.GET("/ws/bot/crm", realtime.BotCRMSocket)
@@ -391,7 +407,7 @@ func main() {
 		// 📦 INVENTARIO — sidebar → Inventario (Artículos, Departamentos,
 		// Ajustes, Movimientos). Mismas rutas que el panel de Avante.
 		// ============================================
-		inv := protected.Group("/inventario")
+		inv := protected.Group("/inventario", handlers.LiveNotify("inventario"))
 		{
 			inv.GET("/articulos", handlers.InvListItems)
 			inv.POST("/articulos", handlers.InvCreateItem)
@@ -422,7 +438,7 @@ func main() {
 		}
 
 		// Laboratorio (ópticas) — handlers/laboratorio.go
-		lab := protected.Group("/laboratorio")
+		lab := protected.Group("/laboratorio", handlers.LiveNotify("lab", "optometria", "pos"))
 		{
 			lab.GET("/pedidos", handlers.LabListOrders)
 			lab.PATCH("/pedidos/:id/estado", handlers.LabSetStatus)
@@ -440,7 +456,7 @@ func main() {
 		}
 
 		// Optometría (ópticas) — handlers/optometria.go
-		opt := protected.Group("/optometria")
+		opt := protected.Group("/optometria", handlers.LiveNotify("optometria", "lab"))
 		{
 			opt.GET("/plantillas", handlers.OptListTemplates)
 			opt.GET("/plantillas/activa", handlers.OptActiveTemplate)
@@ -473,7 +489,7 @@ func main() {
 		}
 
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
-		citas := protected.Group("/citas")
+		citas := protected.Group("/citas", handlers.LiveNotify("citas", "optometria"))
 		{
 			citas.GET("/horarios", handlers.CitasHours)
 			citas.GET("/horarios/ocupadas", handlers.CitasOccupied)
@@ -491,7 +507,7 @@ func main() {
 		// 🧾 PUNTO DE VENTA — sidebar → Punto de venta (Punto de venta,
 		// Ventas, Corte de caja). Las ventas descuentan el Inventario.
 		// ============================================
-		pos := protected.Group("/pos")
+		pos := protected.Group("/pos", handlers.LiveNotify("pos", "lab", "optometria", "inventario"))
 		{
 			pos.GET("/inventario", handlers.PosSearchInventory)
 			pos.GET("/estados", handlers.PosOrderStatuses)
@@ -512,7 +528,7 @@ func main() {
 			pos.GET("/ticket-plantilla", handlers.PosGetTicketTemplate)
 			pos.PUT("/ticket-plantilla", handlers.PosSaveTicketTemplate)
 		}
-		caja := protected.Group("/caja")
+		caja := protected.Group("/caja", handlers.LiveNotify("pos"))
 		{
 			caja.GET("/estado", handlers.CajaEstadoAPI)
 			caja.GET("/cortes", handlers.CajaListCortes)
@@ -626,6 +642,10 @@ func main() {
 
 	// Rastreo público de pedidos (clave en el ticket) — handlers/order_tracking.go
 	router.GET("/rastreo", handlers.TrackingPage)
+	// Entrada del equipo (ópticas) y la página Usuarios del dueño
+	router.GET("/equipo/login", handlers.StaffLoginPage)
+	router.POST("/api/equipo/login", handlers.StaffLogin)
+	router.GET("/equipo", middleware.AuthRequired(), handlers.StaffPage)
 	router.GET("/api/rastreo", handlers.TrackingAPI)
 
 	// Mis citas: la página se arma en el servidor (handlers/appointments_panel.go).
