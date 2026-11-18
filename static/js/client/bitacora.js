@@ -1,13 +1,26 @@
 /* bitacora.js — Bitácora del equipo (/bitacora, solo el dueño).
    API: GET /api/bitacora (lista) y /api/bitacora/personas (resumen).
-   En vivo: AttomosLive topic "bitacora" + revisión cada 30 s. */
+   En vivo: AttomosLive topic "bitacora" + revisión cada 30 s.
+   Textos: translations.js (bit_*); se vuelve a pintar al cambiar de idioma.
+   Las descripciones vienen del servidor tal como se guardaron (en español). */
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
   if (!$('bitPage')) return;
 
-  const ROLE_LABELS = { dueno: 'Dueño', recepcion: 'Recepción', caja: 'Caja', optometria: 'Optometría', lab: 'Laboratorio', laboratorio: 'Laboratorio', inventario: 'Inventario' };
-  const AREA_LABELS = { pos: 'Recepción', caja: 'Caja', lab: 'Laboratorio', optometria: 'Optometría', citas: 'Citas', inventario: 'Inventario', equipo: 'Usuarios', sesion: 'Sesión' };
+  const LOCALES = { es: 'es-MX', en: 'en-US', ru: 'ru-RU', uz: 'uz-UZ', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR', pt: 'pt-BR', de: 'de-DE', ko: 'ko-KR' };
+  function lang() { try { return localStorage.getItem('attomos_lang') || localStorage.getItem('lang') || 'es'; } catch (_) { return 'es'; } }
+  function locale() { return LOCALES[lang()] || 'es-MX'; }
+  function t(key, vars) {
+    const D = (window.Translations && window.Translations.dict) || {};
+    let s = (D[lang()] && D[lang()][key]) || (D.es && D.es[key]) || key;
+    if (vars) Object.keys(vars).forEach((k) => { s = s.split('{' + k + '}').join(vars[k]); });
+    return s;
+  }
+  const ROLE_KEYS = { dueno: 'bit_owner', recepcion: 'staff_role_recepcion', caja: 'bit_area_caja', optometria: 'staff_role_optometria', lab: 'staff_role_laboratorio', laboratorio: 'staff_role_laboratorio', inventario: 'staff_role_inventario' };
+  // El servidor guarda al dueño como "Dueño (Negocio)": se muestra en el idioma elegido.
+  const actorName = (name, staffId) => (staffId ? name : String(name || t('bit_owner')).replace(/^Dueño/, t('bit_owner')));
+  const AREA_KEYS = { pos: 'staff_role_recepcion', caja: 'bit_area_caja', lab: 'staff_role_laboratorio', optometria: 'staff_role_optometria', citas: 'bit_area_citas', inventario: 'staff_role_inventario', equipo: 'dash_nav_staff', sesion: 'bit_k_session' };
   const ICONS = {
     pos: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
     caja: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
@@ -58,7 +71,7 @@
   async function getJSON(url) {
     const r = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || 'No se pudo cargar.');
+    if (!r.ok) throw new Error(d.error || t('bit_load_err'));
     return d;
   }
 
@@ -68,18 +81,18 @@
     return ((w[0] || '?')[0] + (w[1] ? w[1][0] : '')).toUpperCase();
   }
   function rolesText(p) {
-    if (p.key === 'dueno') return 'Dueño';
-    const r = String(p.roles || '').split(',').filter(Boolean).map((x) => ROLE_LABELS[x] || x);
-    return (r.join(' · ') || 'Sin rol') + (p.active === false ? ' · Desactivado' : '');
+    if (p.key === 'dueno') return t('bit_owner');
+    const r = String(p.roles || '').split(',').filter(Boolean).map((x) => (ROLE_KEYS[x] ? t(ROLE_KEYS[x]) : x));
+    return (r.join(' · ') || t('bit_no_role')) + (p.active === false ? ' · ' + t('bit_disabled') : '');
   }
   async function loadPeople() {
     try {
       const d = await getJSON('/api/bitacora/personas?' + baseParams());
       state.people = d.personas || [];
-      const t = d.totales || {};
-      $('bitStAcc').textContent = (t.acciones || 0).toLocaleString('es-MX');
-      $('bitStSes').textContent = (t.sesiones || 0).toLocaleString('es-MX');
-      $('bitStFail').textContent = (t.fallidas || 0).toLocaleString('es-MX');
+      const tot = d.totales || {};
+      $('bitStAcc').textContent = (tot.acciones || 0).toLocaleString(locale());
+      $('bitStSes').textContent = (tot.sesiones || 0).toLocaleString(locale());
+      $('bitStFail').textContent = (tot.fallidas || 0).toLocaleString(locale());
       $('bitStPeople').textContent = state.people.filter((p) => (p.acciones || 0) + (p.sesiones || 0) > 0).length;
       renderPeople();
     } catch (e) {
@@ -88,10 +101,11 @@
   }
   function renderPeople() {
     const total = state.people.reduce((n, p) => n + (p.acciones || 0) + (p.sesiones || 0), 0);
-    const rows = [{ key: '', name: 'Todos', sub: 'Todo el equipo y tú', n: total, all: true }].concat(
-      state.people.map((p) => ({ key: p.key, name: p.name, sub: rolesText(p), n: (p.acciones || 0) + (p.sesiones || 0), owner: p.key === 'dueno', off: p.active === false }))
+    const rows = [{ key: '', name: t('bit_all'), sub: t('bit_all_sub'), n: total, all: true }].concat(
+      state.people.map((p) => ({ key: p.key, name: actorName(p.name, p.staffId), sub: rolesText(p), n: (p.acciones || 0) + (p.sesiones || 0), owner: p.key === 'dueno', off: p.active === false }))
     );
-    $('bitPeopleSub').textContent = state.people.length - 1 > 0 ? `${state.people.length - 1} cuenta${state.people.length - 1 === 1 ? '' : 's'} del equipo` : 'Aún no tienes cuentas del equipo';
+    const nAcc = state.people.length - 1;
+    $('bitPeopleSub').textContent = nAcc > 0 ? t(nAcc === 1 ? 'bit_accounts_one' : 'bit_accounts_many', { n: nAcc }) : t('bit_no_accounts');
     $('bitPeople').innerHTML = rows.map((r, i) => `
       <button type="button" role="listitem" class="bit-person${r.key === state.person ? ' is-on' : ''}${r.off ? ' is-off' : ''}" data-key="${esc(r.key)}" style="--i:${i}">
         <span class="bit-ava${r.owner ? ' is-owner' : ''}${r.all ? ' is-all' : ''}">${r.all ? svg('equipo') : esc(initials(r.name))}</span>
@@ -108,13 +122,15 @@
   });
 
   /* ---------- lista ---------- */
-  const fmtTime = (d) => d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s?([ap])\.?\s?m\.?/i, (_, x) => ' ' + x.toLowerCase() + 'm');
+  const fmtTime = (d) => (lang() === 'es'
+    ? d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s?([ap])\.?\s?m\.?/i, (_, x) => ' ' + x.toLowerCase() + 'm')
+    : d.toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit' }));
   function dayLabel(d) {
-    const t = startOfDay(new Date()), x = startOfDay(d);
-    const diff = Math.round((t - x) / 86400000);
-    if (diff === 0) return 'Hoy';
-    if (diff === 1) return 'Ayer';
-    return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: x.getFullYear() === t.getFullYear() ? undefined : 'numeric' });
+    const t0 = startOfDay(new Date()), x = startOfDay(d);
+    const diff = Math.round((t0 - x) / 86400000);
+    if (diff === 0) return t('bit_today');
+    if (diff === 1) return t('bit_yesterday');
+    return d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', year: x.getFullYear() === t0.getFullYear() ? undefined : 'numeric' });
   }
   function iconKey(it) {
     if (!it.ok) return 'fail';
@@ -123,14 +139,14 @@
   }
   function rowHTML(it, i, isNew) {
     const d = new Date(it.createdAt);
-    const who = it.staffId ? it.actor : (it.actor || 'Dueño');
-    const area = AREA_LABELS[it.area] || '';
+    const who = actorName(it.actor, it.staffId);
+    const area = AREA_KEYS[it.area] ? t(AREA_KEYS[it.area]) : '';
     return `<div class="bit-row${it.ok ? '' : ' is-fail'}${isNew ? ' is-new' : ''}" style="--i:${Math.min(i, 20)}" data-id="${it.id}">
       <span class="bit-time">${esc(fmtTime(d))}</span>
       <span class="bit-ic a-${esc(it.kind === 'sesion' ? 'sesion' : it.area)}">${svg(iconKey(it))}</span>
       <div class="bit-body-txt">
         <div class="bit-desc"><b>${esc(who)}</b> — ${esc(it.description)}</div>
-        <div class="bit-meta">${area ? `<span class="bit-tag">${esc(area)}</span>` : ''}${it.ok ? '' : '<span class="bit-tag fail">No se pudo</span>'}<span>${esc(d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }))}</span></div>
+        <div class="bit-meta">${area ? `<span class="bit-tag">${esc(area)}</span>` : ''}${it.ok ? '' : `<span class="bit-tag fail">${esc(t('bit_failed_tag'))}</span>`}<span>${esc(d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' }))}</span></div>
       </div>
     </div>`;
   }
@@ -145,16 +161,16 @@
     tl.innerHTML = html;
     const empty = $('bitEmpty');
     empty.hidden = state.items.length > 0;
-    if (!state.items.length) empty.textContent = state.q || state.kind || state.area || state.person ? 'Nada coincide con estos filtros.' : 'Sin movimientos en este periodo.';
+    if (!state.items.length) empty.textContent = t(state.q || state.kind || state.area || state.person ? 'bit_empty_filter' : 'bit_empty');
     $('bitMore').hidden = !state.hasMore;
     const p = state.people.find((x) => x.key === state.person);
-    $('bitFeedTitle').textContent = p ? 'Actividad de ' + p.name : 'Actividad de todos';
-    $('bitFeedSub').textContent = state.items.length ? `${state.items.length}${state.hasMore ? '+' : ''} movimiento${state.items.length === 1 ? '' : 's'}` : '';
+    $('bitFeedTitle').textContent = p ? t('bit_feed_of', { name: actorName(p.name, p.staffId) }) : t('bit_feed_all');
+    $('bitFeedSub').textContent = state.items.length ? t(state.items.length === 1 && !state.hasMore ? 'bit_moves_one' : 'bit_moves_many', { n: state.items.length + (state.hasMore ? '+' : '') }) : '';
   }
   async function loadList() {
     const seq = ++state.seq;
     $('bitEmpty').hidden = false;
-    $('bitEmpty').textContent = 'Cargando…';
+    $('bitEmpty').textContent = t('bit_loading');
     $('bitTimeline').innerHTML = '';
     $('bitMore').hidden = true;
     try {
@@ -173,7 +189,7 @@
     if (!last) return;
     const btn = $('bitMore');
     btn.disabled = true;
-    btn.textContent = 'Cargando…';
+    btn.textContent = t('bit_loading');
     try {
       const p = listParams();
       p.set('antes_id', last.id);
@@ -183,7 +199,7 @@
       render();
     } catch (_) {}
     btn.disabled = false;
-    btn.textContent = 'Cargar más';
+    btn.textContent = t('bit_more');
   });
 
   /* ---------- en vivo ---------- */
@@ -211,7 +227,7 @@
     const b = $('bitLive');
     b.classList.toggle('is-on', state.live);
     b.setAttribute('aria-pressed', state.live ? 'true' : 'false');
-    $('bitLiveLabel').textContent = state.live ? 'En vivo' : 'En pausa';
+    $('bitLiveLabel').textContent = t(state.live ? 'bit_live' : 'bit_paused');
   }
   $('bitLive').addEventListener('click', () => {
     state.live = !state.live;
@@ -266,6 +282,17 @@
     qT = setTimeout(() => { state.q = e.target.value.trim(); loadList(); }, 280);
   });
 
+  // Cambio de idioma: repintar lo que arma este archivo.
+  document.addEventListener('attomos:langchange', () => {
+    paintLive();
+    renderPeople();
+    render();
+    if (!state.items.length && $('bitEmpty').textContent) $('bitEmpty').textContent = t(state.q || state.kind || state.area || state.person ? 'bit_empty_filter' : 'bit_empty');
+  });
+
+  $('bitPeopleSub').textContent = t('bit_loading');
+  $('bitFeedSub').textContent = t('bit_loading');
+  $('bitEmpty').textContent = t('bit_loading');
   paintLive();
   reloadAll();
 })();

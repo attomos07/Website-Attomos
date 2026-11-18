@@ -1,7 +1,7 @@
 /* negocio-cuenta.js — Entrar / Crear cuenta del cliente (/n/:slug/entrar,
    /n/:slug/registro). Al entrar, las citas que agendó en este navegador
    como invitado pasan a su cuenta (reclamos guardados por agendar-cita.js).
-   API: handlers/business_page.go */
+   API: handlers/business_page.go · Textos: negocio-i18n.js (NI.t) */
 (function () {
   'use strict';
   var app = document.getElementById('authApp');
@@ -9,6 +9,8 @@
   var slug = app.dataset.slug, owner = app.dataset.owner, next = app.dataset.next || 'mis-citas';
   var $ = function (id) { return document.getElementById(id); };
   var CLAIMS = 'attReclamos:' + owner;
+  var T = function (k, v) { return window.NI ? NI.t(k, v) : k; };
+  var S = function (m) { return window.NI ? NI.srv(m) : m; };
 
   function claims() {
     try { return JSON.parse(localStorage.getItem(CLAIMS) || '[]').slice(-10); } catch (_) { return []; }
@@ -21,7 +23,7 @@
       var inp = b.parentElement.querySelector('input');
       var show = inp.type === 'password';
       inp.type = show ? 'text' : 'password';
-      b.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      b.setAttribute('aria-label', T(show ? 'ac_hide_pw' : 'ac_show_pw'));
       b.style.color = show ? 'var(--blue-600)' : '';
     });
   });
@@ -46,19 +48,19 @@
         location.href = '/n/' + slug + '/' + next;
         return;
       }
-      var msg = d.error || 'Algo salió mal. Intenta de nuevo.';
+      var msg = S(d.error) || T('ac_generic');
       if (d.existe) {
         $('authError').innerHTML = '';
         $('authError').append(msg + ' ');
         var a = document.createElement('a');
         a.href = '/n/' + slug + '/entrar' + (next === 'agendar' ? '?sig=agendar' : '');
-        a.textContent = 'Ir a iniciar sesión';
+        a.textContent = T('ac_go_login');
         $('authError').append(a);
       } else {
         $('authError').textContent = msg;
       }
     } catch (_) {
-      $('authError').textContent = 'Sin conexión. Revisa tu internet e intenta de nuevo.';
+      $('authError').textContent = T('ac_offline');
     }
     btn.disabled = false;
   }
@@ -89,7 +91,7 @@
       if (v.length >= 12 || /[^a-zA-Z0-9]/.test(v)) score++;
       var colors = ['#D14343', '#f59e0b', '#16a34a'];
       $('pwStrength').querySelectorAll('span').forEach(function (s, i) { s.style.background = i < score ? colors[score - 1] : ''; });
-      $('pwStrengthLabel').textContent = !v ? 'Usa al menos 8 caracteres, con letras y números.' : ['Muy corta', 'Débil', 'Buena', 'Muy segura'][score];
+      $('pwStrengthLabel').textContent = !v ? T('ac_pass_hint') : T('ac_pw' + score);
     });
 
     reg.addEventListener('submit', function (e) {

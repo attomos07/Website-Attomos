@@ -265,13 +265,18 @@ func negAddress(b *models.MyBusinessInfo) (string, string) {
 	return full, between
 }
 
+// Los textos van en español; los campos crudos (PromoKind, Dow, Start…)
+// los usa negocio-i18n.js para mostrarlos en el idioma del visitante.
 type negService struct {
 	Titulo, Descripcion, Imagen, Precio, Antes, Promo string
+	PromoKind, PromoEnd, PromoDows                    string // days | until | promo
 	Agotado                                           bool
 }
 
 type negDay struct {
 	Dia, Horas string
+	Dow        int
+	Start, End string
 	Hoy        bool
 	Cerrado    bool
 }
@@ -293,6 +298,7 @@ func NegocioPage(c *gin.Context) {
 	}
 	if l, ok := negocioTypeLabels[strings.ToLower(tipo)]; ok {
 		data["Tipo"] = l
+		data["TipoKey"] = strings.ToLower(tipo)
 	} else if tipo != "" {
 		data["Tipo"] = strings.ToUpper(tipo[:1]) + strings.ReplaceAll(tipo[1:], "-", " ")
 	}
@@ -336,6 +342,7 @@ func NegocioPage(c *gin.Context) {
 	// Ubicación
 	dir, entre := negAddress(b)
 	data["Direccion"], data["Entre"] = dir, entre
+	data["EntreCalles"] = strings.TrimSpace(b.Location.BetweenStreets)
 	if dir != "" {
 		q := url.QueryEscape(n.Nombre + ", " + dir)
 		data["MapaEmbed"] = template.URL("https://www.google.com/maps?q=" + q + "&output=embed")
@@ -359,15 +366,22 @@ func NegocioPage(c *gin.Context) {
 			if s.OriginalPrice > s.PromoPrice {
 				sv.Antes = negMoney(s.OriginalPrice)
 			}
+			sv.Promo, sv.PromoKind = "Promoción", "promo"
 			switch {
 			case s.PromoPeriodType == "days" && len(s.PromoDays) > 0:
-				sv.Promo = "Promo los " + strings.Join(s.PromoDays, ", ")
+				sv.Promo, sv.PromoKind = "Promo los "+strings.Join(s.PromoDays, ", "), "days"
+				dows := []string{}
+				for _, d := range s.PromoDays {
+					if i, ok := negDaysKeys[strings.ToLower(strings.TrimSpace(d))]; ok {
+						dows = append(dows, strconv.Itoa(i))
+					}
+				}
+				sv.PromoDows = strings.Join(dows, ",")
 			case s.PromoPeriodType == "range" && s.PromoDateEnd != "":
 				if t, err := time.Parse("2006-01-02", s.PromoDateEnd); err == nil {
 					sv.Promo = fmt.Sprintf("Promo hasta el %d de %s", t.Day(), negMeses[t.Month()-1])
+					sv.PromoKind, sv.PromoEnd = "until", s.PromoDateEnd
 				}
-			default:
-				sv.Promo = "Promoción"
 			}
 		} else if s.Price > 0 {
 			sv.Precio = negMoney(s.Price)
@@ -384,9 +398,10 @@ func NegocioPage(c *gin.Context) {
 	anyOpen := false
 	for _, i := range []int{1, 2, 3, 4, 5, 6, 0} {
 		d := week[i]
-		row := negDay{Dia: negDias[i], Hoy: i == int(now.Weekday())}
+		row := negDay{Dia: negDias[i], Dow: i, Hoy: i == int(now.Weekday())}
 		if d.Open && citaHHMM.MatchString(d.Start) && citaHHMM.MatchString(d.End) {
 			row.Horas = neg12h(d.Start) + " – " + neg12h(d.End)
+			row.Start, row.End = d.Start, d.End
 			anyOpen = true
 		} else {
 			row.Horas, row.Cerrado = "Cerrado", true
@@ -400,20 +415,23 @@ func NegocioPage(c *gin.Context) {
 		closedToday := bookingIsClosed(b, now.Format("2006-01-02"))
 		switch {
 		case closedToday:
-			data["Estado"], data["Abierto"] = "Hoy cerramos", false
+			data["Estado"], data["Abierto"], data["EstadoKind"] = "Hoy cerramos", false, "closed_today"
 		case today.Open && hm >= today.Start && hm < today.End:
 			data["Estado"], data["Abierto"] = "Abierto · cierra a las "+neg12h(today.End), true
+			data["EstadoKind"], data["EstadoTime"] = "open_until", today.End
 		case today.Open && hm < today.Start:
 			data["Estado"], data["Abierto"] = "Cerrado · abre hoy a las "+neg12h(today.Start), false
+			data["EstadoKind"], data["EstadoTime"] = "opens_today", today.Start
 		default:
 			for k := 1; k <= 7; k++ {
 				nd := now.AddDate(0, 0, k)
 				if d := week[nd.Weekday()]; d.Open && citaHHMM.MatchString(d.Start) && !bookingIsClosed(b, nd.Format("2006-01-02")) {
-					when := "el " + strings.ToLower(negDias[nd.Weekday()])
+					when, kind := "el "+strings.ToLower(negDias[nd.Weekday()]), "opens_day"
 					if k == 1 {
-						when = "mañana"
+						when, kind = "mañana", "opens_tomorrow"
 					}
 					data["Estado"] = "Cerrado · abre " + when + " a las " + neg12h(d.Start)
+					data["EstadoKind"], data["EstadoTime"], data["EstadoDow"] = kind, d.Start, int(nd.Weekday())
 					break
 				}
 			}
@@ -426,7 +444,7 @@ func NegocioPage(c *gin.Context) {
 			break
 		}
 		t, _ := time.ParseInLocation("2006-01-02", d.Fecha, time.Local)
-		cerr = append(cerr, gin.H{"Fecha": fmt.Sprintf("%s %d de %s", strings.ToLower(negDias[t.Weekday()]), t.Day(), negMeses[t.Month()-1]), "Motivo": d.Motivo})
+		cerr = append(cerr, gin.H{"Fecha": fmt.Sprintf("%s %d de %s", strings.ToLower(negDias[t.Weekday()]), t.Day(), negMeses[t.Month()-1]), "ISO": d.Fecha, "Motivo": d.Motivo})
 	}
 	data["Cerrados"] = cerr
 
@@ -436,17 +454,18 @@ func NegocioPage(c *gin.Context) {
 		if strings.TrimSpace(w.Name) == "" {
 			continue
 		}
-		dias := []string{}
+		dias, dows := []string{}, []string{}
 		for _, d := range w.Days {
 			if i, ok := negDaysKeys[strings.ToLower(strings.TrimSpace(d))]; ok {
 				dias = append(dias, string([]rune(negDias[i])[:3]))
+				dows = append(dows, strconv.Itoa(i))
 			}
 		}
-		h := ""
+		h, st, en := "", "", ""
 		if citaHHMM.MatchString(w.StartTime) && citaHHMM.MatchString(w.EndTime) {
-			h = neg12h(w.StartTime) + " – " + neg12h(w.EndTime)
+			h, st, en = neg12h(w.StartTime)+" – "+neg12h(w.EndTime), w.StartTime, w.EndTime
 		}
-		equipo = append(equipo, gin.H{"Nombre": w.Name, "Inicial": negocioInitial(w.Name), "Dias": strings.Join(dias, " · "), "Horas": h})
+		equipo = append(equipo, gin.H{"Nombre": w.Name, "Inicial": negocioInitial(w.Name), "Dias": strings.Join(dias, " · "), "Dows": strings.Join(dows, ","), "Horas": h, "Start": st, "End": en})
 	}
 	data["Equipo"] = equipo
 

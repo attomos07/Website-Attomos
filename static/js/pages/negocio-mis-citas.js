@@ -1,22 +1,21 @@
 /* negocio-mis-citas.js — Mis citas del cliente (/n/:slug/mis-citas).
    Reagendar abre la página de agendar en modo cambio (?reagendar=<id>);
-   cancelar pide un motivo. API: handlers/business_page.go */
+   cancelar pide un motivo. API: handlers/business_page.go
+   Textos y fechas en el idioma del visitante: negocio-i18n.js (NI). */
 (function () {
   'use strict';
   var app = document.getElementById('mcApp');
   if (!app) return;
   var slug = app.dataset.slug, API = '/api/n/' + slug + '/mis-citas';
   var $ = function (id) { return document.getElementById(id); };
-  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  var MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  var STATUS = { pending: 'Por confirmar', confirmed: 'Confirmada', completed: 'Atendida', cancelled: 'Cancelada', no_show: 'No asististe' };
+  var T = function (k, v) { return NI.t(k, v); };
   var citas = [], tab = 'proximas', cancelId = 0;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function parse(d) { var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
-  function to12(t) { var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'pm' : 'am'); }
-  function longDate(c) { var d = parse(c.date); return DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES_L[d.getMonth()]; }
+  function to12(t) { return NI.time(t).replace(/ ([AP])M$/, function (m, x) { return ' ' + x.toLowerCase() + 'm'; }); }
+  function longDate(c) { return NI.date(c.date); }
+  function when(c) { return T('mc_at', { date: longDate(c), time: to12(c.time) }); }
   function toast(msg) {
     var t = $('mcToast');
     t.textContent = msg;
@@ -30,7 +29,7 @@
       var r = await fetch(API, { headers: { Accept: 'application/json' } });
       var d = await r.json().catch(function () { return {}; });
       if (r.status === 401) { location.href = '/n/' + slug + '/entrar'; return; }
-      if (!r.ok) throw new Error(d.error || 'No se pudieron cargar tus citas.');
+      if (!r.ok) throw new Error(NI.srv(d.error) || T('mc_load_err'));
       citas = d.citas || [];
       stats();
       render();
@@ -45,28 +44,26 @@
     var next = citas.filter(function (c) { return c.proxima; }).sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
     $('mcStNext').textContent = next.length;
     $('mcStTotal').textContent = citas.length;
-    $('mcStWhen').textContent = next.length ? longDate(next[0]).replace(/^./, function (x) { return x.toUpperCase(); }) + ' · ' + to12(next[0].time) : 'Sin citas próximas';
+    $('mcStWhen').textContent = next.length ? NI.cap(longDate(next[0])) + ' · ' + to12(next[0].time) : T('mc_no_next');
   }
 
   function render() {
     var list = citas.filter(function (c) { return tab === 'proximas' ? c.proxima : !c.proxima; });
     if (tab === 'proximas') list.sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
     $('mcEmpty').hidden = list.length > 0;
-    $('mcEmptyTxt').textContent = tab === 'proximas'
-      ? 'No tienes citas próximas. Agenda una y aparecerá aquí para que la puedas cambiar o cancelar.'
-      : 'Aquí verás tus citas anteriores y las que canceles.';
+    $('mcEmptyTxt').textContent = T(tab === 'proximas' ? 'mc_empty_next' : 'mc_empty_past');
     $('mcList').innerHTML = list.map(function (c, i) {
       var d = parse(c.date), off = c.status === 'cancelled' || !c.proxima;
       var acts = c.puedeCambiar
-        ? '<div class="mc-actions"><a class="mc-btn mc-btn-ghost mc-btn-sm" href="/n/' + slug + '/agendar?reagendar=' + c.id + '">Reagendar</a>' +
-          '<button type="button" class="mc-btn mc-btn-ghost mc-btn-sm" data-cancel="' + c.id + '">Cancelar</button></div>'
+        ? '<div class="mc-actions"><a class="mc-btn mc-btn-ghost mc-btn-sm" href="/n/' + slug + '/agendar?reagendar=' + c.id + '">' + esc(T('mc_resched')) + '</a>' +
+          '<button type="button" class="mc-btn mc-btn-ghost mc-btn-sm" data-cancel="' + c.id + '">' + esc(T('mc_cancel')) + '</button></div>'
         : '';
       var reason = c.status === 'cancelled' && c.cancelReason ? '<p class="mc-reason">' + esc(c.cancelReason) + '</p>' : '';
-      var hint = c.status === 'pending' && c.proxima ? '<span>· ' + esc('Te confirmarán pronto') + '</span>' : '';
+      var hint = c.status === 'pending' && c.proxima ? '<span>· ' + esc(T('mc_soon')) + '</span>' : '';
       return '<article class="mc-item' + (off ? ' is-off' : '') + '" style="--i:' + i + '">' +
-        '<div class="mc-date"><small>' + MESES[d.getMonth()] + '</small><strong>' + d.getDate() + '</strong><small>' + DIAS[d.getDay()].slice(0, 3) + '</small></div>' +
-        '<div class="mc-info"><h3>' + esc(longDate(c)) + ' · ' + to12(c.time) + '</h3>' +
-          '<div class="mc-meta"><span class="mc-status st-' + esc(c.status) + '"><i></i>' + esc(STATUS[c.status] || c.status) + '</span>' + hint +
+        '<div class="mc-date"><small>' + esc(NI.months('short')[d.getMonth()].replace(/\.$/, '')) + '</small><strong>' + d.getDate() + '</strong><small>' + esc(NI.weekday(d.getDay(), 'short').replace(/\.$/, '')) + '</small></div>' +
+        '<div class="mc-info"><h3>' + esc(NI.cap(longDate(c))) + ' · ' + esc(to12(c.time)) + '</h3>' +
+          '<div class="mc-meta"><span class="mc-status st-' + esc(c.status) + '"><i></i>' + esc(T('mc_s_' + c.status)) + '</span>' + hint +
           (c.servicio ? '<span>· ' + esc(c.servicio) + '</span>' : '') + '</div>' + reason + '</div>' +
         acts + '</article>';
     }).join('');
@@ -87,7 +84,7 @@
     var c = citas.filter(function (x) { return x.id === id; })[0];
     if (!c) return;
     cancelId = id;
-    $('mcCancelWhen').textContent = longDate(c) + ' a las ' + to12(c.time);
+    $('mcCancelWhen').textContent = when(c);
     $('mcMotivo').value = '';
     $('mcCancelError').textContent = '';
     $('mcReasons').querySelectorAll('button').forEach(function (b) { b.classList.remove('is-on'); });
@@ -111,14 +108,14 @@
   });
   $('mcCancelOk').addEventListener('click', async function () {
     var motivo = $('mcMotivo').value.trim(), btn = this;
-    if (motivo.length < 3) { $('mcCancelError').textContent = 'Elige o escribe el motivo.'; $('mcMotivo').focus(); return; }
+    if (motivo.length < 3) { $('mcCancelError').textContent = T('mc_reason_req'); $('mcMotivo').focus(); return; }
     btn.disabled = true;
     try {
       var r = await fetch(API + '/' + cancelId + '/cancelar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ motivo: motivo }) });
       var d = await r.json().catch(function () { return {}; });
-      if (!r.ok) throw new Error(d.error || 'No se pudo cancelar.');
+      if (!r.ok) throw new Error(NI.srv(d.error) || T('mc_cancel_err'));
       closeCancel();
-      toast('Tu cita quedó cancelada.');
+      toast(T('mc_cancelled_ok'));
       load();
     } catch (e) {
       $('mcCancelError').textContent = e.message;
@@ -129,8 +126,11 @@
   // Viene de reagendar: aviso.
   try {
     var q = new URLSearchParams(location.search);
-    if (q.get('ok') === 'reagendada') { toast('¡Listo! Tu cita cambió de horario.'); history.replaceState(null, '', location.pathname); }
+    if (q.get('ok') === 'reagendada') { toast(T('mc_resched_ok')); history.replaceState(null, '', location.pathname); }
   } catch (_) {}
 
+  function hello() { $('mcHello').textContent = T('mc_hello', { name: $('mcHello').dataset.who }); }
+  document.addEventListener('ni:lang', function () { hello(); stats(); render(); });
+  hello();
   load();
 })();

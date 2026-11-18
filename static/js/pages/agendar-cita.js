@@ -3,7 +3,8 @@
    Tus datos → preguntas paso a paso → cita agendada.
    Con cuenta del cliente (/n/:slug), "Tus datos" llega lleno. Con
    ?reagendar=<id> solo se elige el nuevo día y hora de esa cita.
-   API: handlers/booking.go y handlers/business_page.go */
+   API: handlers/booking.go y handlers/business_page.go
+   Textos, días, meses y horas en el idioma del visitante: negocio-i18n.js (NI). */
 (function () {
   'use strict';
 
@@ -14,37 +15,38 @@
   var reschedId = +(new URLSearchParams(location.search).get('reagendar') || 0), resched = null;
   var $ = function (id) { return document.getElementById(id); };
 
-  var MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var WEEKDAYS_FULL = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-  var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  var T = function (k, v) { return NI.t(k, v); };
   var CHECK = '<svg class="qopt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   var HOUR_CHECK = '<svg class="appt-hour-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 
   /* Preguntas rápidas — las mismas de Avante. Se guardan con las mismas
-     claves que ya lee "Ver cliente" en Citas. Si el negocio no es óptica,
+     claves que ya lee "Ver cliente" en Citas (el texto que se ve cambia con
+     el idioma; lo que se guarda es la clave). Si el negocio no es óptica,
      solo se pregunta cómo se enteró. */
-  var COMO = { step: 'como', type: 'radio', name: 'como_se_entero', cls: 'qopt-list qopt-list--2col', required: true,
-    title: '¿Cómo te enteraste de nosotros?', hint: 'Elige una opción.',
-    opts: [['facebook', 'Facebook'], ['instagram', 'Instagram'], ['television', 'Televisión'], ['tiktok', 'TikTok'],
-      ['sitio_web', 'Sitio web'], ['google_maps', 'Google Maps'], ['familiares', 'Familiares'], ['amigos', 'Amigos'],
-      ['recomendado', 'Me recomendaron'], ['casualidad', 'Pasé por casualidad'], ['recurrente', 'Ya soy cliente']] };
-  var Q_OPTICA = [
-    { type: 'radio', name: 'ultimo_examen', required: true, title: '¿Hace cuánto fue tu último examen de la vista?', hint: 'Elige una opción.',
-      opts: [['menos_6_meses', 'Menos de 6 meses'], ['6_meses_1_anio', 'Entre 6 meses y 1 año'], ['1_2_anios', 'Entre 1 y 2 años'], ['mas_2_anios', 'Más de 2 años'], ['nunca', 'Nunca me he hecho uno']] },
-    { step: 'lentes', type: 'groups', title: '¿Usas lentes actualmente?', hint: 'Responde las dos.',
-      groups: [{ name: 'lentes_armazon', label: 'Lentes de armazón', opts: [['si', 'Sí'], ['no', 'No']] },
-               { name: 'lentes_contacto', label: 'Lentes de contacto', opts: [['si', 'Sí'], ['no', 'No']] }] },
-    { type: 'radio', name: 'usa_gotitas', cls: 'qopt-row', required: true, title: '¿Usas gotitas para los ojos?', hint: 'Como tratamiento o para resequedad.',
-      opts: [['si', 'Sí'], ['no', 'No']] },
-    { type: 'check', name: 'problemas', title: '¿Tienes alguno de estos problemas en tus ojos?', hint: 'Puedes elegir varias, o ninguna.',
-      opts: [['fatiga_visual', 'Fatiga visual', 'al trabajar con la computadora'], ['mala_vision_lejana', 'Mala visión lejana'], ['mala_vision_cercana', 'Mala visión cercana'],
-        ['sensibilidad_luz_solar', 'Sensibilidad a la luz solar'], ['sensibilidad_luz_artificial', 'Sensibilidad a la luz artificial']] },
-    { type: 'check', name: 'enfermedades', title: '¿Padeces alguna de estas enfermedades?', hint: 'Puedes elegir varias, o ninguna.',
-      opts: [['diabetes', 'Diabetes'], ['hipertension', 'Hipertensión'], ['cirugias_oculares', 'Cirugías oculares']] },
-    COMO,
-    { type: 'radio', name: 'procedencia', required: true, empresa: true, title: '¿Vienes de parte de alguna empresa?', hint: 'Elige una opción.',
-      opts: [['empresa', 'De una empresa'], ['ninguna', 'Ninguna, vengo por mi cuenta']] }
-  ];
+  function buildQuestions(optica) {
+    var YN = [['si', T('q_yes')], ['no', T('q_no')]], ONE = T('q_hint_one'), MANY = T('q_many_hint');
+    var COMO = { step: 'como', type: 'radio', name: 'como_se_entero', cls: 'qopt-list qopt-list--2col', required: true,
+      title: T('q_como_t'), hint: ONE,
+      opts: [['facebook', 'Facebook'], ['instagram', 'Instagram'], ['television', T('q_tv')], ['tiktok', 'TikTok'],
+        ['sitio_web', T('q_website')], ['google_maps', 'Google Maps'], ['familiares', T('q_family')], ['amigos', T('q_friends')],
+        ['recomendado', T('q_recommended')], ['casualidad', T('q_chance')], ['recurrente', T('q_regular')]] };
+    if (!optica) return [COMO];
+    return [
+      { type: 'radio', name: 'ultimo_examen', required: true, title: T('q_exam_t'), hint: ONE,
+        opts: [['menos_6_meses', T('q_exam_1')], ['6_meses_1_anio', T('q_exam_2')], ['1_2_anios', T('q_exam_3')], ['mas_2_anios', T('q_exam_4')], ['nunca', T('q_exam_5')]] },
+      { step: 'lentes', type: 'groups', title: T('q_lenses_t'), hint: T('q_lenses_hint'),
+        groups: [{ name: 'lentes_armazon', label: T('q_frames'), opts: YN }, { name: 'lentes_contacto', label: T('q_contacts'), opts: YN }] },
+      { type: 'radio', name: 'usa_gotitas', cls: 'qopt-row', required: true, title: T('q_drops_t'), hint: T('q_drops_hint'), opts: YN },
+      { type: 'check', name: 'problemas', title: T('q_probs_t'), hint: MANY,
+        opts: [['fatiga_visual', T('q_p1'), T('q_p1_sub')], ['mala_vision_lejana', T('q_p2')], ['mala_vision_cercana', T('q_p3')],
+          ['sensibilidad_luz_solar', T('q_p4')], ['sensibilidad_luz_artificial', T('q_p5')]] },
+      { type: 'check', name: 'enfermedades', title: T('q_dis_t'), hint: MANY,
+        opts: [['diabetes', T('q_d1')], ['hipertension', T('q_d2')], ['cirugias_oculares', T('q_d3')]] },
+      COMO,
+      { type: 'radio', name: 'procedencia', required: true, empresa: true, title: T('q_comp_t'), hint: ONE,
+        opts: [['empresa', T('q_comp_1')], ['ninguna', T('q_comp_2')]] }
+    ];
+  }
 
   var info = null, viewDate = null, selectedDate = '', selectedTime = null, occupiedHours = [];
   var contactData = null, questions = [], questIndex = 0, sending = false, doneOK = false;
@@ -57,27 +59,43 @@
   function pad(n) { return String(n).padStart(2, '0'); }
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parseISO(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
-  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-  function to12h(t) {
-    var p = t.split(':'), h = +p[0];
-    return (h % 12 || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM');
-  }
-  function formatSelectedDate(s) { var d = parseISO(s); return DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MONTHS[d.getMonth()]; }
+  function capitalize(s) { return NI.cap(s); }
+  function to12h(t) { return NI.time(t); }
+  function formatSelectedDate(s) { return NI.date(s); }
   function animate(el) { el.classList.remove('is-animating'); void el.offsetWidth; el.classList.add('is-animating'); }
+  // Panel del día (derecha) y cabeceras de días, en el idioma elegido.
+  function paintSide() {
+    if (!selectedDate) {
+      $('apptWeekday').textContent = T('ag_pick_day');
+      $('apptDetailTime').textContent = T('ag_tbd');
+      return;
+    }
+    var d = parseISO(selectedDate);
+    $('apptWeekday').textContent = NI.weekday(d.getDay()).toLocaleUpperCase(NI.locale());
+    $('apptSideMonthYear').textContent = capitalize(NI.months()[d.getMonth()]) + ' ' + d.getFullYear();
+    $('apptDetailTime').textContent = selectedTime ? to12h(selectedTime) : T('ag_tbd');
+  }
+  function paintWeekdays() {
+    var short = NI.weekdays('short').map(function (w) { return w.replace(/\.$/, ''); });
+    $('agWeekdays').innerHTML = short.map(function (w) { return '<span>' + esc(w.toLocaleUpperCase(NI.locale())) + '</span>'; }).join('');
+    $('apptNacimientoWeekdays').innerHTML = short.map(function (w) {
+      return '<span>' + esc(NI.lang === 'es' ? w.slice(0, 2).toLowerCase() : w) + '</span>';
+    }).join('');
+  }
 
   /* ---------------- carga ---------------- */
   async function load() {
     try {
       var r = await fetch(API);
       var d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'No se pudo cargar.');
+      if (!r.ok) throw new Error(NI.srv(d.error) || T('ag_load_err'));
       info = d;
       var n = d.negocio || {};
       if (n.nombre) $('agName').textContent = n.nombre;
       if (n.logo) $('agLogo').innerHTML = '<img src="' + esc(n.logo) + '" alt="' + esc(n.nombre || '') + '">';
       else $('agLogo').querySelector('span').textContent = (n.nombre || '·').trim().charAt(0).toUpperCase();
       if (n.direccion) { $('apptDetailAddress').textContent = n.direccion; $('apptAddrRow').hidden = false; }
-      questions = n.optica ? Q_OPTICA : [COMO];
+      questions = buildQuestions(!!n.optica);
       paintQuestions();
       if (d.cliente) prefill(d.cliente);
       if (reschedId && SLUG) await loadResched(!!d.cliente);
@@ -85,7 +103,7 @@
       viewDate = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
       renderCalendar(0);
     } catch (e) {
-      $('apptDayGrid').innerHTML = '<p class="appt-hour-empty">' + esc(e.message) + ' Recarga la página.</p>';
+      $('apptDayGrid').innerHTML = '<p class="appt-hour-empty">' + esc(e.message) + ' ' + esc(T('ag_reload')) + '</p>';
     }
   }
 
@@ -99,7 +117,7 @@
     var note = document.createElement('p');
     note.className = 'ag-logged';
     note.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>' +
-      '<span>Llenamos tus datos con tu cuenta. Tu cita aparecerá en «Mis citas».</span>';
+      '<span data-i18n="ag_logged_note">' + esc(T('ag_logged_note')) + '</span>';
     var form = $('apptContactForm');
     form.insertBefore(note, form.firstChild);
   }
@@ -110,24 +128,28 @@
       var r = await fetch('/api/n/' + SLUG + '/mis-citas');
       var d = await r.json();
       var c = (d.citas || []).filter(function (x) { return x.id === reschedId; })[0];
-      if (!c || !c.puedeCambiar) throw new Error('Esta cita ya no se puede cambiar desde aquí.');
+      if (!c || !c.puedeCambiar) throw new Error(T('ag_cant_change'));
       resched = c;
-      $('agLead').textContent = 'Elige el nuevo día y la nueva hora para tu cita.';
-      box.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>' +
-        '<span>Cambiando tu cita del <b>' + esc(formatSelectedDate(c.date)) + '</b> a las <b>' + to12h(c.time) + '</b></span>';
-      $('apptSubmit').textContent = 'Confirmar cambio';
+      paintResched();
     } catch (e) {
-      box.textContent = e.message || 'No encontramos esa cita en tu cuenta.';
+      box.textContent = e.message || T('ag_not_found_appt');
       reschedId = 0;
     }
     box.hidden = false;
+  }
+  function paintResched() {
+    if (!resched) return;
+    $('agLead').textContent = T('ag_lead_resched');
+    $('agResched').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>' +
+      '<span>' + T('ag_resched_banner', { date: esc(formatSelectedDate(resched.date)), time: esc(to12h(resched.time)) }) + '</span>';
+    if (!sending) $('apptSubmit').textContent = T('ag_confirm_change');
   }
   async function doResched() {
     if (sending) return;
     sending = true;
     var btn = $('apptSubmit');
     btn.disabled = true;
-    btn.textContent = 'Guardando…';
+    btn.textContent = T('ag_saving');
     try {
       var r = await fetch('/api/n/' + SLUG + '/mis-citas/' + resched.id + '/reagendar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate, time: selectedTime })
@@ -135,22 +157,21 @@
       var d = await r.json().catch(function () { return {}; });
       if (r.ok) {
         doneOK = 'resched';
-        openApptModal('¡Cita reagendada!', 'Tu cita ahora es el ' + formatSelectedDate(selectedDate) + ' a las ' + to12h(selectedTime) +
-          '. ' + ((info.negocio || {}).nombre || 'El negocio') + ' te confirmará el nuevo horario.', true);
+        openApptModal(T('ag_resched_title'), T('ag_resched_text', { date: formatSelectedDate(selectedDate), time: to12h(selectedTime), name: (info.negocio || {}).nombre || T('ag_the_business') }), true);
       } else if (d.ocupada) {
         selectedTime = null;
-        $('apptDetailTime').textContent = 'Por definir';
+        $('apptDetailTime').textContent = T('ag_tbd');
         loadOccupiedHours(selectedDate).then(renderHours);
-        openApptModal('Esa hora ya se ocupó', 'Justo se agendó esa hora — elige otra disponible.', false);
+        openApptModal(T('ag_busy_title'), T('ag_busy_text'), false);
       } else {
-        openApptModal('No se pudo cambiar', d.error || 'Intenta de nuevo en un momento.', false);
+        openApptModal(T('ag_change_fail'), NI.srv(d.error) || T('ag_try_again'), false);
       }
     } catch (_) {
-      openApptModal('Sin conexión', 'Revisa tu internet e intenta de nuevo.', false);
+      openApptModal(T('ag_offline_title'), T('ac_offline'), false);
     }
     sending = false;
     btn.disabled = false;
-    btn.textContent = 'Confirmar cambio';
+    btn.textContent = T('ag_confirm_change');
   }
 
   /* ---------------- calendario (iOS 27) ---------------- */
@@ -170,7 +191,7 @@
   }
   function renderCalendar(dir) {
     var v = viewDate;
-    $('agMonth').textContent = MONTHS[v.getMonth()];
+    $('agMonth').textContent = NI.months()[v.getMonth()];
     $('agYear').textContent = v.getFullYear();
     var hoy = parseISO(info.hoy), max = parseISO(info.hoy); max.setDate(max.getDate() + info.maxDias);
     $('agPrev').disabled = v.getFullYear() === hoy.getFullYear() && v.getMonth() === hoy.getMonth();
@@ -182,7 +203,7 @@
       var d = new Date(v.getFullYear(), v.getMonth(), n), s = iso(d), st = dayState(d);
       var cls = 'appt-day' + (s === info.hoy ? ' today' : '') + (s === selectedDate ? ' selected' : '') +
         (st === 'closed' ? ' closed' : '') + (st === 'closed-date' ? ' closed-date' : '');
-      var title = st === 'closed-date' ? 'Cerrado' : st === 'closed' ? 'Ese día no se dan citas' : '';
+      var title = st === 'closed-date' ? esc(T('ng_closed')) : st === 'closed' ? esc(T('ag_no_appts_day')) : '';
       html += '<button type="button" class="' + cls + '" data-d="' + s + '" data-st="' + st + '" style="--i:' + (i++) + '"' +
         (st === 'ok' || st === 'closed-date' ? '' : ' disabled') + (title ? ' title="' + title + '"' : '') + '>' + n + '</button>';
     }
@@ -199,7 +220,7 @@
     if (!b || b.disabled) return;
     if (b.dataset.st === 'closed-date') {
       var why = closedReason(b.dataset.d), box = $('apptClosedNotes');
-      box.innerHTML = '<p class="appt-closed-note">' + esc(capitalize(formatSelectedDate(b.dataset.d))) + ': estaremos cerrados' + (why ? ' (' + esc(why) + ')' : '') + '.</p>';
+      box.innerHTML = '<p class="appt-closed-note">' + esc(T('ag_closed_note', { date: capitalize(formatSelectedDate(b.dataset.d)) })) + (why ? ' (' + esc(why) + ')' : '') + '.</p>';
       box.hidden = false;
       return;
     }
@@ -222,9 +243,7 @@
     selectedDate = s;
     selectedTime = null;
     $('apptDayNum').textContent = d.getDate();
-    $('apptWeekday').textContent = WEEKDAYS_FULL[d.getDay()];
-    $('apptSideMonthYear').textContent = capitalize(MONTHS[d.getMonth()]) + ' ' + d.getFullYear();
-    $('apptDetailTime').textContent = 'Por definir';
+    paintSide();
     ['apptDayNum', 'apptWeekday', 'apptSideMonthYear'].forEach(function (id) { animate($(id)); });
     showHourView();
   }
@@ -266,13 +285,13 @@
   function renderHours() {
     var grid = $('apptHourGrid'), slots = hourSlots(selectedDate);
     if (!slots.filter(function (t) { return occupiedHours.indexOf(t) < 0; }).length) {
-      grid.innerHTML = '<p class="appt-hour-empty">Ya no quedan horas este día.<br>Toca «Volver» y elige otro.</p>';
+      grid.innerHTML = '<p class="appt-hour-empty">' + T('ag_no_hours') + '</p>';
       return;
     }
     grid.innerHTML = slots.map(function (t) {
       var busy = occupiedHours.indexOf(t) >= 0;
       return '<button type="button" class="appt-hour' + (selectedTime === t ? ' active' : '') + (busy ? ' occupied' : '') + '" data-t="' + t + '"' +
-        (busy ? ' disabled title="Esta hora ya está ocupada"' : '') + '>' + HOUR_CHECK + '<span class="appt-hour-label">' + to12h(t) + '</span></button>';
+        (busy ? ' disabled title="' + esc(T('ag_busy_hour')) + '"' : '') + '>' + HOUR_CHECK + '<span class="appt-hour-label">' + esc(to12h(t)) + '</span></button>';
     }).join('');
   }
   $('apptHourGrid').addEventListener('click', function (e) {
@@ -324,7 +343,7 @@
 
   $('apptSubmit').addEventListener('click', function () {
     if (!selectedDate || !selectedTime) {
-      openApptModal('Elige una hora', 'Por favor selecciona un día y una hora antes de confirmar.', false);
+      openApptModal(T('ag_pick_hour_title'), T('ag_pick_hour_text'), false);
       return;
     }
     if (resched) { doResched(); return; }
@@ -349,12 +368,12 @@
         label.textContent = p[2] + '/' + p[1] + '/' + p[0];
         label.classList.remove('is-placeholder');
       } else {
-        label.textContent = 'dd/mm/aaaa';
+        label.textContent = T('ag_bday_ph');
         label.classList.add('is-placeholder');
       }
     }
     function renderDays() {
-      monthYearBtn.textContent = capitalize(MONTHS[viewM]) + ' ' + viewY;
+      monthYearBtn.textContent = capitalize(NI.months()[viewM]) + ' ' + viewY;
       var first = new Date(viewY, viewM, 1).getDay(), inMonth = new Date(viewY, viewM + 1, 0).getDate(), html = '';
       for (var i = 0; i < first; i++) html += '<span class="appt-datepicker-day is-empty"></span>';
       for (var d = 1; d <= inMonth; d++) {
@@ -382,7 +401,7 @@
       daysEl.hidden = on;
       prevBtn.style.visibility = nextBtn.style.visibility = on ? 'hidden' : '';
       monthYearBtn.classList.toggle('is-open', on);
-      monthYearBtn.textContent = on ? 'Elige el año' : capitalize(MONTHS[viewM]) + ' ' + viewY;
+      monthYearBtn.textContent = on ? T('ag_pick_year') : capitalize(NI.months()[viewM]) + ' ' + viewY;
       if (on) renderYears(); else renderDays();
     }
     function open() {
@@ -424,7 +443,8 @@
       setTimeout(close, 140);
     });
     clearBtn.addEventListener('click', function () { hidden.value = ''; setLabel(); setYearsMode(true); });
-    return { value: function () { return hidden.value; }, set: function (v) { hidden.value = v; setLabel(); } };
+    return { value: function () { return hidden.value; }, set: function (v) { hidden.value = v; setLabel(); },
+      refresh: function () { setLabel(); if (showingYears) setYearsMode(true); else renderDays(); } };
   })();
 
   /* ---------------- 1 · tus datos ---------------- */
@@ -434,11 +454,11 @@
     var nombre = $('apptNombre').value.trim(), apellido = $('apptApellido').value.trim();
     var cel = $('apptCelular').value.trim(), correo = $('apptCorreo').value.trim();
     var err = $('apptContactError');
-    if (!nombre || !apellido) { err.textContent = 'Completa tu nombre y apellido.'; return; }
-    if (!/^\d{10}$/.test(cel)) { err.textContent = 'Ingresa un celular a 10 dígitos.'; return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) { err.textContent = 'Ingresa un correo válido.'; return; }
+    if (!nombre || !apellido) { err.textContent = T('ag_err_name'); return; }
+    if (!/^\d{10}$/.test(cel)) { err.textContent = T('ag_err_phone'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) { err.textContent = T('ag_err_email'); return; }
     var nac = birthPicker.value();
-    if (!nac) { err.textContent = 'Elige tu fecha de nacimiento.'; return; }
+    if (!nac) { err.textContent = T('ac_birth_err'); return; }
     err.textContent = '';
     contactData = { nombre: nombre, apellido: apellido, celular: '+52' + cel, correo: correo, fechaNacimiento: nac, website: $('apptWebsite').value };
     closeModal('apptContactModalOverlay');
@@ -468,8 +488,8 @@
       }
       if (q.empresa) {
         body += '<div class="quest-empresa" id="questEmpresaWrap" aria-hidden="true"><div class="modal-field">' +
-          '<label for="questEmpresa">¿De qué empresa?</label>' +
-          '<input type="text" id="questEmpresa" name="empresa" maxlength="120" placeholder="Nombre de la empresa" autocomplete="organization" tabindex="-1"></div></div>';
+          '<label for="questEmpresa">' + esc(T('ag_company_q')) + '</label>' +
+          '<input type="text" id="questEmpresa" name="empresa" maxlength="120" placeholder="' + esc(T('ag_company_ph')) + '" autocomplete="organization" tabindex="-1"></div></div>';
       }
       return '<section class="quest-step" data-k="' + k + '"><h3>' + esc(q.title) + '</h3><p class="quest-step-hint">' + esc(q.hint) + '</p>' + body + '</section>';
     }).join('');
@@ -506,7 +526,7 @@
       el.classList.toggle('is-back', k === questIndex && !!back);
     });
     var last = questIndex === questions.length - 1;
-    $('questCount').textContent = 'Paso ' + (questIndex + 1) + ' de ' + questions.length;
+    $('questCount').textContent = T('ag_step', { i: questIndex + 1, n: questions.length });
     $('questProgressBar').style.width = ((questIndex + 1) / questions.length * 100) + '%';
     $('questBack').hidden = questIndex === 0;
     $('questNext').hidden = last;
@@ -516,9 +536,7 @@
   }
   function stepError(k) {
     var q = questions[k];
-    return q.type === 'groups' ? 'Responde las dos preguntas para continuar.'
-      : (q.empresa && empresaSelected()) ? 'Escribe el nombre de la empresa.'
-      : 'Elige una opción para continuar.';
+    return T(q.type === 'groups' ? 'ag_err_groups' : (q.empresa && empresaSelected()) ? 'ag_err_company' : 'ag_err_option');
   }
   $('questNext').addEventListener('click', function () {
     if (!stepValid(questIndex)) { $('apptQuestError').textContent = stepError(questIndex); return; }
@@ -552,13 +570,13 @@
   $('apptQuestForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     for (var k = 0; k < questions.length; k++) {
-      if (!stepValid(k)) { showQuestStep(k, true); $('apptQuestError').textContent = k === questIndex ? stepError(k) : 'Te faltó responder esta pregunta.'; return; }
+      if (!stepValid(k)) { showQuestStep(k, true); $('apptQuestError').textContent = k === questIndex ? stepError(k) : T('ag_missed'); return; }
     }
     if (sending) return;
     sending = true;
     var btn = $('apptQuestSubmit');
     btn.disabled = true;
-    btn.textContent = 'Agendando...';
+    btn.textContent = T('ag_booking');
     var c = contactData;
     try {
       var r = await fetch(API, {
@@ -572,7 +590,7 @@
       closeModal('apptQuestModalOverlay');
       if (r.ok) {
         doneOK = true;
-        var neg = (info.negocio || {}).nombre || 'el negocio', alt = null;
+        var neg = (info.negocio || {}).nombre || T('ag_the_business'), alt = null;
         if (d.reclamo) { // si luego crea su cuenta, esta cita pasa a "Mis citas"
           try {
             var cl = JSON.parse(localStorage.getItem(CLAIMS) || '[]');
@@ -581,27 +599,58 @@
           } catch (_) {}
         }
         try { if (!d.cuenta) sessionStorage.setItem('attContacto:' + app.dataset.id, JSON.stringify(c)); } catch (_) {}
-        if (SLUG) alt = d.cuenta ? { text: 'Ver mis citas', href: '/n/' + SLUG + '/mis-citas' }
-          : { text: 'Crea tu cuenta para cambiar o cancelar tu cita sin llamar', href: '/n/' + SLUG + '/registro' };
-        openApptModal('¡Cita agendada!', 'Tu cita quedó agendada para el ' + formatSelectedDate(selectedDate) + ' a las ' + to12h(selectedTime) +
-          '. ' + neg + ' te confirmará por WhatsApp. ¡Te esperamos!', true, alt);
+        if (SLUG) alt = d.cuenta ? { text: T('ag_see_appts'), href: '/n/' + SLUG + '/mis-citas' }
+          : { text: T('ag_create_acct'), href: '/n/' + SLUG + '/registro' };
+        openApptModal(T('ag_booked'), T('ag_booked_text', { date: formatSelectedDate(selectedDate), time: to12h(selectedTime), name: neg }), true, alt);
       } else if (d.ocupada) {
         selectedTime = null;
-        $('apptDetailTime').textContent = 'Por definir';
+        $('apptDetailTime').textContent = T('ag_tbd');
         loadOccupiedHours(selectedDate).then(renderHours);
-        openApptModal('Esa hora ya se ocupó', 'Justo se agendó esa hora — elige otra disponible.', false);
+        openApptModal(T('ag_busy_title'), T('ag_busy_text'), false);
       } else {
-        openApptModal('No se pudo agendar', d.error || 'Intenta de nuevo en un momento.', false);
+        openApptModal(T('ag_book_fail'), NI.srv(d.error) || T('ag_try_again'), false);
       }
     } catch (ex) {
       closeModal('apptQuestModalOverlay');
-      openApptModal('Sin conexión', 'Revisa tu internet e intenta de nuevo.', false);
+      openApptModal(T('ag_offline_title'), T('ac_offline'), false);
     } finally {
       sending = false;
       btn.disabled = false;
-      btn.textContent = 'Agendar cita';
+      btn.textContent = T('nav_book');
     }
   });
 
+  // Cambio de idioma: volver a pintar lo que arma este archivo (sin perder lo elegido).
+  function paintStatic() {
+    paintWeekdays();
+    paintSide();
+    if (!resched) $('agLead').textContent = T('ag_lead');
+    if (!sending) $('apptSubmit').textContent = T(resched ? 'ag_confirm_change' : 'ag_confirm');
+    if (!$('apptModalOverlay').classList.contains('open')) $('apptModalTitle').textContent = T('ag_booked');
+    birthPicker.refresh();
+  }
+  document.addEventListener('ni:lang', function () {
+    paintStatic();
+    paintResched();
+    if (info) {
+      renderCalendar(0);
+      if (selectedDate) { $('apptHourDateLabel').textContent = formatSelectedDate(selectedDate); renderHours(); }
+      // Preguntas: se vuelven a pintar y se conservan las respuestas.
+      var f = $('apptQuestForm'), keep = {};
+      Array.prototype.forEach.call(f.querySelectorAll('input'), function (i) {
+        if ((i.type === 'radio' || i.type === 'checkbox') && i.checked) keep[i.name + '=' + i.value] = 1;
+        else if (i.type === 'text') keep['#' + i.name] = i.value;
+      });
+      questions = buildQuestions(!!(info.negocio || {}).optica);
+      paintQuestions();
+      Array.prototype.forEach.call(f.querySelectorAll('input'), function (i) {
+        if (keep[i.name + '=' + i.value]) i.checked = true;
+        if (i.type === 'text' && keep['#' + i.name] != null) i.value = keep['#' + i.name];
+      });
+      syncEmpresaField();
+      showQuestStep(questIndex);
+    }
+  });
+  paintStatic();
   load();
 })();

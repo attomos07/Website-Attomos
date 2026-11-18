@@ -1,7 +1,8 @@
 {{/* Cuenta del cliente en un negocio: /n/:slug/entrar y /n/:slug/registro.
      Mismo acomodo que iniciar sesión / registro de Avante (panel de marca a
      la izquierda, tarjeta a la derecha) con los datos y colores del negocio.
-     API: handlers/business_page.go · JS: static/js/pages/negocio-cuenta.js */}}
+     API: handlers/business_page.go · JS: static/js/pages/negocio-cuenta.js
+     Idiomas: static/js/pages/negocio-i18n.js */}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -10,10 +11,10 @@
 <meta name="theme-color" content="#ffffff">
 <title>{{if eq .Mode "registro"}}Crear cuenta{{else}}Iniciar sesión{{end}} — {{.Nombre}}</title>
 <link rel="icon" type="image/png" href="{{if .Logo}}{{.Logo}}{{else}}/static/images/attomos-favicon.png{{end}}">
-<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=1">
+<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=2">
 <link rel="stylesheet" href="/static/css/pages/negocio-cuenta.css?v=1">
 </head>
-<body>
+<body data-ni-name="{{.Nombre}}" data-ni-title="{{if eq .Mode "registro"}}ac_title_signup{{else}}nav_login{{end}}">
 
 {{template "negocio-nav" .Nav}}
 
@@ -29,18 +30,18 @@
         </a>
       </div>
       <div class="auth-panel-body">
-        <div class="eyebrow on-dark">Tu cuenta en {{.Nombre}}</div>
+        <div class="eyebrow on-dark" data-i18n="ac_your_account">Tu cuenta en {{.Nombre}}</div>
         {{if eq .Mode "registro"}}
-        <h1>Tus citas, <em>sin llamar</em>.</h1>
-        <p>Crea tu cuenta una sola vez y agenda, cambia o cancela tus citas cuando quieras, desde tu celular.</p>
+        <h1 data-i18n-html="ac_h_signup">Tus citas, <em>sin llamar</em>.</h1>
+        <p data-i18n="ac_p_signup">Crea tu cuenta una sola vez y agenda, cambia o cancela tus citas cuando quieras, desde tu celular.</p>
         {{else}}
-        <h1>Qué gusto verte <em>de nuevo</em>.</h1>
-        <p>Entra para ver tus citas, cambiarlas de día u hora o cancelarlas sin llamar.</p>
+        <h1 data-i18n-html="ac_h_login">Qué gusto verte <em>de nuevo</em>.</h1>
+        <p data-i18n="ac_p_login">Entra para ver tus citas, cambiarlas de día u hora o cancelarlas sin llamar.</p>
         {{end}}
         <ul class="auth-features">
-          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Agenda en segundos con tus datos ya llenos</li>
-          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Reagenda o cancela desde «Mis citas»</li>
-          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Todas tus citas, próximas y anteriores, en un lugar</li>
+          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span data-i18n="ac_f1">Agenda en segundos con tus datos ya llenos</span></li>
+          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span data-i18n="ac_f2">Reagenda o cancela desde «Mis citas»</span></li>
+          <li class="auth-feature"><span class="auth-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span data-i18n="ac_f3">Todas tus citas, próximas y anteriores, en un lugar</span></li>
         </ul>
       </div>
       <div class="auth-panel-foot">
@@ -53,121 +54,122 @@
       <div class="auth-card">
         <div class="auth-mobile-brand">
           <span class="mark-logo">{{if .Logo}}<img src="{{.Logo}}" alt="">{{else}}{{.Nav.Inicial}}{{end}}</span>
-          <div class="eyebrow">Tu cuenta en {{.Nombre}}</div>
+          <div class="eyebrow" data-i18n="ac_your_account">Tu cuenta en {{.Nombre}}</div>
         </div>
 
         {{if eq .Mode "registro"}}
         <div class="auth-card-head">
-          <div class="eyebrow">Crea tu cuenta</div>
-          <h1>Regístrate</h1>
-          <p>Completa tus datos para agendar y manejar tus citas.</p>
+          <div class="eyebrow" data-i18n="ac_eyebrow_signup">Crea tu cuenta</div>
+          <h1 data-i18n="ac_h1_signup">Regístrate</h1>
+          <p data-i18n="ac_sub_signup">Completa tus datos para agendar y manejar tus citas.</p>
         </div>
         <form id="registerForm" novalidate>
           <div class="field-row-2">
             <div>
-              <label class="field-label" for="regNombre">Nombre(s)</label>
+              <label class="field-label" for="regNombre" data-i18n="ac_first">Nombre(s)</label>
               <div class="field">
                 <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-                <input type="text" id="regNombre" placeholder="Tu nombre" autocomplete="given-name" maxlength="120" required>
-                <p class="field-error">Escribe tu nombre.</p>
+                <input type="text" id="regNombre" placeholder="Tu nombre" data-i18n-ph="ac_first_ph" autocomplete="given-name" maxlength="120" required>
+                <p class="field-error" data-i18n="ac_first_err">Escribe tu nombre.</p>
               </div>
             </div>
             <div>
-              <label class="field-label" for="regApellido">Apellido(s)</label>
+              <label class="field-label" for="regApellido" data-i18n="ac_last">Apellido(s)</label>
               <div class="field">
                 <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-                <input type="text" id="regApellido" placeholder="Tu apellido" autocomplete="family-name" maxlength="120" required>
-                <p class="field-error">Escribe tu apellido.</p>
+                <input type="text" id="regApellido" placeholder="Tu apellido" data-i18n-ph="ac_last_ph" autocomplete="family-name" maxlength="120" required>
+                <p class="field-error" data-i18n="ac_last_err">Escribe tu apellido.</p>
               </div>
             </div>
           </div>
           <div>
-            <label class="field-label" for="regEmail">Correo electrónico</label>
+            <label class="field-label" for="regEmail" data-i18n="ac_email">Correo electrónico</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
               <input type="email" id="regEmail" placeholder="tu@correo.com" autocomplete="email" maxlength="200" required>
-              <p class="field-error">Escribe un correo válido.</p>
+              <p class="field-error" data-i18n="ac_email_err">Escribe un correo válido.</p>
             </div>
           </div>
           <div>
-            <label class="field-label" for="regCelular">Celular</label>
+            <label class="field-label" for="regCelular" data-i18n="ac_phone">Celular</label>
             <div class="field field-phone">
               <span class="field-phone-lada">+52</span>
               <input type="tel" id="regCelular" inputmode="numeric" maxlength="10" placeholder="6621234567" autocomplete="tel-national" required>
-              <p class="field-error">Escribe tu celular a 10 dígitos.</p>
+              <p class="field-error" data-i18n="ac_phone_err">Escribe tu celular a 10 dígitos.</p>
             </div>
           </div>
           <div>
-            <label class="field-label" for="regNacimiento">Fecha de nacimiento</label>
+            <label class="field-label" for="regNacimiento" data-i18n="ac_birth">Fecha de nacimiento</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
               <input type="date" id="regNacimiento" autocomplete="bday" required>
-              <p class="field-error">Elige tu fecha de nacimiento.</p>
+              <p class="field-error" data-i18n="ac_birth_err">Elige tu fecha de nacimiento.</p>
             </div>
           </div>
           <div>
-            <label class="field-label" for="regPassword">Contraseña</label>
+            <label class="field-label" for="regPassword" data-i18n="ac_pass">Contraseña</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
               <input class="has-toggle" type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password" maxlength="72" required>
-              <button type="button" class="field-toggle" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
-              <p class="field-error">Usa al menos 8 caracteres.</p>
+              <button type="button" class="field-toggle" aria-label="Mostrar contraseña" data-i18n-aria="ac_show_pw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <p class="field-error" data-i18n="ac_pass_err">Usa al menos 8 caracteres.</p>
             </div>
             <div class="pw-strength" id="pwStrength"><span></span><span></span><span></span></div>
-            <p class="pw-strength-label" id="pwStrengthLabel">Usa al menos 8 caracteres, con letras y números.</p>
+            <p class="pw-strength-label" id="pwStrengthLabel" data-i18n="ac_pass_hint">Usa al menos 8 caracteres, con letras y números.</p>
           </div>
           <div>
-            <label class="field-label" for="regPassword2">Confirmar contraseña</label>
+            <label class="field-label" for="regPassword2" data-i18n="ac_pass2">Confirmar contraseña</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
               <input class="has-toggle" type="password" id="regPassword2" placeholder="••••••••" autocomplete="new-password" maxlength="72" required>
-              <button type="button" class="field-toggle" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
-              <p class="field-error">Las contraseñas no coinciden.</p>
+              <button type="button" class="field-toggle" aria-label="Mostrar contraseña" data-i18n-aria="ac_show_pw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <p class="field-error" data-i18n="ac_pass2_err">Las contraseñas no coinciden.</p>
             </div>
           </div>
           <label class="auth-hp" aria-hidden="true">Sitio web<input type="text" id="regWebsite" tabindex="-1" autocomplete="off"></label>
           <p class="auth-error" id="authError" role="alert"></p>
-          <button type="submit" class="btn solid auth-submit" id="authSubmit">Crear cuenta <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-          <p class="form-note">Tus datos solo los ve {{.Nombre}} para atender tus citas.</p>
+          <button type="submit" class="btn solid auth-submit" id="authSubmit"><span data-i18n="ac_create_btn">Crear cuenta</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <p class="form-note" data-i18n="ac_note">Tus datos solo los ve {{.Nombre}} para atender tus citas.</p>
         </form>
-        <p class="auth-switch">¿Ya tienes cuenta? <a href="/n/{{.Slug}}/entrar{{if eq .Next "agendar"}}?sig=agendar{{end}}">Inicia sesión</a></p>
+        <p class="auth-switch"><span data-i18n="ac_have">¿Ya tienes cuenta?</span> <a data-i18n="ac_login_link" href="/n/{{.Slug}}/entrar{{if eq .Next "agendar"}}?sig=agendar{{end}}">Inicia sesión</a></p>
         {{else}}
         <div class="auth-card-head">
-          <div class="eyebrow">Bienvenido de vuelta</div>
-          <h1>Inicia sesión</h1>
-          <p>Entra con el correo y la contraseña de tu cuenta.</p>
+          <div class="eyebrow" data-i18n="ac_eyebrow_login">Bienvenido de vuelta</div>
+          <h1 data-i18n="nav_login">Inicia sesión</h1>
+          <p data-i18n="ac_sub_login">Entra con el correo y la contraseña de tu cuenta.</p>
         </div>
         <form id="loginForm" novalidate>
           <div>
-            <label class="field-label" for="loginEmail">Correo electrónico</label>
+            <label class="field-label" for="loginEmail" data-i18n="ac_email">Correo electrónico</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
               <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" required>
-              <p class="field-error">Escribe tu correo.</p>
+              <p class="field-error" data-i18n="ac_email_req">Escribe tu correo.</p>
             </div>
           </div>
           <div>
-            <label class="field-label" for="loginPassword">Contraseña</label>
+            <label class="field-label" for="loginPassword" data-i18n="ac_pass">Contraseña</label>
             <div class="field">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
               <input class="has-toggle" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
-              <button type="button" class="field-toggle" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
-              <p class="field-error">Escribe tu contraseña.</p>
+              <button type="button" class="field-toggle" aria-label="Mostrar contraseña" data-i18n-aria="ac_show_pw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <p class="field-error" data-i18n="ac_pass_req">Escribe tu contraseña.</p>
             </div>
           </div>
           <p class="auth-error" id="authError" role="alert"></p>
-          <button type="submit" class="btn solid auth-submit" id="authSubmit">Iniciar sesión <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button type="submit" class="btn solid auth-submit" id="authSubmit"><span data-i18n="nav_login">Iniciar sesión</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </form>
-        <p class="auth-switch">¿Aún no tienes cuenta? <a href="/n/{{.Slug}}/registro{{if eq .Next "agendar"}}?sig=agendar{{end}}">Crea una</a></p>
+        <p class="auth-switch"><span data-i18n="ac_no_account">¿Aún no tienes cuenta?</span> <a data-i18n="ac_create_link" href="/n/{{.Slug}}/registro{{if eq .Next "agendar"}}?sig=agendar{{end}}">Crea una</a></p>
         {{end}}
       </div>
     </div>
   </div>
 </section>
 
-<footer class="auth-foot">Página de {{.Nombre}} · hecha con <a href="/" target="_blank" rel="noopener">Attomos</a></footer>
+<footer class="auth-foot"><span data-i18n="ac_footer">Página de {{.Nombre}} · hecha con</span> <a href="/" target="_blank" rel="noopener">Attomos</a></footer>
 
+<script src="/static/js/pages/negocio-i18n.js?v=1"></script>
 <script src="/static/js/pages/negocio-nav.js?v=1"></script>
-<script src="/static/js/pages/negocio-cuenta.js?v=1"></script>
+<script src="/static/js/pages/negocio-cuenta.js?v=2"></script>
 </body>
 </html>

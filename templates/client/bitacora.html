@@ -33,40 +33,40 @@
   <main class="inv-page bit-page" id="bitPage">
     <div class="admin-header bit-head">
       <div>
-        <h1>Bitácora</h1>
-        <p>Quién vendió, quién movió un trabajo, quién agendó o borró algo, y cuándo. Se guarda sola con cada cambio de tu equipo y tuyo.</p>
+        <h1 data-translate="dash_nav_bitacora">Bitácora</h1>
+        <p data-translate="bit_subtitle">Quién vendió, quién movió un trabajo, quién agendó o borró algo, y cuándo. Se guarda sola con cada cambio de tu equipo y tuyo.</p>
       </div>
-      <button type="button" class="bit-live is-on" id="bitLive" aria-pressed="true" title="Mostrar lo nuevo sin recargar">
+      <button type="button" class="bit-live is-on" id="bitLive" aria-pressed="true" title="Mostrar lo nuevo sin recargar" data-translate-title="bit_live_title">
         <span class="bit-live-dot"></span><span id="bitLiveLabel">En vivo</span>
       </button>
     </div>
 
     <div class="bit-period">
       <div class="inv-chips" id="bitPeriod">
-        <button type="button" class="is-on" data-period="hoy">Hoy</button>
-        <button type="button" data-period="ayer">Ayer</button>
-        <button type="button" data-period="7">Últimos 7 días</button>
-        <button type="button" data-period="30">Últimos 30 días</button>
-        <button type="button" data-period="rango">Elegir fechas</button>
+        <button type="button" class="is-on" data-period="hoy" data-translate="bit_today">Hoy</button>
+        <button type="button" data-period="ayer" data-translate="bit_yesterday">Ayer</button>
+        <button type="button" data-period="7" data-translate="dash_last_7">Últimos 7 días</button>
+        <button type="button" data-period="30" data-translate="bit_last_30">Últimos 30 días</button>
+        <button type="button" data-period="rango" data-translate="bit_range">Elegir fechas</button>
       </div>
       <div class="bit-range" id="bitRange" hidden>
-        <label>Desde <input type="date" id="bitFrom"></label>
-        <label>Hasta <input type="date" id="bitTo"></label>
-        <button type="button" class="btn solid small" id="bitRangeApply">Ver</button>
+        <label><span data-translate="bit_from">Desde</span> <input type="date" id="bitFrom"></label>
+        <label><span data-translate="bit_to">Hasta</span> <input type="date" id="bitTo"></label>
+        <button type="button" class="btn solid small" id="bitRangeApply" data-translate="bit_view">Ver</button>
       </div>
     </div>
 
     <div class="inv-stats bit-stats">
-      <div class="inv-stat"><small>Acciones</small><strong id="bitStAcc">—</strong></div>
-      <div class="inv-stat"><small>Entradas y salidas</small><strong id="bitStSes">—</strong></div>
-      <div class="inv-stat bit-stat-bad"><small>No se pudieron</small><strong id="bitStFail">—</strong></div>
-      <div class="inv-stat"><small>Personas activas</small><strong id="bitStPeople">—</strong></div>
+      <div class="inv-stat"><small data-translate="bit_st_actions">Acciones</small><strong id="bitStAcc">—</strong></div>
+      <div class="inv-stat"><small data-translate="bit_st_sessions">Entradas y salidas</small><strong id="bitStSes">—</strong></div>
+      <div class="inv-stat bit-stat-bad"><small data-translate="bit_st_failed">No se pudieron</small><strong id="bitStFail">—</strong></div>
+      <div class="inv-stat"><small data-translate="bit_st_people">Personas activas</small><strong id="bitStPeople">—</strong></div>
     </div>
 
     <div class="bit-layout">
       <aside class="admin-panel bit-people">
         <div class="bit-panel-head">
-          <h2>Equipo</h2>
+          <h2 data-translate="bit_team">Equipo</h2>
           <p id="bitPeopleSub">Cargando…</p>
         </div>
         <div class="bit-people-list" id="bitPeople" role="list"></div>
@@ -79,33 +79,33 @@
         </div>
         <div class="bit-toolbar">
           <div class="inv-chips" id="bitKinds">
-            <button type="button" class="is-on" data-kind="">Todo</button>
-            <button type="button" data-kind="accion">Acciones</button>
-            <button type="button" data-kind="sesion">Sesión</button>
-            <button type="button" data-kind="fallidas">No se pudieron</button>
+            <button type="button" class="is-on" data-kind="" data-translate="bit_k_all">Todo</button>
+            <button type="button" data-kind="accion" data-translate="bit_k_actions">Acciones</button>
+            <button type="button" data-kind="sesion" data-translate="bit_k_session">Sesión</button>
+            <button type="button" data-kind="fallidas" data-translate="bit_st_failed">No se pudieron</button>
           </div>
           <div class="search-box inv-search-box bit-search">
             <div class="search-box-glow"></div>
             <div class="search-box-inner">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" id="bitSearch" placeholder="Buscar (cliente, folio, «canceló»…)" autocomplete="off" spellcheck="false">
+              <input type="search" id="bitSearch" placeholder="Buscar (cliente, folio, «canceló»…)" data-translate-placeholder="bit_search_ph" autocomplete="off" spellcheck="false">
             </div>
           </div>
         </div>
         <div class="inv-chips bit-areas" id="bitAreas">
-          <button type="button" class="is-on" data-area="">Todas las áreas</button>
-          <button type="button" data-area="pos">Recepción</button>
-          <button type="button" data-area="caja">Caja</button>
-          <button type="button" data-area="citas">Citas</button>
-          <button type="button" data-area="optometria">Optometría</button>
-          <button type="button" data-area="lab">Laboratorio</button>
-          <button type="button" data-area="inventario">Inventario</button>
-          <button type="button" data-area="equipo">Usuarios</button>
+          <button type="button" class="is-on" data-area="" data-translate="bit_area_all">Todas las áreas</button>
+          <button type="button" data-area="pos" data-translate="staff_role_recepcion">Recepción</button>
+          <button type="button" data-area="caja" data-translate="bit_area_caja">Caja</button>
+          <button type="button" data-area="citas" data-translate="bit_area_citas">Citas</button>
+          <button type="button" data-area="optometria" data-translate="staff_role_optometria">Optometría</button>
+          <button type="button" data-area="lab" data-translate="staff_role_laboratorio">Laboratorio</button>
+          <button type="button" data-area="inventario" data-translate="staff_role_inventario">Inventario</button>
+          <button type="button" data-area="equipo" data-translate="dash_nav_staff">Usuarios</button>
         </div>
 
         <div class="bit-timeline" id="bitTimeline" aria-live="polite"></div>
         <p class="bit-empty" id="bitEmpty">Cargando…</p>
-        <div class="bit-more-wrap"><button type="button" class="btn small bit-more" id="bitMore" hidden>Cargar más</button></div>
+        <div class="bit-more-wrap"><button type="button" class="btn small bit-more" id="bitMore" hidden data-translate="bit_more">Cargar más</button></div>
       </section>
     </div>
   </main>
@@ -116,7 +116,7 @@
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
 <script src="/static/js/client/live.js?v=1"></script>
-<script src="/static/js/client/bitacora.js?v=1"></script>
+<script src="/static/js/client/bitacora.js?v=3"></script>
 <script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>
 </html>

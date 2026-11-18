@@ -7,7 +7,7 @@
      derecha) y el calendario llevan el diseño iOS 27 de Attomos.
      Lleva la barra del negocio (/n/:slug). Con cuenta, "Tus datos" llega
      lleno y la cita queda en "Mis citas"; con ?reagendar=<id> cambia el día
-     y la hora de esa cita. */}}
+     y la hora de esa cita. Idiomas: static/js/pages/negocio-i18n.js */}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,25 +16,26 @@
 <meta name="theme-color" content="#ffffff">
 <title>{{if .NotFound}}Liga no encontrada{{else}}Agenda tu cita — {{.Negocio}}{{end}}</title>
 <link rel="icon" type="image/png" href="/static/images/attomos-favicon.png">
-{{if .Nav}}<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=1">{{end}}
+{{if .Nav}}<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=2">{{end}}
 <link rel="stylesheet" href="/static/css/pages/agendar-cita.css?v=4">
 </head>
-<body>
+<body{{if .NotFound}}{{else}} data-ni-name="{{.Negocio}}" data-ni-title="ag_title"{{end}}>
 {{if .Nav}}{{template "negocio-nav" .Nav}}{{end}}
 
 {{if .NotFound}}
 <section class="strip ag-missing">
   <div class="section-head">
     <div class="ag-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4"/></svg></div>
-    <h2>Esta liga ya no existe</h2>
-    <p>Pide al negocio que te comparta su liga para agendar.</p>
+    <h2 data-i18n="ag_nf_title">Esta liga ya no existe</h2>
+    <p data-i18n="ag_nf_text">Pide al negocio que te comparta su liga para agendar.</p>
   </div>
 </section>
+<script src="/static/js/pages/negocio-i18n.js?v=1"></script>
 {{else}}
 <section class="strip{{if .Nav}} has-nav{{end}}" id="agApp" data-id="{{.ID}}" data-slug="{{.Slug}}">
   <div class="section-head">
     <div class="ag-logo" id="agLogo"><span></span></div>
-    <div class="eyebrow">Agenda tu cita</div>
+    <div class="eyebrow" data-i18n="ag_eyebrow">Agenda tu cita</div>
     <h2 id="agName">{{.Negocio}}</h2>
     <p id="agLead">Elige el día y la hora que mejor te acomode.</p>
     <div class="ag-resched" id="agResched" hidden></div>
@@ -47,11 +48,11 @@
         <div class="ag-cal-head">
           <h3><span id="agMonth"></span> <em id="agYear"></em></h3>
           <div class="ag-cal-nav">
-            <button type="button" id="agPrev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-            <button type="button" id="agNext" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <button type="button" id="agPrev" aria-label="Mes anterior" data-i18n-aria="ag_prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button type="button" id="agNext" aria-label="Mes siguiente" data-i18n-aria="ag_next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
           </div>
         </div>
-        <div class="appt-weekdays"><span>DOM</span><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span></div>
+        <div class="appt-weekdays" id="agWeekdays"><span>DOM</span><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span></div>
         <div class="appt-day-grid" id="apptDayGrid"><div class="ag-loading"><span class="ag-spin"></span></div></div>
         <div class="appt-closed-notes" id="apptClosedNotes" hidden></div>
       </div>
@@ -59,7 +60,7 @@
       <!-- Horas del día elegido -->
       <div class="appt-view appt-view-hour" id="apptHourView">
         <div class="appt-nav-row">
-          <button type="button" class="appt-back" id="apptBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> Volver</button>
+          <button type="button" class="appt-back" id="apptBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> <span data-i18n="mc_back">Volver</span></button>
           <span id="apptHourDateLabel"></span>
         </div>
         <hr class="appt-line">
@@ -76,29 +77,29 @@
         <div class="appt-side-monthyear" id="apptSideMonthYear"></div>
       </div>
       <div class="appt-side-details">
-        <div class="appt-detail-label">Detalles de tu cita</div>
+        <div class="appt-detail-label" data-i18n="ag_details">Detalles de tu cita</div>
         <div class="appt-detail-row">
           <span class="appt-detail-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-          <div><span>Hora</span><strong id="apptDetailTime">Por definir</strong></div>
+          <div><span data-i18n="ag_time">Hora</span><strong id="apptDetailTime">Por definir</strong></div>
         </div>
         <div class="appt-detail-row" id="apptAddrRow" hidden>
           <span class="appt-detail-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
-          <div><span>Dirección</span><strong id="apptDetailAddress"></strong></div>
+          <div><span data-i18n="ag_address">Dirección</span><strong id="apptDetailAddress"></strong></div>
         </div>
       </div>
     </aside>
   </div>
-  <p class="ag-foot">Agenda con <a href="/" target="_blank" rel="noopener">Attomos</a></p>
+  <p class="ag-foot"><span data-i18n="ag_foot">Agenda con</span> <a href="/" target="_blank" rel="noopener">Attomos</a></p>
 </section>
 
 <!-- Modal final: cita agendada -->
 <div class="modal-overlay" id="apptModalOverlay">
   <div class="modal-card">
-    <button class="modal-close" id="apptModalClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <button class="modal-close" id="apptModalClose" aria-label="Cerrar" data-i18n-aria="ag_close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
     <h3 id="apptModalTitle">¡Cita agendada!</h3>
     <p id="apptModalText"></p>
-    <button class="btn solid modal-ok" id="apptModalOk">Listo</button>
+    <button class="btn solid modal-ok" id="apptModalOk" data-i18n="ag_ok">Listo</button>
     <a class="modal-alt" id="apptModalAlt" hidden></a>
   </div>
 </div>
@@ -106,50 +107,50 @@
 <!-- Modal 1: datos de contacto -->
 <div class="modal-overlay" id="apptContactModalOverlay">
   <div class="modal-card modal-form-card">
-    <button class="modal-close" id="apptContactModalClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    <h3>Tus datos</h3>
-    <p>Los necesitamos para confirmar tu cita.</p>
+    <button class="modal-close" id="apptContactModalClose" aria-label="Cerrar" data-i18n-aria="ag_close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h3 data-i18n="ag_your_data">Tus datos</h3>
+    <p data-i18n="ag_need">Los necesitamos para confirmar tu cita.</p>
     <form id="apptContactForm" class="modal-form" novalidate>
       <div class="modal-field">
-        <label for="apptNombre">Nombre</label>
+        <label for="apptNombre" data-i18n="ag_first">Nombre</label>
         <input type="text" id="apptNombre" name="nombre" autocomplete="given-name" maxlength="120" required>
       </div>
       <div class="modal-field">
-        <label for="apptApellido">Apellido</label>
+        <label for="apptApellido" data-i18n="ag_last">Apellido</label>
         <input type="text" id="apptApellido" name="apellido" autocomplete="family-name" maxlength="120" required>
       </div>
       <div class="modal-field">
-        <label for="apptCelular">Celular</label>
+        <label for="apptCelular" data-i18n="ac_phone">Celular</label>
         <div class="modal-phone-row">
           <span class="modal-phone-lada">+52</span>
           <input type="tel" id="apptCelular" name="celular" inputmode="numeric" maxlength="10" placeholder="6621234567" autocomplete="tel-national" required>
         </div>
       </div>
       <div class="modal-field">
-        <label for="apptCorreo">Correo electrónico</label>
+        <label for="apptCorreo" data-i18n="ac_email">Correo electrónico</label>
         <input type="email" id="apptCorreo" name="correo" placeholder="tu@correo.com" autocomplete="email" maxlength="200" required>
       </div>
       <div class="modal-field">
-        <label for="apptNacimientoBtn">Fecha de nacimiento</label>
+        <label for="apptNacimientoBtn" data-i18n="ac_birth">Fecha de nacimiento</label>
         <div class="appt-datepicker" id="apptNacimientoPicker">
           <button type="button" class="appt-datepicker-trigger" id="apptNacimientoBtn" aria-haspopup="dialog" aria-expanded="false">
             <svg class="appt-datepicker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             <span class="appt-datepicker-value is-placeholder" id="apptNacimientoLabel">dd/mm/aaaa</span>
             <svg class="appt-datepicker-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
-          <div class="appt-datepicker-menu" id="apptNacimientoMenu" role="dialog" aria-label="Elige tu fecha de nacimiento">
+          <div class="appt-datepicker-menu" id="apptNacimientoMenu" role="dialog" aria-label="Elige tu fecha de nacimiento" data-i18n-aria="ac_birth_err">
             <div class="appt-datepicker-nav">
-              <button type="button" class="appt-datepicker-arrow" id="apptNacimientoPrev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-              <button type="button" class="appt-datepicker-navlabel" id="apptNacimientoMonthYear" title="Elegir año">—</button>
-              <button type="button" class="appt-datepicker-arrow" id="apptNacimientoNext" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              <button type="button" class="appt-datepicker-arrow" id="apptNacimientoPrev" aria-label="Mes anterior" data-i18n-aria="ag_prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+              <button type="button" class="appt-datepicker-navlabel" id="apptNacimientoMonthYear" title="Elegir año" data-i18n-title="ag_pick_year">—</button>
+              <button type="button" class="appt-datepicker-arrow" id="apptNacimientoNext" aria-label="Mes siguiente" data-i18n-aria="ag_next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
             </div>
             <div class="appt-datepicker-years" id="apptNacimientoYears" hidden></div>
             <div class="appt-datepicker-days" id="apptNacimientoDays">
-              <div class="appt-datepicker-weekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
+              <div class="appt-datepicker-weekdays" id="apptNacimientoWeekdays"><span>do</span><span>lu</span><span>ma</span><span>mi</span><span>ju</span><span>vi</span><span>sá</span></div>
               <div class="appt-datepicker-grid" id="apptNacimientoGrid"></div>
             </div>
             <div class="appt-datepicker-actions">
-              <button type="button" id="apptNacimientoClear">Borrar</button>
+              <button type="button" id="apptNacimientoClear" data-i18n="ag_clear">Borrar</button>
             </div>
           </div>
         </div>
@@ -157,7 +158,7 @@
       </div>
       <label class="ag-hp" aria-hidden="true">Sitio web<input type="text" id="apptWebsite" tabindex="-1" autocomplete="off"></label>
       <p class="modal-form-error" id="apptContactError"></p>
-      <button type="submit" class="btn solid modal-ok" id="apptContactSubmit">Continuar</button>
+      <button type="submit" class="btn solid modal-ok" id="apptContactSubmit" data-i18n="ag_continue">Continuar</button>
     </form>
   </div>
 </div>
@@ -165,7 +166,7 @@
 <!-- Modal 2: preguntas rápidas — paso a paso (las pinta agendar-cita.js) -->
 <div class="modal-overlay" id="apptQuestModalOverlay">
   <div class="modal-card modal-form-card modal-quest-card">
-    <button class="modal-close" id="apptQuestModalClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <button class="modal-close" id="apptQuestModalClose" aria-label="Cerrar" data-i18n-aria="ag_close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     <div class="quest-top">
       <span class="quest-count" id="questCount">Paso 1 de 1</span>
       <div class="quest-progress"><div class="quest-progress-bar" id="questProgressBar"></div></div>
@@ -174,16 +175,17 @@
       <div id="questSteps"></div>
       <p class="modal-form-error" id="apptQuestError"></p>
       <div class="quest-nav">
-        <button type="button" class="btn quest-back" id="questBack">Atrás</button>
-        <button type="button" class="btn solid quest-next" id="questNext">Siguiente</button>
-        <button type="submit" class="btn solid quest-submit" id="apptQuestSubmit">Agendar cita</button>
+        <button type="button" class="btn quest-back" id="questBack" data-i18n="ag_q_back">Atrás</button>
+        <button type="button" class="btn solid quest-next" id="questNext" data-i18n="ag_q_next">Siguiente</button>
+        <button type="submit" class="btn solid quest-submit" id="apptQuestSubmit" data-i18n="nav_book">Agendar cita</button>
       </div>
     </form>
   </div>
 </div>
 
+<script src="/static/js/pages/negocio-i18n.js?v=1"></script>
 {{if .Nav}}<script src="/static/js/pages/negocio-nav.js?v=1"></script>{{end}}
-<script src="/static/js/pages/agendar-cita.js?v=4"></script>
+<script src="/static/js/pages/agendar-cita.js?v=5"></script>
 {{end}}
 </body>
 </html>
