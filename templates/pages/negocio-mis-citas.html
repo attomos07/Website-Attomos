@@ -1,0 +1,86 @@
+{{/* Mis citas del cliente en un negocio: /n/:slug/mis-citas.
+     Ver sus citas, reagendar (abre /n/:slug/agendar?reagendar=<id>) o
+     cancelar con motivo, sin llamar. API: handlers/business_page.go
+     JS: static/js/pages/negocio-mis-citas.js */}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>Mis citas — {{.Nombre}}</title>
+<link rel="icon" type="image/png" href="{{if .Nav.Logo}}{{.Nav.Logo}}{{else}}/static/images/attomos-favicon.png{{end}}">
+<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=1">
+<link rel="stylesheet" href="/static/css/pages/negocio-mis-citas.css?v=1">
+</head>
+<body>
+
+{{template "negocio-nav" .Nav}}
+
+<main class="mc-main" id="mcApp" data-slug="{{.Slug}}">
+  <div class="mc-head">
+    <div>
+      <div class="mc-eyebrow">Mis citas en {{.Nombre}}</div>
+      <h1>Hola, {{.Nav.Cliente}}</h1>
+      <p>Aquí ves tus citas y puedes cambiarlas de día u hora o cancelarlas, sin llamar.</p>
+    </div>
+    <a class="mc-btn mc-btn-solid" href="/n/{{.Slug}}/agendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Agendar nueva cita</a>
+  </div>
+
+  <div class="mc-stats">
+    <div class="mc-stat"><small>Próximas</small><strong id="mcStNext">—</strong></div>
+    <div class="mc-stat"><small>Siguiente cita</small><strong id="mcStWhen">—</strong></div>
+    <div class="mc-stat"><small>Total</small><strong id="mcStTotal">—</strong></div>
+  </div>
+
+  <section class="mc-panel">
+    <div class="mc-tabs" role="tablist">
+      <button type="button" class="is-on" data-tab="proximas" role="tab">Próximas</button>
+      <button type="button" data-tab="anteriores" role="tab">Anteriores</button>
+      <span class="mc-tabs-pill" aria-hidden="true"></span>
+    </div>
+    <div class="mc-list" id="mcList"><div class="mc-skel"></div><div class="mc-skel"></div></div>
+    <div class="mc-empty" id="mcEmpty" hidden>
+      <span class="mc-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      <p id="mcEmptyTxt"></p>
+      <a class="mc-btn mc-btn-solid" href="/n/{{.Slug}}/agendar">Agendar cita</a>
+    </div>
+  </section>
+
+  <div class="mc-account">
+    <span>Entraste como <strong>{{.Cliente}}</strong> · {{.Correo}}</span>
+    <button type="button" class="mc-link" data-nb-salir>Cerrar sesión</button>
+  </div>
+</main>
+
+<!-- Cancelar cita -->
+<div class="mc-overlay" id="mcCancel" aria-hidden="true">
+  <div class="mc-modal" role="dialog" aria-modal="true" aria-labelledby="mcCancelTitle">
+    <button type="button" class="mc-x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <div class="mc-modal-ic is-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4"/></svg></div>
+    <h3 id="mcCancelTitle">Cancelar cita</h3>
+    <p id="mcCancelWhen"></p>
+    <p class="mc-hint">Cuéntanos brevemente por qué cancelas — {{.Nombre}} lo va a ver.</p>
+    <div class="mc-reasons" id="mcReasons">
+      <button type="button">Tuve un imprevisto</button>
+      <button type="button">Ya no la necesito</button>
+      <button type="button">Me queda lejos el horario</button>
+      <button type="button">Me enfermé</button>
+    </div>
+    <textarea id="mcMotivo" rows="3" maxlength="400" placeholder="Escribe el motivo"></textarea>
+    <p class="mc-error" id="mcCancelError" role="alert"></p>
+    <div class="mc-modal-actions">
+      <button type="button" class="mc-btn mc-btn-ghost" data-close>Volver</button>
+      <button type="button" class="mc-btn mc-btn-danger" id="mcCancelOk">Cancelar cita</button>
+    </div>
+    <p class="mc-alt">¿Mejor otro día? <a href="#" id="mcCancelMove">Reagéndala</a></p>
+  </div>
+</div>
+
+<div class="mc-toast" id="mcToast" role="status"></div>
+
+<script src="/static/js/pages/negocio-nav.js?v=1"></script>
+<script src="/static/js/pages/negocio-mis-citas.js?v=1"></script>
+</body>
+</html>

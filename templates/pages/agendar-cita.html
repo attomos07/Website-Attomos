@@ -4,7 +4,10 @@
      "Pendiente" con la etiqueta "Por la web".
      Igual que /agendar de Avante: una tarjeta (calendario → horas) y los
      modales Tus datos → preguntas → cita agendada. El panel del día (a la
-     derecha) y el calendario llevan el diseño iOS 27 de Attomos. */}}
+     derecha) y el calendario llevan el diseño iOS 27 de Attomos.
+     Lleva la barra del negocio (/n/:slug). Con cuenta, "Tus datos" llega
+     lleno y la cita queda en "Mis citas"; con ?reagendar=<id> cambia el día
+     y la hora de esa cita. */}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,9 +16,11 @@
 <meta name="theme-color" content="#ffffff">
 <title>{{if .NotFound}}Liga no encontrada{{else}}Agenda tu cita — {{.Negocio}}{{end}}</title>
 <link rel="icon" type="image/png" href="/static/images/attomos-favicon.png">
-<link rel="stylesheet" href="/static/css/pages/agendar-cita.css?v=3">
+{{if .Nav}}<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=1">{{end}}
+<link rel="stylesheet" href="/static/css/pages/agendar-cita.css?v=4">
 </head>
 <body>
+{{if .Nav}}{{template "negocio-nav" .Nav}}{{end}}
 
 {{if .NotFound}}
 <section class="strip ag-missing">
@@ -26,12 +31,13 @@
   </div>
 </section>
 {{else}}
-<section class="strip" id="agApp" data-id="{{.ID}}">
+<section class="strip{{if .Nav}} has-nav{{end}}" id="agApp" data-id="{{.ID}}" data-slug="{{.Slug}}">
   <div class="section-head">
     <div class="ag-logo" id="agLogo"><span></span></div>
     <div class="eyebrow">Agenda tu cita</div>
     <h2 id="agName">{{.Negocio}}</h2>
-    <p>Elige el día y la hora que mejor te acomode.</p>
+    <p id="agLead">Elige el día y la hora que mejor te acomode.</p>
+    <div class="ag-resched" id="agResched" hidden></div>
   </div>
 
   <div class="appt-card">
@@ -93,6 +99,7 @@
     <h3 id="apptModalTitle">¡Cita agendada!</h3>
     <p id="apptModalText"></p>
     <button class="btn solid modal-ok" id="apptModalOk">Listo</button>
+    <a class="modal-alt" id="apptModalAlt" hidden></a>
   </div>
 </div>
 
@@ -175,7 +182,8 @@
   </div>
 </div>
 
-<script src="/static/js/pages/agendar-cita.js?v=3"></script>
+{{if .Nav}}<script src="/static/js/pages/negocio-nav.js?v=1"></script>{{end}}
+<script src="/static/js/pages/agendar-cita.js?v=4"></script>
 {{end}}
 </body>
 </html>

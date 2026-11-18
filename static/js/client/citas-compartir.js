@@ -1,6 +1,6 @@
 /* citas-compartir.js — Recepción → Citas → ⚙ "Compartir con tus clientes".
-   Ligas públicas: la página para agendar (/agendar/:id) y el rastreo de
-   pedidos (/rastreo). Copiar, abrir, mandar por WhatsApp y código QR.
+   Ligas públicas: la página del negocio (/n/:slug), la página para agendar
+   (/n/:slug/agendar) y el rastreo de pedidos (/rastreo). Copiar, abrir, mandar por WhatsApp y código QR.
    API: GET /api/citas/compartir (handlers/booking.go) */
 (function () {
   'use strict';
@@ -11,6 +11,7 @@
   var data = null;
 
   var IC = {
+    shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/></svg>',
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M9 15l2 2 4-4"/></svg>',
     track: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
@@ -56,14 +57,18 @@
 
   function paint() {
     var neg = data.negocio || 'nuestro negocio';
-    var items = [
+    var items = [];
+    if (data.pagina) items.push({ key: 'pagina', ic: IC.shop, title: 'Página de tu negocio',
+      desc: 'Se arma sola con lo que llenaste en Mi Negocio: servicios, horario, ubicación y contacto. Tus clientes crean su cuenta y en «Mis citas» cambian o cancelan su cita sin llamar.',
+      url: data.pagina, msg: '¡Hola! Conoce ' + neg + ' y agenda tu cita aquí: ' + data.pagina });
+    items = items.concat([
       { key: 'agendar', ic: IC.cal, title: 'Página para agendar',
-        desc: 'Tus clientes eligen servicio, día y hora. La cita te llega aquí como Pendiente con la etiqueta «Por la web».',
+        desc: 'Tus clientes eligen día y hora. La cita te llega aquí como Pendiente con la etiqueta «Por la web».',
         url: data.agendar, msg: '¡Hola! Agenda tu cita en ' + neg + ' aquí: ' + data.agendar },
       { key: 'rastreo', ic: IC.track, title: 'Rastreo de pedidos',
         desc: data.optica ? 'Tus clientes ven en qué paso del laboratorio van sus lentes con la clave AT de su ticket.' : 'Tus clientes ven cómo va su pedido con la clave de su ticket.',
         url: data.rastreo, msg: (data.optica ? 'Revisa cómo van tus lentes' : 'Revisa cómo va tu pedido') + ' en ' + neg + ' con la clave de tu ticket: ' + data.rastreo }
-    ];
+    ]);
     list.innerHTML = items.map(function (it, i) {
       return '<section class="cs-item" data-key="' + it.key + '" style="--i:' + i + '">' +
         '<div class="cs-item-head"><span class="cs-ic cs-ic-' + it.key + '">' + it.ic + '</span>' +

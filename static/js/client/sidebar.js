@@ -70,6 +70,8 @@
         labItem.style.display = isOptica ? '' : 'none';
         const staffItem = document.getElementById('staffMenuItem');
         if (staffItem) staffItem.style.display = isOptica ? '' : 'none';
+        const logItem = document.getElementById('bitacoraMenuItem');
+        if (logItem) logItem.style.display = isOptica ? '' : 'none';
         REC_ITEMS.concat(OPT_ITEMS, INV_ITEMS).forEach((id) => {
             const el = document.getElementById(id);
             if (el && id !== 'clientHistoryMenuItem') el.style.display = isOptica ? '' : 'none';

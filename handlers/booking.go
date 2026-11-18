@@ -12,6 +12,10 @@ package handlers
 //	GET  /api/agendar/:id/ocupadas?fecha= horas llenas de ese día
 //	POST /api/agendar/:id                 agenda la cita
 //	GET  /api/citas/compartir             (panel) ligas para compartir
+//
+// Si el cliente tiene cuenta en el negocio (business_page.go), sus datos
+// llegan llenos y la cita queda en su cuenta ("Mis citas"). Con
+// ?reagendar=<id> la misma página sirve para cambiar el día y la hora.
 
 import (
 	"fmt"
@@ -181,7 +185,10 @@ func BookingPage(c *gin.Context) {
 		c.HTML(http.StatusNotFound, "agendar-cita.html", gin.H{"NotFound": true})
 		return
 	}
-	c.HTML(http.StatusOK, "agendar-cita.html", gin.H{"ID": u.ID, "Negocio": invBusinessName(u.ID)})
+	name := invBusinessName(u.ID)
+	n := &negocioCtx{Owner: u, Branch: bookingBranch(u.ID), Slug: models.EnsureBusinessSlug(u.ID, name), Nombre: name}
+	cu := customerFromCookie(c, u.ID)
+	c.HTML(http.StatusOK, "agendar-cita.html", gin.H{"ID": u.ID, "Negocio": name, "Slug": n.Slug, "Nav": negocioNav(n, cu, "agendar")})
 }
 
 // BookingInfo — GET /api/agendar/:id
@@ -213,7 +220,12 @@ func BookingInfo(c *gin.Context) {
 			neg["optica"] = isOpticaType(b.BusinessType)
 		}
 	}
+	var cliente interface{}
+	if cu := customerFromCookie(c, u.ID); cu != nil {
+		cliente = customerJSON(cu)
+	}
 	c.JSON(http.StatusOK, gin.H{
+		"cliente":  cliente, // con sesión: sus datos para llenar "Tus datos"
 		"negocio":  neg,
 		"open":     open,
 		"close":    close,
@@ -233,7 +245,17 @@ func BookingOccupied(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Esta liga para agendar ya no existe."})
 		return
 	}
-	counts, err := citaSlotCounts(u.ID, c.Query("fecha"), 0)
+	// Al reagendar, la hora que ya tiene su cita no cuenta como ocupada.
+	var except uint
+	if id, _ := strconv.ParseUint(c.Query("excepto"), 10, 64); id > 0 {
+		if cu := customerFromCookie(c, u.ID); cu != nil {
+			var a models.Appointment
+			if config.DB.Select("id").Where("id = ? AND user_id = ? AND customer_id = ?", id, u.ID, cu.ID).First(&a).Error == nil {
+				except = a.ID
+			}
+		}
+	}
+	counts, err := citaSlotCounts(u.ID, c.Query("fecha"), except)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Fecha inválida."})
 		return
@@ -314,27 +336,14 @@ func BookingCreate(c *gin.Context) {
 	}
 	if msg == "" {
 		in.Notas = bookingCut(in.Notas, 500)
-		now := time.Now().In(time.Local)
-		dh, dayOK := bookingDayHours(u.ID, bookingBranch(u.ID))[int(when.Weekday())]
-		hm := when.Format("15:04")
-		switch {
-		case !dayOK:
-			msg = "Ese día no se dan citas. Elige otro día."
-		case !bookingHalfHour.MatchString(in.Time) || hm < dh[0] || hm > dh[1]:
-			msg = "Esa hora no está disponible. Elige otra."
-		case when.Before(now.Add(bookingMinLead)):
-			msg = "Esa hora ya pasó. Elige otra."
-		case when.After(now.AddDate(0, 0, bookingMaxDays+1)):
-			msg = fmt.Sprintf("Solo se puede agendar con %d días de anticipación.", bookingMaxDays)
-		case !citaDayOpen(u.ID, when) || bookingIsClosed(bookingBranch(u.ID), in.Date):
-			msg = "Ese día no se dan citas. Elige otro día."
-		}
+		msg = bookingSlotProblem(u.ID, when, in.Date, in.Time)
 	}
 	if msg != "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
 
+	cu := customerFromCookie(c, u.ID)
 	// Un mismo celular no puede apartar muchas horas.
 	var pend int64
 	config.DB.Model(&models.Appointment{}).
@@ -368,6 +377,9 @@ func BookingCreate(c *gin.Context) {
 		Source:          models.AppointmentSourceWeb,
 		// Etiqueta automática "Por la web" (citaTagOf, por el Source).
 	}
+	if cu != nil {
+		a.CustomerID = cu.ID
+	}
 	if err := config.DB.Create(&a).Error; err != nil {
 		citaFail(c, "BookingCreate", err, "No se pudo agendar. Intenta de nuevo.")
 		return
@@ -375,7 +387,33 @@ func BookingCreate(c *gin.Context) {
 	bookingHit(ip)
 	LivePublish(u.ID, "citas", "optometria")
 	log.Printf("📅 [Agendar] Cita web ID=%d negocio=%d %s %s", a.ID, u.ID, in.Date, in.Time)
-	c.JSON(http.StatusCreated, gin.H{"ok": true, "id": a.ID})
+	out := gin.H{"ok": true, "id": a.ID, "cuenta": cu != nil}
+	if cu == nil {
+		// Si después crea su cuenta (o entra), esta cita pasa a "Mis citas".
+		out["reclamo"] = bookingClaimToken(u.ID, a.ID)
+	}
+	c.JSON(http.StatusCreated, out)
+}
+
+// bookingSlotProblem — por qué no se puede agendar en ese día y hora ("" = sí se puede).
+func bookingSlotProblem(uid uint, when time.Time, day, hhmm string) string {
+	now := time.Now().In(time.Local)
+	b := bookingBranch(uid)
+	dh, dayOK := bookingDayHours(uid, b)[int(when.Weekday())]
+	hm := when.Format("15:04")
+	switch {
+	case !dayOK:
+		return "Ese día no se dan citas. Elige otro día."
+	case !bookingHalfHour.MatchString(hhmm) || hm < dh[0] || hm > dh[1]:
+		return "Esa hora no está disponible. Elige otra."
+	case when.Before(now.Add(bookingMinLead)):
+		return "Esa hora ya pasó. Elige otra."
+	case when.After(now.AddDate(0, 0, bookingMaxDays+1)):
+		return fmt.Sprintf("Solo se puede agendar con %d días de anticipación.", bookingMaxDays)
+	case !citaDayOpen(uid, when) || bookingIsClosed(b, day):
+		return "Ese día no se dan citas. Elige otro día."
+	}
+	return ""
 }
 
 /* ---------------- panel: compartir ---------------- */
@@ -384,9 +422,17 @@ func BookingCreate(c *gin.Context) {
 func CitasShareLinks(c *gin.Context) {
 	uid := invUserID(c)
 	base := bookingBaseURL(c)
+	name := invBusinessName(uid)
+	agendar := fmt.Sprintf("%s/agendar/%d", base, uid)
+	pagina := ""
+	if slug := models.EnsureBusinessSlug(uid, name); slug != "" {
+		pagina = base + "/n/" + slug
+		agendar = pagina + "/agendar"
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"negocio": invBusinessName(uid),
-		"agendar": fmt.Sprintf("%s/agendar/%d", base, uid),
+		"negocio": name,
+		"pagina":  pagina,
+		"agendar": agendar,
 		"rastreo": base + "/rastreo",
 		"optica":  invIsOptica(uid),
 	})

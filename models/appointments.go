@@ -56,6 +56,9 @@ type Appointment struct {
 	// Questionnaire: JSON con "¿Cómo nos conoció?" ({"como_se_entero":"facebook"}).
 	Questionnaire string `gorm:"type:text" json:"questionnaire"`
 	CancelReason  string `gorm:"size:500" json:"cancelReason"`
+	// CustomerID: cuenta del cliente que la agendó desde la página del
+	// negocio (/n/:slug); 0 = la agendó el negocio o un invitado.
+	CustomerID uint `gorm:"index;default:0" json:"customerId"`
 	// Tag: cómo llegó la cita — sin_cita | chequeo | telefono | whatsapp
 	// ("" = sin etiqueta; las del bot se muestran como "bot").
 	Tag string `gorm:"size:20" json:"tag"`

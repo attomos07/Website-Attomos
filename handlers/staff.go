@@ -78,6 +78,9 @@ func StaffLogin(c *gin.Context) {
 	s, err := models.FindStaffByUsername(key)
 	if err != nil || !s.CheckPassword(in.Password) {
 		staffAddFail(key)
+		if err == nil {
+			LogStaffSession(c, s, "sesion.fallida", "Intentó entrar con una contraseña incorrecta", false)
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario o contraseña incorrectos."})
 		return
 	}
@@ -101,6 +104,7 @@ func StaffLogin(c *gin.Context) {
 		return
 	}
 	models.TouchStaffLogin(s.ID)
+	LogStaffSession(c, s, "sesion.inicio", "Inició sesión", true)
 	c.SetCookie("auth_token", token, 3600*24, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "redirect": s.Home(), "name": s.Name})
 }

@@ -1842,6 +1842,7 @@ td > .cita-origen-badge, #calEventOrigen{ margin-right:6px; }
 .cs-ic svg{ width:19px; height:19px; }
 .cs-ic-agendar{ background:linear-gradient(140deg, #22d3ee, #0891b2); }
 .cs-ic-rastreo{ background:linear-gradient(140deg, #818cf8, #4f46e5); }
+.cs-ic-pagina{ background:linear-gradient(140deg, #34d399, #059669); }
 .cs-item:hover .cs-ic{ transform:rotate(-6deg) scale(1.06); }
 .cs-item-head strong{ display:block; font-size:14.5px; color:var(--ink); }
 .cs-item-head small{ display:block; margin-top:3px; font-size:12.5px; color:var(--muted); line-height:1.45; }

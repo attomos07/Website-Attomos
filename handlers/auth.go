@@ -215,6 +215,9 @@ func Logout(c *gin.Context) {
 	if tok, err := c.Cookie("auth_token"); err == nil && tok != "" {
 		if claims, err := auth.ValidateToken(tok); err == nil && claims.StaffID > 0 {
 			redirect = "/equipo/login"
+			if st, err := models.GetStaff(claims.UserID, claims.StaffID); err == nil {
+				LogStaffSession(c, st, "sesion.cierre", "Cerró sesión", true)
+			}
 		}
 	}
 	c.SetCookie("auth_token", "", -1, "/", "", false, true)

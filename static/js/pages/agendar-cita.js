@@ -1,13 +1,17 @@
 /* agendar-cita.js — Página pública para agendar (/agendar/:id).
    Mismo flujo que /agendar de Avante: día → hora (en la misma tarjeta) →
    Tus datos → preguntas paso a paso → cita agendada.
-   API: handlers/booking.go */
+   Con cuenta del cliente (/n/:slug), "Tus datos" llega lleno. Con
+   ?reagendar=<id> solo se elige el nuevo día y hora de esa cita.
+   API: handlers/booking.go y handlers/business_page.go */
 (function () {
   'use strict';
 
   var app = document.getElementById('agApp');
   if (!app) return;
   var API = '/api/agendar/' + app.dataset.id;
+  var SLUG = app.dataset.slug || '', CLAIMS = 'attReclamos:' + app.dataset.id;
+  var reschedId = +(new URLSearchParams(location.search).get('reagendar') || 0), resched = null;
   var $ = function (id) { return document.getElementById(id); };
 
   var MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -75,12 +79,78 @@
       if (n.direccion) { $('apptDetailAddress').textContent = n.direccion; $('apptAddrRow').hidden = false; }
       questions = n.optica ? Q_OPTICA : [COMO];
       paintQuestions();
+      if (d.cliente) prefill(d.cliente);
+      if (reschedId && SLUG) await loadResched(!!d.cliente);
       var hoy = parseISO(d.hoy);
       viewDate = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
       renderCalendar(0);
     } catch (e) {
       $('apptDayGrid').innerHTML = '<p class="appt-hour-empty">' + esc(e.message) + ' Recarga la página.</p>';
     }
+  }
+
+  /* ---------------- cuenta del cliente ---------------- */
+  function prefill(c) {
+    $('apptNombre').value = c.nombre || '';
+    $('apptApellido').value = c.apellido || '';
+    $('apptCelular').value = c.celular || '';
+    $('apptCorreo').value = c.correo || '';
+    if (c.fechaNacimiento) birthPicker.set(c.fechaNacimiento);
+    var note = document.createElement('p');
+    note.className = 'ag-logged';
+    note.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>' +
+      '<span>Llenamos tus datos con tu cuenta. Tu cita aparecerá en «Mis citas».</span>';
+    var form = $('apptContactForm');
+    form.insertBefore(note, form.firstChild);
+  }
+  async function loadResched(logged) {
+    if (!logged) { location.href = '/n/' + SLUG + '/entrar'; return; }
+    var box = $('agResched');
+    try {
+      var r = await fetch('/api/n/' + SLUG + '/mis-citas');
+      var d = await r.json();
+      var c = (d.citas || []).filter(function (x) { return x.id === reschedId; })[0];
+      if (!c || !c.puedeCambiar) throw new Error('Esta cita ya no se puede cambiar desde aquí.');
+      resched = c;
+      $('agLead').textContent = 'Elige el nuevo día y la nueva hora para tu cita.';
+      box.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>' +
+        '<span>Cambiando tu cita del <b>' + esc(formatSelectedDate(c.date)) + '</b> a las <b>' + to12h(c.time) + '</b></span>';
+      $('apptSubmit').textContent = 'Confirmar cambio';
+    } catch (e) {
+      box.textContent = e.message || 'No encontramos esa cita en tu cuenta.';
+      reschedId = 0;
+    }
+    box.hidden = false;
+  }
+  async function doResched() {
+    if (sending) return;
+    sending = true;
+    var btn = $('apptSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    try {
+      var r = await fetch('/api/n/' + SLUG + '/mis-citas/' + resched.id + '/reagendar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate, time: selectedTime })
+      });
+      var d = await r.json().catch(function () { return {}; });
+      if (r.ok) {
+        doneOK = 'resched';
+        openApptModal('¡Cita reagendada!', 'Tu cita ahora es el ' + formatSelectedDate(selectedDate) + ' a las ' + to12h(selectedTime) +
+          '. ' + ((info.negocio || {}).nombre || 'El negocio') + ' te confirmará el nuevo horario.', true);
+      } else if (d.ocupada) {
+        selectedTime = null;
+        $('apptDetailTime').textContent = 'Por definir';
+        loadOccupiedHours(selectedDate).then(renderHours);
+        openApptModal('Esa hora ya se ocupó', 'Justo se agendó esa hora — elige otra disponible.', false);
+      } else {
+        openApptModal('No se pudo cambiar', d.error || 'Intenta de nuevo en un momento.', false);
+      }
+    } catch (_) {
+      openApptModal('Sin conexión', 'Revisa tu internet e intenta de nuevo.', false);
+    }
+    sending = false;
+    btn.disabled = false;
+    btn.textContent = 'Confirmar cambio';
   }
 
   /* ---------------- calendario (iOS 27) ---------------- */
@@ -188,7 +258,7 @@
   }
   async function loadOccupiedHours(day) {
     try {
-      var r = await fetch(API + '/ocupadas?fecha=' + day);
+      var r = await fetch(API + '/ocupadas?fecha=' + day + (resched ? '&excepto=' + resched.id : ''));
       var d = await r.json();
       occupiedHours = r.ok ? (d.ocupadas || []) : [];
     } catch (e) { occupiedHours = []; }
@@ -229,7 +299,10 @@
       card.classList.remove('is-bump'); void card.offsetWidth; card.classList.add('is-bump');
     });
   });
-  function openApptModal(title, text, ok) {
+  function openApptModal(title, text, ok, alt) {
+    var a = $('apptModalAlt');
+    a.hidden = !alt;
+    if (alt) { a.textContent = alt.text; a.href = alt.href; }
     $('apptModalTitle').textContent = title;
     $('apptModalText').textContent = text;
     var ic = document.querySelector('#apptModalOverlay .modal-icon');
@@ -241,7 +314,8 @@
   }
   function closeApptModal() {
     closeModal('apptModalOverlay');
-    if (doneOK) location.reload();
+    if (doneOK === 'resched') location.href = '/n/' + SLUG + '/mis-citas?ok=reagendada';
+    else if (doneOK) location.reload();
   }
   $('apptModalClose').addEventListener('click', closeApptModal);
   $('apptModalOk').addEventListener('click', closeApptModal);
@@ -253,6 +327,7 @@
       openApptModal('Elige una hora', 'Por favor selecciona un día y una hora antes de confirmar.', false);
       return;
     }
+    if (resched) { doResched(); return; }
     $('apptContactError').textContent = '';
     openModal('apptContactModalOverlay');
   });
@@ -349,7 +424,7 @@
       setTimeout(close, 140);
     });
     clearBtn.addEventListener('click', function () { hidden.value = ''; setLabel(); setYearsMode(true); });
-    return { value: function () { return hidden.value; } };
+    return { value: function () { return hidden.value; }, set: function (v) { hidden.value = v; setLabel(); } };
   })();
 
   /* ---------------- 1 · tus datos ---------------- */
@@ -497,9 +572,19 @@
       closeModal('apptQuestModalOverlay');
       if (r.ok) {
         doneOK = true;
-        var neg = (info.negocio || {}).nombre || 'el negocio';
+        var neg = (info.negocio || {}).nombre || 'el negocio', alt = null;
+        if (d.reclamo) { // si luego crea su cuenta, esta cita pasa a "Mis citas"
+          try {
+            var cl = JSON.parse(localStorage.getItem(CLAIMS) || '[]');
+            cl.push(d.reclamo);
+            localStorage.setItem(CLAIMS, JSON.stringify(cl.slice(-10)));
+          } catch (_) {}
+        }
+        try { if (!d.cuenta) sessionStorage.setItem('attContacto:' + app.dataset.id, JSON.stringify(c)); } catch (_) {}
+        if (SLUG) alt = d.cuenta ? { text: 'Ver mis citas', href: '/n/' + SLUG + '/mis-citas' }
+          : { text: 'Crea tu cuenta para cambiar o cancelar tu cita sin llamar', href: '/n/' + SLUG + '/registro' };
         openApptModal('¡Cita agendada!', 'Tu cita quedó agendada para el ' + formatSelectedDate(selectedDate) + ' a las ' + to12h(selectedTime) +
-          '. ' + neg + ' te confirmará por WhatsApp. ¡Te esperamos!', true);
+          '. ' + neg + ' te confirmará por WhatsApp. ¡Te esperamos!', true, alt);
       } else if (d.ocupada) {
         selectedTime = null;
         $('apptDetailTime').textContent = 'Por definir';

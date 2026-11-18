@@ -1,0 +1,106 @@
+/* bitacora.css — Bitácora del equipo. Sobre inventory.css (iOS 27, cian). */
+
+.bit-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.bit-live{
+  display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1.5px solid var(--line); background:var(--white); font:inherit; font-size:13px; font-weight:700; color:var(--muted);
+  transition:border-color .2s, color .2s, background .2s, transform .45s cubic-bezier(.34,1.56,.64,1);
+}
+.bit-live:active{ transform:scale(.94); }
+.bit-live-dot{ width:8px; height:8px; border-radius:50%; background:#9ca3af; }
+.bit-live.is-on{ border-color:#a5f3fc; background:#ecfeff; color:#0e7490; }
+.bit-live.is-on .bit-live-dot{ background:#06b6d4; box-shadow:0 0 0 0 rgba(6,182,212,.5); animation:bitPulse 1.8s ease-out infinite; }
+@keyframes bitPulse{ 70%{ box-shadow:0 0 0 8px rgba(6,182,212,0); } 100%{ box-shadow:0 0 0 0 rgba(6,182,212,0); } }
+
+.bit-period{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 16px; }
+.bit-period .inv-chips{ margin-top:0; }
+.bit-range{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; animation:bitIn .4s cubic-bezier(.34,1.35,.64,1); }
+.bit-range[hidden]{ display:none; }
+.bit-range label{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--muted); }
+.bit-range input{ padding:8px 10px; border-radius:10px; border:1.5px solid var(--line); font:inherit; font-size:13px; }
+.bit-stats{ grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); }
+.bit-stat-bad strong{ color:#b42318; }
+
+.bit-layout{ display:grid; grid-template-columns:300px minmax(0,1fr); gap:16px; align-items:start; }
+.bit-panel-head h2{ margin:0; font-size:16px; font-weight:800; color:var(--ink); }
+.bit-panel-head p{ margin:2px 0 12px; font-size:12.5px; color:var(--muted); }
+.bit-people, .bit-feed{ padding:18px; }
+.bit-people{ position:sticky; top:96px; }
+
+.bit-people-list{ display:flex; flex-direction:column; gap:6px; max-height:calc(100vh - 260px); overflow:auto; }
+.bit-person{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; border-radius:14px;
+  border:1.5px solid transparent; background:transparent; cursor:pointer; font:inherit;
+  transition:background .2s, border-color .2s, transform .45s cubic-bezier(.34,1.56,.64,1);
+  animation:bitIn .45s cubic-bezier(.34,1.35,.64,1) backwards; animation-delay:calc(var(--i, 0) * 30ms);
+}
+.bit-person:hover{ background:#f8fafc; }
+.bit-person:active{ transform:scale(.98); }
+.bit-person.is-on{ background:#ecfeff; border-color:#a5f3fc; }
+.bit-person.is-off{ opacity:.6; }
+.bit-ava{
+  width:36px; height:36px; flex:0 0 36px; border-radius:50%; display:grid; place-items:center;
+  background:linear-gradient(135deg, #22d3ee, #0891b2); color:#fff; font-size:13px; font-weight:800;
+}
+.bit-ava.is-owner{ background:linear-gradient(135deg, #818cf8, #4f46e5); }
+.bit-ava.is-all{ background:#0f172a; }
+.bit-ava svg{ width:16px; height:16px; }
+.bit-person-txt{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.bit-person-txt b{ font-size:13.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bit-person-txt small{ font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bit-count{ font-size:12px; font-weight:800; color:#0e7490; background:#ecfeff; border-radius:999px; padding:2px 8px; font-variant-numeric:tabular-nums; }
+.bit-count.zero{ color:var(--muted); background:#f1f5f9; }
+
+.bit-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.bit-toolbar .inv-chips{ margin-top:0; }
+.bit-search{ flex:1 1 240px; max-width:360px; }
+.bit-areas{ margin:10px 0 14px; }
+.bit-areas button{ font-size:12px; padding:6px 11px; }
+
+.bit-timeline{ display:flex; flex-direction:column; }
+.bit-day{ font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+.bit-day:first-child{ margin-top:0; }
+.bit-row{
+  position:relative; display:grid; grid-template-columns:54px 34px minmax(0,1fr); gap:10px; align-items:flex-start;
+  padding:10px 8px; border-radius:14px; transition:background .2s;
+  animation:bitIn .45s cubic-bezier(.34,1.35,.64,1) backwards; animation-delay:calc(var(--i, 0) * 18ms);
+}
+.bit-row:hover{ background:#f8fafc; }
+.bit-row.is-new{ animation:bitNew 1.6s ease; }
+@keyframes bitNew{ 0%{ background:#cffafe; } 100%{ background:transparent; } }
+@keyframes bitIn{ from{ opacity:0; transform:translateY(8px); filter:blur(4px); } }
+.bit-time{ font-size:12.5px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums; padding-top:7px; text-align:right; }
+.bit-ic{ width:34px; height:34px; border-radius:11px; display:grid; place-items:center; background:#ecfeff; color:#0891b2; }
+.bit-ic svg{ width:16px; height:16px; }
+.bit-ic.a-pos{ background:#ecfeff; color:#0891b2; }
+.bit-ic.a-caja{ background:#fef9c3; color:#a16207; }
+.bit-ic.a-lab{ background:#f5f3ff; color:#6d28d9; }
+.bit-ic.a-optometria{ background:#eef2ff; color:#4338ca; }
+.bit-ic.a-citas{ background:#f0fdf4; color:#15803d; }
+.bit-ic.a-inventario{ background:#fff7ed; color:#c2410c; }
+.bit-ic.a-equipo{ background:#fdf2f8; color:#be185d; }
+.bit-ic.a-sesion{ background:#f1f5f9; color:#475569; }
+.bit-row.is-fail .bit-ic{ background:#fef3f2; color:#b42318; }
+.bit-body-txt{ min-width:0; }
+.bit-desc{ font-size:13.5px; color:var(--ink); line-height:1.45; }
+.bit-desc b{ font-weight:800; }
+.bit-row.is-fail .bit-desc{ color:#b42318; }
+.bit-meta{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:3px; font-size:11.5px; color:var(--muted); }
+.bit-tag{ padding:1px 8px; border-radius:999px; background:#f1f5f9; font-weight:700; }
+.bit-tag.fail{ background:#fef3f2; color:#b42318; }
+.bit-empty{ text-align:center; color:var(--muted); font-size:13.5px; padding:30px 10px; }
+.bit-empty[hidden]{ display:none; }
+.bit-more-wrap{ text-align:center; margin-top:8px; }
+.bit-more[hidden]{ display:none; }
+
+@media (max-width:960px){
+  .bit-layout{ grid-template-columns:1fr; }
+  .bit-people{ position:static; }
+  .bit-people-list{ flex-direction:row; overflow-x:auto; max-height:none; padding-bottom:4px; }
+  .bit-person{ flex:0 0 auto; width:auto; }
+  .bit-person-txt small{ display:none; }
+}
+@media (max-width:560px){
+  .bit-row{ grid-template-columns:44px 30px minmax(0,1fr); gap:8px; }
+  .bit-ic{ width:30px; height:30px; }
+}

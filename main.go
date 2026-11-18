@@ -102,6 +102,15 @@ func main() {
 	if err := config.DB.AutoMigrate(models.StaffModels()...); err != nil {
 		log.Fatal("❌ Error en migración de usuarios del equipo:", err)
 	}
+	// Bitácora del equipo (quién hizo qué).
+	if err := config.DB.AutoMigrate(models.ActivityModels()...); err != nil {
+		log.Fatal("❌ Error en migración de la bitácora:", err)
+	}
+	handlers.StartActivityJanitor()
+	// Página pública del negocio (/n/:slug) y cuentas de sus clientes.
+	if err := config.DB.AutoMigrate(models.CustomerModels()...); err != nil {
+		log.Fatal("❌ Error en migración de clientes del negocio:", err)
+	}
 
 	log.Println("✅ Base de datos conectada y migrada")
 
@@ -272,7 +281,10 @@ func main() {
 		// Tiempo real del panel (Recepción, Optometría, Laboratorio, Inventario)
 		protected.GET("/live", handlers.LiveStream)
 		// Usuarios del equipo (solo el dueño)
-		equipo := protected.Group("/equipo")
+		// Bitácora del equipo (solo el dueño)
+		protected.GET("/bitacora", handlers.BitacoraList)
+		protected.GET("/bitacora/personas", handlers.BitacoraPeople)
+		equipo := protected.Group("/equipo", handlers.ActivityTracker("equipo"))
 		{
 			equipo.GET("", handlers.StaffList)
 			equipo.POST("", handlers.StaffCreate)
@@ -324,9 +336,9 @@ func main() {
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
 		// ============================================
 		protected.GET("/appointments", handlers.GetAppointments)
-		protected.POST("/appointments", handlers.LiveNotify("citas", "optometria"), handlers.CreateManualAppointment)
-		protected.PATCH("/appointments/:id/status", handlers.LiveNotify("citas", "optometria"), handlers.UpdateAppointmentStatus)
-		protected.DELETE("/appointments/:id", handlers.LiveNotify("citas", "optometria"), handlers.DeleteAppointment)
+		protected.POST("/appointments", handlers.ActivityTracker("citas"), handlers.LiveNotify("citas", "optometria"), handlers.CreateManualAppointment)
+		protected.PATCH("/appointments/:id/status", handlers.ActivityTracker("citas"), handlers.LiveNotify("citas", "optometria"), handlers.UpdateAppointmentStatus)
+		protected.DELETE("/appointments/:id", handlers.ActivityTracker("citas"), handlers.LiveNotify("citas", "optometria"), handlers.DeleteAppointment)
 
 		// ============================================
 		// 🍕 ORDERS — Pedidos (giros de comida)
@@ -407,7 +419,7 @@ func main() {
 		// 📦 INVENTARIO — sidebar → Inventario (Artículos, Departamentos,
 		// Ajustes, Movimientos). Mismas rutas que el panel de Avante.
 		// ============================================
-		inv := protected.Group("/inventario", handlers.LiveNotify("inventario"))
+		inv := protected.Group("/inventario", handlers.LiveNotify("inventario"), handlers.ActivityTracker("inventario"))
 		{
 			inv.GET("/articulos", handlers.InvListItems)
 			inv.POST("/articulos", handlers.InvCreateItem)
@@ -438,7 +450,7 @@ func main() {
 		}
 
 		// Laboratorio (ópticas) — handlers/laboratorio.go
-		lab := protected.Group("/laboratorio", handlers.LiveNotify("lab", "optometria", "pos"))
+		lab := protected.Group("/laboratorio", handlers.LiveNotify("lab", "optometria", "pos"), handlers.ActivityTracker("lab"))
 		{
 			lab.GET("/pedidos", handlers.LabListOrders)
 			lab.PATCH("/pedidos/:id/estado", handlers.LabSetStatus)
@@ -456,7 +468,7 @@ func main() {
 		}
 
 		// Optometría (ópticas) — handlers/optometria.go
-		opt := protected.Group("/optometria", handlers.LiveNotify("optometria", "lab"))
+		opt := protected.Group("/optometria", handlers.LiveNotify("optometria", "lab"), handlers.ActivityTracker("optometria"))
 		{
 			opt.GET("/plantillas", handlers.OptListTemplates)
 			opt.GET("/plantillas/activa", handlers.OptActiveTemplate)
@@ -489,7 +501,7 @@ func main() {
 		}
 
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
-		citas := protected.Group("/citas", handlers.LiveNotify("citas", "optometria"))
+		citas := protected.Group("/citas", handlers.LiveNotify("citas", "optometria"), handlers.ActivityTracker("citas"))
 		{
 			citas.GET("/horarios", handlers.CitasHours)
 			citas.GET("/compartir", handlers.CitasShareLinks)
@@ -508,7 +520,7 @@ func main() {
 		// 🧾 PUNTO DE VENTA — sidebar → Punto de venta (Punto de venta,
 		// Ventas, Corte de caja). Las ventas descuentan el Inventario.
 		// ============================================
-		pos := protected.Group("/pos", handlers.LiveNotify("pos", "lab", "optometria", "inventario"))
+		pos := protected.Group("/pos", handlers.LiveNotify("pos", "lab", "optometria", "inventario"), handlers.ActivityTracker("pos"))
 		{
 			pos.GET("/inventario", handlers.PosSearchInventory)
 			pos.GET("/estados", handlers.PosOrderStatuses)
@@ -529,7 +541,7 @@ func main() {
 			pos.GET("/ticket-plantilla", handlers.PosGetTicketTemplate)
 			pos.PUT("/ticket-plantilla", handlers.PosSaveTicketTemplate)
 		}
-		caja := protected.Group("/caja", handlers.LiveNotify("pos"))
+		caja := protected.Group("/caja", handlers.LiveNotify("pos"), handlers.ActivityTracker("caja"))
 		{
 			caja.GET("/estado", handlers.CajaEstadoAPI)
 			caja.GET("/cortes", handlers.CajaListCortes)
@@ -648,10 +660,25 @@ func main() {
 	router.GET("/api/agendar/:id", handlers.BookingInfo)
 	router.GET("/api/agendar/:id/ocupadas", handlers.BookingOccupied)
 	router.POST("/api/agendar/:id", handlers.BookingCreate)
+	// Página pública del negocio + cuenta del cliente y Mis citas
+	// (handlers/business_page.go): attomos.com/n/<nombre-del-negocio>
+	router.GET("/n/:slug", handlers.NegocioPage)
+	router.GET("/n/:slug/agendar", handlers.NegocioAgendarPage)
+	router.GET("/n/:slug/entrar", handlers.NegocioAuthPage("entrar"))
+	router.GET("/n/:slug/registro", handlers.NegocioAuthPage("registro"))
+	router.GET("/n/:slug/mis-citas", handlers.NegocioMisCitasPage)
+	router.POST("/api/n/:slug/registro", handlers.CustomerRegister)
+	router.POST("/api/n/:slug/entrar", handlers.CustomerLogin)
+	router.POST("/api/n/:slug/salir", handlers.CustomerLogout)
+	router.GET("/api/n/:slug/yo", handlers.CustomerMe)
+	router.GET("/api/n/:slug/mis-citas", handlers.MyCitasList)
+	router.POST("/api/n/:slug/mis-citas/:id/cancelar", handlers.MyCitaCancel)
+	router.POST("/api/n/:slug/mis-citas/:id/reagendar", handlers.MyCitaReschedule)
 	// Entrada del equipo (ópticas) y la página Usuarios del dueño
 	router.GET("/equipo/login", handlers.StaffLoginPage)
 	router.POST("/api/equipo/login", handlers.StaffLogin)
 	router.GET("/equipo", middleware.AuthRequired(), handlers.StaffPage)
+	router.GET("/bitacora", middleware.AuthRequired(), handlers.BitacoraPage)
 	router.GET("/api/rastreo", handlers.TrackingAPI)
 
 	// Mis citas: la página se arma en el servidor (handlers/appointments_panel.go).

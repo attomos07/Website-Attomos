@@ -1,0 +1,213 @@
+{{/* Página pública del negocio: attomos.com/n/<slug>. Se arma sola con lo
+     que el negocio llenó en Mi Negocio (handlers/business_page.go
+     NegocioPage). Estilos: static/css/pages/negocio.css */}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+{{if .NotFound}}
+<title>Página no encontrada — Attomos</title>
+{{else}}
+<title>{{.Nombre}}{{if .Tipo}} · {{.Tipo}}{{end}}</title>
+<meta name="description" content="{{if .Descripcion}}{{.Descripcion}}{{else}}{{.Nombre}}: servicios, horario, ubicación y citas en línea.{{end}}">
+<meta property="og:title" content="{{.Nombre}}">
+<meta property="og:description" content="{{if .Descripcion}}{{.Descripcion}}{{else}}Agenda tu cita en línea.{{end}}">
+{{if .Banner}}<meta property="og:image" content="{{.Banner}}">{{else if .Logo}}<meta property="og:image" content="{{.Logo}}">{{end}}
+{{end}}
+<link rel="icon" type="image/png" href="{{if .Logo}}{{.Logo}}{{else}}/static/images/attomos-favicon.png{{end}}">
+<link rel="stylesheet" href="/static/css/pages/negocio-nav.css?v=1">
+<link rel="stylesheet" href="/static/css/pages/negocio.css?v=2">
+</head>
+<body class="ng-body">
+
+{{if .NotFound}}
+<main class="ng-missing">
+  <div class="ng-missing-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/></svg></div>
+  <h1>No encontramos este negocio</h1>
+  <p>Revisa que la liga esté bien escrita o pídele al negocio que te la comparta de nuevo.</p>
+  <a class="ng-btn ng-btn-ghost" href="/">Ir a Attomos</a>
+</main>
+{{else}}
+
+{{template "negocio-nav" .Nav}}
+
+<main class="ng-main">
+  <!-- Portada -->
+  <section class="ng-hero{{if .Banner}} has-banner{{end}}">
+    <div class="ng-cover">
+      {{if .Banner}}<img src="{{.Banner}}" alt="" class="ng-cover-img">{{end}}
+      <div class="ng-cover-glow"></div>
+    </div>
+    <div class="ng-hero-card">
+      <div class="ng-hero-logo">{{if .Logo}}<img src="{{.Logo}}" alt="{{.Nombre}}">{{else}}<span>{{.Nav.Inicial}}</span>{{end}}</div>
+      <div class="ng-hero-txt">
+        <div class="ng-chips">
+          {{if .Tipo}}<span class="ng-chip">{{.Tipo}}</span>{{end}}
+          {{if .Estado}}<span class="ng-chip ng-state{{if .Abierto}} is-open{{end}}"><i></i>{{.Estado}}</span>{{end}}
+        </div>
+        <h1>{{.Nombre}}</h1>
+        {{if .Direccion}}<p class="ng-hero-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>{{.Direccion}}</p>{{end}}
+      </div>
+      <div class="ng-hero-actions">
+        <a class="ng-btn ng-btn-solid" href="/n/{{.Nav.Slug}}/agendar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Agendar cita</a>
+        {{if .WhatsApp}}<a class="ng-btn ng-btn-wa" href="{{.WhatsApp}}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3Z"/></svg>WhatsApp</a>{{end}}
+        {{if .TelLink}}<a class="ng-btn ng-btn-ghost" href="{{.TelLink}}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>Llamar</a>{{end}}
+        {{if .MapaLink}}<a class="ng-btn ng-btn-ghost" href="{{.MapaLink}}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 19-9-9 19-2-8-8-2z"/></svg>Cómo llegar</a>{{end}}
+      </div>
+    </div>
+  </section>
+
+  {{if .Descripcion}}
+  <section class="ng-sec ng-about" data-reveal>
+    <div class="ng-eyebrow">Sobre nosotros</div>
+    <p class="ng-about-txt">{{.Descripcion}}</p>
+  </section>
+  {{end}}
+
+  {{if or .Servicios .Menu}}
+  <section class="ng-sec" id="servicios" data-reveal>
+    <div class="ng-sec-head">
+      <div><div class="ng-eyebrow">Lo que ofrecemos</div><h2>Servicios</h2></div>
+      {{if .Menu}}<a class="ng-btn ng-btn-ghost ng-btn-sm" href="{{.Menu}}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Ver catálogo completo</a>{{end}}
+    </div>
+    {{if .Servicios}}
+    <div class="ng-services">
+      {{range $i, $s := .Servicios}}
+      <article class="ng-service{{if $s.Agotado}} is-out{{end}}">
+        <div class="ng-service-img{{if not $s.Imagen}} is-empty{{end}}">
+          {{if $s.Imagen}}<img src="{{$s.Imagen}}" alt="{{$s.Titulo}}" loading="lazy">{{else}}<span class="ng-service-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 17.9l.9-5.4L4.2 8.7l5.4-.8z"/></svg></span>{{end}}
+          {{if $s.Promo}}<em class="ng-promo">{{$s.Promo}}</em>{{end}}
+          {{if $s.Agotado}}<em class="ng-out">Agotado</em>{{end}}
+        </div>
+        <div class="ng-service-body">
+          <h3>{{$s.Titulo}}</h3>
+          {{if $s.Descripcion}}<p>{{$s.Descripcion}}</p>{{end}}
+          {{if $s.Precio}}<div class="ng-price">{{if $s.Antes}}<s>{{$s.Antes}}</s>{{end}}<strong>{{$s.Precio}}</strong></div>{{end}}
+        </div>
+      </article>
+      {{end}}
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  {{if or .Horario .Cerrados}}
+  <section class="ng-sec" id="horario" data-reveal>
+    <div class="ng-sec-head"><div><div class="ng-eyebrow">Cuándo visitarnos</div><h2>Horario</h2></div></div>
+    <div class="ng-hours-grid">
+      {{if .Horario}}
+      <div class="ng-card ng-hours">
+        {{range .Horario}}
+        <div class="ng-hour{{if .Hoy}} is-today{{end}}{{if .Cerrado}} is-closed{{end}}">
+          <span>{{.Dia}}{{if .Hoy}} <em>Hoy</em>{{end}}</span><strong>{{.Horas}}</strong>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+      <div class="ng-card ng-closed">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M10 14l4 4M14 14l-4 4"/></svg>Próximos días cerrados</h3>
+        {{if .Cerrados}}
+        <ul>{{range .Cerrados}}<li><strong>{{.Fecha}}</strong>{{if .Motivo}}<span>{{.Motivo}}</span>{{end}}</li>{{end}}</ul>
+        {{else}}
+        <p class="ng-muted">Por ahora abrimos todos los días de nuestro horario.</p>
+        {{end}}
+        <a class="ng-btn ng-btn-solid ng-btn-block" href="/n/{{.Nav.Slug}}/agendar">Elegir día y hora</a>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  {{if .Direccion}}
+  <section class="ng-sec" id="ubicacion" data-reveal>
+    <div class="ng-sec-head"><div><div class="ng-eyebrow">Dónde estamos</div><h2>Ubicación</h2></div></div>
+    <div class="ng-map-wrap">
+      <iframe class="ng-map" src="{{.MapaEmbed}}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de {{.Nombre}}"></iframe>
+      <div class="ng-card ng-map-card">
+        <span class="ng-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div><strong>{{.Direccion}}</strong>{{if .Entre}}<span>{{.Entre}}</span>{{end}}</div>
+        <a class="ng-btn ng-btn-ghost ng-btn-sm" href="{{.MapaLink}}" target="_blank" rel="noopener">Abrir en Maps</a>
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  {{if .Equipo}}
+  <section class="ng-sec" data-reveal>
+    <div class="ng-sec-head"><div><div class="ng-eyebrow">Quién te atiende</div><h2>Nuestro equipo</h2></div></div>
+    <div class="ng-team">
+      {{range $i, $w := .Equipo}}
+      <div class="ng-card ng-member">
+        <span class="ng-ava">{{$w.Inicial}}</span>
+        <div><strong>{{$w.Nombre}}</strong>{{if $w.Dias}}<span>{{$w.Dias}}</span>{{end}}{{if $w.Horas}}<small>{{$w.Horas}}</small>{{end}}</div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  <section class="ng-sec" id="contacto" data-reveal>
+    <div class="ng-sec-head"><div><div class="ng-eyebrow">Hablemos</div><h2>Contacto</h2></div></div>
+    <div class="ng-contact">
+      {{if .Telefono}}<a class="ng-card ng-cline" href="{{.TelLink}}"><span class="ng-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg></span><div><small>Teléfono</small><strong>{{.Telefono}}</strong></div></a>{{end}}
+      {{if .WhatsApp}}<a class="ng-card ng-cline" href="{{.WhatsApp}}" target="_blank" rel="noopener"><span class="ng-ic ng-ic-wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg></span><div><small>WhatsApp</small><strong>Escríbenos</strong></div></a>{{end}}
+      {{if .Correo}}<a class="ng-card ng-cline" href="mailto:{{.Correo}}"><span class="ng-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><div><small>Correo</small><strong>{{.Correo}}</strong></div></a>{{end}}
+      {{if .Web}}<a class="ng-card ng-cline" href="{{.Web}}" target="_blank" rel="noopener"><span class="ng-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg></span><div><small>Sitio web</small><strong>{{.WebLabel}}</strong></div></a>{{end}}
+      {{range .Redes}}<a class="ng-card ng-cline" href="{{.URL}}" target="_blank" rel="noopener"><span class="ng-ic ng-ic-{{.Key}}">{{if eq .Key "facebook"}}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v2H8v4h2v8h4v-8h3l1-4h-4V8.5c0-.3.2-.5.5-.5Z"/></svg>{{else if eq .Key "instagram"}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>{{else if eq .Key "x"}}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.7 8 10.3h-6.2l-4.9-6.3L5.4 21H2.3l7.3-8.3L2 3h6.4l4.4 5.8Zm-1.1 16.2h1.7L7.4 4.7H5.6Z"/></svg>{{else}}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM3 8.5h3V21H3Zm5.5 0h2.9v1.7c.4-.8 1.4-1.9 3.3-1.9 3.5 0 4.3 2.3 4.3 5.3V21h-3v-6.6c0-1.6 0-3.6-2.2-3.6s-2.3 1.7-2.3 3.5V21h-3Z"/></svg>{{end}}</span><div><small>{{.Label}}</small><strong>Síguenos</strong></div></a>{{end}}
+    </div>
+  </section>
+
+  {{if .Sucursales}}
+  <section class="ng-sec" data-reveal>
+    <div class="ng-sec-head"><div><div class="ng-eyebrow">También estamos en</div><h2>Sucursales</h2></div></div>
+    <div class="ng-branches">
+      {{range .Sucursales}}
+      <div class="ng-card ng-branch">
+        <strong>{{.Nombre}}</strong><span>{{.Direccion}}</span>
+        <div class="ng-branch-actions">
+          {{if .TelLink}}<a href="{{.TelLink}}">{{.Telefono}}</a>{{end}}
+          <a href="{{.Mapa}}" target="_blank" rel="noopener">Ver en mapa</a>
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  <section class="ng-cta" data-reveal>
+    <div>
+      <h2>¿Ya tienes una cita?</h2>
+      <p>Entra a «Mis citas» para verla, cambiarla de día u hora o cancelarla, sin llamar.</p>
+    </div>
+    <div class="ng-cta-actions">
+      <a class="ng-btn ng-btn-solid" href="/n/{{.Nav.Slug}}/agendar">Agendar cita</a>
+      <a class="ng-btn ng-btn-ghost" href="/n/{{.Nav.Slug}}/{{if .Nav.Cliente}}mis-citas{{else}}entrar{{end}}">Mis citas</a>
+    </div>
+  </section>
+</main>
+
+<footer class="ng-foot">
+  <span>© {{.Nombre}}</span>
+  <span>Página hecha con <a href="/" target="_blank" rel="noopener">Attomos</a></span>
+</footer>
+
+<script src="/static/js/pages/negocio-nav.js?v=1"></script>
+<script>
+(function () {
+  var els = document.querySelectorAll('[data-reveal]');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('is-in'); }); return; }
+  var io = new IntersectionObserver(function (en) {
+    en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('is-in'); io.unobserve(x.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function (e) { io.observe(e); });
+})();
+</script>
+{{end}}
+</body>
+</html>
