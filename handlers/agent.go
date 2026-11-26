@@ -1123,33 +1123,22 @@ func centerText(text string, width int) string {
 	return strings.Repeat(" ", padding) + text + strings.Repeat(" ", width-len(text)-padding)
 }
 
+// syncOnboardingToBranch — refleja en la sucursal lo que el wizard de un
+// agente de NEGOCIO todavía pueda traer (trabajadores / festivos de agentes
+// viejos). Los servicios ya NO se copian: productos y servicios viven solo en
+// Inventario (bots.GenerateBusinessConfig los lee de ahí), y el wizard nuevo
+// ya no los captura. Antes esto sobrescribía branch.Services con lo del
+// agente y dejaba dos fuentes de verdad para lo que vende el negocio.
 func syncOnboardingToBranch(branchID uint, cfg models.AgentConfig) {
+	if len(cfg.Workers) == 0 && len(cfg.Holidays) == 0 {
+		return
+	}
 	var branch models.MyBusinessInfo
 	if err := config.DB.First(&branch, branchID).Error; err != nil {
 		log.Printf("⚠️  [SyncBranch] No se encontró sucursal %d: %v", branchID, err)
 		return
 	}
 	updated := false
-	if len(cfg.Services) > 0 {
-		newServices := make(models.BranchServices, len(cfg.Services))
-		for i, s := range cfg.Services {
-			newServices[i] = models.BranchService{
-				Title:           s.Title,
-				Description:     s.Description,
-				PriceType:       s.PriceType,
-				Price:           parseFlexibleFloat(string(s.Price)),
-				OriginalPrice:   parseFlexibleFloatPtr(s.OriginalPrice),
-				PromoPrice:      parseFlexibleFloatPtr(s.PromoPrice),
-				ImageUrls:       s.ImageUrls,
-				PromoPeriodType: s.PromoPeriodType,
-				PromoDays:       s.PromoDays,
-				PromoDateStart:  s.PromoDateStart,
-				PromoDateEnd:    s.PromoDateEnd,
-			}
-		}
-		branch.Services = newServices
-		updated = true
-	}
 	if len(cfg.Workers) > 0 {
 		newWorkers := make(models.BranchWorkers, len(cfg.Workers))
 		for i, w := range cfg.Workers {
@@ -1173,20 +1162,4 @@ func syncOnboardingToBranch(branchID uint, cfg models.AgentConfig) {
 			log.Printf("✅ [SyncBranch] Sucursal %d actualizada", branchID)
 		}
 	}
-}
-
-func parseFlexibleFloat(s string) float64 {
-	if s == "" {
-		return 0
-	}
-	var f float64
-	fmt.Sscanf(s, "%f", &f)
-	return f
-}
-
-func parseFlexibleFloatPtr(s *models.FlexibleString) float64 {
-	if s == nil {
-		return 0
-	}
-	return parseFlexibleFloat(string(*s))
 }

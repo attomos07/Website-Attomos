@@ -41,6 +41,7 @@ type Personality struct {
 	Tone                string   `json:"tone"` // formal, friendly, casual, custom
 	CustomTone          string   `json:"customTone"`
 	AdditionalLanguages []string `json:"additionalLanguages"`
+	StyleSample         string   `json:"styleSample,omitempty"` // ejemplos reales de cómo contesta el negocio
 }
 
 // Schedule representa el horario semanal
@@ -392,6 +393,15 @@ func GetPersonalityPrompt() string {
 			personality += fmt.Sprintf(" Puedes responder en español y también en %s si el cliente lo solicita.",
 				strings.Join(langs, ", "))
 		}
+	}
+
+	// Estilo de respuesta: ejemplos reales del negocio (txt subido en el
+	// wizard). Se imita la forma de escribir, nunca los datos.
+	if sample := strings.TrimSpace(BusinessCfg.Personality.StyleSample); sample != "" {
+		personality += "\n\nESTILO DE RESPUESTA: abajo hay mensajes reales de cómo contesta este negocio a sus clientes. " +
+			"Imita su forma de escribir (saludos, despedidas, largo de los mensajes, emojis, muletillas, trato de tú o usted); si choca con el tono indicado arriba, manda el estilo de estos ejemplos. " +
+			"NO copies datos de esos mensajes (precios, horarios, existencias, nombres de clientes): pueden estar desactualizados; " +
+			"usa siempre la información actual del negocio.\n--- EJEMPLOS ---\n" + sample + "\n--- FIN DE EJEMPLOS ---"
 	}
 
 	return personality

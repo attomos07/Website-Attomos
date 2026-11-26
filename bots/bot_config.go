@@ -51,6 +51,22 @@ type Personality struct {
 	Tone                string   `json:"tone"`
 	CustomTone          string   `json:"customTone,omitempty"`
 	AdditionalLanguages []string `json:"additionalLanguages"`
+	// StyleSample: ejemplos reales de cómo contesta el negocio (ver
+	// models.AgentConfig.StyleSample). El bot los usa como guía de estilo.
+	StyleSample string `json:"styleSample,omitempty"`
+}
+
+// maxStyleSampleRunes — tope del ejemplo de estilo que viaja al bot (va
+// completo en el system prompt en cada mensaje).
+const maxStyleSampleRunes = 6000
+
+func clampStyleSample(s string) string {
+	s = strings.TrimSpace(s)
+	r := []rune(s)
+	if len(r) > maxStyleSampleRunes {
+		return string(r[:maxStyleSampleRunes])
+	}
+	return s
 }
 
 type Schedule struct {
@@ -128,6 +144,7 @@ func GenerateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) 
 			Tone:                agent.Config.Tone,
 			CustomTone:          agent.Config.CustomTone,
 			AdditionalLanguages: agent.Config.AdditionalLanguages,
+			StyleSample:         clampStyleSample(agent.Config.StyleSample),
 		},
 		// Fallback: datos legacy del AgentConfig
 		Schedule: Schedule{

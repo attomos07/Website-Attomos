@@ -7,7 +7,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css" />
     <link rel="stylesheet" href="/static/css/client/userbar.css" />
-    <link rel="stylesheet" href="/static/css/client/onboarding.css?v=5" />
+    <link rel="stylesheet" href="/static/css/client/onboarding.css?v=7" />
   
     <style>
       /* ── Read-only notice en secciones de negocio ── */
@@ -877,6 +877,50 @@
                           </div>
                         </div>
                       </div>
+
+                      <!-- Estilo de respuesta: .txt con conversaciones reales (chat exportado
+                           de WhatsApp o texto libre). Se procesa en el navegador
+                           (initializeStyleSample en onboarding.js) y viaja como config.styleSample. -->
+                      <div class="form-group style-sample-group">
+                        <label class="form-label">
+                          <span data-translate="onb_style_label">¿Cómo contestas tú?</span>
+                          <span class="style-optional" data-translate="onb_style_optional">Opcional</span>
+                        </label>
+                        <span class="form-help" data-translate="onb_style_help">Sube un .txt con conversaciones reales con tus clientes y el agente copiará tu forma de escribir: saludos, emojis, qué tan largo contestas.</span>
+
+                        <div class="style-upload" id="styleUploadArea">
+                          <input type="file" id="styleFileInput" accept=".txt,text/plain" hidden />
+
+                          <button type="button" class="style-upload-placeholder" id="styleUploadPlaceholder">
+                            <span class="style-upload-icon"><i class="lni lni-upload"></i></span>
+                            <span class="style-upload-text">
+                              <strong data-translate="onb_style_drop">Arrastra tu .txt aquí o haz clic para elegirlo</strong>
+                              <span data-translate="onb_style_how">En WhatsApp: abre un chat con un cliente → ⋮ → Más → Exportar chat → Sin archivos</span>
+                            </span>
+                          </button>
+
+                          <div class="style-file" id="styleFileCard" hidden>
+                            <div class="style-file-head">
+                              <span class="style-file-icon"><i class="lni lni-files"></i></span>
+                              <span class="style-file-info">
+                                <strong id="styleFileName"></strong>
+                                <span id="styleFileStats"></span>
+                              </span>
+                              <button type="button" class="style-file-remove" id="styleFileRemove" title="Quitar">
+                                <i class="lni lni-trash-can"></i>
+                              </button>
+                            </div>
+
+                            <div class="style-sender" id="styleSenderWrap" hidden>
+                              <span class="style-sender-label" data-translate="onb_style_who">¿Quién eres tú en este chat?</span>
+                              <div class="style-sender-options" id="styleSenderOptions"></div>
+                            </div>
+
+                            <div class="style-preview-label" data-translate="onb_style_preview">Así lo verá el agente</div>
+                            <pre class="style-preview" id="stylePreview"></pre>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     <div class="action-buttons">
@@ -1236,111 +1280,8 @@
                     </div>
                   </div>
 
-                  <!-- SECCIÓN 9: Menú -->
-                  <div class="section-container" id="section-menu">
-                    <div class="form-section">
-                      <h3 class="section-title">
-                        <i class="lni lni-files"></i>
-                        <span data-translate="onb_sec_menu">Menú</span>
-                      </h3>
-                      <span class="form-help">
-                        <span data-translate="onb_catalog_help">Sube tu catálogo en PDF o como imagen. El agente de IA lo usará como referencia para responder preguntas de tus clientes.</span>
-                      </span>
-
-                      <div class="menu-upload-area" id="ob-menuUploadArea">
-                        <input type="file" id="ob-menuFileInput" accept="image/*,.pdf" style="display:none">
-                        <div class="menu-upload-placeholder" id="ob-menuUploadPlaceholder">
-                          <i class="lni lni-upload"></i>
-                          <span><span data-translate="onb_catalog_drag_pre">Arrastra tu menú aquí o</span> <strong data-translate="onb_catalog_drag_link">haz clic para seleccionar</strong></span>
-                          <span class="menu-upload-hint" data-translate="onb_catalog_hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
-                        </div>
-                        <div class="menu-file-preview" id="ob-menuFilePreview" style="display:none">
-                          <div class="menu-file-info">
-                            <i class="lni lni-files" id="ob-menuFileIcon"></i>
-                            <div>
-                              <span class="menu-file-name" id="ob-menuFileName"></span>
-                              <span class="menu-file-size" id="ob-menuFileSize"></span>
-                            </div>
-                            <button type="button" class="btn-remove-menu" id="ob-btnRemoveMenu">
-                              <i class="lni lni-close"></i>
-                            </button>
-                          </div>
-                          <div class="menu-upload-progress" id="ob-menuUploadProgress" style="display:none">
-                            <div class="menu-progress-bar" id="ob-menuProgressBar"></div>
-                          </div>
-                          <div class="menu-file-viewer" id="ob-menuFileViewer" style="display:none"></div>
-                        </div>
-                        <input type="hidden" id="ob-menuUrlInput" value="">
-                      </div>
-                    </div>
-
-                    <div class="action-buttons">
-                      <button type="button" class="btn btn-back btn-prev-section">
-                        <i class="lni lni-arrow-left"></i>
-                        <span data-translate="onb_btn_prev">Anterior</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-next btn-next-section"
-                        style="margin-left: auto"
-                      >
-                        <span data-translate="onb_btn_next">Siguiente</span>
-                        <i class="lni lni-arrow-right"></i>
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
-                  <!-- SECCIÓN 10: Trabajadores -->
-                  <div class="section-container" id="section-workers">
-                    <div class="form-section">
-                      <h3 class="section-title">
-                        <i class="lni lni-users"></i>
-                        <span data-translate="onb_sec_workers">Trabajadores / Personal</span>
-                      </h3>
-                        <div class="readonly-notice">
-                          <i class="lni lni-lock-alt"></i>
-                          <span data-translate="onb_readonly_notice_pre">Datos precargados desde</span> <strong data-translate="onb_my_business">Mi Negocio</strong>. <span data-translate="onb_readonly_notice_mid">Para editarlos ve a</span>
-                          <a href="/my-business" target="_blank"><span data-translate="onb_my_business">Mi Negocio</span> &rarr;</a>
-                        </div>
-
-
-                      <span class="form-help" data-translate="onb_wkr_help">Agrega información sobre tu personal y su disponibilidad</span>
-
-                      <div class="workers-list" id="workersList">
-                        <!-- Los trabajadores se agregarán dinámicamente aquí -->
-                      </div>
-
-                      <button
-                        type="button"
-                        id="addWorkerBtn"
-                        class="btn-add-worker"
-                      >
-                        <i class="lni lni-plus"></i>
-                        <span data-translate="onb_wkr_add_btn">Agregar Trabajador</span>
-                      </button>
-                    </div>
-
-                    <div class="action-buttons">
-                      <button
-                        type="button"
-                        class="btn btn-back btn-prev-section"
-                      >
-                        <i class="lni lni-arrow-left"></i>
-                        <span data-translate="onb_btn_prev">Anterior</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-next"
-                        id="btnStep2Unified"
-                        style="margin-left: auto"
-                      >
-                        <span data-translate="onb_btn_see_summary">Ver Resumen</span>
-                        <i class="lni lni-arrow-right"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
 
 
 
@@ -1355,6 +1296,10 @@
                       <span data-translate="onb_step3_desc">Revisa la información antes de crear tu agente</span>
                     </p>
                   </div>
+
+                  <!-- Checklist "Lo que sabrá tu agente" (solo negocios): el agente
+                       toma todo de Mi Negocio + Inventario, aquí solo se revisa. -->
+                  <div class="readiness-card" id="readinessContainer" hidden></div>
 
                   <div class="summary-card">
                     <div id="summaryContainer"></div>
@@ -1514,6 +1459,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/ios-pickers.js?v=1"></script>
-    <script src="/static/js/client/onboarding.js?v=6"></script>
+    <script src="/static/js/client/onboarding.js?v=8"></script>
   </body>
 </html>

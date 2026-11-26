@@ -647,7 +647,7 @@ async function loadOnboardingContent() {
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
-                link.href = '/static/css/client/onboarding.css?v=5';
+                link.href = '/static/css/client/onboarding.css?v=7';
                 document.head.appendChild(link);
             }
             // Restaurar estilos del layout de dashboard que onboarding.css sobreescribe
@@ -892,33 +892,21 @@ async function reinitializeOnboardingEvents() {
                 { id: 7, containerId: 'section-holidays',    name: () => t('onb_tab_holidays_gov','Días Inhábiles'), icon: 'lni-gift' },
                 { id: 8, containerId: 'section-services',    name: () => t('onb_tab_courses','Cursos'),         icon: 'lni-graduation' },
               ])
-        : (_hasExistingAgents
-            ? [
-                { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
-                { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
-              ]
-            : [
-                { id: 1,  containerId: 'section-business',    name: () => t('onb_tab_business','Info. Negocio'),  icon: 'lni-briefcase' },
-                { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
-                { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
-                { id: 6,  containerId: 'section-schedule',    name: () => t('onb_tab_schedule','Horarios'),       icon: 'lni-calendar' },
-                { id: 7,  containerId: 'section-holidays',    name: () => t('onb_tab_holidays','Días Festivos'),  icon: 'lni-gift' },
-                { id: 8,  containerId: 'section-services',    name: () => t('onb_tab_services','Servicios / Productos'),      icon: 'lni-package' },
-                { id: 9,  containerId: 'section-menu',        name: () => t('onb_sec_menu','Menú'),           icon: 'lni-files' },
-                { id: 10, containerId: 'section-workers',     name: () => t('onb_tab_workers','Trabajadores'),   icon: 'lni-users' },
-              ]);
+        // Negocios: el agente solo configura lo suyo. Negocio, horario,
+        // festivos, trabajadores y menú vienen de Mi Negocio; productos y
+        // servicios de Inventario (el Resumen muestra el checklist).
+        : [
+            { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+            { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
+          ];
+    window._obIsGovModal = _isGovModal;
 
     // Secciones a ocultar según contexto
-    const _alwaysHide = _isGovModal ? [] : ['section-location', 'section-social'];
-    if (_hasExistingAgents) {
-        if (_isGovModal) {
-            _alwaysHide.push('section-business','section-location','section-social','section-schedule','section-holidays','section-services','section-menu','section-workers');
-        } else {
-            _alwaysHide.push('section-business','section-schedule','section-holidays','section-services','section-menu','section-workers');
-        }
-    } else if (_isGovModal) {
-        _alwaysHide.push('section-menu','section-workers');
-    }
+    const _alwaysHide = _isGovModal
+        ? (_hasExistingAgents
+            ? ['section-business','section-location','section-social','section-schedule','section-holidays','section-services']
+            : [])
+        : ['section-business','section-location','section-social','section-schedule','section-holidays','section-services'];
     _alwaysHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('active'); el.style.display = 'none'; }
@@ -1147,7 +1135,7 @@ async function reinitializeOnboardingEvents() {
             if (step2) { step2.classList.add('active'); step2.style.display = ''; }
             const nav = document.getElementById('sectionNavigation');
             if (nav) nav.style.display = '';
-            window._modalGoToSection(_hasExistingAgents ? 'section-basic' : (_isGovModal ? 'section-business' : 'section-business'));
+            window._modalGoToSection(AGENT_SECTIONS[0].containerId);
         });
         console.log('[dashboard] Hook btnStep1 registrado');
     }

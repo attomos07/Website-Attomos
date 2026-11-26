@@ -24,9 +24,27 @@ function t(key, fallback) { return window.Translations?.dict?.[getLang()]?.[key]
 // `if (typeof showNotification === 'function') showNotification(...)`,
 // así que sin una definición propia usa automáticamente la de la página.
 
-// DÍAS FESTIVOS / SERVICIOS / TRABAJADORES (wizard del agente)
+// ============================================
+// FUENTES DE VERDAD (reestructuración del wizard)
+//   - Mi Negocio  → nombre, giro, ubicación, redes, horario, festivos,
+//                   trabajadores, imágenes y menú.
+//   - Inventario  → productos Y servicios (artículo con "Servicio" marcado);
+//                   el bot los recibe vía GenerateBusinessConfig.
+//   - Agente      → solo plataforma, nombre/teléfono/idiomas y personalidad.
+// Para negocios el wizard ya NO captura ni reenvía horario/festivos/
+// servicios/trabajadores: en el resumen se muestra un checklist de lo que
+// el agente va a saber, con ligas a Mi Negocio / Inventario. El modo
+// gobierno (Dependencia, Cursos, etc.) sigue con sus secciones de siempre.
+// ============================================
+
+function _obIsGov() {
+    if (typeof window._obIsGovModal === 'boolean') return window._obIsGovModal;
+    return (window.agentData?.businessType || '').toLowerCase().includes('gubernamental');
+}
+
+// DÍAS FESTIVOS / SERVICIOS (wizard del agente — hoy solo los usa el modo gobierno)
 // reinitializeOnboardingEvents() (aquí y en dashboard.js/my-agents.js/integrations.js)
-// siempre llamó a initializeHolidays/initializeServices/initializeWorkers de forma
+// siempre llamó a initializeHolidays/initializeServices de forma
 // defensiva (typeof === 'function') pero esas funciones nunca existieron en ningún
 // archivo — por eso los botones "Agregar" no hacían nada. Se agregan aquí: como
 // onboarding.js se carga (directo o inyectado dinámicamente) en las 4 superficies
@@ -133,71 +151,6 @@ function _obAddServiceRow(data) {
     _obRenumberServices();
 }
 
-function initializeWorkers() {
-    const btn = document.getElementById('addWorkerBtn');
-    if (!btn || btn.dataset.obWired) return;
-    btn.dataset.obWired = '1';
-    btn.addEventListener('click', () => _obAddWorkerRow());
-}
-
-function _obRenumberWorkers() {
-    const list = document.getElementById('workersList');
-    if (!list) return;
-    list.querySelectorAll('.worker-item .worker-number').forEach((el, idx) => {
-        el.textContent = `${t('onb_wkr_label','Trabajador')} #${idx + 1}`;
-    });
-}
-
-function _obAddWorkerRow(data) {
-    const list = document.getElementById('workersList');
-    if (!list) return;
-    // Declarado local (no a nivel de archivo) a propósito: este mismo bloque
-    // se duplica en onboarding.js/dashboard.js/my-agents.js/integrations.js —
-    // un const/let a nivel de archivo repetido en 2 scripts que conviven en
-    // la misma página revienta con "Identifier ya declarado" (SyntaxError),
-    // igual que pasó con STATUS_BADGE_KEY_MAP. Dentro de una función no hay ese riesgo.
-    const weekDays = [
-        { key: 'monday',    label: () => t('day_monday','Lunes') },
-        { key: 'tuesday',   label: () => t('day_tuesday','Martes') },
-        { key: 'wednesday', label: () => t('day_wednesday','Miércoles') },
-        { key: 'thursday',  label: () => t('day_thursday','Jueves') },
-        { key: 'friday',    label: () => t('day_friday','Viernes') },
-        { key: 'saturday',  label: () => t('day_saturday','Sábado') },
-        { key: 'sunday',    label: () => t('day_sunday','Domingo') },
-    ];
-    const checkedDays = data?.days || ['monday','tuesday','wednesday','thursday','friday'];
-    const daysHTML = weekDays.map(d => `
-        <label class="availability-day">
-            <input type="checkbox" value="${d.key}" ${checkedDays.includes(d.key) ? 'checked' : ''}>
-            <span>${d.label()}</span>
-        </label>
-    `).join('');
-    const item = document.createElement('div');
-    item.className = 'worker-item';
-    item.innerHTML = `
-        <div class="worker-header">
-            <span class="worker-number"></span>
-            <button type="button" class="btn-remove-worker" title="${t('onb_remove_item','Eliminar')}">
-                <i class="lni lni-trash-can"></i>
-            </button>
-        </div>
-        <div class="worker-fields">
-            <input type="text" class="form-input worker-name" placeholder="${t('onb_wkr_name_ph','Nombre del trabajador')}" value="${(data?.name || '').replace(/"/g, '&quot;')}">
-            <div class="worker-availability">
-                <div class="availability-title">${t('onb_wkr_availability','Disponibilidad')}</div>
-                <div class="availability-grid">${daysHTML}</div>
-            </div>
-            <div class="worker-hours">
-                <input type="time" class="form-input worker-start" value="${data?.startTime || '09:00'}">
-                <input type="time" class="form-input worker-end" value="${data?.endTime || '18:00'}">
-            </div>
-        </div>
-    `;
-    item.querySelector('.btn-remove-worker').addEventListener('click', () => { item.remove(); _obRenumberWorkers(); });
-    list.appendChild(item);
-    _obRenumberWorkers();
-}
-
 // ============================================
 // PERSONALIDAD DEL AGENTE (tono + editor de tono personalizado)
 // ============================================
@@ -224,6 +177,10 @@ function initializeToneSelection() {
 
     const checked = document.querySelector('input[name="tone"]:checked');
     applySelection(checked ? checked.value : 'formal');
+
+    // Las páginas (dashboard/my-agents/integrations) solo llaman a
+    // initializeToneSelection, así que el uploader de estilo se engancha aquí.
+    initializeStyleSample();
 }
 
 function initializeRichEditor() {
@@ -244,6 +201,201 @@ function initializeRichEditor() {
             document.execCommand(buttons[id], false, null);
         });
     });
+}
+
+// ============================================
+// ESTILO DE RESPUESTA (.txt con conversaciones reales)
+// El negocio sube un chat exportado de WhatsApp (o texto libre) y el agente
+// imita cómo contestan. Todo se procesa aquí en el navegador: se detectan
+// los participantes, el usuario elige quién es él, se ocultan nombres de
+// clientes, teléfonos y correos, y se guarda un extracto (máx.
+// STYLE_SAMPLE_MAX caracteres, lo más reciente) en agentData.config.styleSample.
+// El backend lo vuelve a recortar (bots.clampStyleSample) y el bot lo pega
+// en el prompt de personalidad como guía de estilo.
+// ============================================
+
+const STYLE_SAMPLE_MAX = 6000;
+const STYLE_FILE_MAX_MB = 5;
+
+// Android: "25/11/26, 16:47 - Nombre: mensaje"
+// iPhone:  "[25/11/26, 4:47:12 p.m.] Nombre: mensaje"
+const _OB_WA_LINE = /^‎?\[?(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:[\s  ]?[ap]\.?[\s  ]?m\.?)?)\]?\s*(?:[-–]\s*)?([^:]{1,60}?):\s?(.*)$/i;
+const _OB_WA_SKIP = /(<multimedia omitido>|<media omitted>|archivo adjunto|attached|imagen omitida|image omitted|sticker omitido|sticker omitted|audio omitido|audio omitted|video omitido|video omitted|se eliminó este mensaje|this message was deleted|eliminaste este mensaje|you deleted this message|mensaje editado|<se editó este mensaje>|null$)/i;
+// Renglón que empieza con fecha/hora pero sin "Nombre:" = aviso del sistema (cifrado, grupo, etc.)
+const _OB_WA_DATE = /^\u200e?\[?\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4},?\s+\d{1,2}:\d{2}/;
+
+let _obStyleState = null; // { name, kind:'whatsapp'|'text', messages, senders, me, raw }
+
+function _obMaskPrivate(text) {
+    return text
+        .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[correo]')
+        .replace(/(\+?\d[\d\s().-]{7,}\d)/g, '[teléfono]');
+}
+
+function _obParseWhatsApp(raw) {
+    const lines = raw.replace(/\r\n?/g, '\n').split('\n');
+    const msgs = [];
+    let matched = 0;
+    for (const line of lines) {
+        const m = line.match(_OB_WA_LINE);
+        if (m) {
+            matched++;
+            msgs.push({ sender: m[3].replace(/^‎/, '').trim(), text: m[4] });
+        } else if (_OB_WA_DATE.test(line)) {
+            continue; // aviso del sistema: no se pega al mensaje anterior
+        } else if (msgs.length && line.trim()) {
+            msgs[msgs.length - 1].text += '\n' + line; // mensaje de varias líneas
+        }
+    }
+    // Se considera chat de WhatsApp si la mayoría de los renglones con texto lo parecen
+    const nonEmpty = lines.filter(l => l.trim()).length || 1;
+    if (matched < 4 || matched / nonEmpty < 0.3) return null;
+
+    const clean = msgs
+        .map(m => ({ sender: m.sender, text: m.text.replace(/‎/g, '').trim() }))
+        .filter(m => m.text && !_OB_WA_SKIP.test(m.text));
+
+    const counts = {}, chars = {};
+    clean.forEach(m => {
+        counts[m.sender] = (counts[m.sender] || 0) + 1;
+        chars[m.sender] = (chars[m.sender] || 0) + m.text.length;
+    });
+    // Orden por cuánto escribe cada quien: el negocio suele contestar más
+    // largo que el cliente, así el primero es la mejor suposición de "tú".
+    const senders = Object.keys(counts)
+        .sort((a, b) => chars[b] - chars[a])
+        .map(n => ({ name: n, count: counts[n] }));
+    if (!senders.length) return null;
+    return { messages: clean, senders };
+}
+
+// Arma el extracto "Cliente: … / Negocio: …" desde lo más reciente hacia
+// atrás hasta llenar STYLE_SAMPLE_MAX, sin nombres de clientes.
+function _obBuildStyleSample(state) {
+    if (state.kind === 'text') {
+        const txt = _obMaskPrivate(state.raw.trim());
+        return txt.length > STYLE_SAMPLE_MAX ? txt.slice(-STYLE_SAMPLE_MAX) : txt;
+    }
+    const turns = [];
+    state.messages.forEach(m => {
+        const role = m.sender === state.me ? 'Negocio' : 'Cliente';
+        const last = turns[turns.length - 1];
+        if (last && last.role === role) last.text += '\n' + m.text;
+        else turns.push({ role, text: m.text });
+    });
+    const blocks = turns.map(tn => `${tn.role}: ${_obMaskPrivate(tn.text)}`);
+    const out = [];
+    let size = 0;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+        if (size + blocks[i].length + 2 > STYLE_SAMPLE_MAX) break;
+        out.unshift(blocks[i]);
+        size += blocks[i].length + 2;
+    }
+    // Que no empiece a media respuesta del negocio sin la pregunta del cliente
+    while (out.length > 1 && out[0].startsWith('Negocio:') && out.length < blocks.length) out.shift();
+    return out.join('\n\n');
+}
+
+function _obStyleStats(state, sample) {
+    if (state.kind === 'text') {
+        return t('onb_style_stats_text', 'Texto libre · {n} caracteres').replace('{n}', sample.length.toLocaleString());
+    }
+    const mine = (sample.match(/^Negocio:/gm) || []).length;
+    return t('onb_style_stats_wa', 'Chat de WhatsApp · {n} respuestas tuyas como ejemplo').replace('{n}', mine);
+}
+
+function _obApplyStyleState() {
+    const card = document.getElementById('styleFileCard');
+    const placeholder = document.getElementById('styleUploadPlaceholder');
+    window.agentData = window.agentData || {};
+    const cfg = (window.agentData.config = window.agentData.config || {});
+
+    if (!_obStyleState) {
+        if (card) card.hidden = true;
+        if (placeholder) placeholder.hidden = false;
+        delete cfg.styleSample;
+        delete cfg.styleSampleName;
+        return;
+    }
+
+    const sample = _obBuildStyleSample(_obStyleState);
+    cfg.styleSample = sample;
+    cfg.styleSampleName = _obStyleState.name;
+
+    if (placeholder) placeholder.hidden = true;
+    if (card) card.hidden = false;
+    document.getElementById('styleFileName').textContent = _obStyleState.name;
+    document.getElementById('styleFileStats').textContent = _obStyleStats(_obStyleState, sample);
+    document.getElementById('stylePreview').textContent = sample || t('onb_style_empty', 'No se encontraron mensajes tuyos en este chat.');
+
+    const wrap = document.getElementById('styleSenderWrap');
+    const opts = document.getElementById('styleSenderOptions');
+    if (_obStyleState.kind === 'whatsapp' && _obStyleState.senders.length > 1) {
+        wrap.hidden = false;
+        opts.innerHTML = '';
+        _obStyleState.senders.slice(0, 6).forEach(s => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'style-sender-chip' + (s.name === _obStyleState.me ? ' is-on' : '');
+            b.innerHTML = `<span>${_obEsc(s.name)}</span><small>${s.count}</small>`;
+            b.addEventListener('click', () => { _obStyleState.me = s.name; _obApplyStyleState(); });
+            opts.appendChild(b);
+        });
+    } else if (wrap) {
+        wrap.hidden = true;
+    }
+}
+
+async function _obHandleStyleFile(file) {
+    if (!file) return;
+    const isTxt = /\.txt$/i.test(file.name) || file.type === 'text/plain';
+    if (!isTxt) {
+        if (typeof showNotification === 'function') showNotification(t('onb_style_err_type', 'Sube un archivo .txt'), 'error');
+        return;
+    }
+    if (file.size > STYLE_FILE_MAX_MB * 1024 * 1024) {
+        if (typeof showNotification === 'function') showNotification(t('onb_style_err_size', `El archivo supera ${STYLE_FILE_MAX_MB}MB`), 'error');
+        return;
+    }
+    const raw = await file.text();
+    const wa = _obParseWhatsApp(raw);
+    if (wa) {
+        // Por defecto "tú" = quien más escribe (ver _obParseWhatsApp); el
+        // usuario lo puede cambiar con los chips.
+        _obStyleState = { name: file.name, kind: 'whatsapp', messages: wa.messages, senders: wa.senders, me: wa.senders[0].name };
+    } else {
+        _obStyleState = { name: file.name, kind: 'text', raw };
+    }
+    _obApplyStyleState();
+}
+
+function initializeStyleSample() {
+    const area = document.getElementById('styleUploadArea');
+    const input = document.getElementById('styleFileInput');
+    const placeholder = document.getElementById('styleUploadPlaceholder');
+    if (!area || !input || area.dataset.obWired) return;
+    area.dataset.obWired = '1';
+
+    placeholder?.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => { _obHandleStyleFile(input.files[0]); input.value = ''; });
+    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('is-drag'); });
+    area.addEventListener('dragleave', () => area.classList.remove('is-drag'));
+    area.addEventListener('drop', e => {
+        e.preventDefault();
+        area.classList.remove('is-drag');
+        _obHandleStyleFile(e.dataTransfer.files[0]);
+    });
+    document.getElementById('styleFileRemove')?.addEventListener('click', () => {
+        _obStyleState = null;
+        _obApplyStyleState();
+    });
+
+    // Si el wizard se vuelve a abrir con un extracto ya cargado, se muestra
+    const cfg = window.agentData?.config;
+    if (cfg?.styleSample && !_obStyleState) {
+        _obStyleState = { name: cfg.styleSampleName || 'estilo.txt', kind: 'text', raw: cfg.styleSample };
+        _obApplyStyleState();
+    }
 }
 
 // ============================================
@@ -272,44 +424,8 @@ function initializeSchedule() {
 }
 
 // ============================================
-// MENÚ / CATÁLOGO (subir PDF o imagen)
-// Reutiliza el mismo endpoint que ya usa Mi Negocio (/api/upload/menu) — los
-// IDs aquí van prefijados "ob-" (ya venían así en onboarding.html) para no
-// chocar con los de my-business.html si ambos scripts llegan a convivir.
+// SUCURSAL (branch_id real para crear el agente)
 // ============================================
-
-function initializeMenu() {
-    const area = document.getElementById('ob-menuUploadArea');
-    const fileInput = document.getElementById('ob-menuFileInput');
-    const placeholder = document.getElementById('ob-menuUploadPlaceholder');
-    const btnRemove = document.getElementById('ob-btnRemoveMenu');
-    if (!area || !fileInput || area.dataset.obWired) return;
-    area.dataset.obWired = '1';
-
-    placeholder?.addEventListener('click', () => fileInput.click());
-
-    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('menu-drag-over'); });
-    area.addEventListener('dragleave', () => area.classList.remove('menu-drag-over'));
-    area.addEventListener('drop', e => {
-        e.preventDefault();
-        area.classList.remove('menu-drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) _obHandleMenuFile(file);
-    });
-
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files[0]) _obHandleMenuFile(fileInput.files[0]);
-    });
-
-    btnRemove?.addEventListener('click', () => {
-        document.getElementById('ob-menuUrlInput').value = '';
-        document.getElementById('ob-menuFilePreview').style.display = 'none';
-        document.getElementById('ob-menuUploadPlaceholder').style.display = '';
-        const v = document.getElementById('ob-menuFileViewer');
-        if (v) { v.style.display = 'none'; v.innerHTML = ''; }
-        fileInput.value = '';
-    });
-}
 
 // Resuelve el branch_id real de la sucursal (mismo criterio que ya usa
 // my-business.js: activeBranch.id si existe, o 0 si solo hay defaultBranch)
@@ -336,92 +452,18 @@ async function _obResolveBranchId() {
     return branchId;
 }
 
-async function _obHandleMenuFile(file) {
-    const maxMB = 10;
-    if (file.size > maxMB * 1024 * 1024) {
-        if (typeof showNotification === 'function') showNotification(`El archivo supera ${maxMB}MB`, 'error');
-        return;
-    }
-
-    const isPdf = file.type === 'application/pdf';
-    document.getElementById('ob-menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
-    document.getElementById('ob-menuFileName').textContent = file.name;
-    document.getElementById('ob-menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('ob-menuUploadPlaceholder').style.display = 'none';
-    document.getElementById('ob-menuFilePreview').style.display = '';
-
-    const viewer = document.getElementById('ob-menuFileViewer');
-    const localUrl = URL.createObjectURL(file);
-    if (viewer) {
-        viewer.style.display = '';
-        viewer.innerHTML = isPdf
-            ? `<iframe src="${localUrl}" style="width:100%;height:260px;border:none;"></iframe>`
-            : `<img src="${localUrl}" style="max-width:100%;border-radius:8px;">`;
-    }
-
-    const progress = document.getElementById('ob-menuUploadProgress');
-    const bar = document.getElementById('ob-menuProgressBar');
-    if (progress) progress.style.display = '';
-    if (bar) bar.style.width = '0%';
-
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', isPdf ? 'pdf' : 'image');
-
-        let pct = 0;
-        const tick = setInterval(() => {
-            pct = Math.min(pct + 10, 85);
-            if (bar) bar.style.width = pct + '%';
-        }, 150);
-
-        // Se resuelve el branch_id real (activeBranch.id, o 0 si solo hay
-        // defaultBranch) — antes iba fijo en 0, lo que podía subir el menú a
-        // una sucursal equivocada si el negocio ya tenía una sucursal real.
-        const branchIdForUpload = await _obResolveBranchId();
-        const resp = await fetch(`/api/upload/menu?branch_id=${branchIdForUpload}`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData
-        });
-
-        clearInterval(tick);
-        if (!resp.ok) throw new Error('Error al subir el menú');
-        const data = await resp.json();
-        const url = data.url || data.menuUrl || '';
-
-        if (bar) bar.style.width = '100%';
-        const urlInput = document.getElementById('ob-menuUrlInput');
-        if (urlInput) urlInput.value = url;
-        setTimeout(() => { if (progress) progress.style.display = 'none'; }, 500);
-        if (typeof showNotification === 'function') showNotification(t('onb_menu_uploaded','Menú subido correctamente'), 'success');
-    } catch (err) {
-        console.error('❌ Error subiendo menú (onboarding):', err);
-        if (progress) progress.style.display = 'none';
-        document.getElementById('ob-menuFilePreview').style.display = 'none';
-        document.getElementById('ob-menuUploadPlaceholder').style.display = '';
-        if (typeof showNotification === 'function') showNotification(t('onb_menu_upload_error','Error al subir el menú'), 'error');
-    }
-}
-
 // ============================================
 // RESUMEN DE CONFIGURACIÓN (step3)
-// _modalGoToResumen() (en dashboard.js/my-agents.js/integrations.js) ya
-// llamaba a collectFormData() y generateSummary() antes de mostrar el
-// resumen, pero ninguna de las dos existía en ningún archivo — por eso el
-// recuadro de "Resumen de Configuración" siempre salía vacío.
+// _modalGoToResumen() (en dashboard.js/my-agents.js/integrations.js) llama
+// a collectFormData() y generateSummary() antes de mostrar el resumen.
+// En negocios, arriba del resumen va el checklist "Lo que sabrá tu agente"
+// (ver _obLoadReadiness / _obRenderReadiness más abajo).
 // ============================================
 
 function collectFormData() {
     window.agentData = window.agentData || {};
     const d = window.agentData;
     d.config = d.config || {};
-
-    // Info. Negocio (precargada/solo lectura desde Mi Negocio)
-    d.businessName = document.getElementById('businessNameInput')?.value || d.businessName || '';
-    d.businessDesc = document.getElementById('businessDescInput')?.value || d.businessDesc || '';
-    d.website = document.getElementById('websiteInput')?.value || d.website || '';
-    d.emailContact = document.getElementById('emailContactInput')?.value || d.emailContact || '';
 
     // Info. Básica
     const agentNameInput = document.getElementById('agentName');
@@ -441,7 +483,23 @@ function collectFormData() {
     const editorContent = document.getElementById('editorContent');
     if (editorContent) d.config.customTone = editorContent.innerText.trim();
 
-    // Horarios
+    // Negocios: todo lo demás vive en Mi Negocio / Inventario — no se lee
+    // de las secciones ocultas del wizard (si no, se mandarían los valores
+    // por defecto del HTML y pisarían la sucursal).
+    if (!_obIsGov()) {
+        delete d.config.schedule;
+        d.config.holidays = [];
+        d.config.services = [];
+        d.config.workers = [];
+        return d;
+    }
+
+    // ── Solo modo gobierno ─────────────────────────────────────────────
+    d.businessName = document.getElementById('businessNameInput')?.value || d.businessName || '';
+    d.businessDesc = document.getElementById('businessDescInput')?.value || d.businessDesc || '';
+    d.website = document.getElementById('websiteInput')?.value || d.website || '';
+    d.emailContact = document.getElementById('emailContactInput')?.value || d.emailContact || '';
+
     const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
     d.config.schedule = d.config.schedule || {};
     days.forEach(day => {
@@ -454,13 +512,11 @@ function collectFormData() {
         };
     });
 
-    // Días festivos
     d.config.holidays = Array.from(document.querySelectorAll('#holidaysList .holiday-item')).map(item => ({
         date: item.querySelector('.holiday-date')?.value || '',
         name: item.querySelector('.holiday-name')?.value || '',
     })).filter(h => h.date || h.name);
 
-    // Servicios / Productos
     d.config.services = Array.from(document.querySelectorAll('#servicesList .service-item')).map(item => {
         const isPromo = !!item.querySelector('.price-type-option[data-type="promo"]')?.classList.contains('active');
         return {
@@ -473,18 +529,13 @@ function collectFormData() {
         };
     }).filter(s => s.title);
 
-    // Trabajadores
-    d.config.workers = Array.from(document.querySelectorAll('#workersList .worker-item')).map(item => ({
-        name: item.querySelector('.worker-name')?.value || '',
-        days: Array.from(item.querySelectorAll('.availability-day input:checked')).map(el => el.value),
-        start: item.querySelector('.worker-start')?.value || '',
-        end: item.querySelector('.worker-end')?.value || '',
-    })).filter(w => w.name);
-
-    // Menú / catálogo
-    d.config.menuUrl = document.getElementById('ob-menuUrlInput')?.value || d.config.menuUrl || '';
-
+    d.config.workers = [];
     return d;
+}
+
+function _obEsc(s) {
+    return (s === undefined || s === null ? '' : String(s))
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function generateSummary() {
@@ -492,6 +543,7 @@ function generateSummary() {
     if (!container) return;
     const d = window.agentData || {};
     const cfg = d.config || {};
+    const gov = _obIsGov();
 
     const DAY_LABELS = {
         monday: t('day_monday','Lunes'), tuesday: t('day_tuesday','Martes'),
@@ -506,7 +558,7 @@ function generateSummary() {
         custom: t('onb_tone_custom_title','Personalizado'),
     };
 
-    function esc(s) { return (s === undefined || s === null ? '' : String(s)).replace(/</g, '&lt;'); }
+    const esc = _obEsc;
     function item(label, value) {
         return `<div class="summary-item"><span class="summary-label">${esc(label)}</span><span class="summary-value">${esc(value) || '—'}</span></div>`;
     }
@@ -525,88 +577,257 @@ function generateSummary() {
         ${cfg.additionalLanguages?.length ? item(t('onb_lang_additional_label','Idiomas adicionales'), cfg.additionalLanguages.join(', ')) : ''}
     </div>`;
 
-    if (d.businessName || d.businessDesc || d.website || d.emailContact) {
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-briefcase"></i>${t('onb_sec_business','Información del Negocio')}</div>
-            ${d.businessName ? item(t('onb_biz_name_label','Nombre del Negocio'), d.businessName) : ''}
-            ${d.website ? item(t('onb_biz_website_label','Sitio Web'), d.website) : ''}
-            ${d.emailContact ? item(t('onb_biz_email_label','Email de Contacto'), d.emailContact) : ''}
-        </div>`;
-    }
-
     html += `<div class="summary-section">
         <div class="summary-section-title"><i class="lni lni-comments"></i>${t('onb_sec_personality','Personalidad del Agente')}</div>
         ${item(t('onb_pers_tone_label','Tono de Conversación'), TONE_LABELS[cfg.tone] || cfg.tone)}
         ${cfg.tone === 'custom' && cfg.customTone ? item(t('onb_tone_custom_editor_label','Personalizado'), cfg.customTone) : ''}
+        ${cfg.styleSample ? item(t('onb_style_summary','Estilo de respuesta'), cfg.styleSampleName || '.txt') : ''}
     </div>`;
 
-    if (cfg.schedule && Object.keys(cfg.schedule).length) {
-        const lis = Object.keys(cfg.schedule).map(day => {
-            const s = cfg.schedule[day];
-            return `<li>${esc(DAY_LABELS[day] || day)}: ${s.open ? `${esc(s.start)} – ${esc(s.end)}` : t('onb_sum_closed','Cerrado')}</li>`;
-        }).join('');
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_tab_schedule','Horarios')}</div>
-            <ul class="summary-list">${lis}</ul>
-        </div>`;
+    if (gov) {
+        if (d.businessName || d.website || d.emailContact) {
+            html += `<div class="summary-section">
+                <div class="summary-section-title"><i class="lni lni-government"></i>${t('onb_tab_agency','Dependencia')}</div>
+                ${d.businessName ? item(t('onb_biz_name_label','Nombre'), d.businessName) : ''}
+                ${d.website ? item(t('onb_biz_website_label','Sitio Web'), d.website) : ''}
+                ${d.emailContact ? item(t('onb_biz_email_label','Email de Contacto'), d.emailContact) : ''}
+            </div>`;
+        }
+        if (cfg.schedule && Object.keys(cfg.schedule).length) {
+            const lis = Object.keys(cfg.schedule).map(day => {
+                const s = cfg.schedule[day];
+                return `<li>${esc(DAY_LABELS[day] || day)}: ${s.open ? `${esc(s.start)} – ${esc(s.end)}` : t('onb_sum_closed','Cerrado')}</li>`;
+            }).join('');
+            html += `<div class="summary-section">
+                <div class="summary-section-title"><i class="lni lni-calendar"></i>${t('onb_tab_schedule','Horarios')}</div>
+                <ul class="summary-list">${lis}</ul>
+            </div>`;
+        }
+        if (cfg.holidays?.length) {
+            const lis = cfg.holidays.map(h => `<li>${esc(h.date)} — ${esc(h.name)}</li>`).join('');
+            html += `<div class="summary-section">
+                <div class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_tab_holidays_gov','Días Inhábiles')}</div>
+                <ul class="summary-list">${lis}</ul>
+            </div>`;
+        }
+        if (cfg.services?.length) {
+            const lis = cfg.services.map(s => `<li>${esc(s.title)}${s.price ? ` — $${esc(s.price)}` : ''}</li>`).join('');
+            html += `<div class="summary-section">
+                <div class="summary-section-title"><i class="lni lni-graduation"></i>${t('onb_tab_courses','Cursos')}</div>
+                <ul class="summary-list">${lis}</ul>
+            </div>`;
+        }
     }
 
-    if (cfg.holidays?.length) {
-        const lis = cfg.holidays.map(h => `<li>${esc(h.date)} — ${esc(h.name)}</li>`).join('');
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-gift"></i>${t('onb_tab_holidays','Días Festivos')}</div>
-            <ul class="summary-list">${lis}</ul>
-        </div>`;
-    }
+    container.innerHTML = html;
 
-    if (cfg.services?.length) {
-        const lis = cfg.services.map(s => `<li>${esc(s.title)}${s.price ? ` — $${esc(s.price)}` : ''}</li>`).join('');
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-package"></i>${t('onb_tab_services','Servicios / Productos')}</div>
-            <ul class="summary-list">${lis}</ul>
-        </div>`;
+    const readiness = document.getElementById('readinessContainer');
+    if (readiness) {
+        readiness.hidden = gov;
+        if (!gov) _obRefreshReadiness();
+        else _obSetCreateEnabled(true);
     }
+}
 
-    if (cfg.workers?.length) {
-        const lis = cfg.workers.map(w => `<li>${esc(w.name)} — ${esc(w.start)} a ${esc(w.end)}</li>`).join('');
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-users"></i>${t('onb_tab_workers','Trabajadores')}</div>
-            <ul class="summary-list">${lis}</ul>
-        </div>`;
+// ============================================
+// CHECKLIST "LO QUE SABRÁ TU AGENTE" (solo negocios)
+// Lee /api/my-business y /api/inventario/articulos. Lo obligatorio (negocio
+// guardado + horario) bloquea "Crear Agente": sin sucursal guardada el
+// agente se crearía con branch_id 0 y GenerateBusinessConfig no tendría de
+// dónde sacar nombre, horario ni ubicación.
+// ============================================
+
+let _obReadiness = null;
+let _obReadinessFocusWired = false;
+
+async function _obLoadReadiness() {
+    const get = (url) => fetch(url, { credentials: 'include' })
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null);
+    const [biz, inv] = await Promise.all([get('/api/my-business'), get('/api/inventario/articulos')]);
+
+    const b = biz?.activeBranch || null;
+    const bizName = b?.business?.name || '';
+    const openDays = b ? Object.values(b.schedule || {}).filter(day => day && day.isOpen).length : 0;
+    const loc = b?.location || {};
+    const locText = [loc.address, loc.number].filter(Boolean).join(' ') + (loc.city ? `${loc.address ? ', ' : ''}${loc.city}` : '');
+    const workers = Array.isArray(b?.workers) ? b.workers.length : 0;
+    const menuUrl = b?.business?.menuUrl || '';
+
+    const offered = (inv?.items || []).filter(i => Number(i.precio_1) > 0 && !i.venta_oculta);
+    const nSvc = offered.filter(i => i.servicio).length;
+    const nProd = offered.length - nSvc;
+
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+    const items = [
+        {
+            key: 'business', level: 'required', icon: 'lni-briefcase',
+            title: t('onb_rd_business', 'Información del negocio'),
+            ok: !!(b && b.id && bizName),
+            okText: [bizName, b?.business?.typeName].filter(Boolean).join(' · '),
+            missingText: t('onb_rd_business_missing', 'Guarda nombre y giro de tu negocio en Mi Negocio'),
+            href: '/my-business',
+        },
+        {
+            key: 'schedule', level: 'required', icon: 'lni-calendar',
+            title: t('onb_rd_schedule', 'Horario de atención'),
+            ok: !!(b && b.id) && openDays > 0,
+            okText: plural(openDays, t('onb_rd_day', 'día abierto'), t('onb_rd_days', 'días abiertos')) + t('onb_rd_week', ' a la semana'),
+            missingText: t('onb_rd_schedule_missing', 'Indica qué días y a qué hora atiendes'),
+            href: '/my-business',
+        },
+        {
+            key: 'inventory', level: 'recommended', icon: 'lni-package',
+            title: t('onb_rd_inventory', 'Productos y servicios'),
+            ok: offered.length > 0,
+            okText: `${plural(nProd, t('onb_rd_product', 'producto'), t('onb_rd_products', 'productos'))} · ${plural(nSvc, t('onb_rd_service', 'servicio'), t('onb_rd_services', 'servicios'))}`,
+            missingText: inv
+                ? t('onb_rd_inventory_missing', 'Sin artículos con precio: el agente no podrá ofrecer ni cobrar nada')
+                : t('onb_rd_inventory_error', 'No se pudo consultar el Inventario'),
+            href: '/inventory/articulos',
+        },
+        {
+            key: 'location', level: 'recommended', icon: 'lni-map-marker',
+            title: t('onb_rd_location', 'Ubicación'),
+            ok: !!(loc.address || loc.city),
+            okText: locText,
+            missingText: t('onb_rd_location_missing', 'Para que el agente pueda decir dónde estás'),
+            href: '/my-business',
+        },
+        {
+            key: 'workers', level: 'optional', icon: 'lni-users',
+            title: t('onb_rd_workers', 'Trabajadores'),
+            ok: workers > 0,
+            okText: plural(workers, t('onb_rd_worker', 'persona'), t('onb_rd_workers_n', 'personas')),
+            missingText: t('onb_rd_workers_missing', 'Para agendar citas con alguien en específico'),
+            href: '/my-business',
+        },
+        {
+            key: 'menu', level: 'optional', icon: 'lni-files',
+            title: t('onb_rd_menu', 'Menú o catálogo'),
+            ok: !!menuUrl,
+            okText: t('onb_rd_menu_ok', 'Archivo subido'),
+            missingText: t('onb_rd_menu_missing', 'PDF o imagen que el agente puede compartir'),
+            href: '/my-business',
+        },
+    ];
+
+    // Datos que createAgent() necesita y antes salían de las secciones ocultas
+    window.agentData = window.agentData || {};
+    if (b && b.id) window.agentData.branchId = b.id;
+    if (!window.agentData.businessType && b?.business?.type) window.agentData.businessType = String(b.business.type).toLowerCase();
+
+    _obReadiness = {
+        items,
+        ready: items.filter(i => i.level === 'required').every(i => i.ok),
+    };
+    return _obReadiness;
+}
+
+function _obRenderReadiness(state) {
+    const box = document.getElementById('readinessContainer');
+    if (!box) return;
+    if (!state) {
+        box.innerHTML = `<div class="readiness-loading"><div class="ob-spinner"></div><span>${t('onb_rd_loading', 'Revisando tu negocio…')}</span></div>`;
+        return;
     }
+    const LEVEL = {
+        required: t('onb_rd_required', 'Obligatorio'),
+        recommended: t('onb_rd_recommended', 'Recomendado'),
+        optional: t('onb_rd_optional', 'Opcional'),
+    };
+    const done = state.items.filter(i => i.ok).length;
+    const rows = state.items.map(i => {
+        const cls = i.ok ? 'is-ok' : (i.level === 'required' ? 'is-missing' : (i.level === 'recommended' ? 'is-warn' : 'is-optional'));
+        const statusIcon = i.ok ? 'lni-checkmark' : (i.level === 'required' ? 'lni-close' : (i.level === 'recommended' ? 'lni-warning' : 'lni-plus'));
+        const action = i.ok
+            ? `<a class="readiness-link" href="${i.href}" target="_blank" rel="noopener">${t('onb_rd_edit', 'Editar')}</a>`
+            : (i.level === 'required'
+                ? `<a class="readiness-link is-cta" href="${i.href}" target="_blank" rel="noopener">${t('onb_rd_complete', 'Completar')} <i class="lni lni-arrow-right"></i></a>`
+                : `<a class="readiness-link is-soft" href="${i.href}" target="_blank" rel="noopener">${t('onb_rd_add', 'Agregar')} <i class="lni lni-arrow-right"></i></a>`);
+        return `<li class="readiness-item ${cls}">
+            <span class="readiness-status"><i class="lni ${statusIcon}"></i></span>
+            <span class="readiness-icon"><i class="lni ${i.icon}"></i></span>
+            <span class="readiness-body">
+                <span class="readiness-title">${_obEsc(i.title)}${i.ok ? '' : `<span class="readiness-badge">${LEVEL[i.level]}</span>`}</span>
+                <span class="readiness-detail">${_obEsc(i.ok ? i.okText : i.missingText)}</span>
+            </span>
+            ${action}
+        </li>`;
+    }).join('');
 
-    if (cfg.menuUrl) {
-        html += `<div class="summary-section">
-            <div class="summary-section-title"><i class="lni lni-files"></i>${t('onb_sec_menu','Menú')}</div>
-            ${item(t('onb_sum_menu_file','Archivo'), t('onb_sum_menu_uploaded','Subido correctamente'))}
-        </div>`;
+    box.innerHTML = `
+        <div class="readiness-head">
+            <div>
+                <h3 class="readiness-heading"><i class="lni lni-bot"></i>${t('onb_rd_title', 'Lo que sabrá tu agente')}</h3>
+                <p class="readiness-sub">${t('onb_rd_sub', 'El agente toma esta información de Mi Negocio e Inventario. Para cambiar algo, edítalo ahí.')}</p>
+            </div>
+            <button type="button" class="readiness-refresh" id="btnReadinessRefresh" title="${t('onb_rd_refresh', 'Actualizar')}">
+                <i class="lni lni-reload"></i><span>${done}/${state.items.length}</span>
+            </button>
+        </div>
+        <ul class="readiness-list">${rows}</ul>
+        ${state.ready ? '' : `<div class="readiness-alert"><i class="lni lni-lock-alt"></i>${t('onb_rd_blocked', 'Completa lo obligatorio para poder crear tu agente.')}</div>`}
+    `;
+    box.querySelector('#btnReadinessRefresh')?.addEventListener('click', () => _obRefreshReadiness());
+}
+
+function _obSetCreateEnabled(enabled) {
+    const btn = document.getElementById('btnCreateAgent');
+    if (btn) btn.disabled = !enabled;
+}
+
+async function _obRefreshReadiness() {
+    _obRenderReadiness(null);
+    _obSetCreateEnabled(false);
+    const state = await _obLoadReadiness();
+    _obRenderReadiness(state);
+    _obSetCreateEnabled(state.ready);
+
+    // Las ligas abren Mi Negocio / Inventario en otra pestaña: al regresar
+    // se vuelve a revisar solo, sin que el usuario tenga que dar clic.
+    if (!_obReadinessFocusWired) {
+        _obReadinessFocusWired = true;
+        window.addEventListener('focus', () => {
+            const step3 = document.getElementById('step3');
+            const box = document.getElementById('readinessContainer');
+            if (step3?.classList.contains('active') && box && !box.hidden) _obRefreshReadiness();
+        });
     }
-
-    container.innerHTML = html || `<p style="text-align:center;color:#9ca3af;padding:2rem;">${t('onb_sum_empty','No hay información para mostrar todavía.')}</p>`;
 }
 
 // ============================================
 // CREAR AGENTE (POST real)
 // Contrato confirmado contra agent.go (CreateAgentRequest) y
 // models/agent.go (AgentConfig/Service/Staff/Holiday/BusinessProfileInfo).
-// Antes createAgent() se llamaba (envuelta varias veces en cada página) pero
-// nunca existía en ningún archivo — el botón no hacía nada más que loguear
-// "createAgent no definida".
-// menuUrl NO se manda: AgentConfig no tiene ese campo, así que aunque se
-// suba el archivo en el wizard, hoy no hay dónde persistirlo al crear el
-// agente (el upload en sí sí funciona, solo no viaja en este payload).
+// En negocios solo viajan nombre, teléfono, plataforma y personalidad: el
+// resto lo arma GenerateBusinessConfig desde la sucursal (Mi Negocio) y el
+// Inventario. Horario/festivos/servicios/trabajadores solo se mandan en
+// modo gobierno (los sincroniza syncOnboardingToAgency).
 // ============================================
 
 async function createAgent() {
     if (typeof collectFormData === 'function') collectFormData();
     const d = window.agentData || {};
     const cfg = d.config || {};
+    const gov = _obIsGov();
 
     const name = (d.name || '').trim();
     if (!name) {
         if (typeof showNotification === 'function') showNotification(t('onb_err_name_required','Ingresa el nombre del agente'), 'error');
         if (typeof window._modalGoToSection === 'function') window._modalGoToSection('section-basic');
         return;
+    }
+
+    if (!gov) {
+        const state = await _obLoadReadiness();
+        _obRenderReadiness(state);
+        if (!state.ready) {
+            _obSetCreateEnabled(false);
+            if (typeof showNotification === 'function') showNotification(t('onb_rd_blocked', 'Completa lo obligatorio para poder crear tu agente.'), 'error');
+            return;
+        }
     }
 
     const branchId = await _obResolveBranchId();
@@ -622,6 +843,13 @@ async function createAgent() {
             customTone: cfg.tone === 'custom' ? (cfg.customTone || '') : '',
             additionalLanguages: cfg.additionalLanguages || [],
             specialInstructions: cfg.specialInstructions || '',
+            styleSample: cfg.styleSample || '',
+            styleSampleName: cfg.styleSample ? (cfg.styleSampleName || '') : '',
+        },
+    };
+
+    if (gov) {
+        Object.assign(payload.config, {
             schedule: cfg.schedule ? {
                 monday:    cfg.schedule.monday    || { open: true,  start: '09:00', end: '18:00' },
                 tuesday:   cfg.schedule.tuesday   || { open: true,  start: '09:00', end: '18:00' },
@@ -640,19 +868,13 @@ async function createAgent() {
                 originalPrice: s.originalPrice || null,
                 promoPrice: s.promoPrice || null,
             })),
-            workers: (cfg.workers || []).map(w => ({
-                name: w.name,
-                startTime: w.start || '',
-                endTime: w.end || '',
-                days: w.days || [],
-            })),
             businessInfo: {
                 description: d.businessDesc || '',
                 website: d.website || '',
                 email: d.emailContact || '',
             },
-        },
-    };
+        });
+    }
 
     const btn = document.getElementById('btnCreateAgent');
     const origHTML = btn ? btn.innerHTML : '';
@@ -1073,7 +1295,7 @@ async function startQRPolling(agentId, agentName) {
 
     // Las páginas que abren el asistente como modal inyectan onboarding.css sin
     // versión; se cambia por la versión actual para no quedarse con la de caché.
-    const OB_CSS_VERSION = '5';
+    const OB_CSS_VERSION = '7';
     function freshCss() {
         document.querySelectorAll('link[rel="stylesheet"][href*="/static/css/client/onboarding.css"]').forEach((l) => {
             const href = l.getAttribute('href');

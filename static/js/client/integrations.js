@@ -2258,15 +2258,12 @@ async function reinitializeOnboardingEvents() {
         });
     })();
 
+    // Negocios: el agente solo configura lo suyo. Negocio, horario,
+    // festivos, trabajadores y menú vienen de Mi Negocio; productos y
+    // servicios de Inventario (el Resumen muestra el checklist).
     const AGENT_SECTIONS_BUSINESS = [
-        { id:1, containerId:'section-business',    name:() => t('onb_tab_business','Info. Negocio'),   icon:'lni-briefcase' },
         { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
         { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
-        { id:6, containerId:'section-schedule',    name:() => t('onb_tab_schedule','Horarios'),        icon:'lni-calendar' },
-        { id:7, containerId:'section-holidays',    name:() => t('onb_tab_holidays','Días Festivos'),   icon:'lni-gift' },
-        { id:8, containerId:'section-services',    name:() => t('onb_tab_services','Servicios / Productos'),       icon:'lni-package' },
-        { id:9, containerId:'section-menu',        name:() => t('onb_sec_menu','Menú'),            icon:'lni-files' },
-        { id:10,containerId:'section-workers',     name:() => t('onb_tab_workers','Trabajadores'),    icon:'lni-users' },
     ];
     const AGENT_SECTIONS_GOV = [
         { id:1, containerId:'section-business',    name:() => t('onb_tab_agency','Dependencia'),     icon:'lni-government' },
@@ -2291,29 +2288,25 @@ async function reinitializeOnboardingEvents() {
         }
     } catch (_) {}
 
-    // Ocultar secciones que no aplican para gobierno
-    if (_isGovModal) {
-        const menuSec    = document.getElementById('section-menu');
-        const workersSec = document.getElementById('section-workers');
-        if (menuSec)    menuSec.style.display    = 'none';
-        if (workersSec) workersSec.style.display = 'none';
-    }
+    window._obIsGovModal = _isGovModal;
 
     let AGENT_SECTIONS = _isGovModal ? AGENT_SECTIONS_GOV : AGENT_SECTIONS_BUSINESS;
     const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
 
-    ['section-location','section-social'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
-    });
+    // Negocios: ocultar todas las secciones que ahora viven en Mi Negocio / Inventario
+    if (!_isGovModal) {
+        ['section-business','section-location','section-social','section-schedule',
+         'section-holidays','section-services'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+        });
+    }
 
     if (typeof initializeRichEditor === 'function') initializeRichEditor();
     if (typeof initializePhoneToggle === 'function') initializePhoneToggle();
     if (typeof initializeSchedule === 'function') initializeSchedule();
     if (typeof initializeHolidays === 'function') initializeHolidays();
     if (typeof initializeServices === 'function') initializeServices();
-    if (typeof initializeWorkers === 'function') initializeWorkers();
-    if (typeof initializeMenu === 'function') initializeMenu();
     if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();
     if (typeof initializeBusinessTypeSelect === 'function') initializeBusinessTypeSelect();

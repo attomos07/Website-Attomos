@@ -89,6 +89,11 @@ type AgentConfig struct {
 	Promotions          []Promotion `json:"promotions"`
 	Capabilities        []string    `json:"capabilities"`
 	SpecialInstructions string      `json:"specialInstructions"`
+	// Estilo de respuesta: conversaciones reales del negocio (.txt, p. ej. un
+	// chat exportado de WhatsApp) ya filtradas en el navegador. El bot imita
+	// el estilo, no los datos. StyleSampleName solo es para mostrarlo en la UI.
+	StyleSample     string `json:"styleSample,omitempty"`
+	StyleSampleName string `json:"styleSampleName,omitempty"`
 
 	// ── Campos legacy (mantenidos por compatibilidad con agentes existentes) ──
 	Schedule     Schedule            `json:"schedule,omitempty"`

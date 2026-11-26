@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -21,6 +22,7 @@ type Personality struct {
 	Style       string `json:"style"`
 	Language    string `json:"language"`
 	CustomRules string `json:"customRules"`
+	StyleSample string `json:"styleSample,omitempty"` // ejemplos reales de cómo contesta el negocio
 }
 
 // DaySchedule horario de un día específico
@@ -367,6 +369,15 @@ func GetPersonalityPrompt() string {
 
 	if businessConfig.Personality.CustomRules != "" {
 		prompt += fmt.Sprintf(" %s", businessConfig.Personality.CustomRules)
+	}
+
+	// Estilo de respuesta: ejemplos reales del negocio (txt subido en el
+	// wizard). Se imita la forma de escribir, nunca los datos.
+	if sample := strings.TrimSpace(businessConfig.Personality.StyleSample); sample != "" {
+		prompt += "\n\nESTILO DE RESPUESTA: abajo hay mensajes reales de cómo contesta este negocio a sus clientes. " +
+			"Imita su forma de escribir (saludos, despedidas, largo de los mensajes, emojis, muletillas, trato de tú o usted); si choca con el tono indicado arriba, manda el estilo de estos ejemplos. " +
+			"NO copies datos de esos mensajes (precios, horarios, existencias, nombres de clientes): pueden estar desactualizados; " +
+			"usa siempre la información actual del negocio.\n--- EJEMPLOS ---\n" + sample + "\n--- FIN DE EJEMPLOS ---"
 	}
 
 	return prompt
