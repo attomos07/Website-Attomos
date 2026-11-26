@@ -336,7 +336,43 @@ window.Inv = window.Inv || (function () {
   function pdfLibs() { return lib('jspdf').then(function () { return lib('autotable'); }); }
   function ahoraLocal() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19); }
 
+  /* Tiempo real (/api/live) con aviso pendiente (como Avante):
+     si el aviso llega con la pestaña del navegador oculta, con otra
+     sección de Inventario a la vista, con un modal abierto o mientras
+     hay renglones marcados, no se pierde: queda pendiente y se recarga
+     en cuanto se puede (al volver a la pestaña, al cerrar el modal o al
+     desmarcar). paneId: la sección; busy(): true = todavía no. */
+  function liveWatch(paneId, topics, busy, refresh) {
+    if (!window.AttomosLive || !$(paneId)) return null;
+    var pending = false, t = null;
+    function canRun() {
+      var pane = $(paneId);
+      return document.visibilityState === 'visible' && pane && pane.offsetParent &&
+        !document.querySelector('.admin-modal-overlay.open') && !(busy && busy());
+    }
+    function flush() {
+      if (!pending || !canRun()) return;
+      pending = false;
+      refresh();
+    }
+    function later() { if (pending) { clearTimeout(t); t = setTimeout(flush, 80); } }
+    window.AttomosLive.on(topics, function () { pending = true; flush(); });
+    document.addEventListener('visibilitychange', later);
+    window.addEventListener('focus', later);
+    // Al cerrar cualquier modal.
+    if (window.MutationObserver) {
+      var mo = new MutationObserver(later);
+      document.querySelectorAll('.admin-modal-overlay').forEach(function (ov) { mo.observe(ov, { attributes: true, attributeFilter: ['class'] }); });
+    }
+    // Al desmarcar renglones (o cualquier clic / cambio mientras hay algo pendiente).
+    document.addEventListener('click', later);
+    document.addEventListener('change', later);
+    // Al volver a la sección ya se recarga sola (subnav:show): nada pendiente.
+    $(paneId).addEventListener('subnav:show', function () { pending = false; });
+    return { flush: flush, pending: function () { return pending; } };
+  }
   return {
+    liveWatch: liveWatch,
     lib: lib, pdfLibs: pdfLibs, ahoraLocal: ahoraLocal, segGlow: segGlow, segGlowAll: segGlowAll,
     isRastreo: isRastreo, lookupRastreo: lookupRastreo,
     base: base, canCost: canCost, optica: optica, biz: biz,
@@ -2611,14 +2647,10 @@ window.InvLabels = window.InvLabels || (function () {
   loadArmazonData();
   // Al instante: una venta descuenta existencias, otro usuario ajusta…
   // Tiempo real (/api/live): si alguien vende, ajusta o da de alta, la
-  // lista y los indicadores se actualizan solos. Con un modal abierto o
-  // artículos marcados para borrar, espera (se actualiza al volver).
-  if (window.AttomosLive) AttomosLive.on(['inventario'], function () {
-    if (!$('invArticulos').offsetParent) return;
-    if (document.querySelector('.admin-modal-overlay.open')) return;
-    if (Object.keys(delSel).length) return;
-    load(true, true);
-  });
+  // lista y los indicadores se actualizan solos. Con la pestaña oculta, un
+  // modal abierto o artículos marcados para borrar, queda pendiente y se
+  // actualiza en cuanto se puede.
+  if (I.liveWatch) I.liveWatch('invArticulos', ['inventario'], function () { return Object.keys(delSel).length > 0; }, function () { load(true, true); });
   // Al volver a esta pestaña (sin recargar la página) se actualiza la lista.
   I.$('invArticulos').addEventListener('subnav:show', function () { load(true); });
 })();
@@ -4595,13 +4627,9 @@ window.InvEscaner = (function () {
   });
 
   // Tiempo real (/api/live): cuando alguien vende, ajusta o da de alta, el
-  // kárdex se actualiza solo (salvo con un modal abierto o movimientos marcados).
-  if (window.AttomosLive) AttomosLive.on(['inventario', 'pos'], function () {
-    if (!$('invMovimientos').offsetParent) return;
-    if (document.querySelector('.admin-modal-overlay.open')) return;
-    if (Object.keys(sel).length) return;
-    load();
-  });
+  // kárdex se actualiza solo. Con la pestaña oculta, un modal abierto o
+  // movimientos marcados, queda pendiente y se actualiza en cuanto se puede.
+  if (I.liveWatch) I.liveWatch('invMovimientos', ['inventario', 'pos'], function () { return Object.keys(sel).length > 0; }, function () { load(); });
 
   syncPer();
   I.api('/api/inventario/articulos').then(function (d) { arts = d.items || []; }).catch(function () {});
