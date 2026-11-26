@@ -127,6 +127,10 @@ func invIsOptica(userID uint) bool {
 // el dueño, así que siempre puede. Cuando haya empleados, aquí se decide.
 func invCanCost(c *gin.Context) bool { return true }
 
+// invIsOwner: solo el dueño (no las cuentas del equipo) puede borrar de un
+// jalón: varios artículos, movimientos del kárdex y ver lo que se borró.
+func invIsOwner(c *gin.Context) bool { return currentStaff(c) == nil }
+
 // invHideCost borra el costo de lo que se le manda a quien no puede verlo.
 func invHideCost(c *gin.Context, items ...*models.InvItem) {
 	if invCanCost(c) {
@@ -167,6 +171,7 @@ func invPage(file, tab string) gin.HandlerFunc {
 			"InvTab":       tab,
 			"InvBase":      "/inventory",
 			"CanCost":      invCanCost(c),
+			"IsOwner":      invIsOwner(c),
 			"Optica":       optica,
 			"BusinessName": invBusinessName(uid),
 		})
@@ -218,9 +223,12 @@ func InvListItems(c *gin.Context) {
 }
 
 type invItemBody struct {
-	Clave          string  `json:"clave"`
-	ClaveAlterna   string  `json:"clave_alterna"`
+	Clave string `json:"clave"`
+	// ClaveAlterna: nil = no se mandó (las ópticas ya no la capturan) y al
+	// editar se conserva la que tuviera.
+	ClaveAlterna   *string `json:"clave_alterna"`
 	Descripcion    string  `json:"descripcion"`
+	Marca          string  `json:"marca"` // ópticas: marca del armazón (va en la clave)
 	DepartamentoID int64   `json:"departamento_id"`
 	CategoriaID    int64   `json:"categoria_id"`
 	UnidadCompra   string  `json:"unidad_compra"`
@@ -241,6 +249,7 @@ type invItemBody struct {
 	Minimo         int     `json:"minimo"`
 	Maximo         int     `json:"maximo"`
 	Localizacion   string  `json:"localizacion"`
+	PromoPct       float64 `json:"promo_pct"` // % de promoción (Punto de venta)
 	// Solo ópticas
 	TipoArmazon    string   `json:"tipo_armazon"`
 	ColorPrincipal string   `json:"color_principal"`
@@ -268,19 +277,25 @@ func invMoneyOK(vs ...float64) bool {
 }
 
 // bindInvItem lee y valida el artículo. Si algo está mal ya respondió.
-func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
+// keepAlterna = no se mandó la clave alterna (al editar se conserva).
+func bindInvItem(c *gin.Context, uid uint) (a models.InvItem, keepAlterna bool, ok bool) {
 	var b invItemBody
 	if err := c.ShouldBindJSON(&b); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
-		return models.InvItem{}, false
+		return models.InvItem{}, false, false
 	}
-	bad := func(msg string) (models.InvItem, bool) {
+	bad := func(msg string) (models.InvItem, bool, bool) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
-		return models.InvItem{}, false
+		return models.InvItem{}, false, false
+	}
+	alterna := ""
+	keepAlterna = b.ClaveAlterna == nil
+	if b.ClaveAlterna != nil {
+		alterna = models.NormalizeInvClave(*b.ClaveAlterna)
 	}
 	b.Clave = models.NormalizeInvClave(b.Clave)
-	b.ClaveAlterna = models.NormalizeInvClave(b.ClaveAlterna)
 	b.Descripcion = strings.Join(strings.Fields(b.Descripcion), " ")
+	b.Marca = strings.ToUpper(strings.Join(strings.Fields(b.Marca), " "))
 	b.UnidadCompra = strings.ToUpper(strings.TrimSpace(b.UnidadCompra))
 	b.UnidadVenta = strings.ToUpper(strings.TrimSpace(b.UnidadVenta))
 	b.Localizacion = strings.ToUpper(strings.Join(strings.Fields(b.Localizacion), " "))
@@ -298,12 +313,16 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 		return bad("Escribe la clave del artículo.")
 	case len([]rune(b.Clave)) > 60 || !invClaveRe.MatchString(b.Clave):
 		return bad("La clave solo puede llevar letras, números, guiones (-), puntos (.) y diagonales (/).")
-	case b.ClaveAlterna != "" && (len([]rune(b.ClaveAlterna)) > 60 || !invClaveRe.MatchString(b.ClaveAlterna)):
+	case alterna != "" && (len([]rune(alterna)) > 60 || !invClaveRe.MatchString(alterna)):
 		return bad("La clave alterna solo puede llevar letras, números, guiones, puntos y diagonales.")
 	case b.Descripcion == "":
 		return bad("Escribe la descripción del artículo.")
 	case len([]rune(b.Descripcion)) > 200:
 		return bad("La descripción es muy larga (máximo 200 caracteres).")
+	case len([]rune(b.Marca)) > 60:
+		return bad("La marca es muy larga (máximo 60 caracteres).")
+	case b.PromoPct < 0 || b.PromoPct > 100 || math.IsNaN(b.PromoPct):
+		return bad("La promoción va de 0 a 100 %.")
 	case !invUnidad[b.UnidadCompra] || !invUnidad[b.UnidadVenta]:
 		return bad("Elige una unidad de compra y de venta válida.")
 	case b.Factor > 10000:
@@ -343,8 +362,8 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 		b.PromoPrecio, b.PromoFin = 0, ""
 	}
 
-	a := models.InvItem{
-		Clave: b.Clave, ClaveAlterna: b.ClaveAlterna, Descripcion: b.Descripcion,
+	a = models.InvItem{
+		Clave: b.Clave, ClaveAlterna: alterna, Descripcion: b.Descripcion, PromoPct: b.PromoPct,
 		DepartamentoID: b.DepartamentoID, CategoriaID: b.CategoriaID,
 		UnidadCompra: b.UnidadCompra, UnidadVenta: b.UnidadVenta, Factor: b.Factor,
 		Servicio: b.Servicio, IVA: b.IVA, SinRastreo: b.SinRastreo,
@@ -358,7 +377,11 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 
 	// Los datos de armazón solo aplican a ópticas; para otros giros se ignoran.
 	if !invIsOptica(uid) {
-		return a, true
+		return a, keepAlterna, true
+	}
+	// Un servicio no lleva marca (no es armazón).
+	if !b.Servicio {
+		a.Marca = b.Marca
 	}
 	b.TipoArmazon = strings.TrimSpace(b.TipoArmazon)
 	if b.TipoArmazon != "" && !models.InvFrameTypeExists(uid, b.TipoArmazon) {
@@ -402,7 +425,11 @@ func bindInvItem(c *gin.Context, uid uint) (models.InvItem, bool) {
 		return bad("Elige máximo 4 materiales (y nombres cortos).")
 	}
 	a.TipoArmazon, a.ColorPrincipal, a.ColoresExtra, a.MicaTipo, a.Materiales = b.TipoArmazon, b.ColorPrincipal, extras, b.MicaTipo, mats
-	return a, true
+	// Un servicio no es armazón: no lleva tipo, mica, color ni material.
+	if b.Servicio {
+		a.TipoArmazon, a.ColorPrincipal, a.ColoresExtra, a.MicaTipo, a.Materiales = "", "", []string{}, "", []string{}
+	}
+	return a, keepAlterna, true
 }
 
 func invItemErr(c *gin.Context, where string, err error, clave string) {
@@ -425,7 +452,7 @@ func invItemErr(c *gin.Context, where string, err error, clave string) {
 // InvCreateItem — POST /api/inventario/articulos
 func InvCreateItem(c *gin.Context) {
 	uid := invUserID(c)
-	a, ok := bindInvItem(c, uid)
+	a, _, ok := bindInvItem(c, uid)
 	if !ok {
 		return
 	}
@@ -449,12 +476,12 @@ func InvUpdateItem(c *gin.Context) {
 		return
 	}
 	uid := invUserID(c)
-	a, ok := bindInvItem(c, uid)
+	a, keepAlterna, ok := bindInvItem(c, uid)
 	if !ok {
 		return
 	}
 	a.ID = id
-	item, err := models.UpdateInvItem(uid, a, !invCanCost(c))
+	item, err := models.UpdateInvItem(uid, a, !invCanCost(c), keepAlterna)
 	if err != nil {
 		invItemErr(c, "UpdateItem", err, a.Clave)
 		return
@@ -961,7 +988,9 @@ func InvCreateMaterial(c *gin.Context) {
 		return
 	}
 	var b struct {
-		Nombre string `json:"nombre"`
+		Nombre           string `json:"nombre"`
+		Identificador    string `json:"identificador"`    // ARMT | ARZL
+		Subidentificador string `json:"subidentificador"` // texto libre (ACETATO, TR90…)
 	}
 	if err := c.ShouldBindJSON(&b); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
@@ -972,8 +1001,13 @@ func InvCreateMaterial(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Escribe el nombre del material (máximo 30 letras)."})
 		return
 	}
+	ident := strings.ToUpper(strings.TrimSpace(b.Identificador))
+	if ident != "ARMT" && ident != "ARZL" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige si el material es metal (ARMT) o pasta (ARZL)."})
+		return
+	}
 	nombre = invCapitalize(nombre)
-	m, err := models.CreateInvMaterial(invUserID(c), nombre)
+	m, err := models.CreateInvMaterial(invUserID(c), nombre, ident, invSubIdent(b.Subidentificador))
 	if errors.Is(err, models.ErrInvMaterialTaken) {
 		c.JSON(http.StatusConflict, gin.H{"error": "El material «" + nombre + "» ya está en la lista."})
 		return
@@ -983,4 +1017,268 @@ func InvCreateMaterial(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true, "item": m})
+}
+
+/* ---------------- ópticas: quitar colores / materiales, ARMT · ARZL ---------------- */
+
+// invSubIdent: el subidentificador del material en mayúsculas, sin
+// espacios de más (máximo 30 letras).
+func invSubIdent(s string) string {
+	s = strings.ToUpper(strings.Join(strings.Fields(strings.ReplaceAll(s, ",", " ")), " "))
+	if r := []rune(s); len(r) > 30 {
+		s = string(r[:30])
+	}
+	return s
+}
+
+// InvUpdateMaterial — PUT /api/inventario/materiales/:id
+// {identificador, subidentificador}
+func InvUpdateMaterial(c *gin.Context) {
+	if !invOnlyOptica(c) {
+		return
+	}
+	id, ok := invID(c)
+	if !ok {
+		return
+	}
+	var b struct {
+		Identificador    string `json:"identificador"`
+		Subidentificador string `json:"subidentificador"`
+	}
+	if err := c.ShouldBindJSON(&b); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
+		return
+	}
+	ident := strings.ToUpper(strings.TrimSpace(b.Identificador))
+	if ident != "ARMT" && ident != "ARZL" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige si el material es metal (ARMT) o pasta (ARZL)."})
+		return
+	}
+	m, err := models.UpdateInvMaterial(invUserID(c), id, ident, invSubIdent(b.Subidentificador))
+	if errors.Is(err, models.ErrInvMaterialNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ese material ya no existe."})
+		return
+	}
+	if err != nil {
+		invFail(c, "UpdateMaterial", err, "No se pudo guardar el material.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true, "item": m})
+}
+
+// InvDeleteMaterial — DELETE /api/inventario/materiales/:id. Solo lo quita
+// de la lista; los artículos que ya lo tienen lo conservan.
+func InvDeleteMaterial(c *gin.Context) {
+	if !invOnlyOptica(c) {
+		return
+	}
+	id, ok := invID(c)
+	if !ok {
+		return
+	}
+	err := models.DeleteInvMaterial(invUserID(c), id)
+	if errors.Is(err, models.ErrInvMaterialNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ese material ya no existe."})
+		return
+	}
+	if err != nil {
+		invFail(c, "DeleteMaterial", err, "No se pudo quitar el material.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// InvDeleteColor — DELETE /api/inventario/colores/:id. Solo lo quita de la
+// paleta; los artículos que ya lo tienen lo conservan y su código no se
+// vuelve a usar.
+func InvDeleteColor(c *gin.Context) {
+	if !invOnlyOptica(c) {
+		return
+	}
+	id, ok := invID(c)
+	if !ok {
+		return
+	}
+	err := models.DeleteInvColor(invUserID(c), id)
+	if errors.Is(err, models.ErrInvColorNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ese color ya no existe."})
+		return
+	}
+	if err != nil {
+		invFail(c, "DeleteColor", err, "No se pudo quitar el color.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+/* ---------------- precio y promoción por grupo ---------------- */
+
+// InvListRules — GET /api/inventario/reglas
+func InvListRules(c *gin.Context) {
+	items, err := models.ListInvRules(invUserID(c))
+	if err != nil {
+		invFail(c, "ListRules", err, "No se pudieron cargar las reglas.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+// InvApplyGroup — POST /api/inventario/grupo
+// {campo: categoria|material, valor, accion: precio|promo|quitar_promo, monto, recordar}
+func InvApplyGroup(c *gin.Context) {
+	var b struct {
+		Campo    string  `json:"campo"`
+		Valor    string  `json:"valor"`
+		Accion   string  `json:"accion"`
+		Monto    float64 `json:"monto"`
+		Recordar bool    `json:"recordar"`
+	}
+	if err := c.ShouldBindJSON(&b); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
+		return
+	}
+	switch {
+	case b.Accion == "precio" && (b.Monto <= 0 || !invMoneyOK(b.Monto)):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Escribe el precio de venta (mayor a $0)."})
+		return
+	case b.Accion == "promo" && (b.Monto <= 0 || b.Monto > 100 || math.IsNaN(b.Monto)):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La promoción va de 1 a 100 %."})
+		return
+	case b.Accion != "precio" && b.Accion != "promo" && b.Accion != "quitar_promo":
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige qué quieres hacer."})
+		return
+	}
+	uid := invUserID(c)
+	n, err := models.ApplyInvGroup(uid, b.Campo, b.Valor, b.Accion, b.Monto, b.Recordar, invUser(c))
+	if errors.Is(err, models.ErrInvGroupInvalid) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige la categoría o el material."})
+		return
+	}
+	if err != nil {
+		invFail(c, "ApplyGroup", err, "No se pudo aplicar el cambio.")
+		return
+	}
+	invNotifyBots(uid)
+	c.JSON(http.StatusOK, gin.H{"ok": true, "afectados": n})
+}
+
+// InvDeleteRule — DELETE /api/inventario/reglas/:id
+func InvDeleteRule(c *gin.Context) {
+	id, ok := invID(c)
+	if !ok {
+		return
+	}
+	if err := models.DeleteInvRule(invUserID(c), id); err != nil {
+		invFail(c, "DeleteRule", err, "No se pudo quitar la regla.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+/* ---------------- borrar de un jalón (solo el dueño) ---------------- */
+
+// InvDeleteItemsBulk — POST /api/inventario/articulos/eliminar {ids}
+// Solo el dueño: borra definitivamente los artículos elegidos aunque
+// tengan existencia (los movimientos del kárdex se conservan).
+func InvDeleteItemsBulk(c *gin.Context) {
+	if !invIsOwner(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Solo el dueño puede eliminar varios artículos."})
+		return
+	}
+	var in struct {
+		IDs []int64 `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
+		return
+	}
+	ids := invUniqueIDs(in.IDs)
+	if len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige al menos un artículo."})
+		return
+	}
+	if len(ids) > 5000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Máximo 5,000 artículos a la vez."})
+		return
+	}
+	uid := invUserID(c)
+	n, keys, err := models.DeleteInvItemsBulk(uid, ids)
+	if err != nil {
+		invFail(c, "DeleteItemsBulk", err, "No se pudieron eliminar los artículos.")
+		return
+	}
+	invDeletePhotoFiles(keys)
+	invNotifyBots(uid)
+	c.JSON(http.StatusOK, gin.H{"ok": true, "eliminados": n})
+}
+
+func invUniqueIDs(in []int64) []int64 {
+	ids := make([]int64, 0, len(in))
+	seen := map[int64]bool{}
+	for _, id := range in {
+		if id > 0 && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+// InvDeleteMovements — POST /api/inventario/movimientos/eliminar {ids, revertir}
+// Solo el dueño (para quitar pruebas). Los de ventas y pedidos no.
+func InvDeleteMovements(c *gin.Context) {
+	if !invIsOwner(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Solo el dueño puede borrar movimientos."})
+		return
+	}
+	var in struct {
+		IDs      []int64 `json:"ids"`
+		Revertir bool    `json:"revertir"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos."})
+		return
+	}
+	ids := invUniqueIDs(in.IDs)
+	if len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige al menos un movimiento."})
+		return
+	}
+	if len(ids) > 1000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Máximo 1,000 movimientos a la vez."})
+		return
+	}
+	uid := invUserID(c)
+	r, err := models.DeleteInvMovements(uid, ids, in.Revertir, invUser(c))
+	switch {
+	case errors.Is(err, models.ErrInvMovFromSale):
+		c.JSON(http.StatusConflict, gin.H{"error": "Los movimientos de ventas y pedidos no se borran aquí: cancela la venta o el pedido."})
+		return
+	case err != nil && strings.Contains(err.Error(), "quedaría con existencia"):
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error() + "."})
+		return
+	case err != nil:
+		invFail(c, "DeleteMovements", err, "No se pudieron borrar los movimientos.")
+		return
+	}
+	if in.Revertir && r.Articulos > 0 {
+		invNotifyBots(uid)
+	}
+	c.JSON(http.StatusOK, r)
+}
+
+// InvListMovDeleted — GET /api/inventario/movimientos/borrados?q=
+// Solo el dueño: qué movimientos se borraron, quién y cuándo.
+func InvListMovDeleted(c *gin.Context) {
+	if !invIsOwner(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Solo el dueño puede ver los movimientos borrados."})
+		return
+	}
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	items, err := models.ListInvMovDeleted(invUserID(c), c.Query("q"), limit)
+	if err != nil {
+		invFail(c, "ListMovDeleted", err, "No se pudieron cargar los movimientos borrados.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }

@@ -1519,3 +1519,254 @@ main.subnav-leave.to-right > :has(.inv-subnav) > *:not(.inv-subnav){ transform:t
 @media (max-width:560px){ .inv-promo-end{ grid-template-columns:1fr; } }
 /* Pestañas de sección ya cargadas pero escondidas (subnav-tabs.js) */
 .content-wrapper > [data-subnav-off]{ display:none !important; }
+/* =========================================================
+   Borrar movimientos (solo el dueño) — traído de Avante
+   ========================================================= */
+body.dark .inv-stat.is-out strong{ color:#ff8b7d; }
+.inv-nowrap{ white-space:nowrap; }
+.inv-ref{ display:block; margin-top:4px; font-size:11px; font-weight:700; color:var(--muted); }
+.inv-ref a{ color:var(--accent); text-decoration:none; }
+.inv-ref a:hover{ text-decoration:underline; }
+.inv-table.is-kardex tbody tr{ cursor:default; }
+/* Eliminar movimientos (solo admin) */
+.inv-mv-sel, .inv-table td.inv-mv-sel{ width:36px; padding-right:0 !important; }
+.inv-mv-sel input{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; vertical-align:middle; }
+.inv-mv-act, .inv-table td.inv-mv-act{ width:44px; text-align:right; }
+.inv-mv-trash{
+  width:30px; height:30px; border-radius:9px; border:1px solid transparent; background:none; color:var(--muted);
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.inv-mv-trash svg{ width:15px; height:15px; }
+.inv-mv-trash:hover{ background:#fdecea; color:#d92d20; border-color:#f6c8c3; }
+.inv-table tbody tr.is-checked td{ background:#fff6f5; }
+.inv-mv-del{ color:#d92d20 !important; border-color:#f6c8c3 !important; }
+.inv-mv-del:hover{ background:#fdecea !important; }
+.inv-mv-del[hidden]{ display:none !important; }
+.inv-mv-del-warn{ font-size:12.5px; line-height:1.5; color:#9a5b00; background:#fff7e6; border:1px solid #f5dfb0; border-radius:12px; padding:9px 12px; margin:10px 0 0; }
+.inv-mv-del-warn[hidden]{ display:none; }
+#mvDelModal .inv-check{ margin-top:12px; }
+.sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+.inv-link-art{ display:block; text-align:left; border:none; background:none; padding:0; cursor:pointer; font-family:var(--sans); color:inherit; }
+
+
+/* =========================================================
+   Clave automática del armazón (ARZL-GUE-2702-0007)
+   ========================================================= */
+#aClave.is-auto{ background:var(--accent-soft); font-weight:700; letter-spacing:.4px; cursor:default; }
+#aClave.is-partial{ color:var(--muted); }
+/* Campo de clave con el "?" adentro y el desglose flotando abajo */
+.inv-clave-field{ position:relative; }
+.inv-clave-wrap{ position:relative; display:block; }
+.inv-clave-wrap input{ width:100%; padding-right:46px !important; }
+.inv-clave-q{ position:absolute; right:7px; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:50%; border:1.5px solid var(--accent-border, var(--line)); background:var(--white); color:var(--accent); font:800 14px/1 var(--sans); cursor:pointer; display:grid; place-items:center; transition:background .2s var(--ease), color .2s var(--ease), transform .2s var(--ease); }
+.inv-clave-q:hover{ transform:translateY(-50%) scale(1.08); }
+.inv-clave-q.is-on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.inv-clave-help{ position:absolute; z-index:30; left:0; right:0; top:calc(100% + 8px); padding:14px 16px; border-radius:16px; background:var(--white); border:1px solid var(--line); box-shadow:0 18px 40px -16px rgba(10,20,80,.35); text-transform:none; letter-spacing:0; font-weight:500; }
+.inv-clave-help:not([hidden]){ animation:invColNewIn .25s cubic-bezier(.22,1.2,.36,1); transform-origin:top right; }
+.inv-clave-help-title{ display:block; font-size:13px; color:var(--ink); margin-bottom:10px; }
+.inv-clave-help-list{ margin:12px 0 0; padding-left:18px; font-size:12.5px; line-height:1.6; color:var(--muted); }
+.inv-clave-help-list b{ color:var(--ink); }
+.inv-clave-help.is-manual .inv-clave-help-list{ display:none; }
+.inv-clave-help-foot{ margin-top:8px; }
+.inv-clave-help-foot:empty{ display:none; }
+body.dark .inv-clave-help{ background:#14162b; }
+body.dark .inv-clave-q{ background:transparent; }
+.inv-clave-parts{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+.inv-clave-parts:empty{ display:none; }
+/* Materiales: identificador y quitar de la lista */
+.inv-mat{ position:relative; }
+.inv-mat-id{ font-size:9.5px; font-weight:800; letter-spacing:.4px; color:var(--muted); padding:1px 5px; border-radius:6px; background:var(--accent-soft); }
+.inv-mat-del{ display:none; margin-left:2px; min-width:18px; height:18px; padding:0 4px; border-radius:100px; font-size:13px; font-weight:800; line-height:18px; text-align:center; color:var(--muted); background:var(--accent-soft); cursor:pointer; }
+.inv-mat:hover .inv-mat-del, .inv-mat-del.is-armed{ display:inline-block; }
+.inv-mat-del:hover{ color:#fff; background:#e2554a; }
+.inv-mat-del.is-armed{ font-size:10.5px; color:#fff; background:#e2554a; }
+@media (hover:none){ .inv-mat-del{ display:inline-block; } }
+#aMatNew > input{ order:1; }
+.inv-mat-ident{ flex:1 1 100%; order:2; }
+#aMatNew > button{ order:3; }
+.inv-mat-ident button{ flex:1; }
+.inv-cp-row{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:4px; }
+.inv-cp{ display:flex; flex-direction:column; align-items:center; gap:3px; min-width:64px; padding:7px 10px 6px; border-radius:12px; background:var(--white); border:1px solid var(--line); transition:border-color .2s var(--ease), background .2s var(--ease); }
+.inv-cp b{ font-size:13.5px; font-weight:800; letter-spacing:.6px; color:var(--accent); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+.inv-cp small{ font-size:10.5px; font-weight:600; color:var(--muted); max-width:130px; text-align:center; line-height:1.25; }
+.inv-cp.is-missing{ border-style:dashed; border-color:#e0a63a; background:#fff8ea; }
+.inv-cp.is-missing b{ color:#c58a1d; }
+.inv-cp.is-missing small{ color:#a06400; }
+.inv-cp-sep{ align-self:center; margin-top:-14px; font-weight:800; color:var(--muted); }
+.inv-clave-mode{ border:0; background:none; padding:4px 0; font:inherit; font-size:12px; font-weight:700; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.inv-clave-mode:hover{ color:var(--accent-hover, var(--accent)); }
+.inv-color-code{ font-style:normal; font-size:11px; font-weight:800; letter-spacing:.4px; padding:2px 7px; border-radius:100px; background:var(--accent-soft); color:var(--accent); margin-left:4px; vertical-align:1px; }
+body.dark .inv-cp{ background:rgba(255,255,255,.04); }
+body.dark .inv-cp.is-missing{ background:rgba(255,192,77,.08); border-color:rgba(255,192,77,.45); }
+body.dark .inv-cp.is-missing b, body.dark .inv-cp.is-missing small{ color:#ffc04d; }
+
+/* Promoción del artículo */
+.inv-promo-row{ display:grid; grid-template-columns:minmax(0, 220px) minmax(0, 1fr); gap:14px; align-items:end; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); }
+.inv-promo-row .inv-hint{ padding-bottom:10px; }
+.inv-hint-rule{ display:block; margin-top:3px; color:#1f7a4d; font-weight:600; }
+.inv-promo-tag{ display:inline-block; margin-left:6px; padding:2px 7px; border-radius:100px; background:#e3f6ea; color:#1f7a4d; font-size:10.5px; font-weight:800; vertical-align:1px; }
+.inv-d-promo{ display:inline-block; margin-top:6px; padding:4px 10px; border-radius:100px; background:rgba(255,255,255,.18); font-size:11.5px; font-weight:700; color:#fff; }
+body.dark .inv-promo-tag{ background:rgba(27,175,122,.16); color:#5fd6a4; }
+body.dark .inv-hint-rule{ color:#5fd6a4; }
+@media (max-width:560px){ .inv-promo-row{ grid-template-columns:1fr; } .inv-promo-row .inv-hint{ padding-bottom:0; } }
+
+/* =========================================================
+   Precio / promoción para un grupo (categoría o material)
+   ========================================================= */
+.inv-grp-card{ max-width:560px; }
+.inv-grp-seg{ flex-wrap:wrap; border-radius:16px; }
+.inv-grp-seg button{ flex:1 1 auto; }
+.inv-grp-count{ margin-top:6px; }
+.inv-grp-count:empty{ display:none; }
+.inv-grp-sum{ margin:0; padding:10px 12px; border-radius:12px; background:var(--accent-soft); font-size:13px; line-height:1.45; color:var(--ink); }
+.inv-grp-sum[hidden]{ display:none; }
+.inv-grp-rules{ margin-top:18px; }
+.inv-grp-rules:empty{ display:none; }
+.inv-grp-rules h4{ margin:0 0 8px; font-size:11.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); }
+.inv-grp-rule{ display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line); border-radius:12px; }
+.inv-grp-rule + .inv-grp-rule{ margin-top:6px; }
+.inv-grp-rule > span:nth-child(2){ flex:1; min-width:0; display:flex; flex-direction:column; }
+.inv-grp-rule strong{ font-size:13px; color:var(--ink); }
+.inv-grp-rule small{ font-size:11.5px; color:var(--muted); }
+.inv-grp-rule-ico{ width:30px; height:30px; flex:none; display:grid; place-items:center; border-radius:10px; font-weight:800; font-size:13px; }
+.inv-grp-rule-ico.is-precio{ background:var(--accent-soft); color:var(--accent); }
+.inv-grp-rule-ico.is-promo{ background:#e3f6ea; color:#1f7a4d; }
+body.dark .inv-grp-rule-ico.is-promo{ background:rgba(27,175,122,.16); color:#5fd6a4; }
+
+/* Eliminar varios artículos (solo admin) */
+.inv-table tbody tr.is-marked:not(.is-selected) td{ background:#fdecea; }
+body.dark .inv-table tbody tr.is-marked:not(.is-selected) td{ background:rgba(226,85,74,.12); }
+.inv-del-list{ list-style:none; margin:8px 0 0; padding:0; max-height:220px; overflow:auto; border:1px solid var(--line); border-radius:12px; }
+.inv-del-list li{ padding:7px 11px; font-size:12.5px; color:var(--ink); border-top:1px solid var(--line); }
+.inv-del-list li:first-child{ border-top:0; }
+.inv-del-list li span{ font-weight:800; color:var(--accent); margin-right:6px; }
+.inv-del-list li em{ font-style:normal; font-weight:700; color:#b42318; margin-left:4px; white-space:nowrap; }
+.inv-del-list li.is-more{ color:var(--muted); font-weight:600; }
+
+/* Eliminar movimientos: las dos opciones explicadas y la vista previa */
+.inv-mvdel-q{ margin:14px 0 8px; font-size:13px; font-weight:700; color:var(--ink); }
+.inv-mvdel-opts{ display:flex; flex-direction:column; gap:8px; }
+.inv-mvdel-opt{ position:relative; display:flex; align-items:flex-start; gap:12px; padding:11px 13px; border-radius:14px; border:1.5px solid var(--line); cursor:pointer; transition:border-color .2s var(--ease), background .2s var(--ease); }
+.inv-mvdel-opt input{ position:absolute; opacity:0; pointer-events:none; }
+.inv-mvdel-opt.is-on{ border-color:var(--accent); background:var(--accent-soft); }
+.inv-mvdel-dot{ flex:none; width:18px; height:18px; margin-top:1px; border-radius:50%; border:2px solid var(--line); background:var(--white); transition:border .2s var(--ease); }
+.inv-mvdel-opt.is-on .inv-mvdel-dot{ border:5px solid var(--accent); }
+.inv-mvdel-opt strong{ display:block; font-size:13.5px; color:var(--ink); }
+.inv-mvdel-opt small{ display:block; margin-top:2px; font-size:12px; line-height:1.45; color:var(--muted); }
+.inv-mvdel-opt small b{ color:var(--ink); }
+.inv-mvdel-prev{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+.inv-mvdel-prev:empty{ display:none; }
+.inv-mvdel-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:9px 12px; border-radius:12px; background:var(--accent-soft); }
+.inv-mvdel-name{ flex:1 1 160px; min-width:0; font-size:13px; font-weight:700; color:var(--ink); }
+.inv-mvdel-nums{ display:flex; align-items:center; gap:10px; }
+.inv-mvdel-nums span{ display:flex; flex-direction:column; align-items:center; }
+.inv-mvdel-nums small{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.inv-mvdel-nums b{ font-size:16px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.inv-mvdel-nums i{ font-style:normal; color:var(--muted); font-weight:800; }
+.inv-mvdel-note{ flex:1 1 100%; font-size:12px; line-height:1.4; color:var(--muted); }
+.inv-mvdel-row.is-bad{ background:#fdecea; }
+.inv-mvdel-row.is-bad .inv-mvdel-note, .inv-mvdel-row.is-bad b{ color:#b42318; }
+.inv-mvdel-row.is-gone{ background:#f4f4f6; }
+.inv-mvdel-row.is-more{ font-size:12px; color:var(--muted); font-weight:600; }
+body.dark .inv-mvdel-dot{ background:transparent; }
+body.dark .inv-mvdel-row.is-bad{ background:rgba(226,85,74,.12); }
+body.dark .inv-mvdel-row.is-gone{ background:rgba(255,255,255,.05); }
+
+/* Servicio: sin marca ni pestaña de Inventario */
+.inv-tab[hidden], #aMarcaField[hidden], #aArmazon[hidden]{ display:none; }
+/* ---------- Pestañas del artículo como pasos (onboarding) ---------- */
+.inv-tabs.inv-steps{ gap:0; padding:4px 0 0; margin:0 24px; border-radius:0; background:none; }
+.inv-steps .inv-tab{
+  display:flex; flex-direction:column; align-items:center; gap:7px; padding:0 4px 8px; border-radius:12px;
+  color:var(--muted); text-align:center;
+}
+.inv-steps .inv-tab.is-on{ color:var(--accent); }
+.inv-steps .inv-tab.is-done{ color:var(--ink); }
+.inv-step-dot{
+  position:relative; z-index:1; width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  border:2px solid var(--line); background:var(--white); color:var(--muted);
+  font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
+  transition:background .3s var(--ease), border-color .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease), transform .3s cubic-bezier(.22,1.2,.36,1);
+}
+.inv-step-dot svg{ display:none; width:16px; height:16px; }
+.inv-steps .inv-tab:hover .inv-step-dot{ border-color:var(--accent); color:var(--accent); }
+.inv-steps .inv-tab.is-on .inv-step-dot{
+  background:var(--accent); border-color:var(--accent); color:#fff; transform:scale(1.08);
+  box-shadow:0 0 0 5px var(--accent-soft), 0 8px 18px -6px rgba(4,28,255,.45);
+}
+.inv-steps .inv-tab.is-done .inv-step-dot{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.inv-steps .inv-tab.is-done .inv-step-dot svg{ display:block; animation:invStepCheck .35s var(--ease); }
+.inv-steps .inv-tab.is-done .inv-step-n{ display:none; }
+@keyframes invStepCheck{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
+.inv-step-txt{ display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.15; }
+.inv-step-k{ font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.inv-step-txt > span{ font-size:13px; font-weight:700; }
+/* La línea que une los pasos y se va llenando hasta el actual. */
+.inv-steps .inv-steps-track,
+.inv-steps .inv-tabs-glow{
+  position:absolute; z-index:0; top:20px; bottom:auto; height:3px; border-radius:3px; transform:none; box-shadow:none;
+}
+.inv-steps .inv-steps-track{ background:var(--line); }
+.inv-steps .inv-tabs-glow{ background:var(--accent); transition:width .45s cubic-bezier(.22,1,.36,1); }
+.inv-steps .inv-tab.is-on .inv-tab-count{ background:var(--accent); color:#fff; }
+@media (max-width:560px){
+  .inv-tabs.inv-steps{ margin:0 14px; }
+  .inv-step-k{ display:none; }
+  .inv-step-dot{ width:30px; height:30px; font-size:12px; }
+  .inv-steps .inv-steps-track, .inv-steps .inv-tabs-glow{ top:18px; }
+  .inv-step-txt > span{ font-size:11.5px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .inv-step-dot, .inv-steps .inv-tabs-glow{ transition:none; }
+  .inv-steps .inv-tab.is-done .inv-step-dot svg{ animation:none; }
+}
+/* Material: subidentificador (no va en la clave) */
+#aMatNew > .inv-mat-sub{ order:2; flex:1 1 100%; }
+#aMatNew > .inv-mat-sub-hint{ order:2; flex:1 1 100%; margin:-2px 2px 0; font-size:11px; color:var(--muted); }
+#aMatName:disabled{ opacity:.7; cursor:default; }
+.inv-mat-id[data-mat-edit]{ cursor:pointer; }
+.inv-mat-id[data-mat-edit]:hover{ color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+/* Color: quitar de la paleta (igual que los materiales) */
+.inv-col:hover .inv-mat-del, .inv-col .inv-mat-del.is-armed{ display:inline-block; }
+
+/* Borrados: cantidad 0 (ni + ni −) */
+.inv-qty.is-zero{ color:var(--muted); font-weight:700; }
+
+/* ---------- Movimientos borrados (solo admin) ---------- */
+.inv-borr-card{ max-width:940px; }
+.inv-borr-search{
+  display:flex; align-items:center; gap:8px; margin:12px 0 14px; padding:0 14px; height:42px;
+  border:1.5px solid var(--line); border-radius:100px; background:var(--white);
+}
+.inv-borr-search svg{ width:16px; height:16px; color:var(--muted); flex-shrink:0; }
+.inv-borr-search input{ flex:1; border:none; outline:none; background:none; font-family:var(--sans); font-size:13.5px; color:var(--ink); }
+.inv-borr-search:focus-within{ border-color:var(--accent); }
+.inv-borr-list{ display:flex; flex-direction:column; gap:12px; max-height:62vh; overflow-y:auto; padding-right:2px; }
+.inv-borr-lote{ border:1px solid var(--line); border-radius:16px; overflow:hidden; animation:dayItemIn .25s var(--ease); }
+.inv-borr-lote header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px;
+  background:var(--accent-soft); font-size:13px; color:var(--ink);
+}
+.inv-borr-lote header small{ display:block; margin-top:2px; font-size:11.5px; color:var(--muted); }
+.inv-borr-modo{
+  flex-shrink:0; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:700; white-space:nowrap;
+  background:var(--white); color:var(--muted); border:1px solid var(--line);
+}
+.inv-borr-modo.is-rev{ background:#fff4e0; color:#9a5b00; border-color:#f5d9a8; }
+body.dark .inv-borr-modo.is-rev{ background:rgba(245,166,35,.14); color:#ffc56b; border-color:rgba(245,166,35,.3); }
+.inv-borr-table{ overflow-x:auto; }
+.inv-borr-table table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.inv-borr-table th{ text-align:left; padding:8px 12px; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); white-space:nowrap; }
+.inv-borr-table td{ padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink); }
+.inv-borr-table tr:last-child td{ border-bottom:none; }
+.inv-borr-table .num{ text-align:right; }
+.inv-borr-table .inv-cell-art strong{ display:block; }
+.inv-chip.t-ticket{ background:#eef1ff; color:#3b4bc4; }
+body.dark .inv-chip.t-ticket{ background:rgba(90,110,255,.18); color:#a9b4ff; }
+@media (max-width:640px){
+  .inv-borr-lote header{ flex-direction:column; align-items:flex-start; }
+}
+/* Artículos: «197 artículos» separado de los filtros (Todos, Bajo mínimo…) */
+.inv-chips + .inv-sel-bar{ margin:16px 2px 10px; }

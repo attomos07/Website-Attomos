@@ -186,7 +186,7 @@
         ['.cf-seg', 'tint'],
         ['#labOrigen', 'tint'],
         ['.view-switch', 'tint'],
-        ['.inv-tabs', 'tint'],
+        ['.inv-tabs:not(.inv-steps)', 'tint'], // los pasos del artículo tienen su propia línea
         ['.tkp-seg', 'light'],
         ['.cc-subtabs', 'line'],
         ['.pf-tabs', 'tint'],

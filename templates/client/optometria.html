@@ -144,11 +144,12 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
-    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=8">
     <link rel="stylesheet" href="/static/css/client/appointments.css?v=8">
-    <link rel="stylesheet" href="/static/css/client/optometria.css?v=2">
+    <link rel="stylesheet" href="/static/css/client/optometria.css?v=3">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
     <link rel="stylesheet" href="/static/css/client/attomos-skin.css?v=1">
+    <script>if(/[?&]embed=1(&|$)/.test(location.search))document.documentElement.classList.add('hc-embed');</script>
 </head>
 <body class="inv-body opt-body" data-staff="{{.StaffName}}">
     <div class="decorative-rings">
@@ -225,6 +226,17 @@
       </div>
 
       <div class="empty-state" id="historialEmpty" style="display:none;"></div>
+
+      {{/* Paginación: 20 pacientes por página. */}}
+      <div class="hc-pager" id="hcPager" hidden>
+        <span class="hc-pager-count" id="hcPagCount"></span>
+        <div class="hc-pager-nav">
+          <button type="button" class="hc-page-arrow" id="hcPagPrev" aria-label="Página anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+          <span class="hc-page-current" id="hcPagCurrent">Página 1</span>
+          <button type="button" class="hc-page-arrow" id="hcPagNext" aria-label="Página siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+        <span></span>
+      </div>
     </section>
   </main>
 {{else if eq .OptTab "ordenes-lab"}}
@@ -483,7 +495,7 @@
 <!-- Ticket digital de la venta -->
 <div class="vp-ticket-ov" id="vpTicketOv" hidden>
   <div class="vp-ticket-card" role="dialog" aria-modal="true" aria-label="Ticket digital">
-    <div class="vp-ticket-head"><strong id="vpTicketTitle">Ticket</strong><button type="button" class="vp-x" id="vpTicketClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="vp-ticket-head"><strong id="vpTicketTitle">Ticket</strong><a class="vp-pop" id="vpTicketPop" href="#" target="_blank" rel="noopener" hidden>Abrir en otra ventana</a><button type="button" class="vp-x" id="vpTicketClose" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <iframe id="vpTicketFrame" title="Ticket digital" loading="lazy"></iframe>
   </div>
 </div>
@@ -530,10 +542,10 @@
 <script src="/static/js/client/optometria/examen-render.js?v=1"></script>
 <script src="/static/js/client/optometria/examen-modal.js?v=1"></script>
 <script src="/static/js/client/optometria/examen-vista.js?v=1"></script>
-<script src="/static/js/client/optometria/historial-clinico.js?v=1"></script>
+<script src="/static/js/client/optometria/historial-clinico.js?v=2"></script>
 <script src="/static/js/client/optometria/documentos.js?v=1"></script>
-<script src="/static/js/client/optometria/ventas-pendientes.js?v=1"></script>
+<script src="/static/js/client/optometria/ventas-pendientes.js?v=2"></script>
 <script src="/static/js/client/optometria/plantilla-examen.js?v=1"></script>
-<script src="/static/js/client/ios27-panel.js?v=3"></script>
+<script src="/static/js/client/ios27-panel.js?v=4"></script>
 </body>
 </html>

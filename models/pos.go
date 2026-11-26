@@ -29,17 +29,26 @@ import (
    ========================================================= */
 
 type PosClientRecord struct {
-	ID            int64     `gorm:"primaryKey;autoIncrement"`
-	UserID        uint      `gorm:"not null;uniqueIndex:uq_pos_cli_num,priority:1;index:idx_pos_cli_nombre,priority:1"`
-	Numero        string    `gorm:"size:20;not null;uniqueIndex:uq_pos_cli_num,priority:2"`
-	Clave         string    `gorm:"size:30;not null;default:''"`
-	Nombre        string    `gorm:"size:120;not null;index:idx_pos_cli_nombre,priority:2"`
-	Celular       string    `gorm:"size:20;not null;default:''"`
-	Representante string    `gorm:"size:120;not null;default:''"`
-	DiasCredito   int       `gorm:"not null;default:0"`
-	LimiteCredito float64   `gorm:"type:decimal(12,2);not null;default:0"`
-	CreatedBy     string    `gorm:"size:120;not null;default:''"`
-	CreatedAt     time.Time `gorm:"type:datetime"`
+	ID            int64   `gorm:"primaryKey;autoIncrement"`
+	UserID        uint    `gorm:"not null;uniqueIndex:uq_pos_cli_num,priority:1;index:idx_pos_cli_nombre,priority:1"`
+	Numero        string  `gorm:"size:20;not null;uniqueIndex:uq_pos_cli_num,priority:2"`
+	Clave         string  `gorm:"size:30;not null;default:''"`
+	Nombre        string  `gorm:"size:120;not null;index:idx_pos_cli_nombre,priority:2"`
+	Celular       string  `gorm:"size:20;not null;default:''"`
+	Representante string  `gorm:"size:120;not null;default:''"`
+	DiasCredito   int     `gorm:"not null;default:0"`
+	LimiteCredito float64 `gorm:"type:decimal(12,2);not null;default:0"`
+	// Perfil: correo, nacimiento, dirección, particular o empresa (y
+	// cuál), pasatiempo y profesión.
+	Correo     string    `gorm:"size:160;not null;default:''"`
+	Nacimiento string    `gorm:"size:10;not null;default:''"`
+	Direccion  string    `gorm:"size:255;not null;default:''"`
+	Tipo       string    `gorm:"size:10;not null;default:'Particular'"`
+	Empresa    string    `gorm:"size:120;not null;default:''"`
+	Pasatiempo string    `gorm:"size:120;not null;default:''"`
+	Profesion  string    `gorm:"size:120;not null;default:''"`
+	CreatedBy  string    `gorm:"size:120;not null;default:''"`
+	CreatedAt  time.Time `gorm:"type:datetime"`
 }
 
 func (PosClientRecord) TableName() string { return "pos_clients" }
@@ -49,6 +58,7 @@ type PosSaleRecord struct {
 	UserID        uint       `gorm:"not null;uniqueIndex:uq_pos_sale_folio,priority:1;index:idx_pos_sale_fecha,priority:1"`
 	Folio         int64      `gorm:"not null;uniqueIndex:uq_pos_sale_folio,priority:2"`
 	ClientID      *int64     `gorm:"index"`
+	CitaID        *int64     `gorm:"index"` // la cita de hoy de la que vino (Citas → "Asistió · Compró")
 	Cliente       string     `gorm:"size:120;not null;default:''"`
 	Cajero        string     `gorm:"size:120;not null;default:''"`
 	Subtotal      float64    `gorm:"type:decimal(12,2);not null;default:0"`
@@ -185,6 +195,14 @@ type PosClient struct {
 	Representante string  `json:"representante"`
 	DiasCredito   int     `json:"dias"`
 	LimiteCredito float64 `json:"limite"`
+	// Perfil
+	Correo     string `json:"correo"`
+	Nacimiento string `json:"nacimiento"` // "YYYY-MM-DD" o ""
+	Direccion  string `json:"direccion"`
+	Tipo       string `json:"tipo"`    // "Particular" | "Empresa"
+	Empresa    string `json:"empresa"` // nombre de la empresa (si es Empresa)
+	Pasatiempo string `json:"pasatiempo"`
+	Profesion  string `json:"profesion"`
 	// Calculados a partir de sus créditos abiertos:
 	Saldo        float64 `json:"saldo"`
 	SaldoVencido float64 `json:"saldo_vencido"`
@@ -194,6 +212,7 @@ type PosClient struct {
 
 const posClientSelect = `
 	SELECT c.id, c.numero, c.clave, c.nombre, c.celular, c.representante, c.dias_credito, c.limite_credito,
+	       c.correo, c.nacimiento, c.direccion, c.tipo, c.empresa, c.pasatiempo, c.profesion,
 	       COALESCE(SUM(cr.saldo), 0),
 	       COALESCE(SUM(CASE WHEN cr.vence IS NOT NULL AND cr.vence < ? THEN cr.saldo ELSE 0 END), 0),
 	       COALESCE(DATE_FORMAT(MIN(cr.vence), '%Y-%m-%d'), ''),
@@ -204,6 +223,7 @@ const posClientSelect = `
 func scanPosClient(sc interface{ Scan(...interface{}) error }) (PosClient, error) {
 	var c PosClient
 	err := sc.Scan(&c.ID, &c.Numero, &c.Clave, &c.Nombre, &c.Celular, &c.Representante, &c.DiasCredito, &c.LimiteCredito,
+		&c.Correo, &c.Nacimiento, &c.Direccion, &c.Tipo, &c.Empresa, &c.Pasatiempo, &c.Profesion,
 		&c.Saldo, &c.SaldoVencido, &c.ProximoVence, &c.Creditos)
 	c.Saldo, c.SaldoVencido = round2(c.Saldo), round2(c.SaldoVencido)
 	return c, err
@@ -267,9 +287,11 @@ func NextPosClientNumero(userID uint) (string, error) {
 // CreatePosClient guarda un cliente nuevo.
 func CreatePosClient(userID uint, c PosClient, createdBy string) (*PosClient, error) {
 	res, err := posDB().Exec(
-		`INSERT INTO pos_clients (user_id, numero, clave, nombre, celular, representante, dias_credito, limite_credito, created_by, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		userID, c.Numero, c.Clave, c.Nombre, c.Celular, c.Representante, c.DiasCredito, round2(c.LimiteCredito), createdBy, posNow(),
+		`INSERT INTO pos_clients (user_id, numero, clave, nombre, celular, representante, dias_credito, limite_credito,
+		        correo, nacimiento, direccion, tipo, empresa, pasatiempo, profesion, created_by, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		userID, c.Numero, c.Clave, c.Nombre, c.Celular, c.Representante, c.DiasCredito, round2(c.LimiteCredito),
+		c.Correo, c.Nacimiento, c.Direccion, posTipo(c.Tipo), c.Empresa, c.Pasatiempo, c.Profesion, createdBy, posNow(),
 	)
 	if err != nil {
 		if isInvDuplicateKey(err) {
@@ -289,9 +311,11 @@ func UpdatePosClient(userID uint, id int64, c PosClient) (*PosClient, error) {
 	}
 	_, err := posDB().Exec(
 		`UPDATE pos_clients SET numero = ?, clave = ?, nombre = ?, celular = ?, representante = ?,
-		        dias_credito = ?, limite_credito = ?
+		        dias_credito = ?, limite_credito = ?, correo = ?, nacimiento = ?, direccion = ?, tipo = ?,
+		        empresa = ?, pasatiempo = ?, profesion = ?
 		 WHERE id = ? AND user_id = ?`,
-		c.Numero, c.Clave, c.Nombre, c.Celular, c.Representante, c.DiasCredito, round2(c.LimiteCredito), id, userID,
+		c.Numero, c.Clave, c.Nombre, c.Celular, c.Representante, c.DiasCredito, round2(c.LimiteCredito),
+		c.Correo, c.Nacimiento, c.Direccion, posTipo(c.Tipo), c.Empresa, c.Pasatiempo, c.Profesion, id, userID,
 	)
 	if err != nil {
 		if isInvDuplicateKey(err) {
@@ -300,6 +324,13 @@ func UpdatePosClient(userID uint, id int64, c PosClient) (*PosClient, error) {
 		return nil, err
 	}
 	return GetPosClient(userID, id)
+}
+
+func posTipo(t string) string {
+	if t == "Empresa" {
+		return t
+	}
+	return "Particular"
 }
 
 // PosClientPhone — celular del cliente (para mandarle su ticket por WhatsApp).
@@ -325,6 +356,7 @@ type PosInventoryItem struct {
 	CantidadActual int     `json:"cantidad_actual"`
 	Servicio       bool    `json:"servicio"`
 	Foto           string  `json:"foto"`
+	PromoPct       float64 `json:"promo_pct"` // promoción del Inventario (%), el POS la pone de descuento
 }
 
 // SearchPosInventory busca por clave, clave alterna (código de barras) o
@@ -347,7 +379,7 @@ func SearchPosInventory(userID uint, q string, limit int) ([]PosInventoryItem, e
 			break
 		}
 	}
-	query := "SELECT i.id, i.clave, i.descripcion, i.precio_1, i.existencia, i.servicio, COALESCE(" + invPhotoMainSQL + ", 0) FROM inv_articulos i WHERE " +
+	query := "SELECT i.id, i.clave, i.descripcion, i.precio_1, i.existencia, i.servicio, COALESCE(" + invPhotoMainSQL + ", 0), i.promo_pct FROM inv_articulos i WHERE " +
 		strings.Join(where, " AND ") + " ORDER BY i.descripcion ASC LIMIT ?"
 	args = append(args, limit)
 	rows, err := posDB().Query(query, args...)
@@ -359,7 +391,7 @@ func SearchPosInventory(userID uint, q string, limit int) ([]PosInventoryItem, e
 	for rows.Next() {
 		var it PosInventoryItem
 		var fotoID int64
-		if err := rows.Scan(&it.ID, &it.Clave, &it.Descripcion, &it.PrecioVenta, &it.CantidadActual, &it.Servicio, &fotoID); err != nil {
+		if err := rows.Scan(&it.ID, &it.Clave, &it.Descripcion, &it.PrecioVenta, &it.CantidadActual, &it.Servicio, &fotoID, &it.PromoPct); err != nil {
 			return nil, err
 		}
 		it.Foto = InvPhotoURL(fotoID)

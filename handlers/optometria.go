@@ -323,6 +323,44 @@ type optExamInput struct {
 	Data          json.RawMessage `json:"data"`
 	UserID        int64           `json:"userId"`        // cliente del Punto de venta (0 = sin ligar)
 	AppointmentID int64           `json:"appointmentId"` // 0 = sin cita
+	// SyncName: se corrigió el nombre y se aceptó el aviso de que también
+	// cambia en Mis citas y en el Punto de venta.
+	SyncName *struct {
+		Nombre   string `json:"nombre"`
+		Apellido string `json:"apellido"`
+	} `json:"syncName"`
+}
+
+// optApplyNameSync pone el nombre corregido en la cita y en el cliente.
+func optApplyNameSync(uid uint, apptID int64, in optExamInput) {
+	if in.SyncName == nil || apptID <= 0 {
+		return
+	}
+	citas, clientes, err := models.ApplyNameSync(uid, apptID, in.SyncName.Nombre, in.SyncName.Apellido)
+	if err != nil {
+		log.Printf("optometria: no se pudo pasar el nombre a la cita #%d: %v", apptID, err)
+		return
+	}
+	if citas+clientes > 0 {
+		LivePublish(uid, "citas", "pos")
+	}
+}
+
+// OptPreviewNameSync — GET /api/optometria/cambio-nombre?citaId=&nombre=
+// Para el aviso antes de guardar: si el nombre del examen es distinto al
+// de la cita, qué se cambiaría en Mis citas y en el Punto de venta.
+func OptPreviewNameSync(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Query("citaId"), 10, 64)
+	if id <= 0 {
+		c.JSON(http.StatusOK, models.NameSyncPreview{})
+		return
+	}
+	p, err := models.PreviewNameSync(invUserID(c), id, c.Query("nombre"))
+	if err != nil {
+		optFail(c, "PreviewNameSync", err, "No se pudo revisar el nombre.")
+		return
+	}
+	c.JSON(http.StatusOK, p)
 }
 
 func (in *optExamInput) clean() string {
@@ -359,6 +397,7 @@ func OptCreateExam(c *gin.Context) {
 		optFail(c, "CreateExam", err, "No se pudo guardar el examen.")
 		return
 	}
+	optApplyNameSync(uid, in.AppointmentID, in)
 	// La cita de la que salió queda como "asistió".
 	models.MarkAppointmentAttended(uid, in.AppointmentID)
 	c.JSON(http.StatusCreated, e)
@@ -390,6 +429,8 @@ func OptUpdateExam(c *gin.Context) {
 		optFail(c, "UpdateExam", err, "No se pudieron guardar los cambios.")
 		return
 	}
+	// La cita es la del examen guardado (no la que mande el navegador).
+	optApplyNameSync(uid, e.AppointmentID, in)
 	c.JSON(http.StatusOK, e)
 }
 

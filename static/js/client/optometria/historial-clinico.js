@@ -118,7 +118,18 @@
     document.getElementById('statSoon').textContent = c.soon;
   }
 
+  function goPage(n){
+    page = n;
+    renderRows();
+    var t = document.querySelector('.hc-table');
+    if (t && t.getBoundingClientRect().top < 0) t.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  if (document.getElementById('hcPager')){
+    document.getElementById('hcPagPrev').addEventListener('click', function(){ goPage(page - 1); });
+    document.getElementById('hcPagNext').addEventListener('click', function(){ goPage(page + 1); });
+  }
   function setFilter(f){
+    page = 0;
     filter = f;
     chipsEl.querySelectorAll('.hc-chip').forEach(function(b){ b.classList.toggle('active', b.dataset.filter === f); });
     document.querySelectorAll('.hc-stat').forEach(function(b){ b.classList.toggle('active', b.dataset.filter === f && f !== 'all'); });
@@ -153,6 +164,9 @@
   }
 
   var visible = [];
+  // Paginación: 20 pacientes por página (al buscar o filtrar vuelve a la 1).
+  var PAGE_SIZE = 20, page = 0;
+  var pagerEl = document.getElementById('hcPager');
   function renderRows(){
     var term = normalize(searchInput.value);
     var termDigits = searchInput.value.replace(/\D/g, '');
@@ -164,8 +178,14 @@
     });
     var extra = (term && filter === 'all') ? accountMatches : [];
 
-    var html = visible.map(function(p, i){ return rowHTML(p, i, false); }).join('');
-    if (extra.length){
+    var pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+    if (page > pages - 1) page = pages - 1;
+    if (page < 0) page = 0;
+    var from = page * PAGE_SIZE, to = Math.min(visible.length, from + PAGE_SIZE);
+    var html = '';
+    for (var i = from; i < to; i++) html += rowHTML(visible[i], i, false);
+    // Las cuentas sin examen van al final (en la última página).
+    if (extra.length && page === pages - 1){
       html += '<tr class="hc-sep"><td colspan="5">Cuentas sin examen todavía</td></tr>' +
         extra.map(function(p, i){ return rowHTML(p, i, true); }).join('');
     }
@@ -180,6 +200,13 @@
       emptyEl.textContent = 'Ningún paciente coincide con este filtro.';
     } else {
       emptyEl.style.display = 'none';
+    }
+    if (pagerEl){
+      pagerEl.hidden = visible.length <= PAGE_SIZE;
+      document.getElementById('hcPagCount').textContent = visible.length ? 'Mostrando ' + (from + 1) + '–' + to + ' de ' + visible.length : '';
+      document.getElementById('hcPagCurrent').textContent = 'Página ' + (page + 1) + ' de ' + pages;
+      document.getElementById('hcPagPrev').disabled = page <= 0;
+      document.getElementById('hcPagNext').disabled = page >= pages - 1;
     }
     hintEl.textContent = (term || filter !== 'all')
       ? total + ' de ' + plural(patients.length, 'paciente', 'pacientes')
@@ -202,6 +229,7 @@
   // de clientes que todavía no tienen examen.
   var searchTimer;
   searchInput.addEventListener('input', function(){
+    page = 0;
     renderRows();
     clearTimeout(searchTimer);
     var term = searchInput.value.trim();
@@ -1035,11 +1063,28 @@
   ROOT.addEventListener('subnav:show', function(){ loadDirectory(); });
   if (window.AttomosLive) AttomosLive.on(['optometria'], function(){ if (ROOT.offsetParent) loadDirectory(); });
   loadDirectory().then(function(){
+    var qs = new URLSearchParams(window.location.search);
     // ?paciente=<key> abre directo la ficha (p. ej. desde otro lado del panel)
-    var key = new URLSearchParams(window.location.search).get('paciente');
-    if (!key) return;
-    var p = patients.filter(function(x){ return x.key === key; })[0];
-    openPatient(key, p || { key: key, name: '', phone: '' });
+    var key = qs.get('paciente');
+    if (key){
+      var p = patients.filter(function(x){ return x.key === key; })[0];
+      openPatient(key, p || { key: key, name: '', phone: '' });
+      return;
+    }
+    // ?buscar=<nombre>&tel=<celular>: desde una venta (ticket). Si se
+    // encuentra al paciente se abre su ficha; si no, queda buscado.
+    var buscar = (qs.get('buscar') || '').trim();
+    var tel = (qs.get('tel') || '').replace(/\D/g, '').slice(-10);
+    if (!buscar && !tel) return;
+    var want = normalize(buscar);
+    var hit = patients.filter(function(x){ return want && normalize(x.name) === want; })[0] ||
+      patients.filter(function(x){ return tel.length === 10 && String(x.phone || '').replace(/\D/g, '').slice(-10) === tel; })[0];
+    if (hit){ openPatient(hit.key, hit); return; }
+    if (buscar){
+      searchInput.value = buscar;
+      searchInput.dispatchEvent(new Event('input'));
+      hintEl.textContent = 'Todavía no hay exámenes de ' + buscar + '. Búscalo con otro nombre si se registró distinto.';
+    }
   });
 
   if (window.feather) feather.replace();

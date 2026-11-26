@@ -447,6 +447,17 @@ func main() {
 			inv.POST("/colores", handlers.InvCreateColor)
 			inv.GET("/materiales", handlers.InvListMaterials)
 			inv.POST("/materiales", handlers.InvCreateMaterial)
+			inv.PUT("/materiales/:id", handlers.InvUpdateMaterial)
+			inv.DELETE("/materiales/:id", handlers.InvDeleteMaterial)
+			inv.DELETE("/colores/:id", handlers.InvDeleteColor)
+			// Mismo precio / promoción para toda una categoría o un material.
+			inv.GET("/reglas", handlers.InvListRules)
+			inv.POST("/grupo", handlers.InvApplyGroup)
+			inv.DELETE("/reglas/:id", handlers.InvDeleteRule)
+			// Solo el dueño: borrar de un jalón y ver lo que se borró.
+			inv.POST("/articulos/eliminar", handlers.InvDeleteItemsBulk)
+			inv.POST("/movimientos/eliminar", handlers.InvDeleteMovements)
+			inv.GET("/movimientos/borrados", handlers.InvListMovDeleted)
 		}
 
 		// Laboratorio (ópticas) — handlers/laboratorio.go
@@ -498,6 +509,7 @@ func main() {
 			opt.GET("/ventas-pendientes", handlers.OptVentasPendientes)
 			opt.POST("/ventas-pendientes/:id/sin-orden", handlers.OptVentaSinOrden)
 			opt.GET("/citas-hoy", handlers.OptCitasHoy)
+			opt.GET("/cambio-nombre", handlers.OptPreviewNameSync)
 		}
 
 		// Mis citas (portado de Citas de Avante) — handlers/appointments_panel.go
@@ -520,7 +532,7 @@ func main() {
 		// 🧾 PUNTO DE VENTA — sidebar → Punto de venta (Punto de venta,
 		// Ventas, Corte de caja). Las ventas descuentan el Inventario.
 		// ============================================
-		pos := protected.Group("/pos", handlers.LiveNotify("pos", "lab", "optometria", "inventario"), handlers.ActivityTracker("pos"))
+		pos := protected.Group("/pos", handlers.LiveNotify("pos", "lab", "optometria", "inventario", "citas"), handlers.ActivityTracker("pos"))
 		{
 			pos.GET("/inventario", handlers.PosSearchInventory)
 			pos.GET("/estados", handlers.PosOrderStatuses)
@@ -532,6 +544,9 @@ func main() {
 			pos.PUT("/clientes/:id", handlers.PosUpdateClient)
 			pos.GET("/clientes/:id/creditos", handlers.PosClientCredits)
 			pos.GET("/clientes/:id/ultima-venta", handlers.PosClientLastSale)
+			pos.GET("/clientes/:id/perfil", handlers.PosClientPerfil)
+			pos.GET("/citas-hoy", handlers.PosCitasHoy)
+			pos.GET("/ventas/por-material", handlers.PosVentasPorMaterial)
 			pos.GET("/ventas", handlers.PosListSales)
 			pos.GET("/ventas/:id", handlers.PosGetSale)
 			pos.POST("/ventas", handlers.PosCreateSale)

@@ -12,8 +12,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
-    <link rel="stylesheet" href="/static/css/client/inventory.css?v=6">
-    <link rel="stylesheet" href="/static/css/client/appointments.css?v=10">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=8">
+    <link rel="stylesheet" href="/static/css/client/appointments.css?v=11">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
 </head>
 <body class="inv-body citas-body" data-optica="{{if .Optica}}1{{end}}" data-cap="{{.Capacidad}}" data-biz-name="{{.BusinessName}}" data-services="{{.ServicesJSON}}" data-workers="{{.WorkersJSON}}">
@@ -626,7 +626,7 @@
         <div class="crear-cita-tipo">
           <span class="crear-cita-tipo-label">Tipo de cita <em>(opcional)</em></span>
           <div class="cita-tag-options" id="crearCitaTags"></div>
-          <p class="crear-cita-tipo-hint" id="crearCitaTagHint" hidden>Vino sin cita: se registra hoy y puedes elegir una hora que ya pasó.</p>
+          <p class="crear-cita-tipo-hint" id="crearCitaTagHint" hidden>Vino sin cita: se registra hoy. Elige la hora a la que llegó; puede ser una que ya pasó o una ocupada.</p>
         </div>
 
         <div class="form-section-title"><span class="form-section-num">1</span>Fecha y hora</div>
@@ -814,7 +814,7 @@
       </button>
     </div>
     <div class="admin-modal-body">
-      <p class="ce-export-hint">Un PDF con las estadísticas del periodo: cuántas citas hubo, cuántos asistieron, cómo llegaron y cómo te conocieron, con gráfica de barras y de líneas.</p>
+      <p class="ce-export-hint">Un PDF con las estadísticas del periodo: cuántas citas hubo, cuántos asistieron, cómo llegaron, cómo te conocieron, qué día de la semana compran más y menos, con gráfica de barras y de líneas.</p>
       <div class="cf-seg ce-export-seg" id="ceExpTipo" role="tablist" aria-label="Periodo del reporte">
         <span class="cf-seg-glow" aria-hidden="true"></span>
         <button type="button" data-tipo="dia" class="is-on">Día</button>
@@ -842,8 +842,8 @@
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
 <script src="/static/js/client/live.js?v=1"></script>
-<script src="/static/js/client/appointments.js?v=8"></script>
+<script src="/static/js/client/appointments.js?v=9"></script>
 <script src="/static/js/client/citas-compartir.js?v=2"></script>
-<script src="/static/js/client/ios27-panel.js?v=3"></script>
+<script src="/static/js/client/ios27-panel.js?v=4"></script>
 </body>
 </html>

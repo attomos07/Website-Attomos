@@ -387,6 +387,10 @@ type citaInput struct {
 	Notas           string          `json:"notas"`
 	Status          string          `json:"status"`
 	Tag             string          `json:"tag"`
+	// Encimar: se le dio a propósito una hora que ya tiene cita a alguien
+	// que vino sin cita (si el de las 10:00 no llegó, se le da esa hora y
+	// se quedan las dos). Solo cuenta con Tag "sin_cita" y al crear.
+	Encimar bool `json:"encimar"`
 }
 
 // validate limpia y revisa lo que manda el panel; regresa la fecha y hora
@@ -490,14 +494,18 @@ func CitasCreate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Ese día no se dan citas. Elige otro día."})
 		return
 	}
-	free, err := citaSlotFree(uid, when, 0)
-	if err != nil {
-		citaFail(c, "Create", err, "No se pudo verificar el horario.")
-		return
-	}
-	if !free {
-		c.JSON(http.StatusConflict, gin.H{"error": "Esa hora ya está ocupada. Elige otra."})
-		return
+	// Anti-doble-cita: solo con "Vino sin cita" se deja dar una hora
+	// llena (el modal lo avisa y manda encimar).
+	if !(in.Encimar && in.Tag == "sin_cita") {
+		free, err := citaSlotFree(uid, when, 0)
+		if err != nil {
+			citaFail(c, "Create", err, "No se pudo verificar el horario.")
+			return
+		}
+		if !free {
+			c.JSON(http.StatusConflict, gin.H{"error": "Esa hora ya está ocupada. Elige otra."})
+			return
+		}
 	}
 	status := models.AppointmentStatusConfirmed
 	if s, ok := citaStatusFromPanel[in.Status]; ok && in.Status != "" {

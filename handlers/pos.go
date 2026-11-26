@@ -165,6 +165,24 @@ type posClientInput struct {
 	Representante string  `json:"representante"`
 	Dias          int     `json:"dias"`
 	Limite        float64 `json:"limite"`
+	Correo        string  `json:"correo"`
+	Nacimiento    string  `json:"nacimiento"`
+	Direccion     string  `json:"direccion"`
+	Tipo          string  `json:"tipo"`
+	Empresa       string  `json:"empresa"`
+	Pasatiempo    string  `json:"pasatiempo"`
+	Profesion     string  `json:"profesion"`
+}
+
+var posCorreoRe = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
+
+// posCut recorta espacios y deja como máximo n caracteres.
+func posCut(s string, n int) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if r := []rune(s); len(r) > n {
+		s = string(r[:n])
+	}
+	return s
 }
 
 func bindPosClient(c *gin.Context) (models.PosClient, bool) {
@@ -193,6 +211,22 @@ func bindPosClient(c *gin.Context) (models.PosClient, bool) {
 	case in.Dias < 0 || in.Dias > 365 || in.Limite < 0 || in.Limite > 99999999:
 		return bad("Revisa los días y el límite de crédito.")
 	}
+	in.Correo = strings.ToLower(strings.TrimSpace(in.Correo))
+	in.Nacimiento = strings.TrimSpace(in.Nacimiento)
+	if in.Correo != "" && (!posCorreoRe.MatchString(in.Correo) || len(in.Correo) > 160) {
+		return bad("Revisa el correo (ej. nombre@correo.com).")
+	}
+	if in.Nacimiento != "" && !posDateRe.MatchString(in.Nacimiento) {
+		return bad("Revisa la fecha de nacimiento.")
+	}
+	tipo := "Particular"
+	if strings.EqualFold(strings.TrimSpace(in.Tipo), "empresa") {
+		tipo = "Empresa"
+	}
+	empresa := ""
+	if tipo == "Empresa" {
+		empresa = posCut(in.Empresa, 120)
+	}
 	rep := strings.TrimSpace(in.Representante)
 	if len([]rune(rep)) > 120 {
 		rep = string([]rune(rep)[:120])
@@ -200,6 +234,8 @@ func bindPosClient(c *gin.Context) (models.PosClient, bool) {
 	return models.PosClient{
 		Numero: in.Numero, Clave: in.Clave, Nombre: in.Nombre, Celular: in.Celular,
 		Representante: rep, DiasCredito: in.Dias, LimiteCredito: in.Limite,
+		Correo: in.Correo, Nacimiento: in.Nacimiento, Direccion: posCut(in.Direccion, 255),
+		Tipo: tipo, Empresa: empresa, Pasatiempo: posCut(in.Pasatiempo, 120), Profesion: posCut(in.Profesion, 120),
 	}, true
 }
 
@@ -292,6 +328,7 @@ func PosClientLastSale(c *gin.Context) {
 func PosCreateSale(c *gin.Context) {
 	var in struct {
 		ClientID   int64                `json:"client_id"`
+		CitaID     int64                `json:"cita_id"`
 		Items      []models.PosSaleItem `json:"productos"`
 		Pagos      models.PosPayments   `json:"pagos"`
 		Referencia string               `json:"referencia"`
@@ -300,6 +337,11 @@ func PosCreateSale(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&in); err != nil || len(in.Items) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "La venta no trae productos."})
+		return
+	}
+	// Ya no se vende a "Público en general": la venta lleva cliente.
+	if in.ClientID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Elige o registra al cliente antes de cobrar."})
 		return
 	}
 	if len(in.Items) > 300 {
@@ -350,7 +392,10 @@ func PosCreateSale(c *gin.Context) {
 	}
 	// La existencia cambió: los bots ofrecen el catálogo del Inventario.
 	invNotifyBots(uid)
-	c.JSON(http.StatusCreated, gin.H{"venta": sale})
+	// En Mis citas queda "Asistió · Compró" (la cita que se eligió o la de
+	// hoy con el celular / nombre del cliente).
+	citaID := models.MarkCitaCompro(uid, sale.ID, in.CitaID, in.ClientID)
+	c.JSON(http.StatusCreated, gin.H{"venta": sale, "cita_id": citaID})
 }
 
 // PosListSales — GET /api/pos/ventas?desde=&hasta=&q=&estado= (sin fechas: hoy)
@@ -588,4 +633,60 @@ func PosSetPedidoStatus(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"pedido": p})
+}
+
+/* ---------------- citas de hoy, perfil y ventas por material ---------------- */
+
+// PosCitasHoy — GET /api/pos/citas-hoy
+// Las citas de hoy para traer al cliente al Punto de venta.
+func PosCitasHoy(c *gin.Context) {
+	list, err := models.ListPosCitasHoy(invUserID(c))
+	if err != nil {
+		posFail(c, "CitasHoy", err, "No se pudieron cargar las citas de hoy.")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, gin.H{"items": list})
+}
+
+// PosClientPerfil — GET /api/pos/clientes/:id/perfil
+// Datos, compras y (ópticas) exámenes de la vista del cliente.
+func PosClientPerfil(c *gin.Context) {
+	id, ok := posID(c)
+	if !ok {
+		return
+	}
+	uid := invUserID(c)
+	p, err := models.GetPosPerfil(uid, id, invIsOptica(uid))
+	if errors.Is(err, models.ErrPosClientNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ese cliente ya no existe."})
+		return
+	}
+	if err != nil {
+		posFail(c, "ClientPerfil", err, "No se pudo cargar el perfil.")
+		return
+	}
+	c.JSON(http.StatusOK, p)
+}
+
+// PosVentasPorMaterial — GET /api/pos/ventas/por-material?desde=&hasta=
+// Piezas e importe por identificador (ARMT/ARZL) y subidentificador del
+// material (reporte PDF de Ventas, ópticas).
+func PosVentasPorMaterial(c *gin.Context) {
+	desde, hasta := c.Query("desde"), c.Query("hasta")
+	if (desde != "" && !posDateRe.MatchString(desde)) || (hasta != "" && !posDateRe.MatchString(hasta)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Fechas inválidas."})
+		return
+	}
+	uid := invUserID(c)
+	if !invIsOptica(uid) {
+		c.JSON(http.StatusOK, gin.H{"items": []models.PosVentaMaterial{}})
+		return
+	}
+	items, err := models.ListPosVentasPorMaterial(uid, desde, hasta)
+	if err != nil {
+		posFail(c, "VentasPorMaterial", err, "No se pudieron calcular las ventas por material.")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }

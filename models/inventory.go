@@ -35,6 +35,9 @@ import (
 type InventorySettingsRecord struct {
 	UserID   uint      `gorm:"primaryKey;autoIncrement:false"`
 	SeededAt time.Time `gorm:"type:datetime"`
+	// ColorCodigoMax: el código de color más alto que se ha usado (aunque
+	// ese color ya se haya borrado), para no volver a darlo.
+	ColorCodigoMax int `gorm:"not null;default:0"`
 }
 
 func (InventorySettingsRecord) TableName() string { return "inv_settings" }
@@ -45,6 +48,7 @@ type InventoryItemRecord struct {
 	Clave          string  `gorm:"size:60;not null;uniqueIndex:uq_inv_art_clave,priority:2"`
 	ClaveAlterna   string  `gorm:"size:60;not null;default:''"`
 	Descripcion    string  `gorm:"size:200;not null"`
+	Marca          string  `gorm:"size:60;not null;default:''"` // ópticas: marca del armazón (va en la clave)
 	DepartamentoID *int64  `gorm:"index"`
 	CategoriaID    *int64  `gorm:"index"`
 	UnidadCompra   string  `gorm:"size:12;not null;default:'PZA'"`
@@ -65,6 +69,7 @@ type InventoryItemRecord struct {
 	InvMinimo      int     `gorm:"not null;default:0"`
 	InvMaximo      int     `gorm:"not null;default:0"`
 	Localizacion   string  `gorm:"size:60;not null;default:''"`
+	PromoPct       float64 `gorm:"type:decimal(5,2);not null;default:0"` // % de descuento en el Punto de venta
 	TipoArmazon    string  `gorm:"size:60;not null;default:''"`
 	ColorPrincipal string  `gorm:"size:40;not null;default:''"`
 	ColoresExtra   string  `gorm:"size:120;not null;default:''"`
@@ -151,6 +156,9 @@ type InventoryColorRecord struct {
 	UserID uint   `gorm:"not null;uniqueIndex:uq_inv_color,priority:1"`
 	Nombre string `gorm:"size:30;not null;uniqueIndex:uq_inv_color,priority:2"`
 	Hex    string `gorm:"size:7;not null;default:'#888888'"`
+	// Codigo: 2 dígitos (01, 02…; de 100 en adelante, 3). Es la última
+	// parte de la clave automática del armazón.
+	Codigo string `gorm:"size:4;not null;default:''"`
 	Orden  int    `gorm:"not null;default:0"`
 }
 
@@ -160,7 +168,13 @@ type InventoryMaterialRecord struct {
 	ID     int64  `gorm:"primaryKey;autoIncrement"`
 	UserID uint   `gorm:"not null;uniqueIndex:uq_inv_material,priority:1"`
 	Nombre string `gorm:"size:30;not null;uniqueIndex:uq_inv_material,priority:2"`
-	Orden  int    `gorm:"not null;default:0"`
+	// Identificador: ARMT (metal) o ARZL (pasta), la primera parte de la
+	// clave automática del armazón.
+	Identificador string `gorm:"size:4;not null;default:''"`
+	// Subidentificador: texto libre (ACETATO, TR90…). No va en la clave;
+	// agrupa las ventas en el reporte de Ventas.
+	Subidentificador string `gorm:"size:30;not null;default:''"`
+	Orden            int    `gorm:"not null;default:0"`
 }
 
 func (InventoryMaterialRecord) TableName() string { return "inv_materiales" }
@@ -181,7 +195,7 @@ func InventoryModels() []interface{} {
 		&InventorySettingsRecord{}, &InventoryItemRecord{}, &InventoryDepartmentRecord{},
 		&InventoryCategoryRecord{}, &InventoryAdjustmentRecord{}, &InventoryMovementRecord{},
 		&InventoryPhotoRecord{}, &InventoryColorRecord{}, &InventoryMaterialRecord{},
-		&InventoryFrameTypeRecord{},
+		&InventoryFrameTypeRecord{}, &InventoryRuleRecord{}, &InventoryMovDeletedRecord{},
 	}
 }
 
@@ -348,6 +362,7 @@ type InvItem struct {
 	Clave          string  `json:"clave"`
 	ClaveAlterna   string  `json:"clave_alterna"`
 	Descripcion    string  `json:"descripcion"`
+	Marca          string  `json:"marca"` // ópticas: marca del armazón (va en la clave)
 	DepartamentoID int64   `json:"departamento_id"`
 	Departamento   string  `json:"departamento"`
 	CategoriaID    int64   `json:"categoria_id"`
@@ -370,6 +385,9 @@ type InvItem struct {
 	Minimo         int     `json:"minimo"`
 	Maximo         int     `json:"maximo"`
 	Localizacion   string  `json:"localizacion"`
+	// PromoPct: % de descuento de promoción; el Punto de venta lo pone solo
+	// al agregar el artículo a la venta (aparte de la promoción del agente).
+	PromoPct float64 `json:"promo_pct"`
 	// Solo ópticas: tipo de armazón (slug), color principal y hasta 2 más
 	// si es combinado, mica ("oftalmico" | "sol" | "") y materiales.
 	TipoArmazon    string   `json:"tipo_armazon"`
@@ -395,13 +413,13 @@ type InvItem struct {
 const invPhotoMainSQL = "(SELECT f.id FROM inv_fotos f WHERE f.item_id = i.id ORDER BY f.orden ASC, f.id ASC LIMIT 1)"
 
 const invItemSelect = `
-	SELECT i.id, i.clave, i.clave_alterna, i.descripcion,
+	SELECT i.id, i.clave, i.clave_alterna, i.descripcion, i.marca,
 	       COALESCE(i.departamento_id, 0), COALESCE(d.nombre, ''),
 	       COALESCE(i.categoria_id, 0), COALESCE(c.nombre, ''),
 	       i.unidad_compra, i.unidad_venta, i.factor, i.servicio, i.sin_rastreo, i.iva,
 	       i.precio_compra, i.precio_1, i.precio_2, i.precio_3, i.precio_4,
 	       i.mayoreo_2, i.mayoreo_3, i.mayoreo_4,
-	       i.existencia, i.inv_minimo, i.inv_maximo, i.localizacion,
+	       i.existencia, i.inv_minimo, i.inv_maximo, i.localizacion, i.promo_pct,
 	       i.tipo_armazon, i.color_principal, i.colores_extra, i.mica_tipo, i.materiales,
 	       i.venta_oculta, i.venta_titulo, i.venta_descripcion, i.venta_etiqueta, i.promo_precio,
 	       COALESCE(DATE_FORMAT(i.promo_fin, '%Y-%m-%dT%H:%i'), ''),
@@ -415,12 +433,12 @@ func scanInvItem(sc interface{ Scan(...interface{}) error }) (InvItem, error) {
 	var a InvItem
 	var photoID int64
 	var extra, mats string
-	err := sc.Scan(&a.ID, &a.Clave, &a.ClaveAlterna, &a.Descripcion,
+	err := sc.Scan(&a.ID, &a.Clave, &a.ClaveAlterna, &a.Descripcion, &a.Marca,
 		&a.DepartamentoID, &a.Departamento, &a.CategoriaID, &a.Categoria,
 		&a.UnidadCompra, &a.UnidadVenta, &a.Factor, &a.Servicio, &a.SinRastreo, &a.IVA,
 		&a.PrecioCompra, &a.Precio1, &a.Precio2, &a.Precio3, &a.Precio4,
 		&a.Mayoreo2, &a.Mayoreo3, &a.Mayoreo4,
-		&a.Existencia, &a.Minimo, &a.Maximo, &a.Localizacion,
+		&a.Existencia, &a.Minimo, &a.Maximo, &a.Localizacion, &a.PromoPct,
 		&a.TipoArmazon, &a.ColorPrincipal, &extra, &a.MicaTipo, &mats,
 		&a.VentaOculta, &a.VentaTitulo, &a.VentaDescripcion, &a.VentaEtiqueta, &a.PromoPrecio, &a.PromoFin,
 		&a.UpdatedAt, &photoID)
@@ -525,6 +543,10 @@ func CreateInvItem(userID uint, a InvItem, usuario string) (*InvItem, error) {
 	if a.Servicio {
 		a.Existencia = 0
 	}
+	// Sin promoción escrita: toma la de las reglas de su categoría/material.
+	if a.PromoPct <= 0 {
+		a.PromoPct = invPromoFromRules(userID, a)
+	}
 	tx, err := invDB().Begin()
 	if err != nil {
 		return nil, err
@@ -533,17 +555,17 @@ func CreateInvItem(userID uint, a InvItem, usuario string) (*InvItem, error) {
 	now := invNow()
 	res, err := tx.Exec(
 		`INSERT INTO inv_articulos
-		   (user_id, clave, clave_alterna, descripcion, departamento_id, categoria_id, unidad_compra, unidad_venta, factor,
+		   (user_id, clave, clave_alterna, descripcion, marca, departamento_id, categoria_id, unidad_compra, unidad_venta, factor,
 		    servicio, sin_rastreo, iva, precio_compra, precio_1, precio_2, precio_3, precio_4, mayoreo_2, mayoreo_3, mayoreo_4,
-		    existencia, inv_minimo, inv_maximo, localizacion,
+		    existencia, inv_minimo, inv_maximo, localizacion, promo_pct,
 		    tipo_armazon, color_principal, colores_extra, mica_tipo, materiales,
 		    venta_oculta, venta_titulo, venta_descripcion, venta_etiqueta, promo_precio, promo_fin, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		userID, NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		userID, NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, a.Marca, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
 		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
 		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4,
-		a.Existencia, a.Minimo, a.Maximo, a.Localizacion,
+		a.Existencia, a.Minimo, a.Maximo, a.Localizacion, invRound2(a.PromoPct),
 		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","),
 		a.VentaOculta, a.VentaTitulo, a.VentaDescripcion, a.VentaEtiqueta, invRound2(a.PromoPrecio), invPromoFinSQL(a.PromoFin), now, now,
 	)
@@ -574,7 +596,9 @@ func CreateInvItem(userID uint, a InvItem, usuario string) (*InvItem, error) {
 //
 // keepCost = true deja el precio de compra que ya tenía (para cuando haya
 // empleados que no deben ver/cambiar el costo; el dueño sí puede).
-func UpdateInvItem(userID uint, a InvItem, keepCost bool) (*InvItem, error) {
+// keepAlterna = true conserva la clave alterna que ya tenía (las ópticas ya
+// no la capturan: su clave se arma sola).
+func UpdateInvItem(userID uint, a InvItem, keepCost, keepAlterna bool) (*InvItem, error) {
 	if err := checkInvClassification(userID, &a); err != nil {
 		return nil, err
 	}
@@ -585,22 +609,25 @@ func UpdateInvItem(userID uint, a InvItem, keepCost bool) (*InvItem, error) {
 	if keepCost {
 		a.PrecioCompra = cur.PrecioCompra
 	}
+	if keepAlterna {
+		a.ClaveAlterna = cur.ClaveAlterna
+	}
 	if a.Servicio && cur.Existencia != 0 {
 		return nil, fmt.Errorf("para marcarlo como servicio primero deja su existencia en 0 (Ajustar)")
 	}
 	_, err = invDB().Exec(
 		`UPDATE inv_articulos SET
-		   clave = ?, clave_alterna = ?, descripcion = ?, departamento_id = ?, categoria_id = ?,
+		   clave = ?, clave_alterna = ?, descripcion = ?, marca = ?, departamento_id = ?, categoria_id = ?,
 		   unidad_compra = ?, unidad_venta = ?, factor = ?, servicio = ?, sin_rastreo = ?, iva = ?,
 		   precio_compra = ?, precio_1 = ?, precio_2 = ?, precio_3 = ?, precio_4 = ?,
-		   mayoreo_2 = ?, mayoreo_3 = ?, mayoreo_4 = ?, inv_minimo = ?, inv_maximo = ?, localizacion = ?,
+		   mayoreo_2 = ?, mayoreo_3 = ?, mayoreo_4 = ?, inv_minimo = ?, inv_maximo = ?, localizacion = ?, promo_pct = ?,
 		   tipo_armazon = ?, color_principal = ?, colores_extra = ?, mica_tipo = ?, materiales = ?,
 		   venta_oculta = ?, venta_titulo = ?, venta_descripcion = ?, venta_etiqueta = ?, promo_precio = ?, promo_fin = ?, updated_at = ?
 		 WHERE id = ? AND user_id = ?`,
-		NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
+		NormalizeInvClave(a.Clave), a.ClaveAlterna, a.Descripcion, a.Marca, nullInvID(a.DepartamentoID), nullInvID(a.CategoriaID),
 		a.UnidadCompra, a.UnidadVenta, a.Factor, a.Servicio, a.SinRastreo, a.IVA,
 		invRound2(a.PrecioCompra), invRound2(a.Precio1), invRound2(a.Precio2), invRound2(a.Precio3), invRound2(a.Precio4),
-		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4, a.Minimo, a.Maximo, a.Localizacion,
+		a.Mayoreo2, a.Mayoreo3, a.Mayoreo4, a.Minimo, a.Maximo, a.Localizacion, invRound2(a.PromoPct),
 		a.TipoArmazon, a.ColorPrincipal, strings.Join(a.ColoresExtra, ","), a.MicaTipo, strings.Join(a.Materiales, ","),
 		a.VentaOculta, a.VentaTitulo, a.VentaDescripcion, a.VentaEtiqueta, invRound2(a.PromoPrecio), invPromoFinSQL(a.PromoFin), invNow(),
 		a.ID, userID,
@@ -1340,11 +1367,17 @@ type InvColor struct {
 	ID     int64  `json:"id"`
 	Nombre string `json:"nombre"`
 	Hex    string `json:"hex"`
+	// Codigo: 2 dígitos (01, 02…); última parte de la clave del armazón.
+	Codigo string `json:"codigo"`
 }
 
 type InvMaterial struct {
 	ID     int64  `json:"id"`
 	Nombre string `json:"nombre"`
+	// Identificador: ARMT (metal) o ARZL (pasta), primera parte de la clave.
+	Identificador string `json:"identificador"`
+	// Subidentificador: texto libre (ACETATO, TR90…) para el reporte de Ventas.
+	Subidentificador string `json:"subidentificador"`
 }
 
 type InvFrameType struct {
@@ -1399,7 +1432,8 @@ func ensureOpticsSeed(userID uint, table string) {
 
 func ListInvColors(userID uint) ([]InvColor, error) {
 	ensureOpticsSeed(userID, "inv_colores")
-	rows, err := invDB().Query(`SELECT id, nombre, hex FROM inv_colores WHERE user_id = ? ORDER BY orden, nombre`, userID)
+	fillInvColorCodes(userID)
+	rows, err := invDB().Query(`SELECT id, nombre, hex, codigo FROM inv_colores WHERE user_id = ? ORDER BY orden, nombre`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -1407,7 +1441,7 @@ func ListInvColors(userID uint) ([]InvColor, error) {
 	out := []InvColor{}
 	for rows.Next() {
 		var c InvColor
-		if err := rows.Scan(&c.ID, &c.Nombre, &c.Hex); err != nil {
+		if err := rows.Scan(&c.ID, &c.Nombre, &c.Hex, &c.Codigo); err != nil {
 			return nil, err
 		}
 		out = append(out, c)
@@ -1427,17 +1461,20 @@ func CreateInvColor(userID uint, nombre, hex string) (*InvColor, error) {
 	}
 	var orden int
 	_ = db.QueryRow(`SELECT COALESCE(MAX(orden), 0) + 1 FROM inv_colores WHERE user_id = ?`, userID).Scan(&orden)
-	res, err := db.Exec(`INSERT INTO inv_colores (user_id, nombre, hex, orden) VALUES (?, ?, ?, ?)`, userID, nombre, hex, orden)
+	// Color nuevo = el siguiente código libre.
+	codigo := nextInvColorCode(userID)
+	res, err := db.Exec(`INSERT INTO inv_colores (user_id, nombre, hex, codigo, orden) VALUES (?, ?, ?, ?, ?)`, userID, nombre, hex, codigo, orden)
 	if err != nil {
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
-	return &InvColor{ID: id, Nombre: nombre, Hex: hex}, nil
+	return &InvColor{ID: id, Nombre: nombre, Hex: hex, Codigo: codigo}, nil
 }
 
 func ListInvMaterials(userID uint) ([]InvMaterial, error) {
 	ensureOpticsSeed(userID, "inv_materiales")
-	rows, err := invDB().Query(`SELECT id, nombre FROM inv_materiales WHERE user_id = ? ORDER BY orden, nombre`, userID)
+	fillInvMaterialIdents(userID)
+	rows, err := invDB().Query(`SELECT id, nombre, identificador, subidentificador FROM inv_materiales WHERE user_id = ? ORDER BY orden, nombre`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -1445,7 +1482,7 @@ func ListInvMaterials(userID uint) ([]InvMaterial, error) {
 	out := []InvMaterial{}
 	for rows.Next() {
 		var m InvMaterial
-		if err := rows.Scan(&m.ID, &m.Nombre); err != nil {
+		if err := rows.Scan(&m.ID, &m.Nombre, &m.Identificador, &m.Subidentificador); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -1453,7 +1490,7 @@ func ListInvMaterials(userID uint) ([]InvMaterial, error) {
 	return out, rows.Err()
 }
 
-func CreateInvMaterial(userID uint, nombre string) (*InvMaterial, error) {
+func CreateInvMaterial(userID uint, nombre, identificador, sub string) (*InvMaterial, error) {
 	db := invDB()
 	var n int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM inv_materiales WHERE user_id = ? AND LOWER(nombre) = LOWER(?)`, userID, nombre).Scan(&n); err != nil {
@@ -1464,12 +1501,12 @@ func CreateInvMaterial(userID uint, nombre string) (*InvMaterial, error) {
 	}
 	var orden int
 	_ = db.QueryRow(`SELECT COALESCE(MAX(orden), 0) + 1 FROM inv_materiales WHERE user_id = ?`, userID).Scan(&orden)
-	res, err := db.Exec(`INSERT INTO inv_materiales (user_id, nombre, orden) VALUES (?, ?, ?)`, userID, nombre, orden)
+	res, err := db.Exec(`INSERT INTO inv_materiales (user_id, nombre, identificador, subidentificador, orden) VALUES (?, ?, ?, ?, ?)`, userID, nombre, identificador, sub, orden)
 	if err != nil {
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
-	return &InvMaterial{ID: id, Nombre: nombre}, nil
+	return &InvMaterial{ID: id, Nombre: nombre, Identificador: identificador, Subidentificador: sub}, nil
 }
 
 func ListInvFrameTypes(userID uint) ([]InvFrameType, error) {

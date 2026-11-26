@@ -622,6 +622,8 @@ window.InvLabels = window.InvLabels || (function () {
   var filtered = [], page = 1, selectedId = null;
   var f = { q: '', dep: '', cat: '', estado: '' };
   var loading = false;
+  // Eliminar varios de un jalón (solo admin): ids marcados.
+  var canBulk = !!$('artSelAll'), delSel = {};
 
   /* ---------- estado de existencia ---------- */
   function estadoOf(a) {
@@ -637,10 +639,10 @@ window.InvLabels = window.InvLabels || (function () {
   }
 
   /* ---------- carga ---------- */
-  function load(keepSelection) {
+  function load(keepSelection, silent) {
     if (loading) return Promise.resolve();
     loading = true;
-    $('invBody').classList.add('is-loading');
+    if (!silent) $('invBody').classList.add('is-loading');
     return I.api('/api/inventario/articulos').then(function (d) {
       items = d.items || [];
       deps = d.departamentos || [];
@@ -651,6 +653,7 @@ window.InvLabels = window.InvLabels || (function () {
       renderStats();
       apply(true);
     }).catch(function (err) {
+      if (silent) return;
       $('invCaption').textContent = err.message;
       I.toast(err.message, 'error');
     }).finally(function () {
@@ -743,7 +746,7 @@ window.InvLabels = window.InvLabels || (function () {
       if (f.cat && String(a.categoria_id) !== f.cat) return false;
       if (f.estado && estadoOf(a) !== f.estado) return false;
       if (words.length) {
-        var hay = I.norm(a.clave + ' ' + a.clave_alterna + ' ' + a.descripcion + ' ' + a.localizacion + ' ' + (a.color_principal || '') + ' ' + (a.colores_extra || []).join(' ') + ' ' + tipoNombre(a.tipo_armazon || '') + ' ' + (a.materiales || []).join(' '));
+        var hay = I.norm(a.clave + ' ' + a.clave_alterna + ' ' + a.descripcion + ' ' + (a.marca || '') + ' ' + a.localizacion + ' ' + (a.color_principal || '') + ' ' + (a.colores_extra || []).join(' ') + ' ' + tipoNombre(a.tipo_armazon || '') + ' ' + (a.materiales || []).join(' '));
         for (var i = 0; i < words.length; i++) if (hay.indexOf(words[i]) === -1) return false;
       }
       return true;
@@ -779,14 +782,15 @@ window.InvLabels = window.InvLabels || (function () {
     var start = (page - 1) * PAGE;
     var rows = filtered.slice(start, start + PAGE);
     $('invBody').innerHTML = rows.map(function (a, i) {
-      return '<tr data-id="' + a.id + '" class="' + (a.id === selectedId ? 'is-selected' : '') + '" style="--i:' + Math.min(i, 20) + '" tabindex="-1">' +
+      return '<tr data-id="' + a.id + '" class="' + (a.id === selectedId ? 'is-selected' : '') + (delSel[a.id] ? ' is-marked' : '') + '" style="--i:' + Math.min(i, 20) + '" tabindex="-1">' +
+        (canBulk ? '<td class="inv-mv-sel"><input type="checkbox" data-sel="' + a.id + '"' + (delSel[a.id] ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(a.descripcion) + '"></td>' : '') +
         '<td class="inv-cell-art"><div class="inv-art-line">' +
           (a.foto ? '<img class="inv-thumb" src="' + esc(a.foto) + '" alt="" loading="lazy">' : '<span class="inv-thumb is-empty" aria-hidden="true"></span>') +
           '<div><span class="inv-clave">' + esc(a.clave || '—') + (a.clave_alterna ? '<em> / ' + esc(a.clave_alterna) + '</em>' : '') + '</span>' +
           '<strong>' + esc(a.descripcion) + '</strong></div></div></td>' +
         '<td class="c-dep"><span>' + esc(a.departamento || 'Sin departamento') + '</span>' + (a.categoria ? '<small>' + esc(a.categoria) + '</small>' : '') + '</td>' +
         '<td class="num">' + existCell(a) + '</td>' +
-        '<td class="num inv-price">' + (a.promo_estado === 'activa' ? '<span class="inv-promo-chip" title="Promoción para el agente y Comy">' + mxn.format(a.promo_precio) + '</span>' : '') + mxn.format(a.precio_1) + '</td>' +
+        '<td class="num inv-price">' + (a.promo_estado === 'activa' ? '<span class="inv-promo-chip" title="Promoción para el agente y Comy">' + mxn.format(a.promo_precio) + '</span>' : '') + mxn.format(a.precio_1) + (a.promo_pct > 0 ? '<small class="inv-promo-tag" title="Descuento en el Punto de venta">−' + I.round2(a.promo_pct) + ' %</small>' : '') + '</td>' +
       '</tr>';
     }).join('');
     var empty = $('invEmpty');
@@ -799,18 +803,23 @@ window.InvLabels = window.InvLabels || (function () {
     $('pgLabel').textContent = 'Página ' + page + ' de ' + pages;
     $('pgPrev').disabled = page <= 1;
     $('pgNext').disabled = page >= pages;
+    syncDelSel();
     renderDetail();
   }
   $('pgPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
   $('pgNext').addEventListener('click', function () { page++; render(); });
 
   $('invBody').addEventListener('click', function (e) {
+    var cb = e.target.closest('input[data-sel]');
+    if (cb) { toggleDelSel(Number(cb.getAttribute('data-sel')), cb.checked); return; }
+    if (e.target.closest('td.inv-mv-sel')) return;
     var tr = e.target.closest('tr[data-id]');
     if (!tr) return;
     select(Number(tr.getAttribute('data-id')));
     if (window.matchMedia('(max-width: 1000px)').matches) openSheet();
   });
   $('invBody').addEventListener('dblclick', function (e) {
+    if (e.target.closest('td.inv-mv-sel')) return;
     var tr = e.target.closest('tr[data-id]');
     if (tr) openEdit(byId[Number(tr.getAttribute('data-id'))]);
   });
@@ -891,7 +900,8 @@ window.InvLabels = window.InvLabels || (function () {
       '<h2 class="inv-d-title">' + esc(a.descripcion) + '</h2>' +
       '<p class="inv-d-claves"><span>' + esc(a.clave || '—') + '</span>' + (a.clave_alterna ? '<span>' + esc(a.clave_alterna) + '</span>' : '') + '</p>' +
       '<div class="inv-d-price"><small>Precio de venta' + (a.iva ? ' (con IVA)' : '') + '</small><strong>' + mxn.format(a.precio_1) + '</strong>' +
-        (u1 != null ? '<span class="inv-d-util">' + (u1 >= 0 ? '+' : '') + I.round2(u1).toFixed(1) + ' % sobre costo</span>' : '') + '</div>' +
+        (u1 != null ? '<span class="inv-d-util">' + (u1 >= 0 ? '+' : '') + I.round2(u1).toFixed(1) + ' % sobre costo</span>' : '') +
+        (a.promo_pct > 0 ? '<span class="inv-d-promo">Promoción −' + I.round2(a.promo_pct) + ' % · en Punto de venta ' + mxn.format(I.round2(a.precio_1 * (1 - a.promo_pct / 100))) + '</span>' : '') + '</div>' +
       '<div class="inv-d-stock is-' + st + '">' +
         '<div><small>Cantidad disponible</small><strong>' + (a.servicio ? '—' : I.num(a.existencia)) + '</strong><em>' + esc(a.unidad_venta) + '</em></div>' +
         '<span class="inv-d-chip is-' + st + '">' + stLabel + '</span>' +
@@ -899,6 +909,7 @@ window.InvLabels = window.InvLabels || (function () {
       '<div class="inv-d-rows">' +
         '<div class="inv-d-row"><span>Departamento</span><strong>' + esc(a.departamento || '—') + '</strong></div>' +
         '<div class="inv-d-row"><span>Categoría</span><strong>' + esc(a.categoria || '—') + '</strong></div>' +
+        (a.marca ? '<div class="inv-d-row"><span>Marca</span><strong>' + esc(a.marca) + '</strong></div>' : '') +
         '<div class="inv-d-row"><span>Localización</span><strong>' + esc(a.localizacion || '—') + '</strong></div>' +
         '<div class="inv-d-row"><span>Agente y Comy</span><strong>' + ventaTxt(a) + '</strong></div>' +
         (a.tipo_armazon ? '<div class="inv-d-row"><span>Tipo de armazón</span><strong>' + esc(tipoNombre(a.tipo_armazon)) + '</strong></div>' : '') +
@@ -939,7 +950,7 @@ window.InvLabels = window.InvLabels || (function () {
   var editing = null; // artículo que se edita (null = nuevo)
   var formDep = '', formCat = '';
   var aDep = I.select($('aDepartamento'), { placeholder: 'Sin departamento', onChange: function (v) { formDep = v; formCat = ''; buildFormCats(); } });
-  var aCat = I.select($('aCategoria'), { placeholder: 'Sin categoría', onChange: function (v) { formCat = v; } });
+  var aCat = I.select($('aCategoria'), { placeholder: 'Sin categoría', onChange: function (v) { formCat = v; rulesPrefill(); } });
   var unitOpts = UNIDADES.map(function (u) { return { value: u, label: u }; });
   var aUC = I.select($('aUCompra'), { options: unitOpts, value: 'PZA' });
   var aUV = I.select($('aUVenta'), { options: unitOpts, value: 'PZA' });
@@ -954,13 +965,43 @@ window.InvLabels = window.InvLabels || (function () {
     $('aMats').innerHTML = list.map(function (n) {
       var i = formMats.map(function (x) { return x.toLowerCase(); }).indexOf(n.toLowerCase());
       var nuevo = newMat && n.toLowerCase() === newMat.toLowerCase();
+      var m = matOf(n);
       return '<button type="button" class="inv-sw inv-mat' + (i >= 0 ? ' is-main' : '') + (nuevo ? ' is-new' : '') + '" data-mat="' + esc(n) + '">' +
-        '<i>' + (i >= 0 ? '✓' : '') + '</i><span>' + esc(n) + '</span></button>';
+        '<i>' + (i >= 0 ? '✓' : '') + '</i><span>' + esc(n) + '</span>' +
+        (m ? '<small class="inv-mat-id" role="button" tabindex="-1" data-mat-edit="' + m.id + '" title="Cambiar su identificador o subidentificador">' + esc(m.identificador || '¿?') + (m.subidentificador ? ' · ' + esc(m.subidentificador) : '') + '</small>' : '') +
+        (m ? '<span class="inv-mat-del" role="button" tabindex="-1" data-mat-del="' + m.id + '" title="Quitar «' + esc(n) + '» de la lista" aria-label="Quitar ' + esc(n) + ' de la lista">×</span>' : '') +
+        '</button>';
     }).join('') + '<button type="button" class="inv-sw is-add" data-mat-new title="Agregar un material"><i>+</i><span>Nuevo</span></button>';
     newMat = '';
+    updateClave();
+  }
+  function matOf(n) { return materiales.filter(function (m) { return m.nombre.toLowerCase() === String(n || '').toLowerCase(); })[0]; }
+  // Quitar un material de la lista: el primer toque pregunta, el segundo lo quita.
+  var matDelTimer = null;
+  function deleteMat(x) {
+    var chip = x.closest('.inv-mat');
+    if (!x.classList.contains('is-armed')) {
+      $('aMats').querySelectorAll('.inv-mat-del.is-armed').forEach(function (o) { o.classList.remove('is-armed'); o.textContent = '×'; });
+      x.classList.add('is-armed'); x.textContent = '¿Quitar?';
+      clearTimeout(matDelTimer);
+      matDelTimer = setTimeout(function () { x.classList.remove('is-armed'); x.textContent = '×'; }, 3000);
+      return;
+    }
+    clearTimeout(matDelTimer);
+    var id = x.getAttribute('data-mat-del'), name = chip.getAttribute('data-mat');
+    I.api('/api/inventario/materiales/' + id, { method: 'DELETE' }).then(function () {
+      materiales = materiales.filter(function (m) { return String(m.id) !== id; });
+      formMats = formMats.filter(function (n) { return n.toLowerCase() !== name.toLowerCase(); });
+      renderMats();
+      I.toast('Material «' + name + '» quitado de la lista. Los artículos que ya lo tienen lo conservan.');
+    }).catch(function (err) { I.toast(err.message, 'error'); });
   }
   $('aMats').addEventListener('click', function (e) {
-    if (e.target.closest('[data-mat-new]')) { $('aMatNew').hidden = false; $('aMatName').focus(); return; }
+    var del = e.target.closest('[data-mat-del]');
+    if (del) { e.preventDefault(); e.stopPropagation(); deleteMat(del); return; }
+    var ed = e.target.closest('[data-mat-edit]');
+    if (ed) { e.preventDefault(); e.stopPropagation(); openMatEdit(Number(ed.getAttribute('data-mat-edit'))); return; }
+    if (e.target.closest('[data-mat-new]')) { openMatEdit(0); return; }
     var b = e.target.closest('[data-mat]');
     if (!b) return;
     var n = b.getAttribute('data-mat'), i = formMats.map(function (x) { return x.toLowerCase(); }).indexOf(n.toLowerCase());
@@ -968,20 +1009,67 @@ window.InvLabels = window.InvLabels || (function () {
     else if (formMats.length < 4) formMats.push(n);
     else { I.toast('Máximo 4 materiales.', 'error'); return; }
     renderMats();
+    rulesPrefill();
   });
+  // El mismo cuadro sirve para agregar un material (id 0) o para cambiarle
+  // el identificador / subidentificador a uno de la lista.
+  var matEditId = 0;
+  function openMatEdit(id) {
+    var m = id ? materiales.filter(function (x) { return x.id === id; })[0] : null;
+    matEditId = m ? m.id : 0;
+    $('aMatName').value = m ? m.nombre : '';
+    $('aMatName').disabled = !!m;
+    $('aMatSub').value = m ? (m.subidentificador || '') : '';
+    matIdent = m ? (m.identificador || '') : '';
+    syncMatIdent();
+    $('aMatAdd').textContent = m ? 'Guardar' : 'Agregar';
+    $('aMatNew').hidden = false;
+    setTimeout(function () { (m ? $('aMatSub') : $('aMatName')).focus(); }, 30);
+  }
   function closeMatNew() {
     var box = $('aMatNew');
     if (box.hidden) return;
     box.classList.add('is-closing');
-    setTimeout(function () { box.hidden = true; box.classList.remove('is-closing'); $('aMatName').value = ''; }, 200);
+    setTimeout(function () {
+      box.hidden = true; box.classList.remove('is-closing');
+      $('aMatName').value = ''; $('aMatName').disabled = false; $('aMatSub').value = '';
+      matEditId = 0; $('aMatAdd').textContent = 'Agregar';
+    }, 200);
   }
+  $('aMatSub').addEventListener('input', function () {
+    var pos = this.selectionStart; this.value = this.value.toUpperCase(); this.setSelectionRange(pos, pos);
+  });
+  $('aMatSub').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('aMatAdd').click(); } });
   $('aMatCancel').addEventListener('click', closeMatNew);
   $('aMatName').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('aMatAdd').click(); } });
+  // Material nuevo: hay que decir si es metal (ARMT) o pasta (ARZL).
+  var matIdent = '';
+  function syncMatIdent() {
+    Array.prototype.forEach.call($('aMatIdent').querySelectorAll('[data-ident]'), function (b) {
+      var on = b.getAttribute('data-ident') === matIdent;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+  $('aMatIdent').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ident]'); if (!b) return;
+    matIdent = b.getAttribute('data-ident'); syncMatIdent();
+  });
   $('aMatAdd').addEventListener('click', function () {
-    var name = $('aMatName').value.trim(), btn = this;
+    var name = $('aMatName').value.trim(), btn = this, sub = $('aMatSub').value.trim();
     if (!name) { $('aMatName').focus(); return; }
+    if (!matIdent) { I.toast('Elige si «' + name + '» es metal (ARMT) o pasta (ARZL).', 'error'); return; }
     btn.disabled = true;
-    I.api('/api/inventario/materiales', { method: 'POST', body: { nombre: name } }).then(function (d) {
+    if (matEditId) {
+      I.api('/api/inventario/materiales/' + matEditId, { method: 'PUT', body: { identificador: matIdent, subidentificador: sub } }).then(function (d) {
+        materiales = materiales.map(function (m) { return m.id === d.item.id ? d.item : m; });
+        closeMatNew();
+        renderMats();
+        I.toast('Material «' + d.item.nombre + '»: ' + d.item.identificador + (d.item.subidentificador ? ' · ' + d.item.subidentificador : '') + '.');
+      }).catch(function (err) { I.toast(err.message, 'error'); })
+        .finally(function () { btn.disabled = false; });
+      return;
+    }
+    I.api('/api/inventario/materiales', { method: 'POST', body: { nombre: name, identificador: matIdent, subidentificador: sub } }).then(function (d) {
       materiales.push(d.item);
       newMat = d.item.nombre;
       if (formMats.length < 4) formMats.push(d.item.nombre);
@@ -1025,7 +1113,8 @@ window.InvLabels = window.InvLabels || (function () {
     return Promise.all([
       I.api('/api/inventario/tipos-armazon').then(function (d) { tiposArm = d.items || []; }).catch(function () {}),
       I.api('/api/inventario/colores').then(function (d) { colores = d.items || []; }).catch(function () {}),
-      I.api('/api/inventario/materiales').then(function (d) { materiales = d.items || []; }).catch(function () {})
+      I.api('/api/inventario/materiales').then(function (d) { materiales = d.items || []; }).catch(function () {}),
+      loadReglas()
     ]).then(function () { buildTipos(); renderPalette(); renderMats(); if (current()) renderDetail(); });
   }
   function hexOf(name) { var c = colores.filter(function (x) { return x.nombre.toLowerCase() === String(name).toLowerCase(); })[0]; return c ? c.hex : '#9aa0bb'; }
@@ -1049,18 +1138,218 @@ window.InvLabels = window.InvLabels || (function () {
       var isP = colPrin && c.nombre.toLowerCase() === colPrin.toLowerCase();
       var xi = colExtra.map(function (x) { return x.toLowerCase(); }).indexOf(c.nombre.toLowerCase());
       var nuevo = newColor && c.nombre.toLowerCase() === newColor.toLowerCase();
-      return '<button type="button" class="inv-sw' + (isP ? ' is-main' : xi >= 0 ? ' is-extra' : '') + (nuevo ? ' is-new' : '') + '" data-color="' + esc(c.nombre) + '" title="' + esc(c.nombre) + '">' +
+      return '<button type="button" class="inv-sw inv-col' + (isP ? ' is-main' : xi >= 0 ? ' is-extra' : '') + (nuevo ? ' is-new' : '') + '" data-color="' + esc(c.nombre) + '" title="' + esc(c.nombre + (c.codigo ? ' · ' + c.codigo : '')) + '">' +
         '<i style="background:' + esc(c.hex) + '"></i><span>' + esc(c.nombre) + '</span>' +
-        (isP ? '<b>1</b>' : xi >= 0 ? '<b>' + (xi + 2) + '</b>' : '') + '</button>';
+        (isP ? '<b>1</b>' : xi >= 0 ? '<b>' + (xi + 2) + '</b>' : '') +
+        (c.id ? '<span class="inv-mat-del" role="button" tabindex="-1" data-color-del="' + c.id + '" title="Quitar «' + esc(c.nombre) + '» de la paleta" aria-label="Quitar ' + esc(c.nombre) + ' de la paleta">×</span>' : '') +
+        '</button>';
     }).join('') + '<button type="button" class="inv-sw is-add" data-color-new title="Agregar un color"><i>+</i><span>Nuevo</span></button>';
     newColor = '';
     var sumEl = $('aColorSum');
     sumEl.classList.remove('is-swap'); void sumEl.offsetWidth; sumEl.classList.add('is-swap');
     $('aColorSum').innerHTML = colPrin
-      ? '<span class="inv-sw-big" style="' + swatchStyle(all) + '"></span><span><strong>' + esc(colorTxt(colPrin, colExtra)) + '</strong><small>' + (colExtra.length ? 'Combinado' : 'Un solo color') + ' · toca un color para quitarlo</small></span>'
+      ? '<span class="inv-sw-big" style="' + swatchStyle(all) + '"></span><span><strong>' + esc(colorTxt(colPrin, colExtra)) + (codeOf(colPrin) ? ' <em class="inv-color-code">' + esc(codeOf(colPrin)) + '</em>' : '') + '</strong><small>' + (colExtra.length ? 'Combinado' : 'Un solo color') + ' · toca un color para quitarlo</small></span>'
       : '<span class="inv-sw-big is-empty"></span><span><strong>Sin color</strong><small>Toca el color principal; si es combinado, toca hasta 2 más.</small></span>';
+    updateClave();
+  }
+  function codeOf(name) {
+    var c = colores.filter(function (x) { return x.nombre.toLowerCase() === String(name || '').toLowerCase(); })[0];
+    return c && c.codigo ? c.codigo : '';
+  }
+
+  /* ---------- Clave automática del armazón ----------
+     TIPO-MARCA-MODELO-COLOR, p. ej. ARZL-GUE-2702-0007:
+       · ARMT (metal) o ARZL (pasta), según el primer material elegido.
+       · Las 3 primeras letras de la marca, que se saca de la descripción.
+       · El modelo, que se escribe a mano.
+       · El código del color principal (catálogo de colores: Rojo 0007).
+     Lo que no es armazón (estuche, líquido, servicio) lleva clave a mano. */
+  // Solo ópticas: la clave del armazón se arma sola. Los demás giros la escriben.
+  var claveAuto = !!I.optica;
+  var CLAVE_RE = /^(ARMT|ARZL)-([A-Z0-9]{2,3})-([A-Z0-9.]+)-(\d{2,4})$/;
+  var METAL_RE = /METAL|TITAN|ACERO|ALUMIN|INOX|MONEL|MEMORIA/;
+  var BRAND_STOP = ('ARMAZON ARMAZONES LENTE LENTES ANTEOJO ANTEOJOS GAFA GAFAS MARCO MARCOS MONTURA MICA ' +
+    'DE DEL LA EL LOS LAS PARA CON SIN Y E AL SOL SOLAR OFTALMICO OFTALMICA OPTICO OPTICA GRADUADO ' +
+    'UNISEX HOMBRE MUJER DAMA CABALLERO NINO NINA NINOS INFANTIL KIDS JUNIOR ADULTO ' +
+    'MODELO MOD COLOR PASTA ACETATO METAL METALICO PLASTICO COMPLETO COMPLETA AIRE MEDIO ARO RIN ' +
+    'NUEVO NUEVA PZA PIEZA').split(' ');
+  function plain(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase(); }
+  // Marca: la primera palabra de la descripción que no sea genérica (ARMAZÓN,
+  // DE, SOL…), ni color, ni material, ni tipo de armazón, ni lleve números.
+  function brandOf(desc) {
+    var stop = {};
+    BRAND_STOP.forEach(function (w) { stop[w] = 1; });
+    colores.concat(materiales).concat(tiposArm).forEach(function (x) {
+      plain(x.nombre).split(/[^A-Z0-9]+/).forEach(function (w) { if (w) stop[w] = 1; });
+    });
+    var words = plain(desc).split(/[^A-Z0-9]+/).filter(Boolean);
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (stop[w] || /\d/.test(w) || w.length < 2) continue;
+      // Marcas cortas (RV STUDIO): se completan las 3 letras con la siguiente palabra.
+      var letters = w;
+      for (var j = i + 1; letters.length < 3 && j < words.length && !stop[words[j]]; j++) letters += words[j];
+      if (letters.length >= 3) return { name: w, code: letters.slice(0, 3) };
+    }
+    return null;
+  }
+  // ARMT / ARZL: el que se le eligió al material al crearlo.
+  function identOf(mat) {
+    var m = matOf(mat);
+    if (m && m.identificador) return m.identificador;
+    return mat ? (METAL_RE.test(plain(mat)) ? 'ARMT' : 'ARZL') : '';
+  }
+  function claveParts() {
+    var mat = formMats[0] || '';
+    var marca = plain($('aMarca').value).replace(/[^A-Z0-9]/g, '');
+    var modelo = plain($('aModelo').value).replace(/[^A-Z0-9.]/g, '');
+    var col = codeOf(colPrin);
+    return [
+      { v: identOf(mat), ok: mat, miss: 'Elige el material' },
+      { v: marca.length >= 2 ? marca.slice(0, 3) : '', ok: $('aMarca').value.trim().toUpperCase(), miss: 'Escribe la marca' },
+      { v: modelo, ok: 'Modelo', miss: 'Escribe el modelo' },
+      { v: col, ok: colPrin, miss: colPrin ? 'Ese color no tiene código' : 'Elige el color' }
+    ];
+  }
+  // La clave se ve en el campo mientras se arma (lo que falta sale como …);
+  // el desglose está en el "?" de la clave.
+  function updateClave() {
+    var box = $('aClaveParts'), input = $('aClave');
+    if (!box) return;
+    if (!I.optica) {
+      // Otros giros: clave a mano, sin marca / modelo ni desglose.
+      $('aModeloField').hidden = true; $('aClaveHelpBtn').hidden = true; $('aClaveHint').textContent = '';
+      input.readOnly = false; input.classList.remove('is-auto', 'is-partial');
+      return;
+    }
+    $('aModeloField').hidden = !claveAuto;
+    $('aClaveHint').textContent = claveAuto ? '(se arma sola)' : '';
+    input.readOnly = claveAuto;
+    input.classList.toggle('is-auto', claveAuto);
+    $('aClaveHelp').classList.toggle('is-manual', !claveAuto);
+    if (!claveAuto) {
+      input.classList.remove('is-partial');
+      input.placeholder = 'Ej. AC13';
+      box.innerHTML = '<p class="inv-hint">Ahora la clave se escribe a mano (estuches, líquidos, servicios…).</p>';
+      $('aClaveMode').innerHTML = $('aServicio').checked ? '' : '<button type="button" class="inv-clave-mode" data-clave-mode="auto">Es un armazón: armar la clave sola</button>';
+      return;
+    }
+    var p = claveParts();
+    var any = p.some(function (x) { return x.v; });
+    var complete = p.every(function (x) { return x.v; });
+    input.value = any ? p.map(function (x) { return x.v || '…'; }).join('-') : '';
+    input.classList.toggle('is-partial', any && !complete);
+    input.placeholder = 'Se arma sola: material, marca, modelo y color';
+    box.innerHTML = '<div class="inv-cp-row">' + p.map(function (x, i) {
+      return (i ? '<span class="inv-cp-sep">-</span>' : '') +
+        '<span class="inv-cp' + (x.v ? '' : ' is-missing') + '"><b>' + esc(x.v || '····') + '</b><small>' + esc(x.v ? x.ok : x.miss) + '</small></span>';
+    }).join('') + '</div>';
+    $('aClaveMode').innerHTML = '<button type="button" class="inv-clave-mode" data-clave-mode="manual">No es armazón: escribir la clave a mano</button>';
+  }
+  function claveCompleta() {
+    var p = claveParts();
+    return p.every(function (x) { return x.v; }) ? p.map(function (x) { return x.v; }).join('-') : '';
+  }
+  // "?" de la clave: abre / cierra el desglose.
+  function setClaveHelp(open) {
+    var box = $('aClaveHelp');
+    if (open === box.hidden) {
+      box.hidden = !open;
+      $('aClaveHelpBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+      $('aClaveHelpBtn').classList.toggle('is-on', open);
+    }
+  }
+  $('aClaveHelpBtn').addEventListener('click', function (e) { e.stopPropagation(); setClaveHelp($('aClaveHelp').hidden); });
+  $('aClaveHelp').addEventListener('click', function (e) { e.stopPropagation(); });
+  // En modo automático, tocar la clave también abre el desglose.
+  $('aClave').addEventListener('click', function (e) { if (claveAuto) { e.stopPropagation(); setClaveHelp(true); } });
+  document.addEventListener('click', function () { setClaveHelp(false); });
+  function missingClave() {
+    return claveParts().filter(function (x) { return !x.v; }).map(function (x) { return x.miss.charAt(0).toLowerCase() + x.miss.slice(1); });
+  }
+  $('aClaveMode').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-clave-mode]');
+    if (!b) return;
+    claveAuto = b.getAttribute('data-clave-mode') === 'auto';
+    updateClave();
+    setClaveHelp(false);
+    setTimeout(function () { (claveAuto ? $('aMarca') : $('aClave')).focus(); }, 30);
+  });
+  $('aMarca').addEventListener('input', function () {
+    var pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    try { this.setSelectionRange(pos, pos); } catch (e) {}
+    updateClave();
+  });
+  $('aModelo').addEventListener('input', function () {
+    var pos = this.selectionStart;
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9.]/g, '');
+    try { this.setSelectionRange(pos, pos); } catch (e) {}
+    updateClave();
+  });
+
+  /* ---------- Reglas de precio / promoción por grupo ----------
+     Al dar de alta un artículo, si su categoría o material tiene regla
+     ("todos los de LÍNEA valen $500", "20 % a los de acetato") se le
+     pone el precio y la promoción (si no se escribieron otros). */
+  var reglas = [], prefilled = { precio: '', promo: '' };
+  function loadReglas() {
+    return I.api('/api/inventario/reglas').then(function (d) { reglas = d.items || []; }).catch(function () { reglas = []; });
+  }
+  function reglasFor(tipo) {
+    return reglas.filter(function (r) {
+      if (r.tipo !== tipo) return false;
+      if (r.campo === 'categoria') return formCat && r.valor === String(formCat);
+      return formMats.some(function (m) { return m.toLowerCase() === String(r.valor).toLowerCase(); });
+    });
+  }
+  function reglaTxt(r) { return (r.campo === 'categoria' ? 'categoría ' : 'material ') + r.etiqueta; }
+  function rulesPrefill() {
+    if (editing) return;
+    var pIn = priceRow(1).querySelector('[data-precio]'), prIn = $('aPromo');
+    var rp = reglasFor('precio')[0];
+    if (rp && (!pIn.value || pIn.value === prefilled.precio)) {
+      pIn.value = rp.monto.toFixed(2); prefilled.precio = pIn.value;
+      utilFromPrice(priceRow(1)); syncSinIva();
+    }
+    var best = reglasFor('promo').sort(function (x, y) { return y.monto - x.monto; })[0];
+    if (best && (!prIn.value || prIn.value === prefilled.promo)) { prIn.value = String(best.monto); prefilled.promo = prIn.value; }
+    syncPromoHint(rp, best);
+  }
+  function syncPromoHint(rp, best) {
+    var v = parseFloat($('aPromo').value) || 0, p1 = parseFloat(priceRow(1).querySelector('[data-precio]').value) || 0;
+    var txt = v > 0
+      ? 'En el Punto de venta sale con <strong>' + I.round2(v) + ' % de descuento</strong>' + (p1 > 0 ? ': ' + mxn.format(p1) + ' → <strong>' + mxn.format(I.round2(p1 * (1 - v / 100))) + '</strong>' : '') + '.'
+      : 'Sin promoción. Para darle promoción a toda una categoría o material usa <strong>Precio / promo</strong> en la barra.';
+    var from = [];
+    if (rp && !editing) from.push('el precio de la regla de ' + esc(reglaTxt(rp)));
+    if (best && !editing && v === best.monto) from.push('la promoción de ' + esc(reglaTxt(best)));
+    $('aPromoHint').innerHTML = txt + (from.length ? ' <span class="inv-hint-rule">Tomó ' + from.join(' y ') + '.</span>' : '');
+  }
+  $('aPromo').addEventListener('input', function () { syncPromoHint(); });
+  // Quitar un color de la paleta: el primer toque pregunta, el segundo lo quita.
+  var colDelTimer = null;
+  function deleteColor(x) {
+    if (!x.classList.contains('is-armed')) {
+      $('aPalette').querySelectorAll('.inv-mat-del.is-armed').forEach(function (o) { o.classList.remove('is-armed'); o.textContent = '×'; });
+      x.classList.add('is-armed'); x.textContent = '¿Quitar?';
+      clearTimeout(colDelTimer);
+      colDelTimer = setTimeout(function () { x.classList.remove('is-armed'); x.textContent = '×'; }, 3000);
+      return;
+    }
+    clearTimeout(colDelTimer);
+    var id = x.getAttribute('data-color-del'), name = x.closest('[data-color]').getAttribute('data-color'), low = name.toLowerCase();
+    I.api('/api/inventario/colores/' + id, { method: 'DELETE' }).then(function () {
+      colores = colores.filter(function (c) { return String(c.id) !== id; });
+      if (colPrin && colPrin.toLowerCase() === low) colPrin = colExtra.shift() || '';
+      colExtra = colExtra.filter(function (n) { return n.toLowerCase() !== low; });
+      renderPalette();
+      I.toast('Color «' + name + '» quitado de la paleta. Los artículos que ya lo tienen lo conservan.');
+    }).catch(function (err) { I.toast(err.message, 'error'); });
   }
   $('aPalette').addEventListener('click', function (e) {
+    var cdel = e.target.closest('[data-color-del]');
+    if (cdel) { e.preventDefault(); e.stopPropagation(); deleteColor(cdel); return; }
     if (e.target.closest('[data-color-new]')) { $('aColorNew').hidden = false; $('aColorName').focus(); return; }
     var b = e.target.closest('[data-color]');
     if (!b) return;
@@ -1113,13 +1402,46 @@ window.InvLabels = window.InvLabels || (function () {
 
   // Tabs
   var tabs = artModal.querySelectorAll('.inv-tab');
+  var TAB_ORDER = ['general', 'precios', 'inventario', 'fotos', 'venta'];
+  function curTab() { var on = artModal.querySelector('.inv-tab.is-on'); return on ? on.getAttribute('data-tab') : 'general'; }
+  // "Siguiente" en cada paso; en el último, "Guardar".
+  function syncSaveBtn() {
+    var btn = $('artSave');
+    if (btn.disabled) return;
+    // Solo en el último paso (Venta) el botón es "Guardar".
+    btn.textContent = curTab() === TAB_ORDER[TAB_ORDER.length - 1] ? 'Guardar' : 'Siguiente';
+  }
   function setTab(name) {
     tabs.forEach(function (t) { t.classList.toggle('is-on', t.getAttribute('data-tab') === name); });
     artModal.querySelectorAll('.inv-tabpane').forEach(function (p) { p.classList.toggle('is-on', p.getAttribute('data-pane') === name); });
-    var on = artModal.querySelector('.inv-tab.is-on'), glow = $('artTabsGlow');
-    if (on && glow) { glow.style.width = on.offsetWidth + 'px'; glow.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
+    paintSteps();
+    syncSaveBtn();
   }
   tabs.forEach(function (t) { t.addEventListener('click', function () { setTab(t.getAttribute('data-tab')); }); });
+  // Pasos tipo onboarding: los anteriores al actual quedan con palomita,
+  // se numeran solo los visibles (un servicio no tiene Inventario) y la
+  // línea se llena hasta el paso actual.
+  function paintSteps() {
+    var vis = [].filter.call(tabs, function (t) { return !t.hidden; });
+    var cur = -1;
+    vis.forEach(function (t, i) { if (t.classList.contains('is-on')) cur = i; });
+    vis.forEach(function (t, i) {
+      t.classList.toggle('is-done', i < cur);
+      t.querySelector('.inv-step-n').textContent = i + 1;
+      t.querySelector('.inv-step-k').textContent = 'Paso ' + (i + 1) + ' de ' + vis.length;
+      t.setAttribute('aria-selected', i === cur ? 'true' : 'false');
+    });
+    var track = $('artStepsTrack'), fill = $('artTabsGlow');
+    if (!track || !fill || vis.length < 2) return;
+    // Si el modal todavía se está abriendo (sin medidas), se pinta al ratito.
+    if (!vis[0].offsetWidth) { if (artModal.classList.contains('open')) setTimeout(paintSteps, 60); return; }
+    var mid = function (t) { return t.offsetLeft + t.offsetWidth / 2; };
+    var a = mid(vis[0]), z = mid(vis[vis.length - 1]);
+    track.style.left = fill.style.left = a + 'px';
+    track.style.width = (z - a) + 'px';
+    fill.style.width = Math.max(0, mid(vis[Math.max(cur, 0)]) - a) + 'px';
+  }
+  window.addEventListener('resize', function () { if (artModal.classList.contains('open')) paintSteps(); });
 
   /* ---------- Venta: cómo lo ofrecen el agente y Comy ----------
      Nombre y descripción para vender, etiqueta y promoción (precio menor
@@ -1210,6 +1532,7 @@ window.InvLabels = window.InvLabels || (function () {
       utilFromPrice(row);
     }
     syncSinIva();
+    syncPromoHint();
   });
   if ($('aCompra')) $('aCompra').addEventListener('input', function () {
     [1, 2, 3, 4].forEach(function (n) { utilFromPrice(priceRow(n)); });
@@ -1223,9 +1546,19 @@ window.InvLabels = window.InvLabels || (function () {
     if (s) { $('aExistencia').value = ''; }
     // Ópticas: la clave de rastreo se crea por compra; los servicios no la llevan.
     $('aSinRastreoWrap').hidden = !I.optica || s;
+    // Un servicio no es armazón: su clave se escribe a mano.
+    if (s && claveAuto) claveAuto = false;
+    // Un servicio no lleva marca ni pestaña de Inventario (no tiene existencia).
+    $('aMarcaField').hidden = s || !I.optica;
+    // Tampoco lleva tipo de armazón, mica, color ni material.
+    $('aArmazon').hidden = s || !I.optica;
+    var invTab = artModal.querySelector('.inv-tab[data-tab="inventario"]');
+    if (invTab) invTab.hidden = s;
+    setTab(s && curTab() === 'inventario' ? 'general' : curTab());
+    updateClave();
   }
   $('aServicio').addEventListener('change', syncServicio);
-  ['aClave', 'aClaveAlt'].forEach(function (id) {
+  ['aClave', 'aClaveAlt'].filter(function (id) { return $(id); }).forEach(function (id) {
     $(id).addEventListener('input', function () {
       var pos = this.selectionStart;
       this.value = this.value.toUpperCase().replace(/\s/g, '-').replace(/[^A-Z0-9./-]/g, '');
@@ -1431,7 +1764,20 @@ window.InvLabels = window.InvLabels || (function () {
     artForm.reset();
     $('artError').textContent = '';
     $('aClave').value = mode === 'clone' ? '' : (a ? a.clave : '');
-    $('aClaveAlt').value = a ? a.clave_alterna : '';
+    // Clave armada (ARZL-GUE-2702-0007): se recupera el modelo y se sigue
+    // armando sola. Una clave vieja escrita a mano se respeta al editar.
+    var cm = a ? CLAVE_RE.exec(a.clave || '') : null;
+    $('aModelo').value = cm ? cm[3] : '';
+    // Marca: la guardada; en artículos de antes, se sugiere la de la descripción.
+    var guess = a && !a.marca && (cm || (a.materiales && a.materiales.length)) ? brandOf(a.descripcion) : null;
+    $('aMarca').value = a ? (a.marca || (guess ? guess.name : '')) : '';
+    setClaveHelp(false);
+    claveAuto = !!I.optica && (!a || !!cm || (mode === 'clone' && !!(a.materiales && a.materiales.length)));
+    if (a && a.servicio) claveAuto = false;
+    // Otros giros: clave alterna (código de barras) sigue igual.
+    if ($('aClaveAlt')) $('aClaveAlt').value = a ? (a.clave_alterna || '') : '';
+    $('aPromo').value = a && a.promo_pct > 0 ? String(a.promo_pct) : '';
+    prefilled = { precio: '', promo: '' };
     $('aDesc').value = a ? a.descripcion : '';
     formDep = a && a.departamento_id ? String(a.departamento_id) : '';
     formCat = a && a.categoria_id ? String(a.categoria_id) : '';
@@ -1468,6 +1814,8 @@ window.InvLabels = window.InvLabels || (function () {
     $('aColorNew').hidden = true;
     buildTipos(); renderPalette();
     syncServicio();
+    updateClave();
+    syncPromoHint();
     resetFotos(a, mode);
     fillVenta(a);
   }
@@ -1476,18 +1824,33 @@ window.InvLabels = window.InvLabels || (function () {
   function openClone(a) { if (!a) return; editing = null; $('artTitle').textContent = 'Clonar «' + a.descripcion + '»'; fillForm(a, 'clone'); openArt(); }
   function openArt() {
     loadArmazonData();
+    if (!I.optica) loadReglas(); // reglas por categoría (en ópticas vienen con los datos del armazón)
     I.openModal(artModal);
     setTab('general');
-    setTimeout(function () { (editing ? $('aDesc') : $('aClave')).focus(); }, 80);
+    setTimeout(function () { (editing || claveAuto ? $('aDesc') : $('aClave')).focus(); }, 80);
   }
 
   function intVal(id) { var v = parseInt($(id).value, 10); return isNaN(v) ? 0 : v; }
   artForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var err = $('artError');
+    // "Siguiente": pasa a la otra pestaña; se guarda hasta Venta.
+    // Los servicios se saltan la pestaña de Inventario.
+    var order = TAB_ORDER.filter(function (t) { return !($('aServicio').checked && t === 'inventario'); });
+    var ti = order.indexOf(curTab());
+    if (ti < order.length - 1) {
+      err.textContent = '';
+      setTab(order[ti + 1]);
+      var body0 = artModal.querySelector('.admin-modal-body');
+      if (body0) body0.scrollTop = 0;
+      return;
+    }
     var body = {
-      clave: $('aClave').value.trim(),
-      clave_alterna: $('aClaveAlt').value.trim(),
+      clave: claveAuto ? claveCompleta() : $('aClave').value.trim(),
+      marca: $('aServicio').checked || !I.optica ? '' : $('aMarca').value.trim(),
+      // Clave alterna: solo los giros que no son óptica la capturan; si no se
+      // manda, el servidor conserva la que tuviera.
+      clave_alterna: $('aClaveAlt') && !I.optica ? $('aClaveAlt').value.trim() : undefined,
       descripcion: $('aDesc').value.trim().replace(/\s+/g, ' '),
       departamento_id: Number(formDep) || 0,
       categoria_id: Number(formCat) || 0,
@@ -1502,6 +1865,7 @@ window.InvLabels = window.InvLabels || (function () {
       minimo: intVal('aMinimo'),
       maximo: intVal('aMaximo'),
       localizacion: $('aLocal').value.trim(),
+      promo_pct: I.round2(Math.max(0, Math.min(100, parseFloat($('aPromo').value) || 0))),
       tipo_armazon: formTipo,
       color_principal: colPrin,
       colores_extra: colExtra.slice(),
@@ -1514,12 +1878,18 @@ window.InvLabels = window.InvLabels || (function () {
       promo_precio: $('aPromoOn').checked ? I.round2(parseFloat($('aPromoPrecio').value) || 0) : 0,
       promo_fin: $('aPromoOn').checked ? promoFin() : ''
     };
+    // Un servicio no es armazón: no se guardan tipo, mica, color ni material.
+    if (body.servicio) {
+      body.tipo_armazon = ''; body.color_principal = ''; body.colores_extra = [];
+      body.mica_tipo = ''; body.materiales = [];
+    }
     [1, 2, 3, 4].forEach(function (n) {
       var row = priceRow(n);
       body['precio_' + n] = I.round2(parseFloat(row.querySelector('[data-precio]').value) || 0);
       if (n > 1) body['mayoreo_' + n] = parseInt(row.querySelector('[data-mayoreo]').value, 10) || 0;
     });
     function bad(msg, tab, field) { err.textContent = msg; setTab(tab); if (field) setTimeout(function () { $(field).focus(); }, 60); }
+    if (claveAuto && !body.clave) return bad('Para armar la clave falta: ' + missingClave().join(', ') + '.', 'general', missingClave().length === 1 && !$('aModelo').value ? 'aModelo' : null);
     if (!body.clave) return bad('Escribe la clave del artículo.', 'general', 'aClave');
     if (!body.descripcion) return bad('Escribe la descripción del artículo.', 'general', 'aDesc');
     if (body.precio_1 <= 0 && !body.servicio) return bad('Escribe el precio de venta (precio 1).', 'precios');
@@ -1559,7 +1929,7 @@ window.InvLabels = window.InvLabels || (function () {
     }).catch(function (e2) {
       err.textContent = e2.message;
     }).finally(function () {
-      btn.disabled = false; btn.textContent = 'Guardar';
+      btn.disabled = false; syncSaveBtn();
     });
   });
   // Después de guardar: que el artículo se vea en la lista aunque haya filtros.
@@ -1724,6 +2094,69 @@ window.InvLabels = window.InvLabels || (function () {
     }).catch(function (e2) { $('delError').textContent = e2.message; })
       .finally(function () { btn.disabled = false; });
   });
+
+  /* =======================================================
+     ELIMINAR VARIOS (solo admin): definitivo, aunque tengan existencia
+     ======================================================= */
+  function toggleDelSel(id, on) {
+    if (on) delSel[id] = true; else delete delSel[id];
+    var tr = $('invBody').querySelector('tr[data-id="' + id + '"]');
+    if (tr) tr.classList.toggle('is-marked', !!on);
+    syncDelSel();
+  }
+  function delSelIds() { return Object.keys(delSel).map(Number).filter(function (id) { return byId[id]; }); }
+  function syncDelSel() {
+    if (!canBulk) return;
+    var ids = delSelIds();
+    var btn = $('artDelSel');
+    btn.hidden = !ids.length;
+    btn.lastChild.textContent = ids.length === 1 ? 'Eliminar 1 seleccionado' : 'Eliminar ' + I.num(ids.length) + ' seleccionados';
+    var all = $('artSelAll');
+    var inList = filtered.filter(function (a) { return delSel[a.id]; }).length;
+    all.checked = filtered.length > 0 && inList === filtered.length;
+    all.indeterminate = inList > 0 && inList < filtered.length;
+  }
+  if (canBulk) {
+    // "Todos": los de la lista con los filtros de arriba (todas las páginas).
+    $('artSelAll').addEventListener('change', function () {
+      var on = this.checked;
+      filtered.forEach(function (a) { if (on) delSel[a.id] = true; else delete delSel[a.id]; });
+      render();
+    });
+    var artDelModal = $('artDelModal');
+    $('artDelSel').addEventListener('click', function () {
+      var list = delSelIds().map(function (id) { return byId[id]; });
+      if (!list.length) return;
+      var conExist = list.filter(function (a) { return !a.servicio && a.existencia > 0; });
+      var piezas = conExist.reduce(function (t, a) { return t + a.existencia; }, 0);
+      $('artDelText').innerHTML = '¿Eliminar definitivamente ' + (list.length === 1 ? 'este artículo' : 'estos <strong>' + I.num(list.length) + ' artículos</strong>') + '? No se puede deshacer.';
+      $('artDelList').innerHTML = list.slice(0, 8).map(function (a) {
+        return '<li><span>' + esc(a.clave || '—') + '</span>' + esc(a.descripcion) + (!a.servicio && a.existencia > 0 ? ' <em>' + I.num(a.existencia) + ' en existencia</em>' : '') + '</li>';
+      }).join('') + (list.length > 8 ? '<li class="is-more">y ' + I.num(list.length - 8) + ' más</li>' : '');
+      var warn = $('artDelWarn');
+      warn.hidden = !conExist.length;
+      warn.innerHTML = conExist.length
+        ? (conExist.length === 1 ? '1 tiene' : I.num(conExist.length) + ' tienen') + ' existencia (' + I.num(piezas) + (piezas === 1 ? ' pieza' : ' piezas') + '): se eliminan con todo y su existencia. Sus movimientos pasados se conservan en Movimientos.'
+        : '';
+      $('artDelError').textContent = '';
+      $('artDelOk').textContent = list.length === 1 ? 'Sí, eliminar' : 'Sí, eliminar ' + I.num(list.length);
+      I.openModal(artDelModal);
+    });
+    $('artDelOk').addEventListener('click', function () {
+      var ids = delSelIds(), btn = this;
+      if (!ids.length) return;
+      btn.disabled = true;
+      I.api('/api/inventario/articulos/eliminar', { method: 'POST', body: { ids: ids } }).then(function (d) {
+        I.closeModal(artDelModal);
+        var n = d.eliminados || 0;
+        I.toast(n === 1 ? '1 artículo eliminado.' : I.num(n) + ' artículos eliminados.');
+        delSel = {};
+        if (ids.indexOf(selectedId) >= 0) selectedId = null;
+        return load(false);
+      }).catch(function (e2) { $('artDelError').textContent = e2.message; })
+        .finally(function () { btn.disabled = false; });
+    });
+  }
 
   /* =======================================================
      NÚMEROS DE RASTREO (uno por pieza: AVT000001…)
@@ -2006,7 +2439,133 @@ window.InvLabels = window.InvLabels || (function () {
     w.document.close();
   }
 
+  /* =======================================================
+     MODAL: mismo precio o promoción para toda una categoría o material
+     ======================================================= */
+  var grpModal = $('grpModal');
+  var grp = { campo: 'categoria', accion: 'precio', valor: '' };
+  var grpSel = I.select($('grpValor'), { placeholder: 'Elige…', onChange: function (v) { grp.valor = v; syncGrp(); } });
+  function grpMatches() {
+    if (!grp.valor) return [];
+    return items.filter(function (a) {
+      if (grp.campo === 'categoria') return String(a.categoria_id) === grp.valor;
+      return (a.materiales || []).some(function (m) { return m.toLowerCase() === grp.valor.toLowerCase(); });
+    });
+  }
+  function grpOptions() {
+    if (grp.campo === 'categoria') {
+      var cats = [];
+      deps.forEach(function (d) { (d.categorias || []).forEach(function (c) { cats.push(c); }); });
+      return cats.map(function (c) {
+        var n = items.filter(function (a) { return a.categoria_id === c.id; }).length;
+        return { value: String(c.id), label: c.nombre, hint: n === 1 ? '1 artículo' : I.num(n) + ' artículos' };
+      });
+    }
+    var names = materiales.map(function (m) { return m.nombre; });
+    items.forEach(function (a) { (a.materiales || []).forEach(function (m) { if (!names.some(function (x) { return x.toLowerCase() === m.toLowerCase(); })) names.push(m); }); });
+    return names.map(function (n) {
+      var c = items.filter(function (a) { return (a.materiales || []).some(function (m) { return m.toLowerCase() === n.toLowerCase(); }); }).length;
+      return { value: n, label: n, hint: c === 1 ? '1 artículo' : I.num(c) + ' artículos' };
+    });
+  }
+  function grpLabel() {
+    var o = grpOptions().filter(function (x) { return x.value === grp.valor; })[0];
+    // "de la categoría LÍNEA" / "del material Acetato"
+    return o ? (grp.campo === 'categoria' ? 'de la categoría ' : 'del material ') + o.label : '';
+  }
+  function setSeg(el, attr, v) {
+    Array.prototype.forEach.call(el.querySelectorAll('button[' + attr + ']'), function (b) { b.classList.toggle('is-on', b.getAttribute(attr) === v); });
+  }
+  function syncGrp() {
+    setSeg($('grpCampo'), 'data-campo', grp.campo);
+    setSeg($('grpAccion'), 'data-accion', grp.accion);
+    $('grpValorLabel').textContent = grp.campo === 'categoria' ? 'Categoría' : 'Material';
+    $('grpPrecioField').hidden = grp.accion !== 'precio';
+    $('grpPromoField').hidden = grp.accion !== 'promo';
+    $('grpRecordarWrap').hidden = grp.accion === 'quitar_promo';
+    $('grpRecordarTxt').textContent = grp.accion === 'precio'
+      ? 'Los artículos nuevos de este grupo salen con este precio.'
+      : 'Los artículos nuevos de este grupo salen con esta promoción.';
+    var list = grpMatches(), n = list.length;
+    $('grpCount').textContent = grp.valor ? (n === 1 ? 'Hay 1 artículo.' : 'Hay ' + I.num(n) + ' artículos.') : '';
+    var sum = '';
+    if (grp.valor) {
+      var who = (n === 1 ? 'el artículo' : 'los ' + I.num(n) + ' artículos') + ' ' + esc(grpLabel());
+      var p = parseFloat($('grpPrecio').value), pr = parseFloat($('grpPromo').value);
+      if (grp.accion === 'precio' && p > 0) sum = 'A ' + who + ' se les pone precio de venta <strong>' + mxn.format(p) + '</strong>.';
+      else if (grp.accion === 'promo' && pr > 0) sum = 'A ' + who + ' se les pone <strong>' + I.round2(pr) + ' % de promoción</strong> en el Punto de venta.';
+      else if (grp.accion === 'quitar_promo') {
+        var con = list.filter(function (a) { return a.promo_pct > 0; }).length;
+        sum = con ? 'Se les quita la promoción a <strong>' + I.num(con) + '</strong> ' + esc(grpLabel()) + ' y ya no se pone a los nuevos.' : 'Ninguno ' + esc(grpLabel()) + ' tiene promoción.';
+      }
+    }
+    $('grpSum').innerHTML = sum;
+    $('grpSum').hidden = !sum;
+  }
+  function renderReglas() {
+    var box = $('grpRules');
+    if (!reglas.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<h4>Se aplican solas a los artículos nuevos</h4>' + reglas.map(function (r) {
+      return '<div class="inv-grp-rule"><span class="inv-grp-rule-ico is-' + r.tipo + '">' + (r.tipo === 'precio' ? '$' : '%') + '</span>' +
+        '<span><strong>' + (r.tipo === 'precio' ? mxn.format(r.monto) : '−' + I.round2(r.monto) + ' % de promoción') + '</strong>' +
+        '<small>' + esc(r.campo === 'categoria' ? 'Categoría ' + r.etiqueta : 'Material ' + r.etiqueta) + '</small></span>' +
+        '<button type="button" class="inv-btn-ghost" data-regla-del="' + r.id + '">Quitar</button></div>';
+    }).join('');
+  }
+  function openGrupo() {
+    grp = { campo: 'categoria', accion: 'precio', valor: '' };
+    $('grpPrecio').value = ''; $('grpPromo').value = ''; $('grpRecordar').checked = true; $('grpError').textContent = '';
+    grpSel.setOptions(grpOptions()); grpSel.set('', true);
+    syncGrp();
+    loadReglas().then(renderReglas);
+    I.openModal(grpModal);
+  }
+  $('grpCampo').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-campo]'); if (!b) return;
+    grp.campo = b.getAttribute('data-campo'); grp.valor = '';
+    grpSel.setOptions(grpOptions()); grpSel.set('', true);
+    syncGrp();
+  });
+  $('grpAccion').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-accion]'); if (!b) return;
+    grp.accion = b.getAttribute('data-accion');
+    syncGrp();
+    var f2 = grp.accion === 'precio' ? $('grpPrecio') : grp.accion === 'promo' ? $('grpPromo') : null;
+    if (f2) setTimeout(function () { f2.focus(); }, 30);
+  });
+  ['grpPrecio', 'grpPromo'].forEach(function (id) { $(id).addEventListener('input', syncGrp); });
+  $('grpRules').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-regla-del]'); if (!b) return;
+    b.disabled = true;
+    I.api('/api/inventario/reglas/' + b.getAttribute('data-regla-del'), { method: 'DELETE' }).then(function () {
+      I.toast('Listo: los artículos nuevos ya no toman esa regla. Los que ya están se quedan igual.');
+      return loadReglas().then(renderReglas);
+    }).catch(function (err) { b.disabled = false; I.toast(err.message, 'error'); });
+  });
+  $('grpForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('grpError');
+    if (!grp.valor) { err.textContent = grp.campo === 'categoria' ? 'Elige la categoría.' : 'Elige el material.'; return; }
+    var monto = grp.accion === 'precio' ? parseFloat($('grpPrecio').value) : grp.accion === 'promo' ? parseFloat($('grpPromo').value) : 0;
+    if (grp.accion === 'precio' && !(monto > 0)) { err.textContent = 'Escribe el precio de venta.'; $('grpPrecio').focus(); return; }
+    if (grp.accion === 'promo' && !(monto > 0 && monto <= 100)) { err.textContent = 'La promoción va de 1 a 100 %.'; $('grpPromo').focus(); return; }
+    var btn = $('grpSave'); btn.disabled = true; err.textContent = '';
+    var label = grpLabel();
+    I.api('/api/inventario/grupo', { method: 'POST', body: { campo: grp.campo, valor: grp.valor, accion: grp.accion, monto: monto || 0, recordar: $('grpRecordar').checked } })
+      .then(function (d) {
+        var n = d.afectados || 0;
+        I.closeModal(grpModal);
+        I.toast(grp.accion === 'precio' ? 'Precio ' + mxn.format(monto) + ' aplicado a ' + I.num(n) + ' ' + label + '.'
+          : grp.accion === 'promo' ? 'Promoción de ' + I.round2(monto) + ' % aplicada a ' + I.num(n) + ' ' + label + '.'
+          : 'Promoción quitada a ' + I.num(n) + ' ' + label + '.');
+        loadReglas();
+        return load(true);
+      }).catch(function (e2) { err.textContent = e2.message; })
+      .finally(function () { btn.disabled = false; });
+  });
+
   /* ---------- barra de acciones y atajos ---------- */
+  $('tbGrupo').addEventListener('click', openGrupo);
   $('tbAgregar').addEventListener('click', openAdd);
   $('tbEditar').addEventListener('click', function () { openEdit(current()); });
   $('tbRecargar').addEventListener('click', function () { load(true).then(function () { I.toast('Inventario actualizado.'); }); });
@@ -2051,8 +2610,14 @@ window.InvLabels = window.InvLabels || (function () {
   load(false);
   loadArmazonData();
   // Al instante: una venta descuenta existencias, otro usuario ajusta…
+  // Tiempo real (/api/live): si alguien vende, ajusta o da de alta, la
+  // lista y los indicadores se actualizan solos. Con un modal abierto o
+  // artículos marcados para borrar, espera (se actualiza al volver).
   if (window.AttomosLive) AttomosLive.on(['inventario'], function () {
-    if (!document.querySelector('.admin-modal-overlay.open')) load(true);
+    if (!$('invArticulos').offsetParent) return;
+    if (document.querySelector('.admin-modal-overlay.open')) return;
+    if (Object.keys(delSel).length) return;
+    load(true, true);
   });
   // Al volver a esta pestaña (sin recargar la página) se actualiza la lista.
   I.$('invArticulos').addEventListener('subnav:show', function () { load(true); });
@@ -3625,6 +4190,12 @@ window.InvEscaner = (function () {
   I.$('invMovimientos')._booted = true;
   var $ = I.$, esc = I.esc;
   var TIPOS = { venta: 'Venta', pedido: 'Pedido', entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', inicial: 'Alta' };
+  // Solo el dueño puede borrar movimientos (pruebas). Los de ventas y
+  // pedidos no: esos se quitan cancelando la venta o el pedido.
+  var canDel = $('invMovimientos').getAttribute('data-can-delete') === '1';
+  var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>';
+  var shown = [], sel = {};
+  function delOK(m) { return canDel && m.tipo !== 'venta' && m.tipo !== 'pedido'; }
 
   var f = { item: 0, q: '', tipo: '', per: '30d' };
   var arts = [];
@@ -3749,10 +4320,14 @@ window.InvEscaner = (function () {
     $('mvCaption').textContent = when + ' · ' + I.num(items.length) + (items.length === 1 ? ' movimiento' : ' movimientos') + (items.length >= 1000 ? ' (se muestran los 1,000 más recientes)' : '');
     $('mvEmpty').hidden = items.length > 0;
     $('mvEmpty').textContent = 'No hay movimientos con estos filtros.';
+    shown = items;
+    sel = {};
+    syncSel();
     $('mvBody').innerHTML = items.map(function (m, i) {
       var up = m.cantidad > 0;
       var ref = refHTML(m);
-      return '<tr style="--i:' + Math.min(i, 20) + '">' +
+      return '<tr style="--i:' + Math.min(i, 20) + '" data-mv="' + m.id + '">' +
+        (canDel ? '<td class="inv-mv-sel">' + (delOK(m) ? '<input type="checkbox" data-sel="' + m.id + '" aria-label="Seleccionar movimiento">' : '') + '</td>' : '') +
         '<td class="inv-nowrap">' + esc(I.fechaHora(m.fecha)) + '</td>' +
         '<td class="inv-cell-art">' + (f.item ? '' : '<button type="button" class="inv-link-art" data-item="' + m.item_id + '">') +
           '<span class="inv-clave">' + esc(m.clave) + '</span><strong>' + esc(m.descripcion) + '</strong>' + (f.item ? '' : '</button>') + '</td>' +
@@ -3761,13 +4336,130 @@ window.InvEscaner = (function () {
         '<td class="num inv-nowrap"><span class="inv-muted">' + I.num(m.antes) + ' →</span> <strong>' + I.num(m.despues) + '</strong></td>' +
         '<td>' + esc(m.usuario || '—') + '</td>' +
         '<td>' + (m.comentario && m.comentario !== 'Ticket ' + m.venta_id ? esc(m.comentario) : '<span class="inv-muted">—</span>') + '</td>' +
+        (canDel ? '<td class="inv-mv-act">' + (delOK(m) ? '<button type="button" class="inv-mv-trash" data-del="' + m.id + '" title="Eliminar movimiento" aria-label="Eliminar movimiento">' + TRASH + '</button>' : '') + '</td>' : '') +
       '</tr>';
     }).join('');
   }
   $('mvBody').addEventListener('click', function (e) {
+    var d = e.target.closest('[data-del]');
+    if (d) { openDel([Number(d.getAttribute('data-del'))]); return; }
     var b = e.target.closest('[data-item]');
     if (b) chooseItem(Number(b.getAttribute('data-item')));
   });
+
+  /* =======================================================
+     ELIMINAR MOVIMIENTOS (solo el dueño) — para quitar pruebas.
+     Los de ventas y pedidos no se borran aquí (se cancelan).
+     POST /api/inventario/movimientos/eliminar {ids, revertir}
+     ======================================================= */
+  function selIds() { return Object.keys(sel).map(Number); }
+  function syncSel() {
+    if (!canDel) return;
+    var n = selIds().length;
+    var btn = $('mvDelSel');
+    btn.hidden = n === 0;
+    btn.querySelector('span').textContent = 'Eliminar ' + I.num(n) + (n === 1 ? ' seleccionado' : ' seleccionados');
+    var all = $('mvSelAll');
+    all.checked = n > 0 && n === shown.length;
+    all.indeterminate = n > 0 && n < shown.length;
+  }
+  function byId(id) { for (var i = 0; i < shown.length; i++) if (shown[i].id === id) return shown[i]; return null; }
+  var delIds = [];
+  var delModo = 'revertir', delNeto = {};
+  function setDelModo(v) {
+    delModo = v;
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="mvDelModo"]'), function (r) {
+      r.checked = r.value === v;
+      r.closest('.inv-mvdel-opt').classList.toggle('is-on', r.checked);
+    });
+    renderDelPrev();
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'mvDelModo') setDelModo(e.target.value);
+  });
+  function piezas(n) { return I.num(n) + (Math.abs(n) === 1 ? ' pieza' : ' piezas'); }
+  function renderDelPrev() {
+    var box = $('mvDelPrev');
+    if (!box) return;
+    var rows = Object.keys(delNeto).map(function (k) { return delNeto[k]; });
+    var known = arts.length > 0;
+    var html = rows.slice(0, 6).map(function (x) {
+      var a = arts.filter(function (y) { return y.id === x.id; })[0];
+      if (known && !a) {
+        return '<div class="inv-mvdel-row is-gone"><span class="inv-mvdel-name">' + esc(x.nombre) + '</span><span class="inv-mvdel-note">Este artículo ya no existe: solo se borra el renglón (las dos opciones hacen lo mismo).</span></div>';
+      }
+      if (a && a.servicio) {
+        return '<div class="inv-mvdel-row"><span class="inv-mvdel-name">' + esc(x.nombre) + '</span><span class="inv-mvdel-note">Es un servicio: no lleva piezas.</span></div>';
+      }
+      if (!a) {
+        return '<div class="inv-mvdel-row"><span class="inv-mvdel-name">' + esc(x.nombre) + '</span><span class="inv-mvdel-note">' + (delModo === 'revertir' ? (x.neto > 0 ? 'Le quita ' : 'Le regresa ') + piezas(Math.abs(x.neto)) + '.' : 'Sus piezas no cambian.') + '</span></div>';
+      }
+      var hoy = a.existencia, queda = delModo === 'revertir' ? hoy - x.neto : hoy;
+      var bad = queda < 0;
+      return '<div class="inv-mvdel-row' + (bad ? ' is-bad' : '') + '"><span class="inv-mvdel-name">' + esc(x.nombre) + '</span>' +
+        '<span class="inv-mvdel-nums"><span><small>Hoy tiene</small><b>' + I.num(hoy) + '</b></span><i>→</i><span><small>Va a quedar con</small><b>' + I.num(queda) + '</b></span></span>' +
+        (bad ? '<span class="inv-mvdel-note">No se puede deshacer: quedaría en negativo (ya se vendieron o sacaron esas piezas). Elige «Solo borrar el renglón».</span>'
+             : delModo === 'revertir' && x.neto !== 0 ? '<span class="inv-mvdel-note">' + (Math.abs(x.neto) === 1 ? (x.neto > 0 ? 'Se le quita ' : 'Se le regresa ') : (x.neto > 0 ? 'Se le quitan ' : 'Se le regresan ')) + piezas(Math.abs(x.neto)) + ', como si ese movimiento nunca hubiera pasado.</span>'
+             : '<span class="inv-mvdel-note">Sus piezas no cambian.</span>') +
+        '</div>';
+    }).join('') + (rows.length > 6 ? '<div class="inv-mvdel-row is-more">y ' + I.num(rows.length - 6) + ' artículos más</div>' : '');
+    box.innerHTML = html;
+  }
+  function openDel(ids) {
+    var list = ids.map(byId).filter(Boolean);
+    if (!list.length) return;
+    delIds = list.map(function (m) { return m.id; });
+    var m0 = list[0];
+    $('mvDelError').textContent = '';
+    setDelModo('revertir');
+    $('mvDelText').innerHTML = list.length === 1
+      ? '¿Eliminar definitivamente la <strong>' + esc((TIPOS[m0.tipo] || m0.tipo).toLowerCase()) + '</strong> de <strong>' + (m0.cantidad > 0 ? '+' : '−') + I.num(Math.abs(m0.cantidad)) + '</strong> de <strong>' + esc(m0.descripcion) + '</strong> (' + esc(I.fechaHora(m0.fecha)) + ')? No se puede deshacer.'
+      : '¿Eliminar definitivamente <strong>' + I.num(list.length) + ' movimientos</strong>? No se puede deshacer.';
+    // Vista previa: cuántas piezas tiene hoy cada artículo y con cuántas
+    // queda con cada opción (se piden las existencias al momento).
+    delNeto = {};
+    list.forEach(function (m) {
+      var x = delNeto[m.item_id] || (delNeto[m.item_id] = { id: m.item_id, nombre: m.descripcion, clave: m.clave, neto: 0 });
+      x.neto += m.cantidad;
+    });
+    renderDelPrev();
+    I.api('/api/inventario/articulos').then(function (d) { arts = d.items || []; renderDelPrev(); }).catch(function () {});
+    I.openModal($('mvDelModal'));
+  }
+  if (canDel) {
+    $('mvBody').addEventListener('change', function (e) {
+      var c = e.target.closest('[data-sel]');
+      if (!c) return;
+      var id = Number(c.getAttribute('data-sel'));
+      if (c.checked) sel[id] = true; else delete sel[id];
+      c.closest('tr').classList.toggle('is-checked', c.checked);
+      syncSel();
+    });
+    $('mvSelAll').addEventListener('change', function () {
+      var on = this.checked;
+      sel = {};
+      Array.prototype.forEach.call($('mvBody').querySelectorAll('[data-sel]'), function (c) {
+        c.checked = on;
+        c.closest('tr').classList.toggle('is-checked', on);
+        if (on) sel[Number(c.getAttribute('data-sel'))] = true;
+      });
+      syncSel();
+    });
+    $('mvDelSel').addEventListener('click', function () { openDel(selIds()); });
+    $('mvDelOk').addEventListener('click', function () {
+      if (!delIds.length) return;
+      var btn = this; btn.disabled = true;
+      var revertir = delModo === 'revertir';
+      I.api('/api/inventario/movimientos/eliminar', { method: 'POST', body: { ids: delIds, revertir: revertir } }).then(function (r) {
+        I.closeModal($('mvDelModal'));
+        var n = r.eliminados || 0;
+        I.toast((n === 1 ? 'Movimiento eliminado' : I.num(n) + ' movimientos eliminados') +
+          (revertir && r.articulos ? ' · existencia corregida en ' + I.num(r.articulos) + (r.articulos === 1 ? ' artículo' : ' artículos') : '') + '.');
+        load();
+      }).catch(function (e2) { $('mvDelError').textContent = e2.message; })
+        .finally(function () { btn.disabled = false; });
+    });
+  }
 
   /* =======================================================
      REPORTE (PDF / Excel) con los mismos filtros de la pantalla.
@@ -3902,8 +4594,97 @@ window.InvEscaner = (function () {
       .finally(function () { busy(btn, false, 'Excel'); });
   });
 
+  // Tiempo real (/api/live): cuando alguien vende, ajusta o da de alta, el
+  // kárdex se actualiza solo (salvo con un modal abierto o movimientos marcados).
+  if (window.AttomosLive) AttomosLive.on(['inventario', 'pos'], function () {
+    if (!$('invMovimientos').offsetParent) return;
+    if (document.querySelector('.admin-modal-overlay.open')) return;
+    if (Object.keys(sel).length) return;
+    load();
+  });
+
   syncPer();
   I.api('/api/inventario/articulos').then(function (d) { arts = d.items || []; }).catch(function () {});
   load();
   I.$('invMovimientos').addEventListener('subnav:show', function () { load(); });
+})();
+/* =========================================================
+   Movimientos borrados (solo el dueño): quién borró qué y cuándo.
+     GET /api/inventario/movimientos/borrados?q=
+   ========================================================= */
+(function () {
+  var I = window.Inv;
+  if (!I || !I.$('mvBorrBtn') || I.$('mvBorrBtn')._booted) return; // una sola vez (subnav-tabs.js)
+  I.$('mvBorrBtn')._booted = true;
+  var $ = I.$, esc = I.esc;
+  var TIPOS = { venta: 'Venta', entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', inicial: 'Alta', ticket: 'Ticket' };
+  var DESDE = { movimientos: 'desde Movimientos' };
+  var timer, req = 0;
+
+  function qty(c) {
+    if (!c) return '<span class="inv-qty is-zero">0</span>';
+    return '<span class="inv-qty ' + (c > 0 ? 'is-up' : 'is-down') + '">' + (c > 0 ? '+' : '−') + I.num(Math.abs(c)) + '</span>';
+  }
+  function row(m) {
+    if (m.tipo === 'ticket') {
+      return '<tr><td colspan="2"><span class="inv-chip t-ticket">Ticket</span> <strong>' + esc(m.descripcion) + '</strong></td>' +
+        '<td colspan="3" class="inv-muted">Se borró la venta con su crédito y pedido.</td></tr>';
+    }
+    var arts = m.item_id && !m.clave && !m.descripcion ? '<span class="inv-muted">(artículo eliminado)</span>'
+      : '<span class="inv-clave">' + esc(m.clave || '—') + '</span><strong>' + esc(m.descripcion || '—') + '</strong>';
+    var exist = '—';
+    if (m.exist_hoy != null) {
+      exist = m.exist_queda != null && m.exist_queda !== m.exist_hoy
+        ? '<span class="inv-muted">' + I.num(m.exist_hoy) + ' →</span> <strong>' + I.num(m.exist_queda) + '</strong>'
+        : '<strong>' + I.num(m.exist_hoy) + '</strong> <span class="inv-muted">(sin cambio)</span>';
+    }
+    return '<tr>' +
+      '<td class="inv-cell-art">' + arts + '</td>' +
+      '<td><span class="inv-chip t-' + esc(m.tipo) + '">' + esc(TIPOS[m.tipo] || m.tipo) + '</span>' +
+        '<small class="inv-ref">' + (m.fecha ? esc(I.fechaHora(m.fecha)) : '') + (m.usuario ? ' · ' + esc(m.usuario) : '') + '</small>' +
+        (m.comentario ? '<small class="inv-ref">' + esc(m.comentario) + '</small>' : '') + '</td>' +
+      '<td class="num">' + qty(m.cantidad) + '</td>' +
+      '<td class="num inv-nowrap"><span class="inv-muted">' + I.num(m.antes) + ' →</span> <strong>' + I.num(m.despues) + '</strong></td>' +
+      '<td class="num inv-nowrap">' + exist + '</td>' +
+    '</tr>';
+  }
+  function render(items) {
+    var list = $('mvBorrList');
+    if (!items.length) {
+      list.innerHTML = '<p class="inv-empty">' + ($('mvBorrQ').value.trim() ? 'No hay borrados con esa búsqueda.' : 'Todavía no se ha borrado ningún movimiento.') + '</p>';
+      return;
+    }
+    list.innerHTML = items.map(function (l) {
+      var movs = l.movimientos || [];
+      var nMov = movs.filter(function (m) { return m.tipo !== 'ticket'; }).length;
+      var nTk = movs.length - nMov;
+      var que = [];
+      if (nMov) que.push(nMov + (nMov === 1 ? ' movimiento' : ' movimientos'));
+      if (nTk) que.push(nTk + (nTk === 1 ? ' ticket' : ' tickets'));
+      return '<article class="inv-borr-lote">' +
+        '<header><div><strong>' + esc(l.por || 'Alguien') + '</strong> borró ' + esc(que.join(' y ') || 'nada') +
+          ' <span class="inv-muted">' + esc(DESDE[l.desde] || '') + '</span>' +
+          '<small>' + esc(I.fechaHora(l.fecha)) + '</small></div>' +
+          '<span class="inv-borr-modo' + (l.revertido ? ' is-rev' : '') + '">' + (l.revertido ? 'Deshizo la existencia' : 'Solo borró el renglón') + '</span>' +
+        '</header>' +
+        '<div class="inv-borr-table"><table><thead><tr><th>Artículo</th><th>Movimiento borrado</th><th class="num">Cantidad</th><th class="num">Existencia del mov.</th><th class="num">Artículo: tenía → quedó</th></tr></thead>' +
+        '<tbody>' + movs.map(row).join('') + '</tbody></table></div>' +
+      '</article>';
+    }).join('');
+  }
+  function load() {
+    var my = ++req;
+    $('mvBorrList').innerHTML = '<p class="inv-empty">Cargando…</p>';
+    I.api('/api/inventario/movimientos/borrados?q=' + encodeURIComponent($('mvBorrQ').value.trim())).then(function (d) {
+      if (my === req) render(d.items || []);
+    }).catch(function (e) {
+      if (my === req) $('mvBorrList').innerHTML = '<p class="inv-empty">' + esc(e.message) + '</p>';
+    });
+  }
+  $('mvBorrBtn').addEventListener('click', function () {
+    $('mvBorrQ').value = '';
+    I.openModal($('mvBorrModal'));
+    load();
+  });
+  $('mvBorrQ').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(load, 250); });
 })();

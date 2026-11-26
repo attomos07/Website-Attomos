@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css">
-    <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
+    <link rel="stylesheet" href="/static/css/client/inventory.css?v=8">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
     <link rel="stylesheet" href="/static/css/client/attomos-skin.css?v=1">
 </head>
@@ -64,6 +64,7 @@
       <button type="button" class="inv-tool is-primary" id="tbAgregar"><i data-feather="plus-circle"></i><span>Agregar</span><kbd>F3</kbd></button>
       <button type="button" class="inv-tool" id="tbEditar" disabled><i data-feather="edit-3"></i><span>Editar</span><kbd>F4</kbd></button>
       <button type="button" class="inv-tool" id="tbRecargar"><i data-feather="refresh-cw"></i><span>Recargar</span><kbd>F5</kbd></button>
+      <button type="button" class="inv-tool" id="tbGrupo"><i data-feather="tag"></i><span>Precio / promo</span></button>
       <button type="button" class="inv-tool is-danger" id="tbEliminar" disabled><i data-feather="trash-2"></i><span>Eliminar</span><kbd>F6</kbd></button>
       <span class="inv-tool-sep"></span>
       <button type="button" class="inv-tool" id="tbAjustar" disabled><i data-feather="sliders"></i><span>Ajustar</span><kbd>F8</kbd></button>
@@ -95,11 +96,15 @@
           <button type="button" data-estado="servicio">Servicios</button>
         </div>
 
-        <p class="inv-caption" id="invCaption">Cargando…</p>
+        <div class="inv-sel-bar">
+          <p class="inv-caption" id="invCaption">Cargando…</p>
+          {{if .IsOwner}}<button type="button" class="inv-btn-ghost inv-mv-del" id="artDelSel" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg><span>Eliminar seleccionados</span></button>{{end}}
+        </div>
         <div class="inv-table-wrap">
           <table class="inv-table" id="invTable">
             <thead>
               <tr>
+                {{if .IsOwner}}<th class="inv-mv-sel"><input type="checkbox" id="artSelAll" aria-label="Seleccionar todos los de la lista"></th>{{end}}
                 <th>Clave / Descripción</th>
                 <th class="c-dep">Departamento · Categoría</th>
                 <th class="num">Exist.</th>
@@ -141,31 +146,76 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <div class="inv-tabs" role="tablist">
+    <div class="inv-tabs inv-steps" role="tablist" aria-label="Pasos para dar de alta el artículo">
+      {{/* Pasos del alta (como un onboarding): la línea se va llenando. */}}
+      <span class="inv-steps-track" id="artStepsTrack"></span>
       <span class="inv-tabs-glow" id="artTabsGlow"></span>
-      <button type="button" class="inv-tab is-on" data-tab="general" role="tab">General</button>
-      <button type="button" class="inv-tab" data-tab="precios" role="tab">Precios</button>
-      <button type="button" class="inv-tab" data-tab="inventario" role="tab">Inventario</button>
-      <button type="button" class="inv-tab" data-tab="fotos" role="tab">Fotos <span class="inv-tab-count" id="aFotosCount" hidden></span></button>
-      <button type="button" class="inv-tab" data-tab="venta" role="tab">Venta <span class="inv-tab-dot" id="aVentaDot" hidden></span></button>
+      <button type="button" class="inv-tab is-on" data-tab="general" role="tab"><span class="inv-step-dot"><b class="inv-step-n">1</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="inv-step-txt"><small class="inv-step-k">Paso 1</small><span>General</span></span></button>
+      <button type="button" class="inv-tab" data-tab="precios" role="tab"><span class="inv-step-dot"><b class="inv-step-n">2</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="inv-step-txt"><small class="inv-step-k">Paso 2</small><span>Precios</span></span></button>
+      <button type="button" class="inv-tab" data-tab="inventario" role="tab"><span class="inv-step-dot"><b class="inv-step-n">3</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="inv-step-txt"><small class="inv-step-k">Paso 3</small><span>Inventario</span></span></button>
+      <button type="button" class="inv-tab" data-tab="fotos" role="tab"><span class="inv-step-dot"><b class="inv-step-n">4</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="inv-step-txt"><small class="inv-step-k">Paso 4</small><span>Fotos <span class="inv-tab-count" id="aFotosCount" hidden></span></span></span></button>
+      <button type="button" class="inv-tab" data-tab="venta" role="tab"><span class="inv-step-dot"><b class="inv-step-n">5</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="inv-step-txt"><small class="inv-step-k">Paso 5</small><span>Venta <span class="inv-tab-dot" id="aVentaDot" hidden></span></span></span></button>
     </div>
     <div class="admin-modal-body">
       <form class="staff-form inv-art-form" id="artForm" novalidate autocomplete="off">
         <!-- General -->
         <div class="inv-tabpane is-on" data-pane="general">
+          {{if .Optica}}
+          <!-- Clave: en armazones se arma sola (material · marca · modelo · color);
+               en lo demás (estuches, líquidos…) se escribe a mano. -->
+          <div class="staff-field inv-clave-field">
+            <span>Clave <em id="aClaveHint">(se arma sola)</em></span>
+            <div class="inv-clave-wrap">
+              <input type="text" id="aClave" maxlength="60" required placeholder="Ej. AC13" spellcheck="false">
+              <button type="button" class="inv-clave-q" id="aClaveHelpBtn" aria-expanded="false" aria-controls="aClaveHelp" title="¿Cómo se forma la clave?">?</button>
+            </div>
+            <div class="inv-clave-help" id="aClaveHelp" hidden>
+              <strong class="inv-clave-help-title">Así se forma la clave del armazón</strong>
+              <div class="inv-clave-parts" id="aClaveParts"></div>
+              <ol class="inv-clave-help-list">
+                <li><b>ARMT</b> o <b>ARZL</b>: sale del material (metal o pasta).</li>
+                <li><b>Marca</b>: sus 3 primeras letras.</li>
+                <li><b>Modelo</b>: el código del modelo del armazón.</li>
+                <li><b>Color</b>: el código del color principal (2 dígitos).</li>
+              </ol>
+              <div class="inv-clave-help-foot" id="aClaveMode"></div>
+            </div>
+          </div>
           <div class="staff-form-row">
-            <label class="staff-field">
-              <span>Clave</span>
-              <input type="text" id="aClave" maxlength="60" required placeholder="Ej. {{if .Optica}}AC13{{else}}CAM-AZ-M{{end}}" spellcheck="false">
+            <label class="staff-field" id="aMarcaField">
+              <span>Marca</span>
+              <input type="text" id="aMarca" maxlength="60" placeholder="Ej. GUESS" spellcheck="false" autocapitalize="characters">
             </label>
-            <label class="staff-field">
-              <span>Clave alterna <em>(opcional)</em></span>
-              <input type="text" id="aClaveAlt" maxlength="60" placeholder="Ej. {{if .Optica}}ARZL-GUE-2702-07{{else}}7501234567890{{end}}" spellcheck="false">
+            <label class="staff-field" id="aModeloField">
+              <span>Modelo del armazón</span>
+              <input type="text" id="aModelo" maxlength="30" placeholder="Ej. 2702" spellcheck="false" autocapitalize="characters">
             </label>
           </div>
+          {{else}}
+          <!-- Otros giros: clave y clave alterna (código de barras) a mano.
+               Los ids de la clave automática existen ocultos para el JS. -->
+          <div class="staff-form-row">
+            <div class="staff-field inv-clave-field">
+              <span>Clave <em id="aClaveHint"></em></span>
+              <div class="inv-clave-wrap">
+                <input type="text" id="aClave" maxlength="60" required placeholder="Ej. CAM-AZ-M" spellcheck="false">
+                <button type="button" class="inv-clave-q" id="aClaveHelpBtn" hidden>?</button>
+              </div>
+              <div class="inv-clave-help" id="aClaveHelp" hidden><div id="aClaveParts"></div><div id="aClaveMode"></div></div>
+            </div>
+            <label class="staff-field">
+              <span>Clave alterna <em>(opcional)</em></span>
+              <input type="text" id="aClaveAlt" maxlength="60" placeholder="Ej. 7501234567890" spellcheck="false">
+            </label>
+          </div>
+          <div hidden>
+            <label id="aMarcaField"><input type="text" id="aMarca"></label>
+            <label id="aModeloField"><input type="text" id="aModelo"></label>
+          </div>
+          {{end}}
           <label class="staff-field">
             <span>Descripción</span>
-            <input type="text" id="aDesc" maxlength="200" required placeholder="Ej. {{if .Optica}}ARMAZON GUESS PASTA ROJO{{else}}CAMISA AZUL TALLA M{{end}}">
+            <input type="text" id="aDesc" maxlength="200" required placeholder="Ej. {{if .Optica}}ARMAZÓN GUESS PASTA ROJO{{else}}CAMISA AZUL TALLA M{{end}}">
           </label>
           <div class="staff-form-row">
             <div class="staff-field">
@@ -198,6 +248,13 @@
               <div class="inv-color-sum" id="aColorSum"></div>
               <div class="inv-palette" id="aPalette" role="group" aria-label="Colores"></div>
               <div class="inv-color-new" id="aColorNew" hidden>
+                <div class="inv-seg inv-mat-ident" id="aMatIdent" role="radiogroup" aria-label="Identificador de la clave">
+                  <button type="button" data-ident="ARMT" role="radio">Metal · ARMT</button>
+                  <button type="button" data-ident="ARZL" role="radio">Pasta · ARZL</button>
+                </div>
+                {{/* Subidentificador: no va en la clave; agrupa las ventas en el reporte de Ventas. */}}
+                <input type="text" id="aMatSub" class="inv-mat-sub" maxlength="30" placeholder="Subidentificador (ej. ACETATO, TR90, TITANIO)" spellcheck="false" autocapitalize="characters">
+                <p class="inv-mat-sub-hint">El subidentificador no va en la clave: sirve para ver en el reporte de Ventas de qué se vende más.</p>
                 <input type="color" id="aColorHex" value="#888888" aria-label="Tono del color">
                 <input type="text" id="aColorName" maxlength="30" placeholder="Nombre (ej. Verde menta)">
                 <button type="button" class="inv-btn-ghost" id="aColorCancel">Cancelar</button>
@@ -256,6 +313,13 @@
             {{end}}
             <div class="staff-field">
               <span>Impuestos</span>
+          <div class="inv-promo-row">
+            <label class="staff-field">
+              <span>Promoción <em>(% de descuento; el Punto de venta lo pone solo)</em></span>
+              <span class="inv-pct"><input type="number" id="aPromo" min="0" max="100" step="1" inputmode="decimal" placeholder="0"><em>%</em></span>
+            </label>
+            <p class="inv-hint" id="aPromoHint">Sin promoción. Para darle promoción a toda una categoría o material usa <strong>Precio / promo</strong> en la barra.</p>
+          </div>
               <label class="inv-check is-inline">
                 <input type="checkbox" id="aIva" checked>
                 <span class="inv-check-box"></span>
@@ -301,7 +365,6 @@
           <input type="file" id="aFotoInput" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
           <p class="inv-hint" id="aFotosHint">Las fotos también las enseñan tu agente y Comy. Hasta 6 fotos por artículo (JPG, PNG o WEBP). También puedes <strong>arrastrarlas y soltarlas</strong> aquí. La <strong>principal</strong> es la que se muestra primero; toca la estrella para cambiarla.</p>
         </div>
-
         <!-- Venta: cómo lo ofrecen tu agente y Comy -->
         <div class="inv-tabpane" data-pane="venta">
           <label class="inv-check inv-venta-switch">
@@ -363,6 +426,62 @@
           <button type="submit" class="btn solid small" id="artSave">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: precio o promoción para un grupo ================= -->
+<div class="admin-modal-overlay" id="grpModal">
+  <div class="admin-modal-card inv-grp-card" role="dialog" aria-modal="true" aria-labelledby="grpTitle">
+    <div class="admin-modal-head">
+      <h3 id="grpTitle">Precio o promoción para un grupo</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <form class="staff-form" id="grpForm" novalidate autocomplete="off">
+        <div class="staff-field">
+          <span>¿A cuáles artículos?</span>
+          <div class="inv-seg inv-grp-seg" id="grpCampo" role="radiogroup" aria-label="Agrupar por">
+            <button type="button" data-campo="categoria" class="is-on">Una categoría</button>
+            <button type="button" data-campo="material">Un material</button>
+          </div>
+        </div>
+        <div class="staff-field">
+          <span id="grpValorLabel">Categoría</span>
+          <div id="grpValor"></div>
+          <p class="inv-hint inv-grp-count" id="grpCount"></p>
+        </div>
+        <div class="staff-field">
+          <span>¿Qué quieres hacer?</span>
+          <div class="inv-seg inv-grp-seg" id="grpAccion" role="radiogroup" aria-label="Acción">
+            <button type="button" data-accion="precio" class="is-on">Mismo precio</button>
+            <button type="button" data-accion="promo">Promoción</button>
+            <button type="button" data-accion="quitar_promo">Quitar promoción</button>
+          </div>
+        </div>
+        <label class="staff-field" id="grpPrecioField">
+          <span>Precio de venta para todos <em>(precio 1, con IVA)</em></span>
+          <span class="inv-money"><span>$</span><input type="number" id="grpPrecio" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+        </label>
+        <label class="staff-field" id="grpPromoField" hidden>
+          <span>Descuento de promoción</span>
+          <span class="inv-pct"><input type="number" id="grpPromo" min="1" max="100" step="1" inputmode="decimal" placeholder="0"><em>%</em></span>
+        </label>
+        <label class="inv-check" id="grpRecordarWrap">
+          <input type="checkbox" id="grpRecordar" checked>
+          <span class="inv-check-box"></span>
+          <span><strong>También a los que se agreguen después</strong><small id="grpRecordarTxt">Los artículos nuevos de este grupo salen con este precio.</small></span>
+        </label>
+        <p class="inv-grp-sum" id="grpSum"></p>
+        <p class="staff-error" id="grpError"></p>
+        <div class="staff-form-actions">
+          <button type="button" class="btn small" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn solid small" id="grpSave">Aplicar</button>
+        </div>
+      </form>
+      <div class="inv-grp-rules" id="grpRules"></div>
     </div>
   </div>
 </div>
@@ -486,6 +605,30 @@
     </div>
   </div>
 </div>
+
+{{if .IsOwner}}
+<!-- ================= Modal: eliminar varios artículos (solo admin) ================= -->
+<div class="admin-modal-overlay" id="artDelModal">
+  <div class="admin-modal-card inv-confirm-card" role="dialog" aria-modal="true" aria-labelledby="artDelTitle">
+    <div class="admin-modal-head">
+      <h3 id="artDelTitle">Eliminar artículos</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="inv-confirm-text" id="artDelText"></p>
+      <ul class="inv-del-list" id="artDelList"></ul>
+      <p class="inv-mv-del-warn" id="artDelWarn" hidden></p>
+      <p class="staff-error" id="artDelError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close-modal>Cancelar</button>
+        <button type="button" class="btn solid small inv-btn-danger" id="artDelOk">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
 
 <!-- ================= Modal: impresora de etiquetas ================= -->
 <div class="admin-modal-overlay" id="lblModal">
@@ -1002,7 +1145,7 @@
 
 {{else if eq .InvTab "movimientos"}}
 {{/* ===================== PESTAÑA: MOVIMIENTOS ===================== */}}
-  <main class="inv-page" id="invMovimientos" data-inv-base="{{.InvBase}}" data-can-cost="{{if .CanCost}}1{{end}}" data-optica="{{if .Optica}}1{{end}}" data-business="{{.BusinessName}}">
+  <main class="inv-page" id="invMovimientos" data-inv-base="{{.InvBase}}" data-can-cost="{{if .CanCost}}1{{end}}" data-can-delete="{{if .IsOwner}}1{{end}}" data-optica="{{if .Optica}}1{{end}}" data-business="{{.BusinessName}}">
     <div class="admin-header">
       <div>
         <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg><span>Movimientos</span></h1>
@@ -1067,6 +1210,8 @@
       <div class="inv-sel-bar">
         <p class="inv-caption" id="mvCaption">Cargando…</p>
         <div class="inv-mv-export">
+          {{if .IsOwner}}<button type="button" class="inv-btn-ghost inv-mv-del" id="mvDelSel" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg><span>Eliminar seleccionados</span></button>{{end}}
+          {{if .IsOwner}}<button type="button" class="inv-btn-ghost" id="mvBorrBtn" title="Qué movimientos se borraron, quién y cuándo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Borrados</button>{{end}}
           <button type="button" class="inv-btn-ghost" id="mvPdf" title="Reporte en PDF con los filtros de arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h2"/></svg>Reporte PDF</button>
           <button type="button" class="inv-btn-ghost" id="mvXlsx" title="Los mismos movimientos en Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13l4 5M12 13l-4 5"/></svg>Excel</button>
         </div>
@@ -1075,6 +1220,7 @@
         <table class="inv-table is-kardex">
           <thead>
             <tr>
+              {{if .IsOwner}}<th class="inv-mv-sel"><input type="checkbox" id="mvSelAll" aria-label="Seleccionar todos"></th>{{end}}
               <th>Fecha</th>
               <th>Artículo</th>
               <th>Movimiento</th>
@@ -1082,6 +1228,7 @@
               <th class="num">Existencia</th>
               <th>Usuario</th>
               <th>Comentario</th>
+              {{if .IsOwner}}<th class="inv-mv-act"><span class="sr-only">Eliminar</span></th>{{end}}
             </tr>
           </thead>
           <tbody id="mvBody"></tbody>
@@ -1095,12 +1242,69 @@
 </div><!-- /app-container -->
 
 {{end}}
+{{if .IsOwner}}
+<!-- ================= Modal: eliminar movimientos (solo el dueño) ================= -->
+<div class="admin-modal-overlay" id="mvDelModal">
+  <div class="admin-modal-card inv-confirm-card" role="dialog" aria-modal="true" aria-labelledby="mvDelTitle">
+    <div class="admin-modal-head">
+      <h3 id="mvDelTitle">Eliminar movimientos</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="inv-confirm-text" id="mvDelText"></p>
+      <p class="inv-mvdel-q">Al borrarlo, ¿qué pasa con las piezas del artículo?</p>
+      <div class="inv-mvdel-opts" role="radiogroup" aria-label="Qué pasa con la existencia">
+        <label class="inv-mvdel-opt">
+          <input type="radio" name="mvDelModo" value="revertir" checked>
+          <span class="inv-mvdel-dot"></span>
+          <span><strong>Borrar y deshacer lo que hizo</strong><small>Las piezas regresan a como estaban <b>antes</b> de ese movimiento. Úsalo si el movimiento fue un <b>error</b> (por ejemplo, diste de alta piezas que nunca llegaron).</small></span>
+        </label>
+        <label class="inv-mvdel-opt">
+          <input type="radio" name="mvDelModo" value="solo">
+          <span class="inv-mvdel-dot"></span>
+          <span><strong>Solo borrar el renglón</strong><small>Las piezas se quedan <b>como están hoy</b>; solo desaparece del historial. Úsalo si la existencia ya está bien y nada más quieres limpiar la lista.</small></span>
+        </label>
+      </div>
+      <div class="inv-mvdel-prev" id="mvDelPrev"></div>
+      <p class="inv-mv-del-warn" id="mvDelWarn" hidden></p>
+      <p class="staff-error" id="mvDelError"></p>
+      <div class="staff-form-actions">
+        <button type="button" class="btn small" data-close-modal>Cancelar</button>
+        <button type="button" class="btn solid small inv-btn-danger" id="mvDelOk">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: movimientos borrados (solo el dueño) ================= -->
+<div class="admin-modal-overlay" id="mvBorrModal">
+  <div class="admin-modal-card inv-borr-card" role="dialog" aria-modal="true" aria-labelledby="mvBorrTitle">
+    <div class="admin-modal-head">
+      <h3 id="mvBorrTitle">Movimientos borrados</h3>
+      <button type="button" class="admin-modal-close" data-close-modal aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="admin-modal-body">
+      <p class="inv-hint">Cada vez que se borran movimientos queda registrado quién lo hizo, cuándo, qué se quitó y si se deshizo la existencia. Los de ventas y pedidos no se borran: se cancelan.</p>
+      <div class="inv-borr-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="mvBorrQ" placeholder="Buscar por clave, artículo o quién lo borró…" autocomplete="off">
+      </div>
+      <div class="inv-borr-list" id="mvBorrList"></div>
+    </div>
+  </div>
+</div>
+{{end}}
+
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script src="/static/js/translations.js"></script>
 <script src="/static/js/client/sidebar.js"></script>
 <script src="/static/js/client/subnav-tabs.js?v=4"></script>
 <script src="/static/js/client/live.js?v=1"></script>
-<script src="/static/js/client/inventory.js?v=13" data-subnav-page></script>
-<script src="/static/js/client/ios27-panel.js?v=3"></script>
+<script src="/static/js/client/inventory.js?v=14" data-subnav-page></script>
+<script src="/static/js/client/ios27-panel.js?v=4"></script>
 </body>
 </html>
