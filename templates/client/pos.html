@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
     <link rel="stylesheet" href="/static/css/client/pos.css?v=2">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+    <link rel="stylesheet" href="/static/css/client/attomos-skin.css?v=1">
 </head>
 <body class="inv-body pos-body" data-biz="{{.BizJSON}}" data-optica="{{if .Optica}}1{{end}}">
     <div class="decorative-rings">
@@ -48,7 +49,7 @@
     {{template "pos-subnav" .}}
     <div class="admin-header pos-header">
       <div>
-        <h1>Punto de venta</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Punto de venta</span></h1>
         <p>Busca el producto, elige al cliente y cobra. Lo que quede a deber se abona después en «Créditos y abonos».</p>
       </div>
       <button type="button" class="btn small pos-credits-btn" id="posCreditsBtn" title="Créditos del cliente: lo que debe y sus abonos">
@@ -428,7 +429,7 @@
     {{template "pos-subnav" .}}
     <div class="admin-header">
       <div>
-        <h1>Ventas</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Ventas</span></h1>
         <p>Cada venta del punto de venta: cuánto pagó en efectivo y demás formas, cuánto quedó a crédito y cuánto debe todavía.</p>
       </div>
       <button type="button" class="btn small vt-export-btn" id="vtExportBtn">
@@ -439,12 +440,12 @@
 
     <!-- Resumen del periodo -->
     <div class="vt-stats" id="vtStats">
-      <div class="vt-stat"><small>Ventas</small><strong id="vtStVentas">0</strong></div>
-      <div class="vt-stat"><small>Total vendido</small><strong id="vtStTotal">$0.00</strong></div>
-      <div class="vt-stat is-cash"><small>Efectivo en caja</small><strong id="vtStEfectivo">$0.00</strong></div>
-      <div class="vt-stat"><small>Tarjeta · transf. · otros</small><strong id="vtStOtros">$0.00</strong></div>
-      <div class="vt-stat is-credit"><small>Quedó a crédito</small><strong id="vtStCredito">$0.00</strong></div>
-      <div class="vt-stat is-owes"><small>Todavía deben</small><strong id="vtStSaldo">$0.00</strong></div>
+      <div class="vt-stat"><span class="stat-icon cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><small>Ventas</small><strong id="vtStVentas">0</strong></div>
+      <div class="vt-stat"><span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><small>Total vendido</small><strong id="vtStTotal">$0.00</strong></div>
+      <div class="vt-stat is-cash"><span class="stat-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></span><small>Efectivo en caja</small><strong id="vtStEfectivo">$0.00</strong></div>
+      <div class="vt-stat"><span class="stat-icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><small>Tarjeta · transf. · otros</small><strong id="vtStOtros">$0.00</strong></div>
+      <div class="vt-stat is-credit"><span class="stat-icon red" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><small>Quedó a crédito</small><strong id="vtStCredito">$0.00</strong></div>
+      <div class="vt-stat is-owes"><span class="stat-icon amber" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><small>Todavía deben</small><strong id="vtStSaldo">$0.00</strong></div>
     </div>
 
     <div class="admin-panel vt-panel">
@@ -583,7 +584,7 @@
     {{template "pos-subnav" .}}
     <div class="admin-header">
       <div>
-        <h1>Corte de caja <span class="cc-caja-badge">{{.Caja}}</span></h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg><span>Corte de caja</span> <span class="cc-caja-badge">{{.Caja}}</span></h1>
         <p>Cuenta lo que tienes en caja y compáralo con lo que registró el sistema desde el último corte: ventas, abonos, gastos, retiros y demás entradas y salidas.</p>
       </div>
       {{if .EsAdmin}}
@@ -959,7 +960,7 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
     {{template "pos-subnav" .}}
     <div class="admin-header">
       <div>
-        <h1>Consultas</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg><span>Consultas</span></h1>
         <p>Busca en el inventario para ver el precio y cuántas piezas quedan.</p>
       </div>
     </div>
@@ -998,7 +999,7 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
     {{template "pos-subnav" .}}
     <div class="admin-header tkp-header">
       <div>
-        <h1>Plantillas</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v7H6z"/></svg><span>Plantillas</span></h1>
         <p>El ticket de venta que se imprime en la ticketera. Lo que cambies aquí se ve al instante en la vista previa.</p>
       </div>
       <div class="tkp-actions">
@@ -1231,7 +1232,7 @@ Sin más, nos despedimos de usted esperando poder servirle en el futuro.</textar
 <script src="/static/js/client/subnav-tabs.js?v=4"></script>
 <script src="/static/js/client/pos-ticket-render.js?v=3"></script>
 <script src="/static/js/client/live.js?v=1"></script>
-<script src="/static/js/client/pos.js?v=7" data-subnav-page></script>
+<script src="/static/js/client/pos.js?v=8" data-subnav-page></script>
 <script src="/static/js/client/ios27-panel.js?v=3"></script>
 </body>
 </html>

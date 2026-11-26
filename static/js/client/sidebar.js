@@ -53,13 +53,14 @@
 
     // Ópticas: el menú va por ROLES, cada uno con su título y sus vistas
     // (lo que antes eran pestañas ahora son ítems):
-    //   Recepción   — Citas, Punto de venta, Consultas, Ventas, Corte de caja, Plantillas
+    //   Recepción   — Citas, CRM, Punto de venta, Consultas, Ventas, Corte de caja, Plantillas
     //   Optometría  — Examen de la vista, Historial clínico, Orden de laboratorio,
     //                 Garantía / reparación, Plantilla de examen
     //   Laboratorio — Laboratorio
     //   Inventario  — Artículos, Departamentos, Ajustes, Movimientos
-    //   Gestión     — lo demás (CRM…)
-    const REC_ITEMS = ['recCitasItem', 'recPosItem', 'recConsultasItem', 'recVentasItem', 'recCorteItem', 'recPlantillasItem'];
+    //   Gestión     — lo demás
+    // CRM va en Recepción: ahí se atiende a los clientes (WhatsApp → cita/venta).
+    const REC_ITEMS = ['recCitasItem', 'crmMenuItem', 'recPosItem', 'recConsultasItem', 'recVentasItem', 'recCorteItem', 'recPlantillasItem'];
     const OPT_ITEMS = ['optExamItem', 'clientHistoryMenuItem', 'optOrdenesItem', 'optGarantiasItem', 'optPlantillaItem'];
     const INV_ITEMS = ['invArticulosItem', 'invDepItem', 'invAjustesItem', 'invMovItem'];
     function isOpticaType(bt) { bt = normalizeStr(bt); return bt.includes('optica') || bt.includes('optic'); }
@@ -74,7 +75,8 @@
         if (logItem) logItem.style.display = isOptica ? '' : 'none';
         REC_ITEMS.concat(OPT_ITEMS, INV_ITEMS).forEach((id) => {
             const el = document.getElementById(id);
-            if (el && id !== 'clientHistoryMenuItem') el.style.display = isOptica ? '' : 'none';
+            // Historial y CRM existen para otros giros: aquí solo se acomodan, no se ocultan.
+            if (el && id !== 'clientHistoryMenuItem' && id !== 'crmMenuItem') el.style.display = isOptica ? '' : 'none';
         });
         if (!isOptica || sidebar.dataset.roles === '1') return;
         sidebar.dataset.roles = '1';

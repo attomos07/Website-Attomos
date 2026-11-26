@@ -2291,6 +2291,16 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
 
   var FORMAS = ['efectivo', 'cheque', 'vales', 'tarjeta', 'transferencia'];
   var FORMA_TXT = { efectivo: 'Efectivo', cheque: 'Cheque', vales: 'Vales', tarjeta: 'Tarjeta', transferencia: 'Transferencia', credito: 'Crédito' };
+  // Íconos de los indicadores (stat-card de Attomos, ver attomos-skin.css)
+  var FORMA_ICO = {
+    efectivo: '<span class="stat-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></span>',
+    cheque: '<span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>',
+    vales: '<span class="stat-icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>',
+    tarjeta: '<span class="stat-icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>',
+    transferencia: '<span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span>',
+    credito: '<span class="stat-icon red" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>',
+    total: '<span class="stat-icon cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 7V4H6l6 8-6 8h12v-3"/></svg></span>'
+  };
   var MOV_TXT = {
     VEN: 'Venta', CAN: 'Venta cancelada', ABO: 'Abono', ABC: 'Abono cancelado', PRO: 'Propina', COR: 'Entrada por corte',
     GAS: 'Gasto', COM: 'Compra', PAC: 'Pago a crédito', NCR: 'Nota de crédito', DPR: 'Dev. de proveedor',
@@ -2412,8 +2422,8 @@ if (window.AvSelect) window.AvSelect.enhance(document.getElementById('payPropina
         $('ccNow').hidden = false;
         var c = d.calculado;
         $('ccNowStats').innerHTML = FORMAS.map(function (f) {
-          return '<div class="vt-stat' + (f === 'efectivo' ? ' is-cash' : '') + '"><small>' + FORMA_TXT[f] + '</small><strong>' + money(c[f]) + '</strong></div>';
-        }).join('') + '<div class="vt-stat is-total"><small>Total</small><strong>' + money(d.total) + '</strong></div>';
+          return '<div class="vt-stat' + (f === 'efectivo' ? ' is-cash' : '') + '">' + (FORMA_ICO[f] || '') + '<small>' + FORMA_TXT[f] + '</small><strong>' + money(c[f]) + '</strong></div>';
+        }).join('') + '<div class="vt-stat is-total">' + FORMA_ICO.total + '<small>Total</small><strong>' + money(d.total) + '</strong></div>';
       }
       return d;
     }).catch(function (err) { toast(err.message, 'error'); });

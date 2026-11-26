@@ -1,0 +1,433 @@
+/* ============================================================================
+   CAPA ATTOMOS — vistas que vienen de Avante
+   Inventario · Recepción (Punto de venta, Consultas, Ventas, Corte de caja,
+   Plantillas) · Optometría · Laboratorio · Usuarios · Bitácora.
+
+   Va al FINAL (después del CSS de la página y de ios27-panel.css). No mueve
+   nada de lugar: los contenedores y los textos quedan donde estaban. Solo
+   cambia el diseño al de Attomos:
+     1) Tokens: blanco, bordes finos grises y sombras suaves (rediseño iOS
+        de Mi Negocio / CRM) en vez del brillo cian de Avante.
+     2) Encabezado: ícono cian junto al título (como Mis Pedidos / Mis Citas).
+     3) Indicadores: stat-card de Attomos (ícono en círculo con anillos
+        punteados, número grande y etiqueta debajo) en vez de la etiqueta en
+        mayúsculas arriba del número.
+     4) Botones del encabezado: principal con contorno cian (Nuevo …) y
+        secundario con anillo gris (Exportar …), como en Mis Citas.
+     5) Filtros en cápsula: el activo en cian en vez de negro.
+   ============================================================================ */
+
+body.inv-body {
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --grey: #6e6e73;
+  --line: rgba(0, 0, 0, 0.08);
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.05), 0 24px 56px rgba(0, 0, 0, 0.14);
+  --serif: var(--sans);
+  --ats-hair-2: rgba(60, 60, 67, 0.18);
+  --ats-tint: rgba(6, 182, 212, 0.07);
+  --ats-tint-2: rgba(6, 182, 212, 0.12);
+}
+
+/* ---------------------------------------------------------------
+   1. Encabezado de la página
+   --------------------------------------------------------------- */
+.inv-page .admin-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.inv-page .admin-header h1 .header-ico {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: #06b6d4;
+  flex-shrink: 0;
+}
+
+.inv-page .admin-header p {
+  color: #6b7280;
+  font-size: 1rem;
+  letter-spacing: -0.005em;
+}
+
+/* Botones del encabezado (como "Nueva Cita" / "Exportar PDF" de Mis Citas) */
+.inv-body .inv-page .admin-header .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.inv-body .inv-page .admin-header .btn:hover:not(:disabled) {
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* Crear (Nuevo examen / Nueva orden / Nuevo usuario): contorno cian que se
+   llena al pasar el cursor, como "Nueva Cita" y "Nuevo Pedido". */
+.inv-body .inv-page .admin-header .btn.solid:is(.opt-new-btn, .eq-new-btn) {
+  color: #06b6d4;
+  border: 2px solid #06b6d4;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
+}
+
+.inv-body .inv-page .admin-header .btn.solid:is(.opt-new-btn, .eq-new-btn):hover:not(:disabled) {
+  background: #06b6d4;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+}
+
+/* Guardar (Nueva orden, Plantillas…): cian lleno, como "Guardar Cambios"
+   de Mi Negocio. */
+.inv-body .inv-page .admin-header .btn.solid:not(.opt-new-btn):not(.eq-new-btn) {
+  color: #ffffff;
+  border: 2px solid transparent;
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+}
+
+.inv-body .inv-page .admin-header .btn.solid:not(.opt-new-btn):not(.eq-new-btn):hover:not(:disabled) {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(180deg, #22c3dd, #0891b2);
+  box-shadow: 0 10px 26px rgba(6, 182, 212, 0.38);
+}
+
+.inv-body .inv-page .admin-header .btn.solid:disabled {
+  background: rgba(6, 182, 212, 0.12);
+  color: rgba(8, 145, 178, 0.5);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.inv-body .inv-page .admin-header .btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Botones de contorno en la página: anillo gris (no negro) */
+.inv-body .inv-page .btn:not(.solid):not(.danger) {
+  border-color: var(--ats-hair-2);
+}
+
+.inv-body .inv-page .btn:not(.solid):not(.danger):hover:not(:disabled) {
+  border-color: #06b6d4;
+  color: #0891b2;
+}
+
+/* ---------------------------------------------------------------
+   2. Indicadores → stat-card de Attomos
+   Ícono a la izquierda (fila completa), número y etiqueta a la derecha.
+   Las tarjetas sin ícono (las que arma el JS con contenido especial)
+   quedan en una sola columna.
+   --------------------------------------------------------------- */
+.inv-body .inv-stat,
+.inv-body .vt-stat,
+.inv-body .ev-stat,
+.inv-body .hc-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-auto-rows: auto;
+  align-items: center;
+  align-content: center;
+  column-gap: 1rem;
+  row-gap: 0.15rem;
+  padding: 1.15rem 1.25rem;
+  min-width: 0;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  animation: none;
+  transition: transform 0.55s var(--ios-spring, cubic-bezier(0.34, 1.35, 0.64, 1)), box-shadow 0.3s ease;
+}
+
+.inv-body .inv-stat:hover,
+.inv-body .vt-stat:hover,
+.inv-body .ev-stat:hover,
+.inv-body .hc-stat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Sin ícono: una sola columna */
+.inv-body .inv-stat:not(:has(> .stat-icon)),
+.inv-body .vt-stat:not(:has(> .stat-icon)),
+.inv-body .ev-stat:not(:has(> .stat-icon)),
+.inv-body .hc-stat:not(:has(> .stat-icon)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Número (fila 1), etiqueta (fila 2) y texto secundario (fila 3), siempre
+   en la última columna aunque en el HTML la etiqueta vaya primero. */
+.inv-body .inv-stat > strong,
+.inv-body .vt-stat > strong,
+.inv-body .ev-stat > .ev-stat-value,
+.inv-body .hc-stat > .hc-stat-value {
+  grid-column: -2;
+  grid-row: 1;
+  font-family: var(--sans);
+  font-size: clamp(1.1rem, 2.2vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1a1a1a;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-body .inv-stat > small,
+.inv-body .vt-stat > small,
+.inv-body .ev-stat > .ev-stat-label,
+.inv-body .hc-stat > .hc-stat-label {
+  grid-column: -2;
+  grid-row: 2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.inv-body .ev-stat > .ev-stat-sub,
+.inv-body .hc-stat > .hc-stat-sub {
+  grid-column: -2;
+  grid-row: 3;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.inv-body .ev-stat-sub:empty { display: none; }
+
+/* Estados: la tarjeta queda blanca; el color lo lleva el ícono */
+.inv-body .inv-stat.is-warn,
+.inv-body .inv-stat.is-danger,
+.inv-body .vt-stat.is-owes {
+  background: #ffffff;
+  border-color: #f0f0f0;
+}
+
+.inv-body .inv-stat.is-sale strong,
+.inv-body .inv-stat.is-warn strong,
+.inv-body .inv-stat.is-danger strong,
+.inv-body .vt-stat.is-cash strong,
+.inv-body .vt-stat.is-credit strong,
+.inv-body .vt-stat.is-owes strong,
+.inv-body .ev-stat--gar .ev-stat-value {
+  color: #1a1a1a;
+}
+
+.inv-body .inv-stat.is-warn > span:not(.stat-icon) { color: #d97706; }
+.inv-body .inv-stat.is-danger > span:not(.stat-icon) { color: #ef4444; }
+.inv-body .inv-stat > span:not(.stat-icon) { right: 1.1rem; bottom: 0.9rem; }
+
+/* inventory.css esconde todo ".inv-stat > span" (es el "Ver ›"): el ícono no */
+.inv-body .inv-stat > .stat-icon,
+.inv-body .inv-stat:hover > .stat-icon {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  opacity: 1;
+  transform: none;
+  font-size: inherit;
+}
+
+/* Optometría: sin el borde cian animado de Avante */
+.inv-body .ev-stat {
+  border: 1px solid #f0f0f0;
+  background: #ffffff;
+}
+
+/* Tarjetas anchas con contenido propio (origen / por optometrista) */
+.inv-body .ev-stat--split,
+.inv-body .ev-stat--staff {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.inv-body .ev-stat--split > .ev-stat-label,
+.inv-body .ev-stat--staff > .ev-stat-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.inv-body .ev-split strong {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #1a1a1a;
+}
+
+/* Historial clínico: el filtro activo se marca con anillo cian */
+.inv-body .hc-stat.active {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 1px #06b6d4, 0 8px 20px rgba(6, 182, 212, 0.15);
+}
+
+/* Ícono con anillos punteados (igual que Mis Pedidos / Mis Citas) */
+.inv-body .stat-icon {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.inv-body .stat-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px dashed currentColor;
+  opacity: 0.3;
+  animation: atsRotate 20s linear infinite;
+}
+
+.inv-body .stat-icon::after {
+  content: "";
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  border: 2px dashed currentColor;
+  opacity: 0.15;
+  animation: atsRotate 30s linear infinite reverse;
+}
+
+.inv-body .stat-icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  position: relative;
+  z-index: 1;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes atsRotate { to { transform: rotate(360deg); } }
+
+.inv-body .stat-icon.cyan   { background: rgba(6, 182, 212, 0.1);   color: #06b6d4; }
+.inv-body .stat-icon.blue   { background: rgba(59, 130, 246, 0.1);  color: #3b82f6; }
+.inv-body .stat-icon.green  { background: rgba(16, 185, 129, 0.1);  color: #10b981; }
+.inv-body .stat-icon.purple { background: rgba(139, 92, 246, 0.1);  color: #8b5cf6; }
+.inv-body .stat-icon.amber  { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+.inv-body .stat-icon.red    { background: rgba(239, 68, 68, 0.1);   color: #ef4444; }
+.inv-body .stat-icon.fuchsia{ background: rgba(217, 70, 239, 0.1);  color: #c026d3; }
+.inv-body .stat-icon.slate  { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+/* ---------------------------------------------------------------
+   3. Paneles: blanco con borde fino y sombra suave (iOS de Attomos)
+   --------------------------------------------------------------- */
+.inv-body .admin-panel {
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow-md);
+}
+
+.inv-body .admin-panel-head h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+}
+
+/* ---------------------------------------------------------------
+   4. Filtros en cápsula: el activo en cian (no negro)
+   --------------------------------------------------------------- */
+.inv-body .inv-chips button,
+.inv-body .vt-chips button,
+.inv-body .tkp-tab {
+  border: 1px solid var(--ats-hair-2);
+  color: #374151;
+}
+
+.inv-body .inv-chips button:hover,
+.inv-body .vt-chips button:hover,
+.inv-body .tkp-tab:hover {
+  border-color: #06b6d4;
+  color: #0891b2;
+}
+
+.inv-body .inv-chips button.is-on,
+.inv-body .vt-chips button.is-on,
+.inv-body .tkp-tab.active {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: #ffffff;
+  box-shadow: 0 6px 14px -8px rgba(6, 182, 212, 0.8);
+}
+
+.inv-body .inv-chips button.is-on b {
+  color: #ffffff;
+}
+
+/* Botones de fila que se ponían negros al pasar el cursor */
+.inv-body .today-appt:hover .today-appt-btn:not(.solid),
+.inv-body .patient-row:hover .patient-open-btn {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: #ffffff;
+}
+
+/* Selectores desplegables en cápsula */
+.inv-body .inv-page .admin-role-select-btn {
+  border-radius: 999px;
+  border-color: var(--ats-hair-2);
+}
+
+/* ---------------------------------------------------------------
+   5. Móvil (mismos cortes que Mis Citas)
+   --------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .inv-page .admin-header h1 { font-size: 1.6rem; }
+  .inv-page .admin-header h1 .header-ico { width: 1.45rem; height: 1.45rem; }
+  .inv-body .inv-stat,
+  .inv-body .vt-stat,
+  .inv-body .ev-stat,
+  .inv-body .hc-stat { padding: 0.85rem; column-gap: 0.7rem; }
+  .inv-body .stat-icon { width: 40px; height: 40px; }
+  .inv-body .stat-icon svg { width: 1.1rem; height: 1.1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-body .stat-icon::before,
+  .inv-body .stat-icon::after { animation: none; }
+}
+
+/* Bitácora: avatar de "Todos" en cian (no negro) */
+.inv-body .bit-ava.is-all { background: linear-gradient(180deg, #22c3dd, #0891b2); }

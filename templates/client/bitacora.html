@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
     <link rel="stylesheet" href="/static/css/client/bitacora.css?v=1">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+    <link rel="stylesheet" href="/static/css/client/attomos-skin.css?v=1">
 </head>
 <body class="inv-body bit-body">
     <div class="decorative-rings">
@@ -33,7 +34,7 @@
   <main class="inv-page bit-page" id="bitPage">
     <div class="admin-header bit-head">
       <div>
-        <h1 data-translate="dash_nav_bitacora">Bitácora</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><span data-translate="dash_nav_bitacora">Bitácora</span></h1>
         <p data-translate="bit_subtitle">Quién vendió, quién movió un trabajo, quién agendó o borró algo, y cuándo. Se guarda sola con cada cambio de tu equipo y tuyo.</p>
       </div>
       <button type="button" class="bit-live is-on" id="bitLive" aria-pressed="true" title="Mostrar lo nuevo sin recargar" data-translate-title="bit_live_title">
@@ -57,10 +58,10 @@
     </div>
 
     <div class="inv-stats bit-stats">
-      <div class="inv-stat"><small data-translate="bit_st_actions">Acciones</small><strong id="bitStAcc">—</strong></div>
-      <div class="inv-stat"><small data-translate="bit_st_sessions">Entradas y salidas</small><strong id="bitStSes">—</strong></div>
-      <div class="inv-stat bit-stat-bad"><small data-translate="bit_st_failed">No se pudieron</small><strong id="bitStFail">—</strong></div>
-      <div class="inv-stat"><small data-translate="bit_st_people">Personas activas</small><strong id="bitStPeople">—</strong></div>
+      <div class="inv-stat"><span class="stat-icon cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><small data-translate="bit_st_actions">Acciones</small><strong id="bitStAcc">—</strong></div>
+      <div class="inv-stat"><span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span><small data-translate="bit_st_sessions">Entradas y salidas</small><strong id="bitStSes">—</strong></div>
+      <div class="inv-stat bit-stat-bad"><span class="stat-icon red" aria-hidden="true"><svg viewBox="0 0 24 24"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><small data-translate="bit_st_failed">No se pudieron</small><strong id="bitStFail">—</strong></div>
+      <div class="inv-stat"><span class="stat-icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><small data-translate="bit_st_people">Personas activas</small><strong id="bitStPeople">—</strong></div>
     </div>
 
     <div class="bit-layout">

@@ -122,38 +122,47 @@ func (s *StaffUser) CheckPassword(pw string) bool {
 type staffRule struct {
 	prefix  string
 	getOnly bool
+	// contains: además del prefijo, la ruta debe incluir esto (p. ej. el CRM
+	// de un agente: /api/agents/:id/crm/... sin abrir el resto de /api/agents).
+	contains string
 }
 
 // Lo que cada rol puede abrir (páginas y API). Lo demás (Dashboard, Mi
 // Negocio, agentes, facturación, Usuarios…) es solo del dueño.
 var staffRoleRules = map[string][]staffRule{
 	StaffRoleRecepcion: {
-		{"/pos", false}, {"/appointments", false},
-		{"/api/pos", false}, {"/api/caja", false}, {"/api/citas", false}, {"/api/appointments", true},
+		{"/pos", false, ""}, {"/appointments", false, ""},
+		{"/api/pos", false, ""}, {"/api/caja", false, ""}, {"/api/citas", false, ""}, {"/api/appointments", true, ""},
+		// CRM (en Recepción): la página, la lista de agentes (solo lectura) y
+		// la conversación en vivo de cada agente (stream, enviar, tomar control).
+		{"/crm", true, ""}, {"/api/agents", true, ""}, {"/api/agents", false, "/crm/"},
 	},
 	StaffRoleOptometria: {
-		{"/optometria", false},
-		{"/api/optometria", false}, {"/api/appointments", true}, {"/api/citas", true},
+		{"/optometria", false, ""},
+		{"/api/optometria", false, ""}, {"/api/appointments", true, ""}, {"/api/citas", true, ""},
 	},
 	StaffRoleLaboratorio: {
-		{"/laboratorio", false},
-		{"/api/laboratorio", false},
+		{"/laboratorio", false, ""},
+		{"/api/laboratorio", false, ""},
 	},
 	StaffRoleInventario: {
-		{"/inventory", false},
-		{"/api/inventario", false},
+		{"/inventory", false, ""},
+		{"/api/inventario", false, ""},
 	},
 }
 
 // Lo que cualquier cuenta del equipo necesita (sidebar, barra de arriba,
 // tiempo real, cerrar sesión).
 var staffCommonRules = []staffRule{
-	{"/api/me", true}, {"/api/my-business", true}, {"/api/chatwoot/info", true},
-	{"/api/live", true}, {"/api/logout", false},
+	{"/api/me", true, ""}, {"/api/my-business", true, ""}, {"/api/chatwoot/info", true, ""},
+	{"/api/live", true, ""}, {"/api/logout", false, ""},
 }
 
 func ruleMatch(r staffRule, method, path string) bool {
 	if r.getOnly && method != "GET" && method != "HEAD" {
+		return false
+	}
+	if r.contains != "" && !strings.Contains(path, r.contains) {
 		return false
 	}
 	return path == r.prefix || strings.HasPrefix(path, r.prefix+"/") || strings.HasPrefix(path, r.prefix+"?")

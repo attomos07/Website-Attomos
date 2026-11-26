@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/client/inventory.css?v=7">
     <link rel="stylesheet" href="/static/css/client/equipo.css?v=1">
     <link rel="stylesheet" href="/static/css/client/ios27-panel.css?v=5">
+    <link rel="stylesheet" href="/static/css/client/attomos-skin.css?v=1">
 </head>
 <body class="inv-body eq-body">
     <div class="decorative-rings">
@@ -33,7 +34,7 @@
   <main class="inv-page eq-page" id="eqPage">
     <div class="admin-header">
       <div>
-        <h1 data-translate="staff_page_title">Usuarios</h1>
+        <h1><svg class="header-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-translate="staff_page_title">Usuarios</span></h1>
         <p data-translate="staff_page_desc">Las cuentas de tu equipo. Cada quien entra con su usuario y contraseña y solo ve lo de su rol; lo que hace queda a su nombre.</p>
       </div>
       <button type="button" class="btn solid thin eq-new-btn" id="eqNew">
@@ -43,12 +44,12 @@
     </div>
 
     <div class="inv-stats eq-stats" id="eqStats">
-      <div class="inv-stat"><small data-translate="staff_stat_total">Usuarios</small><strong id="eqStTotal">0</strong></div>
-      <div class="inv-stat"><small data-translate="staff_stat_active">Activos</small><strong id="eqStActive">0</strong></div>
-      <div class="inv-stat"><small data-translate="staff_role_recepcion">Recepción</small><strong id="eqSt_recepcion">0</strong></div>
-      <div class="inv-stat"><small data-translate="staff_role_optometria">Optometría</small><strong id="eqSt_optometria">0</strong></div>
-      <div class="inv-stat"><small data-translate="staff_role_laboratorio">Laboratorio</small><strong id="eqSt_laboratorio">0</strong></div>
-      <div class="inv-stat"><small data-translate="staff_role_inventario">Inventario</small><strong id="eqSt_inventario">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><small data-translate="staff_stat_total">Usuarios</small><strong id="eqStTotal">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span><small data-translate="staff_stat_active">Activos</small><strong id="eqStActive">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><small data-translate="staff_role_recepcion">Recepción</small><strong id="eqSt_recepcion">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span><small data-translate="staff_role_optometria">Optometría</small><strong id="eqSt_optometria">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon fuchsia" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.5L4.6 18.4A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.4-2.6L14 9.5V3"/><path d="M7.5 15h9"/></svg></span><small data-translate="staff_role_laboratorio">Laboratorio</small><strong id="eqSt_laboratorio">0</strong></div>
+      <div class="inv-stat"><span class="stat-icon amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><small data-translate="staff_role_inventario">Inventario</small><strong id="eqSt_inventario">0</strong></div>
     </div>
 
     <section class="admin-panel eq-panel">

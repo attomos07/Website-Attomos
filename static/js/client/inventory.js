@@ -3471,10 +3471,10 @@ window.InvEscaner = (function () {
     $('scnCmpSub').innerHTML = esc(s.alcance.label) + ' · ' + esc(I.fechaHora(s.inicio)) + ' a ' + esc(I.fechaHora(s.fin || I.ahoraLocal())) +
       ' · sistema <b>' + I.num(t.sis) + '</b> piezas, contadas <b>' + I.num(t.n) + '</b>';
     $('scnCmpStats').innerHTML =
-      '<button type="button" class="inv-stat" data-f="ok"><small>Coinciden</small><strong>' + I.num(t.ok) + '</strong></button>' +
-      '<button type="button" class="inv-stat is-danger" data-f="falta"><small>Faltantes</small><strong>' + I.num(t.falta) + ' <em>· −' + I.num(t.pzFalta) + ' pzs</em></strong></button>' +
-      '<button type="button" class="inv-stat is-up" data-f="sobra"><small>Sobrantes</small><strong>' + I.num(t.sobra) + ' <em>· +' + I.num(t.pzSobra) + ' pzs</em></strong></button>' +
-      '<div class="inv-stat' + (unk ? ' is-warn' : '') + '"><small>No reconocidos</small><strong>' + I.num(unk) + '</strong></div>';
+      '<button type="button" class="inv-stat" data-f="ok"><span class="stat-icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg></span><small>Coinciden</small><strong>' + I.num(t.ok) + '</strong></button>' +
+      '<button type="button" class="inv-stat is-danger" data-f="falta"><span class="stat-icon red" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><small>Faltantes</small><strong>' + I.num(t.falta) + ' <em>· −' + I.num(t.pzFalta) + ' pzs</em></strong></button>' +
+      '<button type="button" class="inv-stat is-up" data-f="sobra"><span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><small>Sobrantes</small><strong>' + I.num(t.sobra) + ' <em>· +' + I.num(t.pzSobra) + ' pzs</em></strong></button>' +
+      '<div class="inv-stat' + (unk ? ' is-warn' : '') + '"><span class="stat-icon amber" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><small>No reconocidos</small><strong>' + I.num(unk) + '</strong></div>';
     var list = rows.filter(function (r) {
       return cmpFiltro === 'todo' || (cmpFiltro === 'dif' ? r.st !== 'ok' : r.st === cmpFiltro);
     });
