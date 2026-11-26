@@ -838,6 +838,10 @@ async function createAgent() {
         businessType: d.businessType || '',
         branchId,
         social: (window.selectedSocial || d.social || '').toLowerCase(),
+        // Token del bot de Telegram (@BotFather); el servidor lo revisa.
+        telegramToken: ((window.selectedSocial || d.social || '').toLowerCase() === 'telegram')
+            ? ((document.getElementById('telegramBotToken') || {}).value || d.telegramToken || '').replace(/\s+/g, '')
+            : '',
         config: {
             tone: cfg.tone || 'formal',
             customTone: cfg.tone === 'custom' ? (cfg.customTone || '') : '',
@@ -897,6 +901,12 @@ async function createAgent() {
 
         if (typeof showNotification === 'function') {
             showNotification(t('onb_ok_created','¡Agente creado! Desplegando…'), 'success');
+            // Telegram: el bot del negocio (para abrirlo y probarlo).
+            if (data.telegramBot) {
+                setTimeout(function () {
+                    showNotification(t('onb_tg_ready', 'Tu bot de Telegram es') + ' ' + data.telegramBot + ' — t.me/' + String(data.telegramBot).replace(/^@/, ''), 'success');
+                }, 1800);
+            }
         }
         if (typeof closeOnboardingModal === 'function') closeOnboardingModal();
 

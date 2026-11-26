@@ -9,6 +9,7 @@ package src
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -357,6 +358,11 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 }
 
 func askForEmailReminder(state *UserState) string {
+	// Reintento después de que Attomos no aceptó la hora: ya se preguntó el
+	// correo, se guarda directo.
+	if state.Data["_retry"] == "1" {
+		return saveAppointment(state, state.Data["userID"])
+	}
 	state.IsAskingForEmail = true
 	state.Data["email_step"] = "asking"
 
@@ -467,28 +473,9 @@ func saveAppointment(state *UserState, userID string) string {
 		"email":       state.Data["email"],
 	}
 
-	// Google Sheets
-	sheetsErr := SaveAppointmentToSheets(
-		appointmentData["nombre"],
-		appointmentData["telefono"],
-		appointmentData["fechaExacta"],
-		appointmentData["hora"],
-		appointmentData["servicio"],
-		appointmentData["barbero"],
-	)
-	if sheetsErr != nil {
-		log.Printf("❌ Sheets: %v", sheetsErr)
-	}
-
-	// Google Calendar
-	calendarEvent, calendarErr := CreateCalendarEvent(appointmentData)
-	if calendarErr != nil {
-		log.Printf("❌ Calendar: %v", calendarErr)
-	} else if calendarEvent != nil {
-		log.Printf("✅ Calendar event: %s", calendarEvent.HtmlLink)
-	}
-
-	// Backend Attomos
+	// Backend Attomos PRIMERO: revisa horario, festivos, hora ocupada y
+	// que no haya pasado. Si no la acepta, se ofrecen otras horas y no se
+	// guarda en Sheets/Calendar.
 	backendPayload := BotAppointmentPayload{
 		ClientName: appointmentData["nombre"],
 		Phone:      appointmentData["telefono"],
@@ -509,9 +496,36 @@ func saveAppointment(state *UserState, userID string) string {
 	}
 	var appointmentID uint
 	if id, backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
+		var rej *BookingRejected
+		if errors.As(backendErr, &rej) {
+			log.Printf("⚠️  Backend rechazó la cita: %v", rej)
+			return handleBookingRejection(state, rej, backendPayload.Date)
+		}
 		log.Printf("⚠️  Backend: %v", backendErr)
 	} else {
 		appointmentID = id
+	}
+	delete(state.Data, "_retry")
+
+	// Google Sheets
+	sheetsErr := SaveAppointmentToSheets(
+		appointmentData["nombre"],
+		appointmentData["telefono"],
+		appointmentData["fechaExacta"],
+		appointmentData["hora"],
+		appointmentData["servicio"],
+		appointmentData["barbero"],
+	)
+	if sheetsErr != nil {
+		log.Printf("❌ Sheets: %v", sheetsErr)
+	}
+
+	// Google Calendar
+	calendarEvent, calendarErr := CreateCalendarEvent(appointmentData)
+	if calendarErr != nil {
+		log.Printf("❌ Calendar: %v", calendarErr)
+	} else if calendarEvent != nil {
+		log.Printf("✅ Calendar event: %s", calendarEvent.HtmlLink)
 	}
 
 	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada)

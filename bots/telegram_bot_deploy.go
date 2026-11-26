@@ -73,10 +73,28 @@ func (s *TelegramBotDeployService) GetSSHClient() *ssh.Client {
 	return s.sshClient
 }
 
-// botDir retorna el directorio del bot de Telegram para este usuario.
-// Se separa del atomic-whatsapp-web usando un subdirectorio propio.
-func (s *TelegramBotDeployService) botDir(userID uint) string {
-	return fmt.Sprintf("/home/user_%d/atomic-telegram", userID)
+// botDir: carpeta del bot de Telegram de ESTE agente. Antes era una por
+// usuario (/home/user_N/atomic-telegram), así que un negocio con dos bots
+// de Telegram (dos sucursales) se pisaba el .env y el business_config.
+// Los despliegues nuevos van en /home/user_N/atomic-telegram-<agente>; los
+// viejos siguen en la carpeta por usuario hasta que se vuelvan a desplegar.
+func (s *TelegramBotDeployService) botDir(agentID, userID uint) string {
+	dir := fmt.Sprintf("/home/user_%d/atomic-telegram-%d", userID, agentID)
+	if s.sshClient == nil {
+		return dir
+	}
+	if out, err := s.executeCommand(fmt.Sprintf("test -d %s && echo yes || echo no", dir)); err == nil && strings.TrimSpace(out) == "no" {
+		legacy := fmt.Sprintf("/home/user_%d/atomic-telegram", userID)
+		if out2, err2 := s.executeCommand(fmt.Sprintf("test -f %s/.env && grep -q '^AGENT_ID=%d$' %s/.env && echo yes || echo no", legacy, agentID, legacy)); err2 == nil && strings.TrimSpace(out2) == "yes" {
+			return legacy
+		}
+	}
+	return dir
+}
+
+// newBotDir: carpeta para un despliegue nuevo (siempre por agente).
+func (s *TelegramBotDeployService) newBotDir(agentID, userID uint) string {
+	return fmt.Sprintf("/home/user_%d/atomic-telegram-%d", userID, agentID)
 }
 
 // DeployTelegramBot es el punto de entrada principal.
@@ -84,7 +102,7 @@ func (s *TelegramBotDeployService) botDir(userID uint) string {
 func (s *TelegramBotDeployService) DeployTelegramBot(agent *models.Agent, branch *models.MyBusinessInfo, geminiAPIKey string, googleCredentials []byte) error {
 	log.Printf("🚀 [Agent %d] Iniciando despliegue de TelegramBot...", agent.ID)
 
-	dir := s.botDir(agent.UserID)
+	dir := s.newBotDir(agent.ID, agent.UserID)
 
 	// PASO 1: Preparar servidor (Go, GCC, nginx — idempotente)
 	log.Printf("📦 [Agent %d] PASO 1/6: Preparando servidor...", agent.ID)
@@ -483,7 +501,7 @@ func (s *TelegramBotDeployService) UpdateBusinessConfig(agent *models.Agent, bra
 		return fmt.Errorf("error serializando business_config: %w", err)
 	}
 
-	dir := s.botDir(agent.UserID)
+	dir := s.botDir(agent.ID, agent.UserID)
 	configPath := fmt.Sprintf("%s/business_config.json", dir)
 
 	configFile, err := s.sftpClient.Create(configPath)
@@ -503,7 +521,7 @@ func (s *TelegramBotDeployService) UpdateBusinessConfig(agent *models.Agent, bra
 
 // UpdateGeminiAPIKey actualiza la Gemini API key en el .env y reinicia
 func (s *TelegramBotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKey string) error {
-	dir := s.botDir(agent.UserID)
+	dir := s.botDir(agent.ID, agent.UserID)
 	return s.updateEnvVar(agent, dir, "GEMINI_API_KEY", apiKey)
 }
 
@@ -511,7 +529,7 @@ func (s *TelegramBotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKe
 func (s *TelegramBotDeployService) UpdatePaymentConfig(agent *models.Agent) error {
 	log.Printf("🔄 [Agent %d] Actualizando variables de pago (Telegram)...", agent.ID)
 
-	dir := s.botDir(agent.UserID)
+	dir := s.botDir(agent.ID, agent.UserID)
 	envPath := fmt.Sprintf("%s/.env", dir)
 
 	envFile, err := s.sftpClient.Open(envPath)
@@ -624,7 +642,7 @@ func (s *TelegramBotDeployService) DiagnoseBotFailure(agentID uint, userID uint)
 	d.WriteString("🔍 DIAGNÓSTICO TELEGRAM BOT\n")
 	d.WriteString("═══════════════════════════════════\n\n")
 
-	dir := s.botDir(userID)
+	dir := s.botDir(agentID, userID)
 
 	commands := []struct {
 		label string

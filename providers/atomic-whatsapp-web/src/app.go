@@ -3,6 +3,7 @@ package src
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -776,6 +777,11 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 
 // askForEmailReminder pregunta al cliente si desea un recordatorio por email
 func askForEmailReminder(state *UserState) string {
+	// Reintento después de que Attomos no aceptó la hora: ya se preguntó el
+	// correo, se guarda directo.
+	if state.Data["_retry"] == "1" {
+		return saveAppointment(state, state.Data["userID"])
+	}
 	state.IsAskingForEmail = true
 	state.Data["email_step"] = "asking"
 
@@ -932,6 +938,40 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("")
 
+	// Backend Attomos PRIMERO: revisa horario, festivos, hora ocupada y
+	// que no haya pasado. Si no la acepta, se ofrecen otras horas y no se
+	// guarda en Sheets/Calendar.
+	log.Println("📤 PASO 0: Guardando cita en backend de Attomos...")
+	backendPayload := BotAppointmentPayload{
+		ClientName: appointmentData["nombre"],
+		Phone:      appointmentData["telefono"],
+		Service:    appointmentData["servicio"],
+		Worker:     appointmentData["barbero"],
+		Date:       appointmentData["fechaExacta"],
+		Time:       appointmentData["hora"],
+		Notes:      appointmentData["email"],
+	}
+	if len(backendPayload.Date) == 10 {
+		parts := strings.Split(backendPayload.Date, "/")
+		if len(parts) == 3 {
+			backendPayload.Date = parts[2] + "-" + parts[1] + "-" + parts[0]
+		}
+	}
+	if h, m, err := ConvertirHoraA24h(backendPayload.Time); err == nil {
+		backendPayload.Time = fmt.Sprintf("%02d:%02d", h, m)
+	}
+	if backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
+		var rej *BookingRejected
+		if errors.As(backendErr, &rej) {
+			log.Printf("⚠️  [Backend] Rechazó la cita: %v", rej)
+			return handleBookingRejection(state, rej, backendPayload.Date)
+		}
+		log.Printf("⚠️  [Backend] No se pudo guardar cita en Attomos: %v", backendErr)
+	} else {
+		log.Println("✅ [Backend] Cita guardada correctamente en panel de Attomos")
+	}
+	delete(state.Data, "_retry")
+
 	log.Println("📊 PASO 1/2: Guardando en Google Sheets...")
 	sheetsErr := SaveAppointmentToSheets(
 		appointmentData["nombre"],
@@ -976,32 +1016,6 @@ func saveAppointment(state *UserState, userID string) string {
 		log.Println("🎉 CITA GUARDADA EXITOSAMENTE EN AMBOS SERVICIOS")
 	}
 	log.Println("")
-
-	log.Println("📤 PASO 3/3: Guardando cita en backend de Attomos...")
-	backendPayload := BotAppointmentPayload{
-		ClientName: appointmentData["nombre"],
-		Phone:      appointmentData["telefono"],
-		Service:    appointmentData["servicio"],
-		Worker:     appointmentData["barbero"],
-		Date:       appointmentData["fechaExacta"],
-		Time:       appointmentData["hora"],
-		Notes:      appointmentData["email"],
-	}
-	if len(backendPayload.Date) == 10 {
-		parts := strings.Split(backendPayload.Date, "/")
-		if len(parts) == 3 {
-			backendPayload.Date = parts[2] + "-" + parts[1] + "-" + parts[0]
-		}
-	}
-	if h, m, err := ConvertirHoraA24h(backendPayload.Time); err == nil {
-		backendPayload.Time = fmt.Sprintf("%02d:%02d", h, m)
-	}
-
-	if backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
-		log.Printf("⚠️  [Backend] No se pudo guardar cita en Attomos: %v", backendErr)
-	} else {
-		log.Println("✅ [Backend] Cita guardada correctamente en panel de Attomos")
-	}
 
 	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada)
 

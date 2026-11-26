@@ -1,6 +1,7 @@
 package src
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -436,6 +437,39 @@ func saveAppointment(state *UserState, phoneNumber, senderName string) string {
 
 	log.Printf("   📅 Fecha exacta: %s (%s)", fechaExacta, diaSemana)
 	log.Printf("   ⏰ Hora normalizada: %s", horaNormalizada)
+
+	// Backend Attomos PRIMERO (antes este bot no la mandaba y la cita no
+	// salía en Mis citas). El servidor revisa horario, festivos, hora
+	// ocupada y que no haya pasado; si no la acepta, se ofrecen otras horas
+	// y no se guarda en Sheets/Calendar.
+	backendPayload := BotAppointmentPayload{
+		ClientName: state.Data["nombre"],
+		Phone:      state.Data["telefono"],
+		Service:    state.Data["servicio"],
+		Worker:     state.Data["barbero"],
+		Date:       fechaExacta,
+		Time:       horaNormalizada,
+		Notes:      state.Data["email"],
+	}
+	if len(backendPayload.Date) == 10 {
+		if parts := strings.Split(backendPayload.Date, "/"); len(parts) == 3 {
+			backendPayload.Date = parts[2] + "-" + parts[1] + "-" + parts[0]
+		}
+	}
+	if h, m, err := ConvertirHoraA24h(backendPayload.Time); err == nil {
+		backendPayload.Time = fmt.Sprintf("%02d:%02d", h, m)
+	}
+	if backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
+		var rej *BookingRejected
+		if errors.As(backendErr, &rej) {
+			log.Printf("⚠️  [Backend] Rechazó la cita: %v", rej)
+			return handleBookingRejection(state, rej, backendPayload.Date)
+		}
+		log.Printf("⚠️  [Backend] No se pudo guardar cita en Attomos: %v", backendErr)
+	} else {
+		log.Println("✅ [Backend] Cita guardada en el panel de Attomos")
+	}
+	delete(state.Data, "_retry")
 
 	// Guardar en Google Sheets
 	if IsSheetsEnabled() {

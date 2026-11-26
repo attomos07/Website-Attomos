@@ -307,11 +307,14 @@ func CreateBotAppointment(c *gin.Context) {
 		return
 	}
 
-	// Obtener userID desde el agente si no viene en el body
-	if req.UserID == 0 && req.AgentID > 0 {
-		var agent models.Agent
-		if err := config.DB.First(&agent, req.AgentID).Error; err == nil {
-			req.UserID = agent.UserID
+	// El negocio sale del agente (si viene); el userId del body solo se usa
+	// si no hay agente.
+	var agent *models.Agent
+	if req.AgentID > 0 {
+		var ag models.Agent
+		if err := config.DB.First(&ag, req.AgentID).Error; err == nil {
+			agent = &ag
+			req.UserID = ag.UserID
 		}
 	}
 
@@ -320,10 +323,30 @@ func CreateBotAppointment(c *gin.Context) {
 		return
 	}
 
-	dateTimeStr := fmt.Sprintf("%s %s:00", req.Date, req.Time)
-	parsedDate, err := time.ParseInLocation("2006-01-02 15:04:05", dateTimeStr, time.Local)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de fecha/hora inválido"})
+	// Reglas del servidor: horario de ese día, festivos, que no haya pasado
+	// (hora del negocio) y que la hora no esté llena. Ver
+	// appointment_bot_rules.go.
+	parsedDate, cerr := botCheckCita(req.UserID, agent, req.Date, req.Time)
+	if cerr != nil {
+		log.Printf("⚠️  [BotAppointment] rechazada (%s) user=%d %s %s: %s", cerr.Code, req.UserID, req.Date, req.Time, cerr.Msg)
+		sug := cerr.Suggestions
+		if sug == nil {
+			sug = []string{}
+		}
+		c.JSON(cerr.Status, gin.H{
+			"success":     false,
+			"code":        cerr.Code,
+			"error":       cerr.Msg,
+			"date":        cerr.Date,
+			"suggestions": sug,
+		})
+		return
+	}
+
+	// El bot a veces reintenta: si ese celular ya tiene cita a esa hora, no
+	// se duplica.
+	if prev := botExistingCita(req.UserID, req.Phone, parsedDate); prev != nil {
+		c.JSON(http.StatusOK, gin.H{"success": true, "id": prev.ID, "duplicate": true, "message": "La cita ya estaba guardada"})
 		return
 	}
 

@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -22,21 +20,22 @@ import (
 )
 
 type CreateAgentRequest struct {
-	Name         string             `json:"name"`
-	PhoneNumber  string             `json:"phoneNumber"`
-	BusinessType string             `json:"businessType"`
-	MetaDocument string             `json:"metaDocument"`
-	BranchID     uint               `json:"branchId"`
-	Social       string             `json:"social"` // "whatsapp" | "telegram" | "meta" | ...
-	Config       models.AgentConfig `json:"config"`
+	Name         string `json:"name"`
+	PhoneNumber  string `json:"phoneNumber"`
+	BusinessType string `json:"businessType"`
+	MetaDocument string `json:"metaDocument"`
+	BranchID     uint   `json:"branchId"`
+	Social       string `json:"social"` // "whatsapp" | "telegram" | "meta" | ...
+	// Token del bot de Telegram (de @BotFather). Solo con social=telegram;
+	// se guarda en Agent.PhoneNumber, que es de donde lo lee el deploy.
+	TelegramToken string             `json:"telegramToken"`
+	Config        models.AgentConfig `json:"config"`
 }
 
 // CreateAgent crea un nuevo agente
 func CreateAgent(c *gin.Context) {
-	bodyBytes, _ := ioutil.ReadAll(c.Request.Body)
-	log.Printf("🔍 [DEBUG] Payload completo recibido:\n%s", string(bodyBytes))
-	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
+	// (Ya no se escribe el payload completo en los logs: trae el token de
+	// Telegram y documentos en base64.)
 	var req CreateAgentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("❌ Error al parsear JSON: %v", err)
@@ -52,8 +51,12 @@ func CreateAgent(c *gin.Context) {
 		return
 	}
 
+	logPhone := req.PhoneNumber
+	if strings.EqualFold(req.Social, "telegram") {
+		logPhone = "(telegram)"
+	}
 	log.Printf("📋 [CreateAgent] Name=%s Phone=%s BusinessType=%s Social=%s",
-		req.Name, req.PhoneNumber, req.BusinessType, req.Social)
+		req.Name, logPhone, req.BusinessType, req.Social)
 
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -117,20 +120,24 @@ func CreateAgent(c *gin.Context) {
 		}
 	}
 
-	// ── Para Telegram: si no viene phoneNumber, tomar el de la sucursal ──────
-	// El campo phoneNumber se reutiliza para el TELEGRAM_BOT_TOKEN.
-	// Si el usuario no lo llenó en el onboarding, usamos el teléfono de la
-	// sucursal como fallback para que el .env no quede vacío.
-	if botType == "telegram" && req.PhoneNumber == "" && req.BranchID > 0 {
-		var branch models.MyBusinessInfo
-		if err := config.DB.First(&branch, req.BranchID).Error; err == nil && branch.PhoneNumber != "" {
-			req.PhoneNumber = branch.PhoneNumber
-			log.Printf("📋 [User %d] Telegram sin token — usando teléfono de sucursal: %s", user.ID, req.PhoneNumber)
-		} else if user.PhoneNumber != "" {
-			// Fallback al teléfono del usuario registrado
-			req.PhoneNumber = user.PhoneNumber
-			log.Printf("📋 [User %d] Telegram sin token — usando teléfono del usuario: %s", user.ID, req.PhoneNumber)
+	// ── Telegram: cada negocio conecta SU bot (token de @BotFather) ─────────
+	// Antes, sin token se ponía el teléfono de la sucursal en su lugar y el
+	// bot nunca arrancaba. Ahora el token es obligatorio y se revisa con
+	// Telegram antes de crear el agente.
+	var telegramUsername string
+	if botType == "telegram" {
+		token := strings.TrimSpace(req.TelegramToken)
+		if token == "" && isTelegramToken(req.PhoneNumber) {
+			token = strings.TrimSpace(req.PhoneNumber) // clientes viejos que lo mandaban en phoneNumber
 		}
+		username, msg := checkTelegramToken(token, 0)
+		if msg != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg, "field": "telegramToken"})
+			return
+		}
+		req.PhoneNumber = token
+		telegramUsername = username
+		log.Printf("📋 [User %d] Telegram: bot %s (token %s)", user.ID, username, maskTelegramToken(token))
 	}
 
 	if req.BusinessType == "" {
@@ -200,10 +207,16 @@ func CreateAgent(c *gin.Context) {
 	}
 
 	// Respuesta inmediata — el deploy ocurre de forma asíncrona
+	// (Copia para la respuesta: el token de Telegram va enmascarado y el
+	// deploy de abajo sigue usando el agente original.)
+	pub := agent
+	pub.PhoneNumber = agentPublicPhone(&agent)
 	c.JSON(http.StatusAccepted, gin.H{
-		"message": "Agente en proceso de creación",
-		"agent":   agent,
-		"status":  "pending",
+		"message":         "Agente en proceso de creación",
+		"agent":           pub,
+		"status":          "pending",
+		"telegramBot":     telegramUsername,
+		"telegramBotLink": telegramBotLink(telegramUsername),
 	})
 
 	// ── PROCESO ASÍNCRONO DE DEPLOY ──────────────────────────────────────────
@@ -457,7 +470,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("🎉 [Agent %d] TELEGRAM BOT DESPLEGADO EXITOSAMENTE", agent.ID)
 			log.Printf("   - Servidor Compartido: %s", globalServer.IPAddress)
 			log.Printf("   - Puerto: %d", agent.Port)
-			log.Printf("   - Token: %s", agent.PhoneNumber)
+			log.Printf("   - Token: %s", maskTelegramToken(agent.PhoneNumber))
 
 		} else {
 			// ────────────────────────────────────────────────────────────────
@@ -644,7 +657,7 @@ func GetAgents(c *gin.Context) {
 		agentData := gin.H{
 			"id":            agent.ID,
 			"name":          agent.Name,
-			"phoneNumber":   agent.PhoneNumber,
+			"phoneNumber":   agentPublicPhone(&agent),
 			"businessType":  agent.BusinessType,
 			"branchId":      agent.BranchID,
 			"port":          agent.Port,
@@ -684,6 +697,7 @@ func GetAgent(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
 		return
 	}
+	agent.PhoneNumber = agentPublicPhone(&agent)
 	c.JSON(http.StatusOK, gin.H{"agent": agent})
 }
 
@@ -721,7 +735,20 @@ func UpdateAgent(c *gin.Context) {
 	// El teléfono sí se sobreescribe siempre (incluso si viene vacío), para
 	// permitir quitar un número personalizado y volver a "usar el registrado"
 	// — mismo criterio que CreateAgent.
-	agent.PhoneNumber = req.PhoneNumber
+	// Telegram: PhoneNumber es el token del bot. El formulario de edición
+	// manda el teléfono (vacío) o el token enmascarado, así que solo se
+	// cambia si viene un token nuevo válido.
+	if agent.IsTelegramBot() {
+		if nt := strings.TrimSpace(req.PhoneNumber); isTelegramToken(nt) && nt != agent.PhoneNumber {
+			if _, msg := checkTelegramToken(nt, agent.ID); msg != "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": msg, "field": "telegramToken"})
+				return
+			}
+			agent.PhoneNumber = nt
+		}
+	} else {
+		agent.PhoneNumber = req.PhoneNumber
+	}
 
 	// El config se guarda completo siempre que venga en el body — antes solo
 	// se guardaba si cambiaba el mensaje de bienvenida o los servicios, lo
@@ -755,6 +782,7 @@ func UpdateAgent(c *gin.Context) {
 
 	log.Printf("✅ [Agent %s] Actualizado por user %d", agentID, user.ID)
 
+	agent.PhoneNumber = agentPublicPhone(&agent)
 	c.JSON(http.StatusOK, gin.H{"message": "Agente actualizado exitosamente", "agent": agent})
 }
 
@@ -782,6 +810,7 @@ func ToggleAgentStatus(c *gin.Context) {
 	if agent.IsActive {
 		status = "activado"
 	}
+	agent.PhoneNumber = agentPublicPhone(&agent)
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Agente %s exitosamente", status), "agent": agent})
 }
 

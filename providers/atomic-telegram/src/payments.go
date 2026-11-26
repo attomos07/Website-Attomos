@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 // PaymentConfig configuración de pagos leída desde la API de Attomos
@@ -497,7 +498,7 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) (uint, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+botToken)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("error llamando API: %w", err)
@@ -506,7 +507,7 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) (uint, error) {
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+		return 0, parseBookingResponse(resp.StatusCode, respBody)
 	}
 
 	var result struct {

@@ -383,12 +383,45 @@ async function reinitializeOnboardingEvents() {
 
     // ── Habilitar Continuar al seleccionar red social (SINCRÓNICO, antes de cualquier await) ──
     (function setupSocialSelectionEarly() {
+        // Telegram: cada negocio conecta SU bot. Al elegir Telegram se
+        // muestra el campo del token (@BotFather) y "Continuar" se habilita
+        // hasta que tenga el formato correcto (el servidor lo revisa con
+        // Telegram al crear el agente).
+        var TG_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,}$/;
+        function _tgTokenOk() {
+            var inp = document.getElementById('telegramBotToken');
+            return !!inp && TG_RE.test(inp.value.trim());
+        }
+        function _syncStep1Btn() {
+            var btn = document.getElementById('btnStep1');
+            if (!btn || !window.selectedSocial) return;
+            var ok = window.selectedSocial !== 'telegram' || _tgTokenOk();
+            btn.disabled = !ok;
+            if (ok) btn.removeAttribute('disabled');
+        }
         function _enableContinuarEarly(value) {
             try { window.selectedSocial = value; } catch(e) {}
             try { window.agentData = window.agentData || {}; window.agentData.social = value; } catch(e) {}
-            var btn = document.getElementById('btnStep1');
-            if (btn) { btn.disabled = false; btn.removeAttribute('disabled'); }
+            var tg = document.getElementById('telegramTokenSection');
+            if (tg) {
+                tg.style.display = value === 'telegram' ? '' : 'none';
+                if (value === 'telegram') setTimeout(function () { var i = document.getElementById('telegramBotToken'); if (i) i.focus(); }, 60);
+            }
+            _syncStep1Btn();
         }
+        (function () {
+            var inp = document.getElementById('telegramBotToken');
+            if (!inp || inp._tgBound) return;
+            inp._tgBound = true;
+            inp.addEventListener('input', function () {
+                // Pegado con espacios o saltos de línea: se limpian.
+                var clean = inp.value.replace(/\s+/g, '');
+                if (clean !== inp.value) inp.value = clean;
+                try { window.agentData = window.agentData || {}; window.agentData.telegramToken = clean; } catch(e) {}
+                inp.style.borderColor = clean && !TG_RE.test(clean) ? '#ef4444' : '';
+                _syncStep1Btn();
+            });
+        })();
         document.querySelectorAll('input[name="social"]').forEach(function(radio) {
             radio.addEventListener('change', function() { _enableContinuarEarly(this.value); });
         });

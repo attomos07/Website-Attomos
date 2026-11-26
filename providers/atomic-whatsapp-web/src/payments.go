@@ -353,7 +353,7 @@ func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
 
 	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+		return parseBookingResponse(resp.StatusCode, respBody)
 	}
 
 	log.Printf("✅ [Backend] Cita guardada en BD: %s", string(respBody))
