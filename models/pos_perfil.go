@@ -92,6 +92,7 @@ func findPosClientFor(userID uint, nombre, celular string) int64 {
 			return id
 		}
 	}
+	_ = rows.Err() // si falló a medias, simplemente no se encontró
 	return 0
 }
 
@@ -205,6 +206,9 @@ func GetPosPerfil(userID uint, clientID int64, optica bool) (*PosPerfil, error) 
 		p.Ventas = append(p.Ventas, v)
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	p.TotalCompras = round2(p.TotalCompras)
 
 	// Exámenes de la vista: el paciente del Historial clínico ligado a

@@ -151,6 +151,9 @@ func sameNameClients(userID uint, phone, old string) []nameSyncClient {
 			out = append(out, x)
 		}
 	}
+	if rows.Err() != nil {
+		return nil
+	}
 	return out
 }
 

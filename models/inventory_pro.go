@@ -115,6 +115,9 @@ func fillInvColorCodes(userID uint) {
 		}
 	}
 	rows.Close()
+	if rows.Err() != nil {
+		return
+	}
 	for _, id := range ids {
 		code := nextInvColorCode(userID)
 		if code == "" {
@@ -182,6 +185,9 @@ func fillInvMaterialIdents(userID uint) {
 		}
 	}
 	rows.Close()
+	if rows.Err() != nil {
+		return
+	}
 	for _, x := range list {
 		_, _ = db.Exec(`UPDATE inv_materiales SET identificador = ? WHERE id = ? AND user_id = ?`, InvMaterialIdentGuess(x.nombre), x.id, userID)
 	}
@@ -626,6 +632,9 @@ func ListInvMovDeleted(userID uint, q string, limit int) ([]InvMovDeletedBatch, 
 		out = append(out, l)
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	if len(out) == 0 {
 		return out, nil
 	}
