@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -139,6 +140,7 @@ func MetaDiagnostico(c *gin.Context) {
 	}
 	fix := c.Query("arreglar") == "1"
 	var checks []metaCheck
+	servidor := "" // salida del servidor del bot (solo si no responde)
 
 	// 1. Credenciales
 	if agent.MetaAccessToken == "" || agent.MetaPhoneNumberID == "" || agent.MetaWABAID == "" {
@@ -201,7 +203,20 @@ func MetaDiagnostico(c *gin.Context) {
 	} else {
 		resp, err := (&http.Client{Timeout: 6 * time.Second}).Get(fmt.Sprintf("http://%s:%d/health", agent.ServerIP, agent.Port))
 		if err != nil {
-			checks = append(checks, metaCheck{Paso: "4. Bot", OK: false, Detalle: "El bot no responde: " + err.Error(), Arreglo: "Haz Redeploy y revisa sus logs."})
+			checks = append(checks, metaCheck{Paso: "4. Bot", OK: false, Detalle: "El bot no responde desde Attomos: " + err.Error(), Arreglo: "Mira \"servidor\" abajo: si el servicio no está activo, el log dice por qué; si está activo y responde en localhost, el puerto está bloqueado por el firewall."})
+			// Qué pasa dentro del servidor (por SSH).
+			if agent.ServerPassword != "" {
+				script := fmt.Sprintf(`echo "== servicio: $(systemctl is-active orbital-bot-%[1]d)"
+echo "== escuchando en :%[2]d:"; ss -ltnp 2>/dev/null | grep ':%[2]d ' || echo "(nadie)"
+echo "== health local: $(curl -s -m 3 -o /dev/null -w '%%{http_code}' http://127.0.0.1:%[2]d/health || echo falla)"
+echo "== firewall:"; (ufw status 2>/dev/null | head -8) || echo "(sin ufw)"
+echo "== últimas líneas del log:"; tail -n 40 /var/log/orbital-bot-%[1]d.log 2>/dev/null || journalctl -u orbital-bot-%[1]d -n 40 --no-pager`, agent.ID, agent.Port)
+				if out, err := executeSSHCommand(agent.ServerIP, agent.ServerPassword, script); err == nil {
+					servidor = out
+				} else {
+					servidor = "No se pudo entrar por SSH: " + err.Error()
+				}
+			}
 		} else {
 			resp.Body.Close()
 			checks = append(checks, metaCheck{Paso: "4. Bot", OK: resp.StatusCode == http.StatusOK, Detalle: fmt.Sprintf("El bot responde (%d).", resp.StatusCode)})
@@ -214,7 +229,11 @@ func MetaDiagnostico(c *gin.Context) {
 			todo = false
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"agente": agent.ID, "todoBien": todo, "revisiones": checks})
+	out := gin.H{"agente": agent.ID, "todoBien": todo, "revisiones": checks}
+	if servidor != "" {
+		out["servidor"] = strings.Split(strings.TrimSpace(servidor), "\n")
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // metaAutoSubscribe: al guardar credenciales, suscribe la WABA a la app.

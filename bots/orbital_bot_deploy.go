@@ -622,13 +622,16 @@ func (s *OrbitalBotDeployService) startBot(agentID uint) error {
 		return fmt.Errorf("error iniciando servicio: %w", err)
 	}
 
-	// Esperar un momento para que inicie
-	time.Sleep(3 * time.Second)
-
-	// Verificar estado
-	statusOutput, err := s.executeCommand(fmt.Sprintf("systemctl is-active %s", serviceName))
-	if err != nil || !strings.Contains(statusOutput, "active") {
-		return fmt.Errorf("servicio no está activo: %s", statusOutput)
+	// Verificar estado dos veces: un bot que truena al arrancar queda en
+	// "activating" (reinicio automático) o "failed". Antes se buscaba la
+	// palabra "active" y "inactive"/"activating" también pasaban, así que el
+	// redeploy decía "completado" aunque el bot no estuviera corriendo.
+	for _, wait := range []time.Duration{3 * time.Second, 6 * time.Second} {
+		time.Sleep(wait)
+		statusOutput, err := s.executeCommand(fmt.Sprintf("systemctl is-active %s", serviceName))
+		if err != nil || strings.TrimSpace(statusOutput) != "active" {
+			return fmt.Errorf("servicio no está activo: %s", strings.TrimSpace(statusOutput))
+		}
 	}
 
 	log.Printf("   ✅ Bot iniciado correctamente")
