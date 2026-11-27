@@ -810,7 +810,7 @@ body {
   transition: transform 0.55s var(--io-spring), width 0.55s var(--io-spring), height 0.3s ease, opacity 0.2s ease;
 }
 
-.ios-seg > button {
+.ios-seg > :is(button, a) {
   position: relative;
   z-index: 1;
   flex: none;
@@ -829,11 +829,11 @@ body {
   transition: color 0.25s ease, background 0.2s ease, transform 0.4s var(--io-spring);
 }
 
-.ios-seg > button i {
+.ios-seg > :is(button, a) i {
   font-size: 16px;
 }
 
-.ios-seg > button:hover {
+.ios-seg > :is(button, a):hover {
   border-color: transparent;
   box-shadow: none;
   transform: none;
@@ -841,12 +841,12 @@ body {
   background: var(--io-tint);
 }
 
-.ios-seg > button:active {
+.ios-seg > :is(button, a):active {
   transform: scale(0.94);
 }
 
-.ios-seg > button.active,
-.ios-seg > button.active:hover {
+.ios-seg > :is(button, a).active,
+.ios-seg > :is(button, a).active:hover {
   color: #ffffff;
   background: transparent;
   border-color: transparent;
@@ -932,7 +932,7 @@ body {
     width: auto;
   }
 
-  .ios-seg > button {
+  .ios-seg > :is(button, a) {
     padding: 9px 15px;
     font-size: 14px;
   }
@@ -1412,4 +1412,101 @@ body {
   outline: none;
   border-color: rgba(6, 182, 212, 0.45);
   box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.18), var(--io-shadow-hover);
+}
+/* ============================================
+   BLOG DINÁMICO: buscador, resultados, vacío, enlaces
+   ============================================ */
+.blog-search-section {
+    padding-bottom: 36px !important;
+    padding: 0 20px;
+    background: #ffffff;
+    position: relative;
+    z-index: 2;
+}
+.blog-search {
+    max-width: 560px;
+    margin: -28px auto 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    height: 56px;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.blog-search:focus-within {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12), 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+.blog-search i { color: #94a3b8; font-size: 18px; }
+.blog-search input {
+    flex: 1;
+    border: 0;
+    outline: none;
+    font: inherit;
+    font-size: 16px;
+    background: transparent;
+    color: #1a1a1a;
+    min-width: 0;
+}
+.blog-search input::-webkit-search-cancel-button { display: none; }
+.blog-search-clear {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #64748b;
+    text-decoration: none;
+    background: #f1f5f9;
+}
+.blog-search-clear:hover { color: #0f172a; }
+
+.blog-results {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto 28px;
+    color: #475569;
+    font-size: 15px;
+}
+.blog-results a { color: #0891b2; font-weight: 600; text-decoration: none; }
+
+.blog-empty {
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 40px 20px 60px;
+    color: #475569;
+}
+.blog-empty i { font-size: 40px; color: #06b6d4; }
+.blog-empty h3 { font-size: 22px; color: #1a1a1a; margin: 14px 0 8px; }
+.blog-empty .read-more-btn { display: inline-flex; margin-top: 18px; }
+
+a.category-btn,
+a.pagination-btn,
+a.read-more-btn,
+a.blog-link { text-decoration: none; }
+.featured-title a,
+.blog-title a { color: inherit; text-decoration: none; }
+.featured-title a:focus-visible,
+.blog-title a:focus-visible { outline: 2px solid #06b6d4; outline-offset: 3px; border-radius: 6px; }
+.author-avatar { font-size: 16px; font-weight: 700; letter-spacing: .02em; }
+.pagination-btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+.pagination-gap { display: grid; place-items: center; width: 28px; color: #94a3b8; font-weight: 600; }
+
+.nl-hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
+.newsletter-form.is-loading { opacity: .7; pointer-events: none; }
+.newsletter-msg { min-height: 22px; margin: 14px 0 0; font-size: 15px; font-weight: 500; text-align: center; }
+.newsletter-msg.is-ok { color: #059669; }
+.newsletter-msg.is-error { color: #dc2626; }
+
+@media (max-width: 600px) {
+    .blog-search { margin-top: -24px; height: 50px; }
+    .blog-results { flex-direction: column; align-items: flex-start; }
 }

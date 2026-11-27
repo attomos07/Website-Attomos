@@ -40,3 +40,10 @@ func AdminRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// IsAdmin — ¿la petición trae una sesión de admin válida? (sin redirigir).
+// Lo usa el blog para dejar ver la vista previa de borradores.
+func IsAdmin(c *gin.Context) bool {
+	token, err := c.Cookie("admin_session")
+	return err == nil && token != "" && token == getAdminSessionToken()
+}

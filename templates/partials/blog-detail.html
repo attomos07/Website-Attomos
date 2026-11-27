@@ -4,8 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog - {{.title}}</title>
-    <meta name="description" content="Artículos sobre chatbots, inteligencia artificial y automatización para negocios.">
+    <title>{{.title}}</title>
+{{if .NotFound}}
+    <meta name="robots" content="noindex">
+{{else}}
+    <meta name="description" content="{{.Description}}">
+    {{if or .Preview .Draft}}<meta name="robots" content="noindex, nofollow">{{else}}<link rel="canonical" href="{{.Canonical}}">{{end}}
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Attomos">
+    <meta property="og:locale" content="es_MX">
+    <meta property="og:title" content="{{.Post.Title}}">
+    <meta property="og:description" content="{{.Description}}">
+    <meta property="og:url" content="{{.Canonical}}">
+    <meta property="og:image" content="{{.OGImage}}">
+    <meta property="article:published_time" content="{{.Post.ISODate}}">
+    {{if .Post.CategoryName}}<meta property="article:section" content="{{.Post.CategoryName}}">{{end}}
+    {{range .Tags}}<meta property="article:tag" content="{{.}}">
+    {{end}}<meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{.Post.Title}}">
+    <meta name="twitter:description" content="{{.Description}}">
+    <meta name="twitter:image" content="{{.OGImage}}">
+    <script type="application/ld+json">{{.JSONLD}}</script>
+{{end}}
+    <link rel="alternate" type="application/rss+xml" title="Blog de Attomos" href="/blog/feed.xml">
     <!-- LineIcons CSS -->
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
 
@@ -16,26 +37,211 @@
     <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/partials/navbar.css?v=10">
     <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
-    <link rel="stylesheet" href="/static/css/partials/blog-detail.css?v=1">
+    <link rel="stylesheet" href="/static/css/partials/blog-detail.css?v=2">
 </head>
 <body>
     <!-- Navbar -->
     {{template "partials/navbar.html" .}}
 
+{{if .NotFound}}
+    <main class="bd-page is-ready is-notfound" id="blogDetail">
+        <section class="bd-notfound">
+            <div class="bd-notfound-card bd-enter" style="--d: 0ms">
+                <div class="bd-notfound-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div>
+                <h1 class="bd-notfound-title">Artículo no encontrado</h1>
+                <p class="bd-notfound-text">Es posible que el enlace esté incompleto o que el artículo ya no esté disponible. Te invitamos a explorar el resto de nuestro blog.</p>
+                <a class="bd-btn" href="/blog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Volver al blog</span></a>
+            </div>
+        </section>
+        {{if .Related}}
+        <section class="bd-related" aria-labelledby="bdRelatedTitle">
+            <div class="bd-related-head">
+                <h2 class="bd-related-title" id="bdRelatedTitle">Artículos recientes</h2>
+            </div>
+            <div class="bd-related-grid">
+                {{range .Related}}
+                <a class="bd-rcard" href="{{.URL}}">
+                    <div class="bd-rcard-img"><img src="{{.Cover}}" alt="{{if .CoverAlt}}{{.CoverAlt}}{{else}}{{.Title}}{{end}}" loading="lazy" decoding="async"></div>
+                    <div class="bd-rcard-body">
+                        <div class="bd-rcard-meta">
+                            {{if .CategoryName}}<span class="bd-cat bd-cat-sm">{{.CategoryName}}</span>{{end}}
+                            <span class="bd-rcard-time">{{.ReadTime}}</span>
+                        </div>
+                        <h3 class="bd-rcard-title">{{.Title}}</h3>
+                        <p class="bd-rcard-excerpt">{{.Excerpt}}</p>
+                        <span class="bd-rcard-link">Leer más <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+                    </div>
+                </a>
+                {{end}}
+            </div>
+        </section>
+        {{end}}
+    </main>
+{{else}}
     <!-- Barra de progreso de lectura -->
     <div class="bd-progress" id="bdProgress" aria-hidden="true">
         <div class="bd-progress-bar" id="bdProgressBar"></div>
     </div>
 
-    <!-- Contenido del artículo (lo pinta blog-detail.js) -->
-    <main class="bd-page" id="blogDetail" aria-live="polite">
-        <div class="bd-loading" aria-hidden="true">
-            <div class="bd-skel bd-skel-pill"></div>
-            <div class="bd-skel bd-skel-title"></div>
-            <div class="bd-skel bd-skel-title short"></div>
-            <div class="bd-skel bd-skel-cover"></div>
-        </div>
+    {{if or .Preview .Draft}}
+    <div class="bd-preview-banner" role="status">
+        <i class="lni lni-eye"></i>
+        <span><strong>Vista previa.</strong> Este artículo aún no es público{{if .Draft}} (borrador o programado){{end}}.</span>
+    </div>
+    {{end}}
+
+    <main class="bd-page is-ready" id="blogDetail" data-slug="{{.Post.Slug}}" data-title="{{.Post.Title}}" data-url="{{.Canonical}}">
+        <article class="bd-post">
+            <header class="bd-hero">
+                <div class="bd-hero-top bd-enter" style="--d: 0ms">
+                    <a class="bd-back" href="/blog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Blog</span></a>
+                    {{if .Post.CategoryName}}<a class="bd-cat" href="/blog?categoria={{.Post.CategorySlug}}">{{.Post.CategoryName}}</a>{{end}}
+                </div>
+                <h1 class="bd-title bd-enter" style="--d: 60ms">{{.Post.Title}}</h1>
+                <p class="bd-dek bd-enter" style="--d: 120ms">{{.Post.Excerpt}}</p>
+                <div class="bd-meta bd-enter" style="--d: 180ms">
+                    <div class="bd-author">
+                        <div class="bd-avatar" aria-hidden="true">{{.Post.AuthorInitials}}</div>
+                        <div class="bd-author-text">
+                            <div class="bd-author-name">{{.Post.Author}}</div>
+                            <div class="bd-author-role">{{.Post.AuthorRole}}</div>
+                        </div>
+                    </div>
+                    <div class="bd-meta-pills">
+                        <span class="bd-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><time datetime="{{.Post.ISODate}}">{{.Post.Date}}</time></span>
+                        <span class="bd-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>{{.Post.ReadTime}}</span></span>
+                    </div>
+                </div>
+            </header>
+
+            <figure class="bd-cover bd-enter" style="--d: 240ms">
+                <img class="bd-cover-img" src="{{.Post.Cover}}" alt="{{if .Post.CoverAlt}}{{.Post.CoverAlt}}{{else}}{{.Post.Title}}{{end}}" fetchpriority="high" decoding="async">
+            </figure>
+
+            <div class="bd-layout">
+                <aside class="bd-aside">
+                    {{if .Toc}}
+                    <nav class="bd-toc" aria-label="En este artículo">
+                        <button type="button" class="bd-toc-toggle" aria-expanded="false" aria-controls="bdTocPanel">
+                            <span class="bd-toc-heading">En este artículo</span>
+                            <span class="bd-toc-count">{{.TocCount}} {{if eq .TocCount 1}}sección{{else}}secciones{{end}}</span>
+                            <span class="bd-toc-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+                        </button>
+                        <div class="bd-toc-panel" id="bdTocPanel">
+                            <div class="bd-toc-inner">
+                                <div class="bd-toc-track">
+                                    <span class="bd-toc-thumb" aria-hidden="true"></span>
+                                    <ol class="bd-toc-list">
+                                        {{range .Toc}}<li><a href="#{{.ID}}" data-target="{{.ID}}">{{.Text}}</a></li>
+                                        {{end}}
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    {{end}}
+                    <div class="bd-share bd-share-aside">
+                        <div class="bd-share-label">Compartir</div>
+                        <button type="button" class="bd-share-btn bd-share-copy" data-share="copy" aria-label="Copiar enlace">
+                            <span class="bd-share-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg></span>
+                            <span class="bd-share-ico bd-share-ico-ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                            <span class="bd-share-text">Copiar enlace</span>
+                        </button>
+                        <a class="bd-share-btn bd-share-round is-wa" data-share="whatsapp" href="#" target="_blank" rel="noopener" aria-label="Compartir en WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.01c-.24.68-1.42 1.32-1.96 1.37-.5.05-1.13.07-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.79-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3s.75-2.13 1.02-2.42c.26-.29.58-.36.77-.36h.55c.18 0 .42-.07.65.5.24.58.82 2.01.89 2.15.07.15.12.32.02.51-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.74 1.22 1.58 1.97 1.09.97 2.01 1.27 2.29 1.42.29.14.46.12.62-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.65-.14.26.1 1.68.79 1.97.94.29.14.48.22.55.34.07.12.07.7-.17 1.38z"/></svg></a>
+                        <a class="bd-share-btn bd-share-round is-x" data-share="x" href="#" target="_blank" rel="noopener" aria-label="Compartir en X"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43z"/></svg></a>
+                        <a class="bd-share-btn bd-share-round is-in" data-share="linkedin" href="#" target="_blank" rel="noopener" aria-label="Compartir en LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11.25H3V9.75zm6.5 0h3.83v1.54h.06c.53-1.01 1.84-2.08 3.79-2.08 4.05 0 4.8 2.67 4.8 6.13V21h-4v-5.02c0-1.2-.02-2.74-1.67-2.74-1.67 0-1.93 1.3-1.93 2.65V21h-4V9.75z"/></svg></a>
+                    </div>
+                </aside>
+
+                <div class="bd-body">
+                    <div class="bd-prose" id="bdProse">{{.Body}}</div>
+
+                    {{if .Tags}}
+                    <div class="bd-tags" aria-label="Etiquetas">
+                        {{range .Tags}}<span class="bd-tag">#{{.}}</span>{{end}}
+                    </div>
+                    {{end}}
+
+                    <div class="bd-endcard">
+                        <div class="bd-endcard-text">
+                            <div class="bd-endcard-title">¿Te sirvió este artículo?</div>
+                            <div class="bd-endcard-sub">Compártelo con alguien a quien también le pueda ayudar.</div>
+                        </div>
+                        <div class="bd-share bd-share-end">
+                        <button type="button" class="bd-share-btn bd-share-copy" data-share="copy" aria-label="Copiar enlace">
+                            <span class="bd-share-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg></span>
+                            <span class="bd-share-ico bd-share-ico-ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                            <span class="bd-share-text">Copiar enlace</span>
+                        </button>
+                        <a class="bd-share-btn bd-share-round is-wa" data-share="whatsapp" href="#" target="_blank" rel="noopener" aria-label="Compartir en WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.01c-.24.68-1.42 1.32-1.96 1.37-.5.05-1.13.07-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.79-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3s.75-2.13 1.02-2.42c.26-.29.58-.36.77-.36h.55c.18 0 .42-.07.65.5.24.58.82 2.01.89 2.15.07.15.12.32.02.51-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.74 1.22 1.58 1.97 1.09.97 2.01 1.27 2.29 1.42.29.14.46.12.62-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.65-.14.26.1 1.68.79 1.97.94.29.14.48.22.55.34.07.12.07.7-.17 1.38z"/></svg></a>
+                        <a class="bd-share-btn bd-share-round is-x" data-share="x" href="#" target="_blank" rel="noopener" aria-label="Compartir en X"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77L17.75 3zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43z"/></svg></a>
+                        <a class="bd-share-btn bd-share-round is-in" data-share="linkedin" href="#" target="_blank" rel="noopener" aria-label="Compartir en LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11.25H3V9.75zm6.5 0h3.83v1.54h.06c.53-1.01 1.84-2.08 3.79-2.08 4.05 0 4.8 2.67 4.8 6.13V21h-4v-5.02c0-1.2-.02-2.74-1.67-2.74-1.67 0-1.93 1.3-1.93 2.65V21h-4V9.75z"/></svg></a>
+                        </div>
+                    </div>
+
+                    <div class="bd-author-card">
+                        <div class="bd-avatar bd-avatar-lg" aria-hidden="true">{{.Post.AuthorInitials}}</div>
+                        <div>
+                            <div class="bd-author-kicker">Escrito por</div>
+                            <div class="bd-author-name">{{.Post.Author}}</div>
+                            <div class="bd-author-role">{{.Post.AuthorRole}}</div>
+                        </div>
+                    </div>
+
+                    <div class="bd-newsletter">
+                        <div class="bd-newsletter-text">
+                            <div class="bd-endcard-title">Recibe los nuevos artículos</div>
+                            <div class="bd-endcard-sub">Te avisamos por correo cuando publiquemos algo nuevo. Sin spam.</div>
+                        </div>
+                        <form class="newsletter-form bd-newsletter-form" data-source="articulo" novalidate>
+                            <input type="text" name="website" class="nl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                            <input type="email" name="email" class="newsletter-input" placeholder="tu@correo.com" aria-label="Correo electrónico" required>
+                            <button type="submit" class="newsletter-btn">Suscribirme</button>
+                            <p class="newsletter-msg" aria-live="polite"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <section class="bd-cta">
+            <div class="bd-cta-card">
+                <div class="bd-cta-kicker">Attomos · Agentes de IA</div>
+                <h2 class="bd-cta-title">Pon a trabajar un agente de IA en tu WhatsApp</h2>
+                <p class="bd-cta-sub">Responde al instante, agenda citas y toma pedidos las 24 horas, conectado con Google Calendar, Google Sheets y Chatwoot.</p>
+                <button type="button" class="bd-cta-btn">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.01c-.24.68-1.42 1.32-1.96 1.37-.5.05-1.13.07-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.79-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3s.75-2.13 1.02-2.42c.26-.29.58-.36.77-.36h.55c.18 0 .42-.07.65.5.24.58.82 2.01.89 2.15.07.15.12.32.02.51-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.74 1.22 1.58 1.97 1.09.97 2.01 1.27 2.29 1.42.29.14.46.12.62-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.65-.14.26.1 1.68.79 1.97.94.29.14.48.22.55.34.07.12.07.7-.17 1.38z"/></svg>
+                    <span>Hablar por WhatsApp</span>
+                </button>
+            </div>
+        </section>
+
+        {{if .Related}}
+        <section class="bd-related" aria-labelledby="bdRelatedTitle">
+            <div class="bd-related-head">
+                <h2 class="bd-related-title" id="bdRelatedTitle">Artículos relacionados</h2>
+                <a class="bd-related-all" href="/blog">Ver todos <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a>
+            </div>
+            <div class="bd-related-grid">
+                {{range .Related}}
+                <a class="bd-rcard" href="{{.URL}}">
+                    <div class="bd-rcard-img"><img src="{{.Cover}}" alt="{{if .CoverAlt}}{{.CoverAlt}}{{else}}{{.Title}}{{end}}" loading="lazy" decoding="async"></div>
+                    <div class="bd-rcard-body">
+                        <div class="bd-rcard-meta">
+                            {{if .CategoryName}}<span class="bd-cat bd-cat-sm">{{.CategoryName}}</span>{{end}}
+                            <span class="bd-rcard-time">{{.ReadTime}}</span>
+                        </div>
+                        <h3 class="bd-rcard-title">{{.Title}}</h3>
+                        <p class="bd-rcard-excerpt">{{.Excerpt}}</p>
+                        <span class="bd-rcard-link">Leer más <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+                    </div>
+                </a>
+                {{end}}
+            </div>
+        </section>
+        {{end}}
     </main>
+{{end}}
 
     <!-- Footer -->
     {{template "partials/footer.html" .}}
@@ -47,8 +253,8 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="/static/js/partials/blog-posts.js?v=1"></script>
-    <script src="/static/js/partials/blog-detail.js?v=1"></script>
+    <script src="/static/js/partials/newsletter.js?v=1"></script>
+    <script src="/static/js/partials/blog-detail.js?v=2"></script>
 </body>
 </html>
 {{end}}

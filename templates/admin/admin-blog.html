@@ -1,0 +1,189 @@
+{{define "admin-blog"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Attomos Admin — Blog</title>
+    <link rel="icon" type="image/png" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/css/admin/admin-sidebar.css"/>
+    <link rel="stylesheet" href="/static/css/admin/admin-blog.css?v=1"/>
+</head>
+<body>
+
+    {{template "admin/sidebar.html" .}}
+
+    <main class="main">
+        <header class="topbar">
+            <span class="topbar-title">Blog</span>
+            <div class="topbar-right">
+                <a class="btn-secondary" href="/blog" target="_blank" rel="noopener"><i class="lni lni-world"></i> Ver blog</a>
+                <a class="btn-primary" href="/admin/blog/nuevo"><i class="lni lni-plus"></i> Nuevo artículo</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="stats-row">
+                <button type="button" class="stat-card filter-active" data-filter="">
+                    <div class="stat-icon cyan"><i class="lni lni-write"></i></div>
+                    <div><div class="stat-value">{{.Total}}</div><div class="stat-label">Artículos</div></div>
+                </button>
+                <button type="button" class="stat-card" data-filter="publicado">
+                    <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+                    <div><div class="stat-value">{{.Publicados}}</div><div class="stat-label">Publicados</div></div>
+                </button>
+                <button type="button" class="stat-card" data-filter="programado">
+                    <div class="stat-icon violet"><i class="lni lni-alarm-clock"></i></div>
+                    <div><div class="stat-value">{{.Programados}}</div><div class="stat-label">Programados</div></div>
+                </button>
+                <button type="button" class="stat-card" data-filter="borrador">
+                    <div class="stat-icon amber"><i class="lni lni-pencil-alt"></i></div>
+                    <div><div class="stat-value">{{.Borradores}}</div><div class="stat-label">Borradores</div></div>
+                </button>
+                <a class="stat-card" href="/admin/newsletter">
+                    <div class="stat-icon red"><i class="lni lni-envelope"></i></div>
+                    <div><div class="stat-value">{{.Subscribers}}</div><div class="stat-label">Suscriptores</div></div>
+                </a>
+            </div>
+
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <label class="search-box">
+                        <i class="lni lni-search-alt"></i>
+                        <input type="search" id="bpSearch" placeholder="Buscar por título o autor..." autocomplete="off">
+                    </label>
+                    <select class="filter-select" id="bpCategory" aria-label="Categoría">
+                        <option value="">Todas las categorías</option>
+                        {{range .Categories}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Vistas</th>
+                                <th style="text-align:right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bpRows">
+                            {{range .Posts}}
+                            <tr data-id="{{.ID}}" data-status="{{.Status}}" data-cat="{{.CategorySlug}}" data-search="{{.Title}} {{.Author}} {{.Slug}}">
+                                <td>
+                                    <div class="bp-post">
+                                        <img class="bp-thumb" src="{{.Cover}}" alt="" loading="lazy">
+                                        <div>
+                                            <div class="bp-title">{{.Title}}</div>
+                                            <div class="bp-sub">
+                                                {{if .Featured}}<span class="bp-star" title="Destacado"><i class="lni lni-star-filled"></i></span>{{end}}
+                                                <span>{{.Author}}</span>
+                                                {{if .NewsletterAt}}<span class="bp-nl"><i class="lni lni-envelope"></i> Enviado {{.NewsletterAt}}</span>{{end}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{if .CategoryName}}<span class="bp-cat">{{.CategoryName}}</span>{{else}}<span class="bp-muted">Sin categoría</span>{{end}}</td>
+                                <td><span class="status-badge {{.Status}}">{{.StatusLabel}}</span></td>
+                                <td><span class="bp-muted">{{.Date}}</span></td>
+                                <td><span class="bp-muted">{{.Views}}</span></td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="btn-icon" href="{{.URL}}" target="_blank" rel="noopener" title="{{if eq .Status "publicado"}}Ver artículo{{else}}Vista previa{{end}}"><i class="lni lni-eye"></i></a>
+                                        <a class="btn-icon" href="/admin/blog/{{.ID}}/editar" title="Editar"><i class="lni lni-pencil"></i></a>
+                                        <button type="button" class="btn-icon" data-action="newsletter" data-title="{{.Title}}" data-sent="{{.NewsletterAt}}" title="Enviar a suscriptores" {{if ne .Status "publicado"}}disabled{{end}}><i class="lni lni-telegram-original"></i></button>
+                                        <button type="button" class="btn-icon danger" data-action="delete" data-title="{{.Title}}" title="Eliminar"><i class="lni lni-trash-can"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="bpEmpty"{{if .Posts}} hidden{{end}}>
+                    <i class="lni lni-write"></i>
+                    <p>{{if .Posts}}No hay artículos con esos filtros.{{else}}Todavía no hay artículos. Crea el primero.{{end}}</p>
+                </div>
+            </div>
+
+            <div class="bp-grid2">
+                <section class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h2>Categorías</h2>
+                            <p>Aparecen como filtros en el blog cuando tienen artículos publicados.</p>
+                        </div>
+                    </div>
+                    <div class="chip-list" id="catList">
+                        {{range .Categories}}
+                        <span class="chip" data-id="{{.ID}}"><i class="lni {{.Icon}}"></i>{{.Name}}<button type="button" class="chip-del" data-kind="categoria" data-name="{{.Name}}" aria-label="Eliminar {{.Name}}"><i class="lni lni-close"></i></button></span>
+                        {{else}}
+                        <span class="chip-empty">Sin categorías.</span>
+                        {{end}}
+                    </div>
+                    <form class="chip-form" id="catForm">
+                        <input type="text" name="name" placeholder="Nueva categoría" maxlength="80" required>
+                        <select name="icon" aria-label="Ícono">
+                            <option value="lni-tag">Etiqueta</option>
+                            <option value="lni-brain">Cerebro (IA)</option>
+                            <option value="lni-cog">Engrane</option>
+                            <option value="lni-briefcase">Maletín</option>
+                            <option value="lni-book">Libro</option>
+                            <option value="lni-whatsapp">WhatsApp</option>
+                            <option value="lni-bar-chart">Gráfica</option>
+                            <option value="lni-bulb">Idea</option>
+                            <option value="lni-target-customer">Marketing</option>
+                            <option value="lni-cart">Ventas</option>
+                            <option value="lni-calendar">Calendario</option>
+                            <option value="lni-rocket">Novedades</option>
+                        </select>
+                        <button type="submit" class="btn-primary"><i class="lni lni-plus"></i></button>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h2>Etiquetas</h2>
+                            <p>Se muestran al final de cada artículo.</p>
+                        </div>
+                    </div>
+                    <div class="chip-list" id="tagList">
+                        {{range .Tags}}
+                        <span class="chip" data-id="{{.ID}}">#{{.Name}}<button type="button" class="chip-del" data-kind="etiqueta" data-name="{{.Name}}" aria-label="Eliminar {{.Name}}"><i class="lni lni-close"></i></button></span>
+                        {{else}}
+                        <span class="chip-empty">Sin etiquetas.</span>
+                        {{end}}
+                    </div>
+                    <form class="chip-form" id="tagForm">
+                        <input type="text" name="name" placeholder="Nueva etiqueta" maxlength="60" required>
+                        <button type="submit" class="btn-primary"><i class="lni lni-plus"></i></button>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="modal">
+            <div class="modal-title" id="confirmTitle">¿Seguro?</div>
+            <div class="modal-text" id="confirmText"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="confirmCancel">Cancelar</button>
+                <button type="button" class="btn-primary" id="confirmOk">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/js/admin/admin-blog.js?v=1"></script>
+</body>
+</html>
+{{end}}
