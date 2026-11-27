@@ -309,6 +309,7 @@ func main() {
 		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
 		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs)
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
+		protected.PUT("/agents/:id/response-mode", handlers.SetAgentResponseMode)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 		protected.POST("/agents/:id/redeploy", handlers.RedeployAgent)

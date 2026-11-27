@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=5">
+    <link rel="stylesheet" href="/static/css/client/agent-details.css?v=6">
      <link rel="stylesheet" href="/static/css/client/sidebar.css">
 </head>
 <body>
@@ -303,6 +303,20 @@
                                     </h2>
                                 </div>
                                 <div class="config-grid">
+                                    <div class="config-item full-width">
+                                        <label data-translate="ad_mode_label">Modo de respuesta</label>
+                                        <div class="mode-switch" id="modeSwitch" role="radiogroup">
+                                            <button type="button" class="mode-opt" data-mode="ai" role="radio" onclick="setResponseMode('ai')">
+                                                <i class="lni lni-bulb"></i>
+                                                <span><strong>Con IA</strong><small>Platica natural (Gemini)</small></span>
+                                            </button>
+                                            <button type="button" class="mode-opt" data-mode="buttons" role="radio" onclick="setResponseMode('buttons')">
+                                                <i class="lni lni-list"></i>
+                                                <span><strong>Con botones</strong><small>Menú de opciones, sin IA</small></span>
+                                            </button>
+                                        </div>
+                                        <div class="mode-note" id="modeNote"></div>
+                                    </div>
                                     <div class="config-item">
                                         <label data-translate="ad_tone_label">Tono</label>
                                         <div class="config-value" id="configTone">--</div>
@@ -365,6 +379,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/sidebar.js"></script>
-    <script src="/static/js/client/agent-details.js?v=6"></script>
+    <script src="/static/js/client/agent-details.js?v=7"></script>
 </body>
 </html>

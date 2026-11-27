@@ -545,11 +545,13 @@ async function reinitializeOnboardingEvents() {
     // servicios de Inventario (el Resumen muestra el checklist).
     const AGENT_SECTIONS_BUSINESS = [
         { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:9, containerId:'section-mode',        name:() => t('onb_tab_mode','IA o Botones'), icon:'lni-list' },
         { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
     ];
     const AGENT_SECTIONS_GOV = [
         { id:1, containerId:'section-business',    name:() => t('onb_tab_agency','Dependencia'),     icon:'lni-government' },
         { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:9, containerId:'section-mode',        name:() => t('onb_tab_mode','IA o Botones'), icon:'lni-list' },
         { id:3, containerId:'section-location',    name:() => t('onb_tab_location','Ubicación'),       icon:'lni-map-marker' },
         { id:4, containerId:'section-social',      name:() => t('onb_tab_social','Redes Sociales'),  icon:'lni-share-alt' },
         { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
@@ -596,7 +598,7 @@ async function reinitializeOnboardingEvents() {
         } catch (_) {}
     }
     if (_hasExistingAgents) {
-        const _keep = ['section-basic', 'section-personality'];
+        const _keep = ['section-basic', 'section-mode', 'section-personality'];
         AGENT_SECTIONS = AGENT_SECTIONS.filter(s => _keep.includes(s.containerId));
         ['section-business','section-location','section-social','section-schedule','section-holidays',
          'section-services'].forEach(id => {

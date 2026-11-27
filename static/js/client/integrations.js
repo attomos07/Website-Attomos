@@ -262,6 +262,7 @@ async function selectAgent(option) {
         await loadGeminiStatus(selectedAgentId);
     } else if (botType === 'orbital') {
         await loadMetaCredentialsStatus(selectedAgentId);
+        await loadGeminiStatus(selectedAgentId);
     }
 }
 
@@ -276,7 +277,8 @@ function showIntegrationsByBotType(botType) {
         if (geminiCard) geminiCard.style.display = 'block';
         if (metaCard)   metaCard.style.display   = 'none';
     } else if (botType === 'orbital') {
-        if (geminiCard) geminiCard.style.display = 'none';
+        // WhatsApp Business también usa Gemini (clave del negocio).
+        if (geminiCard) geminiCard.style.display = 'block';
         if (metaCard)   metaCard.style.display   = 'block';
     }
     if (paymentsCard)       paymentsCard.style.display       = 'block';
@@ -2263,11 +2265,13 @@ async function reinitializeOnboardingEvents() {
     // servicios de Inventario (el Resumen muestra el checklist).
     const AGENT_SECTIONS_BUSINESS = [
         { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:9, containerId:'section-mode',        name:() => t('onb_tab_mode','IA o Botones'), icon:'lni-list' },
         { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },
     ];
     const AGENT_SECTIONS_GOV = [
         { id:1, containerId:'section-business',    name:() => t('onb_tab_agency','Dependencia'),     icon:'lni-government' },
         { id:2, containerId:'section-basic',       name:() => t('onb_tab_basic','Info. Básica'),    icon:'lni-information' },
+        { id:9, containerId:'section-mode',        name:() => t('onb_tab_mode','IA o Botones'), icon:'lni-list' },
         { id:3, containerId:'section-location',    name:() => t('onb_tab_location','Ubicación'),       icon:'lni-map-marker' },
         { id:4, containerId:'section-social',      name:() => t('onb_tab_social','Redes Sociales'),  icon:'lni-share-alt' },
         { id:5, containerId:'section-personality', name:() => t('onb_tab_personality','Personalidad'),    icon:'lni-comments' },

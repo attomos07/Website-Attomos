@@ -787,16 +787,16 @@
                     </div>
                   </div>
 
-                  <!-- SECCIÓN 4: Personalidad -->
-                  <div class="section-container" id="section-personality">
+                  <!-- SECCIÓN: Modo de respuesta (IA o botones) -->
+                  <div class="section-container" id="section-mode">
                     <div class="form-section">
                       <h3 class="section-title">
-                        <i class="lni lni-comments"></i>
-                        <span data-translate="onb_sec_personality">Personalidad del Agente</span>
+                        <i class="lni lni-list"></i>
+                        <span data-translate="onb_sec_mode">Modo de respuesta</span>
                       </h3>
 
                       <div class="form-group">
-                        <label class="form-label">Modo de respuesta</label>
+                        <label class="form-label">¿Cómo va a contestar tu agente?</label>
                         <div class="tone-radio-group">
                           <label class="tone-radio-option">
                             <input type="radio" name="responseMode" value="ai" checked />
@@ -819,8 +819,36 @@
                             </div>
                           </label>
                         </div>
-                        <span class="form-help">Con botones el cliente elige servicios, horarios, ubicación y agenda su cita tocando opciones. Por ahora solo en WhatsApp Business.</span>
+                        <span class="form-help">Con IA el agente platica de forma natural. Con botones el cliente elige servicios, horarios, ubicación y agenda su cita tocando opciones (no necesita IA). Los botones por ahora funcionan solo en WhatsApp Business; puedes cambiarlo después en los detalles del agente.</span>
                       </div>
+                    </div>
+
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        class="btn btn-back btn-prev-section"
+                      >
+                        <i class="lni lni-arrow-left"></i>
+                        <span data-translate="onb_btn_prev">Anterior</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-next btn-next-section"
+                      >
+                        <span data-translate="onb_btn_next">Siguiente</span>
+                        <i class="lni lni-arrow-right"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- SECCIÓN 4: Personalidad -->
+                  <div class="section-container" id="section-personality">
+                    <div class="form-section">
+                      <h3 class="section-title">
+                        <i class="lni lni-comments"></i>
+                        <span data-translate="onb_sec_personality">Personalidad del Agente</span>
+                      </h3>
+
 
                       <div class="form-group">
                         <label class="form-label" data-translate="onb_pers_tone_label">Tono de Conversación</label>
@@ -1508,6 +1536,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/ios-pickers.js?v=1"></script>
-    <script src="/static/js/client/onboarding.js?v=10"></script>
+    <script src="/static/js/client/onboarding.js?v=11"></script>
   </body>
 </html>

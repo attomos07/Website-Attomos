@@ -108,6 +108,8 @@ function renderAgentDetails(agent) {
     document.getElementById('infoBusinessType').textContent = formatBusinessType(agent.businessType);
     document.getElementById('infoPort').textContent = agent.port || '--';
     
+    renderResponseMode(agent);
+
     // Configuration
     if (agent.config) {
         document.getElementById('configTone').textContent = formatTone(agent.config.tone);
@@ -1190,5 +1192,65 @@ async function runEmbeddedSignup(cfg) {
         await loadMetaConnection();
     } finally {
         window.removeEventListener('message', onMessage);
+    }
+}
+
+// ============================================
+// MODO DE RESPUESTA (IA / botones)
+// ============================================
+
+function renderResponseMode(a, info) {
+    const mode = (a.config && a.config.responseMode) || 'ai';
+    document.querySelectorAll('#modeSwitch .mode-opt').forEach(b => {
+        const on = b.dataset.mode === mode;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    const note = document.getElementById('modeNote');
+    if (!note) return;
+    const bt = (a.botType || '').toLowerCase();
+    let msg = mode === 'buttons'
+        ? 'El cliente elige servicios, horarios, ubicación y agenda su cita tocando opciones.'
+        : 'El agente platica de forma natural con IA. Si no hay clave de Gemini, contesta con el menú de botones.';
+    let warn = false;
+    if (mode === 'buttons' && bt !== 'orbital') {
+        msg = 'Los botones por ahora solo funcionan en WhatsApp Business; en este canal el agente sigue con IA.';
+        warn = true;
+    } else if (info && mode === 'ai' && info.hasGeminiKey === false) {
+        msg = 'Elegiste IA, pero aún no hay clave de Gemini: mientras tanto el agente contesta con botones.';
+        warn = true;
+    } else if (info && info.applied === false) {
+        msg += ' El cambio se aplica en unos minutos.';
+    }
+    note.textContent = msg;
+    note.classList.toggle('warn', warn);
+}
+
+async function setResponseMode(mode) {
+    if (!agent) return;
+    const current = (agent.config && agent.config.responseMode) || 'ai';
+    if (mode === current) return;
+    const btns = document.querySelectorAll('#modeSwitch .mode-opt');
+    btns.forEach(b => b.disabled = true);
+    try {
+        const res = await fetch(`/api/agents/${agentId}/response-mode`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo cambiar el modo');
+        agent.config = agent.config || {};
+        agent.config.responseMode = mode;
+        renderResponseMode(agent, data);
+        if (typeof showNotification === 'function') {
+            showNotification(mode === 'buttons' ? 'Modo con botones activado' : 'Modo con IA activado', 'success');
+        }
+    } catch (err) {
+        if (typeof showNotification === 'function') showNotification(err.message, 'error');
+        else alert(err.message);
+    } finally {
+        btns.forEach(b => b.disabled = false);
     }
 }

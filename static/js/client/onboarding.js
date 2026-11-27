@@ -828,6 +828,12 @@ async function createAgent() {
         return;
     }
 
+    // Modo edición (Mis Agentes → Editar): guardar con PUT, no crear otro.
+    if (d.editingAgentId) {
+        await _obSaveAgentEdit(d, cfg, name);
+        return;
+    }
+
     if (!gov) {
         const state = await _obLoadReadiness();
         _obRenderReadiness(state);
@@ -938,6 +944,140 @@ async function createAgent() {
         if (typeof showNotification === 'function') {
             showNotification(err.message || t('onb_err_create','Error al crear el agente'), 'error');
         }
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+    }
+}
+
+// ============================================
+// EDITAR AGENTE (my-agents.js → openOnboardingModalForEdit)
+// my-agents.js llama a enterAgentEditMode() pero nunca existió: el modal
+// se abría vacío y al guardar se creaba OTRO agente. Precarga el agente y
+// createAgent() guarda con PUT /api/agents/:id.
+// ============================================
+
+function _obCheckRadio(name, value) {
+    if (!value) return;
+    const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+    if (!el) return;
+    el.checked = true;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+window.enterAgentEditMode = async function (agentId) {
+    let agent;
+    try {
+        const res = await fetch('/api/agents/' + encodeURIComponent(agentId), { credentials: 'include' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.agent) throw new Error(data.error || 'No se pudo cargar el agente');
+        agent = data.agent;
+    } catch (err) {
+        console.error('❌ enterAgentEditMode:', err);
+        if (typeof showNotification === 'function') showNotification(err.message, 'error');
+        return;
+    }
+
+    const cfg = agent.config || {};
+    window.agentData = window.agentData || {};
+    const d = window.agentData;
+    d.editingAgentId = agent.id;
+    d.editingConfig = JSON.parse(JSON.stringify(cfg)); // se conserva lo que el wizard no edita
+    d.editingBotType = (agent.botType || '').toLowerCase();
+    d.name = agent.name || '';
+    d.config = Object.assign({}, d.config || {}, {
+        tone: cfg.tone || 'formal',
+        customTone: cfg.customTone || '',
+        responseMode: cfg.responseMode || 'ai',
+        additionalLanguages: cfg.additionalLanguages || [],
+        styleSample: cfg.styleSample || '',
+        styleSampleName: cfg.styleSampleName || '',
+    });
+
+    // Título y botón
+    const title = document.querySelector('.onboarding-modal-title span');
+    if (title) title.textContent = t('agents_edit_modal_title', 'Editar Agente');
+    const btn = document.getElementById('btnCreateAgent');
+    if (btn) btn.innerHTML = `<i class="lni lni-save"></i><span>${t('onb_btn_save','Guardar cambios')}</span>`;
+
+    // Info. Básica
+    const nameEl = document.getElementById('agentName');
+    if (nameEl) nameEl.value = d.name;
+    const phone = String(agent.phoneNumber || '').replace(/\s+/g, '');
+    const toggle = document.getElementById('phoneToggle');
+    if (toggle && d.editingBotType !== 'telegram' && phone) {
+        const cc = document.getElementById('countryCode');
+        const num = document.getElementById('phoneNumber');
+        let code = '';
+        if (cc) {
+            Array.from(cc.options).map(o => o.value).filter(Boolean)
+                .sort((a, b) => b.length - a.length)
+                .some(v => { if (phone.startsWith(v)) { code = v; return true; } return false; });
+            if (code) cc.value = code;
+        }
+        if (num) num.value = code ? phone.slice(code.length) : phone;
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change', { bubbles: true }));
+        d.useDifferentPhone = true;
+    }
+    document.querySelectorAll('input[name="additionalLanguage"]').forEach(el => {
+        el.checked = (cfg.additionalLanguages || []).includes(el.value);
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    // Modo de respuesta y personalidad
+    _obCheckRadio('responseMode', cfg.responseMode || 'ai');
+    _obCheckRadio('tone', cfg.tone || 'formal');
+    const editor = document.getElementById('editorContent');
+    if (editor && cfg.customTone) editor.innerText = cfg.customTone;
+    if (cfg.styleSample) {
+        _obStyleState = { name: cfg.styleSampleName || 'estilo.txt', kind: 'text', raw: cfg.styleSample };
+        if (typeof _obApplyStyleState === 'function') _obApplyStyleState();
+    }
+};
+
+async function _obSaveAgentEdit(d, cfg, name) {
+    const isTelegram = d.editingBotType === 'telegram';
+    const payload = {
+        name,
+        phoneNumber: isTelegram ? '' : (d.useDifferentPhone ? (d.phoneNumber || '') : ''),
+        config: Object.assign({}, d.editingConfig || {}, {
+            tone: cfg.tone || 'formal',
+            customTone: cfg.tone === 'custom' ? (cfg.customTone || '') : '',
+            responseMode: cfg.responseMode || 'ai',
+            additionalLanguages: cfg.additionalLanguages || [],
+            styleSample: cfg.styleSample || '',
+            styleSampleName: cfg.styleSample ? (cfg.styleSampleName || '') : '',
+        }),
+    };
+    // Negocios: horario, festivos, personal y servicios viven en Mi Negocio /
+    // Inventario. No se reenvían (UpdateAgent los sincroniza a la sucursal y
+    // pisaría lo actual con lo que quedó guardado al crear el agente).
+    if (!_obIsGov()) {
+        ['schedule', 'holidays', 'workers', 'services'].forEach(k => delete payload.config[k]);
+    }
+    const btn = document.getElementById('btnCreateAgent');
+    const origHTML = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<div class="loading-spinner"></div><span>${t('onb_saving','Guardando...')}</span>`;
+    }
+    try {
+        const res = await fetch('/api/agents/' + d.editingAgentId, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || 'No se pudieron guardar los cambios');
+        if (typeof showNotification === 'function') showNotification(t('onb_ok_saved', 'Cambios guardados'), 'success');
+        d.editingAgentId = null;
+        d.editingConfig = null;
+        if (typeof closeOnboardingModal === 'function') closeOnboardingModal();
+        if (typeof loadAgents === 'function') loadAgents();
+    } catch (err) {
+        console.error('❌ Error guardando agente:', err);
+        if (typeof showNotification === 'function') showNotification(err.message, 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
     }

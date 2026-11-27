@@ -754,7 +754,7 @@ async function loadOnboardingContent() {
 
             if (!onboardingScriptLoaded) {
                 const script = document.createElement('script');
-                script.src = '/static/js/client/onboarding.js?v=6';
+                script.src = '/static/js/client/onboarding.js?v=11';
                 script.onload = () => {
                     onboardingScriptLoaded = true;
                     if (window.Translations) window.Translations.apply(getLang());
@@ -880,11 +880,13 @@ async function reinitializeOnboardingEvents() {
         ? (_hasExistingAgents
             ? [
                 { id: 2, containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),  icon: 'lni-information' },
+                { id: 9, containerId: 'section-mode',        name: () => t('onb_tab_mode','IA o Botones'), icon: 'lni-list' },
                 { id: 5, containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),  icon: 'lni-comments' },
               ]
             : [
                 { id: 1, containerId: 'section-business',    name: () => t('onb_tab_agency','Dependencia'),    icon: 'lni-government' },
                 { id: 2, containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+                { id: 9, containerId: 'section-mode',        name: () => t('onb_tab_mode','IA o Botones'), icon: 'lni-list' },
                 { id: 3, containerId: 'section-location',    name: () => t('onb_tab_location','Ubicación'),      icon: 'lni-map-marker' },
                 { id: 4, containerId: 'section-social',      name: () => t('onb_tab_social','Redes Sociales'), icon: 'lni-share-alt' },
                 { id: 5, containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
@@ -897,6 +899,7 @@ async function reinitializeOnboardingEvents() {
         // servicios de Inventario (el Resumen muestra el checklist).
         : [
             { id: 2,  containerId: 'section-basic',       name: () => t('onb_tab_basic','Info. Básica'),   icon: 'lni-information' },
+            { id: 9,  containerId: 'section-mode',        name: () => t('onb_tab_mode','IA o Botones'), icon: 'lni-list' },
             { id: 5,  containerId: 'section-personality', name: () => t('onb_tab_personality','Personalidad'),   icon: 'lni-comments' },
           ];
     window._obIsGovModal = _isGovModal;
