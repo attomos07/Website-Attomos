@@ -13,6 +13,7 @@ package realtime
 // a esa fuente antes o después de repartirlo.
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -38,6 +39,10 @@ type CRMEvent struct {
 	Timestamp    int64       `json:"timestamp"`
 	BotConnected *bool       `json:"botConnected,omitempty"` // solo presente en Type == "status"
 	Metrics      *BotMetrics `json:"metrics,omitempty"`      // solo presente en Type == "metrics"
+	// Type == "history": respuesta del bot con el historial guardado en su
+	// servidor (Hetzner, crm_store.go del bot).
+	RequestID string     `json:"requestId,omitempty"`
+	Events    []CRMEvent `json:"events,omitempty"`
 }
 
 // BotMetrics — misma forma que src.BotMetrics del lado del bot
@@ -66,6 +71,9 @@ type CRMSendCommand struct {
 	Type  string `json:"type"` // "send" | "pause" | "resume"
 	Phone string `json:"phone"`
 	Text  string `json:"text,omitempty"`
+	// "history": pedir al bot el historial guardado en su servidor.
+	RequestID string `json:"requestId,omitempty"`
+	Limit     int    `json:"limit,omitempty"`
 }
 
 // botConn envuelve la conexión del bot con su propio mutex de escritura.
@@ -98,7 +106,18 @@ type crmHub struct {
 	bots    map[uint]*botConn               // agentID → conexión del bot
 	subs    map[uint]map[chan CRMEvent]bool // agentID → suscriptores SSE (pestañas del CRM)
 	metrics map[uint]metricsSnapshot        // agentID → última muestra de recursos reportada
+	// hist: últimos mensajes por agente, en memoria. Solo es el respaldo
+	// cuando el bot no está conectado: el historial real vive en el servidor
+	// del bot (Hetzner) y se pide con requestBotHistory.
+	hist map[uint][]CRMEvent
+	// pending: peticiones de historial esperando respuesta del bot.
+	pending map[string]chan []CRMEvent
 }
+
+const (
+	crmHistMax = 300
+	crmHistTTL = 48 * time.Hour
+)
 
 // CRMHub es el hub global del proceso — un único backend maneja todos los
 // agentes, cada uno con su propia entrada en los mapas de arriba.
@@ -106,6 +125,8 @@ var CRMHub = &crmHub{
 	bots:    make(map[uint]*botConn),
 	subs:    make(map[uint]map[chan CRMEvent]bool),
 	metrics: make(map[uint]metricsSnapshot),
+	hist:    make(map[uint][]CRMEvent),
+	pending: make(map[string]chan []CRMEvent),
 }
 
 func (h *crmHub) registerBot(agentID uint, conn *websocket.Conn) *botConn {
@@ -166,7 +187,78 @@ func (h *crmHub) unsubscribe(agentID uint, ch chan CRMEvent) {
 	close(ch)
 }
 
+// remember guarda un mensaje en el historial del agente.
+func (h *crmHub) remember(agentID uint, evt CRMEvent) {
+	if evt.Type != "message" && evt.Type != "control" {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	list := append(h.hist[agentID], evt)
+	cut := time.Now().Add(-crmHistTTL).UnixMilli()
+	i := 0
+	for i < len(list) && (len(list)-i > crmHistMax || list[i].Timestamp < cut) {
+		i++
+	}
+	if i > 0 {
+		list = append([]CRMEvent(nil), list[i:]...)
+	}
+	h.hist[agentID] = list
+}
+
+// history copia del historial reciente del agente.
+func (h *crmHub) history(agentID uint) []CRMEvent {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return append([]CRMEvent(nil), h.hist[agentID]...)
+}
+
+var crmReqSeq uint64
+
+// requestBotHistory pide al bot el historial guardado en su servidor.
+// ok=false si el bot no está conectado o no contestó a tiempo (bots sin
+// redeploy no conocen "history").
+func (h *crmHub) requestBotHistory(agentID uint, limit int, timeout time.Duration) ([]CRMEvent, bool) {
+	h.mu.Lock()
+	crmReqSeq++
+	id := fmt.Sprintf("h%d-%d", agentID, crmReqSeq)
+	ch := make(chan []CRMEvent, 1)
+	h.pending[id] = ch
+	h.mu.Unlock()
+	defer func() {
+		h.mu.Lock()
+		delete(h.pending, id)
+		h.mu.Unlock()
+	}()
+
+	if !h.SendToBot(agentID, CRMSendCommand{Type: "history", RequestID: id, Limit: limit}) {
+		return nil, false
+	}
+	select {
+	case evs := <-ch:
+		return evs, true
+	case <-time.After(timeout):
+		log.Printf("⚠️  [CRM] El bot del agente %d no mandó el historial a tiempo", agentID)
+		return nil, false
+	}
+}
+
+// deliverHistory entrega la respuesta "history" del bot a quien la pidió.
+func (h *crmHub) deliverHistory(evt CRMEvent) {
+	h.mu.RLock()
+	ch, ok := h.pending[evt.RequestID]
+	h.mu.RUnlock()
+	if !ok {
+		return
+	}
+	select {
+	case ch <- evt.Events:
+	default:
+	}
+}
+
 func (h *crmHub) broadcast(agentID uint, evt CRMEvent) {
+	h.remember(agentID, evt)
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for ch := range h.subs[agentID] {
@@ -299,6 +391,11 @@ func BotCRMSocket(c *gin.Context) {
 			evt.Timestamp = time.Now().UnixMilli()
 		}
 
+		if evt.Type == "history" {
+			CRMHub.deliverHistory(evt)
+			continue
+		}
+
 		if evt.Type == "metrics" && evt.Metrics != nil {
 			// Muestra de recursos del proceso — no es un mensaje de
 			// conversación, no se manda a las pestañas del CRM abiertas.
@@ -332,11 +429,31 @@ func StreamAgentCRM(c *gin.Context) {
 
 	// Evento inicial con el estado de conexión del bot, para que el CRM
 	// pueda mostrar "bot conectado" / "bot desconectado".
+	// Telegram guarda el token del bot en PhoneNumber: nunca mandarlo.
+	phone := agent.MetaDisplayNumber
+	if phone == "" && !agent.IsTelegramBot() {
+		phone = agent.PhoneNumber
+	}
 	c.SSEvent("status", gin.H{
 		"botConnected": CRMHub.IsBotConnected(agentID),
 		"agentId":      agentID,
-		"phoneNumber":  agent.PhoneNumber,
+		"phoneNumber":  phone,
 	})
+	c.Writer.Flush()
+
+	// Historial: el que guarda el bot en su servidor (Hetzner); si el bot
+	// no está conectado o no contesta, lo que el backend tiene en memoria.
+	past, fromBot := CRMHub.requestBotHistory(agentID, 1000, 6*time.Second)
+	if !fromBot {
+		past = CRMHub.history(agentID)
+	}
+	for _, evt := range past {
+		if evt.Type == "control" {
+			c.SSEvent("control", evt)
+		} else {
+			c.SSEvent("message", evt)
+		}
+	}
 	c.Writer.Flush()
 
 	notify := c.Writer.CloseNotify()
@@ -353,6 +470,8 @@ func StreamAgentCRM(c *gin.Context) {
 			}
 			if evt.Type == "status" {
 				c.SSEvent("status", evt)
+			} else if evt.Type == "control" {
+				c.SSEvent("control", evt)
 			} else {
 				c.SSEvent("message", evt)
 			}

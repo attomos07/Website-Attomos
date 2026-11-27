@@ -35,6 +35,9 @@ type crmEvent struct {
 	Text        string      `json:"text,omitempty"`
 	Timestamp   int64       `json:"timestamp"`
 	Metrics     *BotMetrics `json:"metrics,omitempty"`
+	// Respuesta a "history" (ver crm_store.go)
+	RequestID string     `json:"requestId,omitempty"`
+	Events    []crmEvent `json:"events,omitempty"`
 }
 
 // crmSendCommand es lo que el backend manda AL bot por este mismo socket —
@@ -45,6 +48,9 @@ type crmSendCommand struct {
 	Type  string `json:"type"` // "send" | "pause" | "resume" | "refresh_business_config"
 	Phone string `json:"phone,omitempty"`
 	Text  string `json:"text,omitempty"`
+	// "history": el backend pide el historial guardado en este servidor.
+	RequestID string `json:"requestId,omitempty"`
+	Limit     int    `json:"limit,omitempty"`
 }
 
 var (
@@ -62,6 +68,7 @@ var (
 // InitCRMBridge conecta con el hub del CRM y se reconecta solo si se cae.
 // Llamar una vez desde main.go, junto a los demás Init*.
 func InitCRMBridge() {
+	initCRMStore() // historial en este servidor (crm_store.go)
 	if os.Getenv("ATTOMOS_API_URL") == "" || os.Getenv("BOT_API_TOKEN") == "" || os.Getenv("AGENT_ID") == "" {
 		log.Println("⚠️  [CRM] ATTOMOS_API_URL, BOT_API_TOKEN o AGENT_ID no configurados — CRM en vivo deshabilitado")
 		return
@@ -143,6 +150,9 @@ func crmReadLoop(conn *websocket.Conn) {
 			return
 		}
 		switch cmd.Type {
+		case "history":
+			go crmSendHistory(cmd.RequestID, cmd.Limit)
+			continue
 		case "refresh_business_config":
 			go func() {
 				if err := LoadBusinessConfig(); err != nil {
@@ -182,6 +192,7 @@ func handleCRMSendCommand(cmd crmSendCommand) {
 		return
 	}
 
+	crmStoreAdd(crmEvent{Type: "message", Direction: "out", From: "human", Phone: cmd.Phone, Text: cmd.Text, Timestamp: time.Now().UnixMilli()})
 	SetHumanControlled(cmd.Phone)
 	log.Printf("✅ [CRM] Mensaje entregado a %s — bot pausado %v para este número", cmd.Phone, humanTakeoverDuration)
 }
@@ -193,6 +204,9 @@ func handleCRMSendCommand(cmd crmSendCommand) {
 //	direction:   "in" (mensaje del cliente) | "out" (mensaje hacia el cliente)
 //	from:        "customer" | "bot" | "human"
 func NotifyCRM(direction, phone, contactName, text, from string) {
+	// Se guarda siempre, aunque el CRM no esté conectado en este momento.
+	crmStoreAdd(crmEvent{Type: "message", Direction: direction, From: from, Phone: phone, ContactName: contactName, Text: text, Timestamp: time.Now().UnixMilli()})
+
 	crmConnMu.Lock()
 	conn := crmConn
 	connected := crmConnected
