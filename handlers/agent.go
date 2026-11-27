@@ -630,19 +630,22 @@ func GetAgents(c *gin.Context) {
 	response := make([]gin.H, len(agents))
 	for i, agent := range agents {
 		agentData := gin.H{
-			"id":            agent.ID,
-			"name":          agent.Name,
-			"phoneNumber":   agentPublicPhone(&agent),
-			"businessType":  agent.BusinessType,
-			"branchId":      agent.BranchID,
-			"port":          agent.Port,
-			"deployStatus":  agent.DeployStatus,
-			"isActive":      agent.IsActive,
-			"botType":       agent.BotType,
-			"config":        agent.Config,
-			"createdAt":     agent.CreatedAt,
-			"chatwootUrl":   agent.ChatwootURL,
-			"chatwootEmail": agent.ChatwootEmail,
+			"id":          agent.ID,
+			"name":        agent.Name,
+			"phoneNumber": agentPublicPhone(&agent),
+			// Número de WhatsApp Business conectado con Meta (para mostrarlo
+			// cuando el agente no tiene teléfono propio).
+			"metaDisplayNumber": agent.MetaDisplayNumber,
+			"businessType":      agent.BusinessType,
+			"branchId":          agent.BranchID,
+			"port":              agent.Port,
+			"deployStatus":      agent.DeployStatus,
+			"isActive":          agent.IsActive,
+			"botType":           agent.BotType,
+			"config":            agent.Config,
+			"createdAt":         agent.CreatedAt,
+			"chatwootUrl":       agent.ChatwootURL,
+			"chatwootEmail":     agent.ChatwootEmail,
 		}
 		if agent.HasOwnServer() {
 			agentData["serverIp"] = agent.ServerIP

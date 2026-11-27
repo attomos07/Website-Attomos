@@ -957,7 +957,7 @@ function createAgentRow(agent) {
     // por diseño. Solo WhatsApp Business (orbital/builderbot) y Telegram usan
     // un número/token real, y ahí sí "Sin número" indica algo pendiente.
     const isWhatsAppWeb = botType === 'atomic';
-    const phone = agent.phoneNumber
+    const phone = agent.phoneNumber || agent.metaDisplayNumber
         || (isWhatsAppWeb ? t('agents_whatsapp_web_number', 'WhatsApp Web') : t('agents_no_number', 'Sin número'));
     const statusBadge = getStatusBadge(agent);
 

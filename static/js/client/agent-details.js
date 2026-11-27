@@ -100,7 +100,7 @@ function renderAgentDetails(agent) {
     // real, y ahí sí "No configurado" indica algo pendiente.
     const botTypeForPhone = (agent.botType || '').toLowerCase();
     const isWhatsAppWebAgent = botTypeForPhone === 'atomic';
-    document.getElementById('infoPhone').textContent = agent.phoneNumber
+    document.getElementById('infoPhone').textContent = agent.phoneNumber || agent.metaDisplayNumber
         || (isWhatsAppWebAgent
             ? (window.Translations?.dict?.[getLang()]?.ad_whatsapp_web_number || 'WhatsApp Web')
             : (window.Translations?.dict?.[getLang()]?.ad_not_configured || 'No configurado'));
@@ -858,9 +858,12 @@ function renderMetaConnection(data) {
 
     document.getElementById('metaConnSetup').style.display = connected ? 'none' : '';
     document.getElementById('metaConnInfo').style.display = connected ? '' : 'none';
+    document.getElementById('metaConnActions').style.display = connected ? '' : 'none';
     document.getElementById('metaCancelEditBtn').style.display = 'none';
 
     document.getElementById('metaInfoNumber').textContent = data.displayNumber || data.display_number || '--';
+    const _metaNum = connected ? (data.displayNumber || data.display_number || '') : '';
+    if (_metaNum && !agent.phoneNumber) document.getElementById('infoPhone').textContent = _metaNum;
     document.getElementById('metaInfoName').textContent = data.verifiedName || data.verified_name || '--';
     document.getElementById('metaWebhookUrl').textContent = data.webhookUrl || `${window.location.origin}/webhook/meta/${agentId}`;
     document.getElementById('metaVerifyTokenValue').textContent = data.webhookVerifyToken || '--';
@@ -940,6 +943,7 @@ async function saveMetaCredentials(event) {
 
 function editMetaCredentials() {
     document.getElementById('metaConnInfo').style.display = 'none';
+    document.getElementById('metaConnActions').style.display = 'none';
     document.getElementById('metaConnSetup').style.display = '';
     document.getElementById('metaCancelEditBtn').style.display = '';
 }
@@ -947,6 +951,7 @@ function editMetaCredentials() {
 function cancelMetaEdit() {
     document.getElementById('metaConnSetup').style.display = 'none';
     document.getElementById('metaConnInfo').style.display = '';
+    document.getElementById('metaConnActions').style.display = '';
     document.getElementById('metaCancelEditBtn').style.display = 'none';
 }
 
