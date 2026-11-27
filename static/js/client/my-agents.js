@@ -191,7 +191,7 @@ async function loadOnboardingContent() {
             if (!document.getElementById('onboarding-css')) {
                 const link = document.createElement('link');
                 link.id = 'onboarding-css'; link.rel = 'stylesheet';
-                link.href = '/static/css/client/onboarding.css';
+                link.href = '/static/css/client/onboarding.css?v=8';
                 document.head.appendChild(link);
             }
             if (!document.getElementById('onboarding-modal-fixes')) {
@@ -383,44 +383,149 @@ async function reinitializeOnboardingEvents() {
 
     // ── Habilitar Continuar al seleccionar red social (SINCRÓNICO, antes de cualquier await) ──
     (function setupSocialSelectionEarly() {
-        // Telegram: cada negocio conecta SU bot. Al elegir Telegram se
-        // muestra el campo del token (@BotFather) y "Continuar" se habilita
-        // hasta que tenga el formato correcto (el servidor lo revisa con
-        // Telegram al crear el agente).
+        // Telegram: cada negocio conecta SU bot sin nada técnico. Al elegir
+        // Telegram se pide un enlace al bot administrador de Attomos
+        // (POST /api/telegram/connect): botón "Abrir Telegram" + QR. Ahí el
+        // cliente toca "Crear mi bot" y confirma; aquí se consulta el código
+        // hasta que el bot queda creado y se habilita "Continuar".
+        // Plan B (si la conexión no está disponible o ya tienen un bot):
+        // pegar el token de @BotFather.
         var TG_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,}$/;
+        var tg = { code: null, ready: false, timer: null, starting: false };
+        function _tgEl(id) { return document.getElementById(id); }
         function _tgTokenOk() {
-            var inp = document.getElementById('telegramBotToken');
-            return !!inp && TG_RE.test(inp.value.trim());
+            var inp = _tgEl('telegramBotToken');
+            return !!inp && !_tgEl('tgManual').hidden && TG_RE.test(inp.value.trim());
         }
         function _syncStep1Btn() {
-            var btn = document.getElementById('btnStep1');
+            var btn = _tgEl('btnStep1');
             if (!btn || !window.selectedSocial) return;
-            var ok = window.selectedSocial !== 'telegram' || _tgTokenOk();
+            var ok = window.selectedSocial !== 'telegram' || tg.ready || _tgTokenOk();
             btn.disabled = !ok;
             if (ok) btn.removeAttribute('disabled');
+        }
+        function _tgError(msg) {
+            var e = _tgEl('tgError');
+            if (!e) return;
+            e.textContent = msg || '';
+            e.hidden = !msg;
+        }
+        // QR con qrcodejs (se carga solo la primera vez, como en Compartir citas).
+        var _qrLib = null;
+        function _tgDrawQR(url) {
+            var box = _tgEl('tgQR');
+            if (!box) return;
+            box.innerHTML = '';
+            if (!_qrLib) {
+                _qrLib = window.QRCode ? Promise.resolve() : new Promise(function (res, rej) {
+                    var sc = document.createElement('script');
+                    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                    sc.onload = res; sc.onerror = function () { _qrLib = null; rej(); };
+                    document.head.appendChild(sc);
+                });
+            }
+            _qrLib.then(function () {
+                box.innerHTML = '';
+                new window.QRCode(box, { text: url, width: 140, height: 140, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+            }).catch(function () { box.style.display = 'none'; });
+        }
+        function _tgShowManual(open) {
+            var m = _tgEl('tgManual');
+            if (m) m.hidden = !open;
+            if (open) setTimeout(function () { var i = _tgEl('telegramBotToken'); if (i) i.focus(); }, 60);
+            _syncStep1Btn();
+        }
+        function _tgDone(st) {
+            tg.ready = true;
+            clearInterval(tg.timer); tg.timer = null;
+            try { window.agentData = window.agentData || {}; window.agentData.telegramConnectCode = tg.code; } catch (e) {}
+            _tgEl('tgStepOpen').hidden = true;
+            _tgEl('tgStepDone').hidden = false;
+            _tgEl('tgDoneName').textContent = (st.botName ? st.botName + ' · ' : '') + (st.botUsername || '');
+            var a = _tgEl('tgDoneLink');
+            a.href = st.botLink || '#';
+            a.textContent = 'Conectado ✓ · Abrir en Telegram';
+            _tgEl('tgManualToggle').hidden = true;
+            _tgShowManual(false);
+            _tgError('');
+            _syncStep1Btn();
+        }
+        function _tgPoll() {
+            if (!tg.code || tg.ready) return;
+            fetch('/api/telegram/connect/' + encodeURIComponent(tg.code), { credentials: 'include', cache: 'no-store' })
+                .then(function (r) { return r.json().catch(function () { return {}; }); })
+                .then(function (st) {
+                    if (!st || tg.ready) return;
+                    if (st.status === 'opened') _tgEl('tgWait').hidden = false;
+                    if (st.status === 'created' || st.status === 'used') _tgDone(st);
+                    if (st.status === 'expired') { clearInterval(tg.timer); tg.timer = null; tg.code = null; _tgStart(); }
+                }).catch(function () {});
+        }
+        function _tgStart() {
+            if (tg.code || tg.starting || tg.ready) return;
+            tg.starting = true;
+            _tgError('');
+            var branchId = 0;
+            try { branchId = Number((window.agentData || {}).branchId || 0) || 0; } catch (e) {}
+            fetch('/api/telegram/connect', {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ branchId: branchId })
+            }).then(function (r) {
+                return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; });
+            }).then(function (res) {
+                tg.starting = false;
+                if (!res.ok) {
+                    _tgError((res.d && res.d.error) || 'No se pudo conectar con Telegram.');
+                    if (res.d && res.d.manual) {
+                        _tgEl('tgStepOpen').hidden = true;
+                        _tgShowManual(true);
+                    }
+                    return;
+                }
+                tg.code = res.d.code;
+                var btn = _tgEl('tgOpenBtn');
+                btn.href = res.d.link;
+                btn.setAttribute('aria-disabled', 'false');
+                _tgDrawQR(res.d.link);
+                clearInterval(tg.timer);
+                tg.timer = setInterval(_tgPoll, 3000);
+            }).catch(function () {
+                tg.starting = false;
+                _tgError('No se pudo conectar con Attomos. Revisa tu internet e intenta de nuevo.');
+            });
         }
         function _enableContinuarEarly(value) {
             try { window.selectedSocial = value; } catch(e) {}
             try { window.agentData = window.agentData || {}; window.agentData.social = value; } catch(e) {}
-            var tg = document.getElementById('telegramTokenSection');
-            if (tg) {
-                tg.style.display = value === 'telegram' ? '' : 'none';
-                if (value === 'telegram') setTimeout(function () { var i = document.getElementById('telegramBotToken'); if (i) i.focus(); }, 60);
-            }
+            var sec = _tgEl('telegramTokenSection');
+            if (sec) sec.style.display = value === 'telegram' ? '' : 'none';
+            if (value === 'telegram') _tgStart();
+            else { clearInterval(tg.timer); tg.timer = null; }
             _syncStep1Btn();
         }
         (function () {
-            var inp = document.getElementById('telegramBotToken');
-            if (!inp || inp._tgBound) return;
-            inp._tgBound = true;
-            inp.addEventListener('input', function () {
-                // Pegado con espacios o saltos de línea: se limpian.
-                var clean = inp.value.replace(/\s+/g, '');
-                if (clean !== inp.value) inp.value = clean;
-                try { window.agentData = window.agentData || {}; window.agentData.telegramToken = clean; } catch(e) {}
-                inp.style.borderColor = clean && !TG_RE.test(clean) ? '#ef4444' : '';
-                _syncStep1Btn();
-            });
+            var inp = _tgEl('telegramBotToken');
+            if (inp && !inp._tgBound) {
+                inp._tgBound = true;
+                inp.addEventListener('input', function () {
+                    var clean = inp.value.replace(/\s+/g, '');
+                    if (clean !== inp.value) inp.value = clean;
+                    try { window.agentData = window.agentData || {}; window.agentData.telegramToken = clean; } catch(e) {}
+                    inp.style.borderColor = clean && !TG_RE.test(clean) ? '#ef4444' : '';
+                    _syncStep1Btn();
+                });
+            }
+            var tog = _tgEl('tgManualToggle');
+            if (tog && !tog._tgBound) {
+                tog._tgBound = true;
+                tog.addEventListener('click', function () { _tgShowManual(_tgEl('tgManual').hidden); });
+            }
+            // Al volver de Telegram a esta pestaña se revisa al instante.
+            if (!window._tgVisBound) {
+                window._tgVisBound = true;
+                document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') _tgPoll(); });
+            }
         })();
         document.querySelectorAll('input[name="social"]').forEach(function(radio) {
             radio.addEventListener('change', function() { _enableContinuarEarly(this.value); });
@@ -1293,11 +1398,18 @@ function confirmRedeploy(agentId, agentName, botType) {
         type: 'warning',
         icon: 'lni-reload',
         title: t('agents_redeploy_title', '¿Redeploy del Agente?'),
-        message: t('agents_redeploy_msg', 'Se reiniciará el bot {name} desde cero. El QR se regenerará y tendrás que volver a escanear.')
+        // WhatsApp con QR (atomic) se vuelve a escanear; WhatsApp Business
+        // (Meta) y Telegram solo se actualizan, sin volver a vincular.
+        message: (botType === 'atomic'
+            ? t('agents_redeploy_msg', 'Se reiniciará el bot {name} desde cero. El QR se regenerará y tendrás que volver a escanear.')
+            : t('agents_redeploy_msg_nolink', 'Se actualizará el bot {name} con la versión más reciente. No tendrás que volver a vincular nada.'))
             .replace('{name}', `<strong>${escapeHtml(agentName)}</strong>`),
-        list: [
+        list: botType === 'atomic' ? [
             t('agents_redeploy_list1', 'El bot se desconectará momentáneamente'),
             t('agents_redeploy_list2', 'Se generará un nuevo QR'),
+            t('agents_redeploy_list3', 'Los datos del negocio no se perderán')
+        ] : [
+            t('agents_redeploy_list1b', 'El bot dejará de contestar unos minutos'),
             t('agents_redeploy_list3', 'Los datos del negocio no se perderán')
         ],
         confirmText: t('agents_redeploy_confirm_btn', 'Sí, Redeploy'),

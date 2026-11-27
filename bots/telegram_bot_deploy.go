@@ -525,6 +525,13 @@ func (s *TelegramBotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKe
 	return s.updateEnvVar(agent, dir, "GEMINI_API_KEY", apiKey)
 }
 
+// UpdateBotToken pone el token nuevo del bot en el .env y lo reinicia
+// (cuando el dueño cambia el token desde Telegram).
+func (s *TelegramBotDeployService) UpdateBotToken(agent *models.Agent, token string) error {
+	dir := s.botDir(agent.ID, agent.UserID)
+	return s.updateEnvVar(agent, dir, "TELEGRAM_BOT_TOKEN", token)
+}
+
 // UpdatePaymentConfig actualiza las variables de pago en el .env
 func (s *TelegramBotDeployService) UpdatePaymentConfig(agent *models.Agent) error {
 	log.Printf("🔄 [Agent %d] Actualizando variables de pago (Telegram)...", agent.ID)

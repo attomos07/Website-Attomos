@@ -28,8 +28,11 @@ type CreateAgentRequest struct {
 	Social       string `json:"social"` // "whatsapp" | "telegram" | "meta" | ...
 	// Token del bot de Telegram (de @BotFather). Solo con social=telegram;
 	// se guarda en Agent.PhoneNumber, que es de donde lo lee el deploy.
-	TelegramToken string             `json:"telegramToken"`
-	Config        models.AgentConfig `json:"config"`
+	TelegramToken string `json:"telegramToken"`
+	// Código de "Conectar Telegram" (bot creado desde el bot administrador
+	// de Attomos, sin tokens). Tiene prioridad sobre TelegramToken.
+	TelegramConnectCode string             `json:"telegramConnectCode"`
+	Config              models.AgentConfig `json:"config"`
 }
 
 // CreateAgent crea un nuevo agente
@@ -125,8 +128,18 @@ func CreateAgent(c *gin.Context) {
 	// bot nunca arrancaba. Ahora el token es obligatorio y se revisa con
 	// Telegram antes de crear el agente.
 	var telegramUsername string
+	var tgConnect *models.TelegramConnect
 	if botType == "telegram" {
 		token := strings.TrimSpace(req.TelegramToken)
+		if code := strings.TrimSpace(req.TelegramConnectCode); code != "" {
+			rec, msg := telegramTokenFromConnect(user.ID, code)
+			if msg != "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": msg, "field": "telegramConnect"})
+				return
+			}
+			tgConnect = rec
+			token = rec.Token
+		}
 		if token == "" && isTelegramToken(req.PhoneNumber) {
 			token = strings.TrimSpace(req.PhoneNumber) // clientes viejos que lo mandaban en phoneNumber
 		}
@@ -196,6 +209,7 @@ func CreateAgent(c *gin.Context) {
 	}
 
 	log.Printf("✅ Agente creado en BD: ID=%d Port=%d BotType=%s", agent.ID, agent.Port, agent.BotType)
+	markTelegramConnectUsed(tgConnect, agent.ID)
 
 	// Sincronizar servicios/trabajadores/festivos → my_business_info
 	if req.BranchID > 0 {
@@ -1061,8 +1075,14 @@ func RedeployAgent(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
 		return
 	}
+	// OrbitalBot (WhatsApp Business / Meta) y Telegram: se vuelve a
+	// desplegar con el código actual de providers/ (ver redeployOrbitalOrTelegram).
+	if agent.IsOrbitalBot() || agent.IsTelegramBot() {
+		redeployOrbitalOrTelegram(c, &agent, user)
+		return
+	}
 	if !agent.IsAtomicBot() {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Redeploy solo disponible para AtomicBot"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Este tipo de agente no tiene redeploy"})
 		return
 	}
 
@@ -1128,6 +1148,75 @@ func RedeployAgent(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Redeploy iniciado."})
+}
+
+// redeployOrbitalOrTelegram — redeploy de OrbitalBot (su servidor propio)
+// y de Telegram (servidor compartido): vuelve a subir el código de
+// providers/, regenera el .env y el business_config con lo actual
+// (credenciales de Meta, Gemini, Mi Negocio, pagos), compila y reinicia.
+// No hay QR ni hay que volver a vincular nada.
+func redeployOrbitalOrTelegram(c *gin.Context, agent *models.Agent, user *models.User) {
+	if agent.IsOrbitalBot() && (agent.ServerIP == "" || agent.ServerPassword == "") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El servidor de este agente todavía no está listo."})
+		return
+	}
+	config.DB.Model(agent).Updates(map[string]interface{}{"deploy_status": "deploying"})
+	ag := *agent
+	geminiAPIKey := user.GetGeminiAPIKey()
+
+	go func() {
+		var googleCredentials []byte
+		if ag.GoogleConnected && ag.GoogleToken != "" {
+			googleCredentials = []byte(ag.GoogleToken)
+		}
+		fail := func(msg string, err error) {
+			log.Printf("❌ [Agent %d] Redeploy: %s: %v", ag.ID, msg, err)
+			config.DB.Model(&ag).Update("deploy_status", "error")
+		}
+
+		if ag.IsOrbitalBot() {
+			svc := bots.NewOrbitalBotDeployService(ag.ServerIP, ag.ServerPassword)
+			if err := svc.Connect(); err != nil {
+				fail("no se pudo conectar al servidor", err)
+				return
+			}
+			defer svc.Close()
+			_ = svc.StopBot(ag.ID)
+			if err := svc.DeployOrbitalBot(&ag, geminiAPIKey, googleCredentials); err != nil {
+				fail("despliegue", err)
+				return
+			}
+			config.DB.Model(&ag).Updates(map[string]interface{}{"deploy_status": "running", "server_status": "ready"})
+		} else {
+			servers, err := bots.GetGlobalServerManager().ListAllServers()
+			if err != nil || len(servers) == 0 {
+				fail("sin servidor compartido", err)
+				return
+			}
+			svc := bots.NewTelegramBotDeployService(servers[0].IPAddress, servers[0].RootPassword)
+			if err := svc.Connect(); err != nil {
+				fail("no se pudo conectar al servidor", err)
+				return
+			}
+			defer svc.Close()
+			var branch *models.MyBusinessInfo
+			if ag.BranchID > 0 {
+				var b models.MyBusinessInfo
+				if err := config.DB.First(&b, ag.BranchID).Error; err == nil {
+					branch = &b
+				}
+			}
+			_ = svc.StopBot(ag.ID)
+			if err := svc.DeployTelegramBot(&ag, branch, geminiAPIKey, googleCredentials); err != nil {
+				fail("despliegue", err)
+				return
+			}
+			config.DB.Model(&ag).Updates(map[string]interface{}{"deploy_status": "running"})
+		}
+		log.Printf("✅ [Agent %d] Redeploy completado (%s)", ag.ID, ag.BotType)
+	}()
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Redeploy iniciado. Tarda unos minutos; no hay que volver a vincular nada."})
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

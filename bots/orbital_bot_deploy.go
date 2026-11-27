@@ -514,9 +514,12 @@ func (s *OrbitalBotDeployService) generateEnvFile(agent *models.Agent, geminiAPI
 	return env.String()
 }
 
-// generateWebhookToken genera un token de verificación para webhook
+// generateWebhookToken: token de verificación del webhook. Debe ser SIEMPRE
+// el mismo para el agente: es el que muestra el panel ("orbital_webhook_N",
+// handlers/meta_credentials.go) y el que se pega en Meta. Antes llevaba la
+// hora, así que después de un (re)deploy ya no coincidía con Meta.
 func generateWebhookToken(agentID uint) string {
-	return fmt.Sprintf("orbital_webhook_%d_%d", agentID, time.Now().Unix())
+	return fmt.Sprintf("orbital_webhook_%d", agentID)
 }
 
 // compileBotOnServer compila el bot en el servidor

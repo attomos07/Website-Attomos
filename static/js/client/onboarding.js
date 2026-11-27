@@ -838,8 +838,12 @@ async function createAgent() {
         businessType: d.businessType || '',
         branchId,
         social: (window.selectedSocial || d.social || '').toLowerCase(),
-        // Token del bot de Telegram (@BotFather); el servidor lo revisa.
-        telegramToken: ((window.selectedSocial || d.social || '').toLowerCase() === 'telegram')
+        // Telegram: el bot creado con "Conectar Telegram" (código; el token
+        // nunca pasa por el navegador) o, plan B, el token de @BotFather.
+        telegramConnectCode: ((window.selectedSocial || d.social || '').toLowerCase() === 'telegram')
+            ? ((window.agentData || {}).telegramConnectCode || d.telegramConnectCode || '')
+            : '',
+        telegramToken: ((window.selectedSocial || d.social || '').toLowerCase() === 'telegram' && !((window.agentData || {}).telegramConnectCode))
             ? ((document.getElementById('telegramBotToken') || {}).value || d.telegramToken || '').replace(/\s+/g, '')
             : '',
         config: {
@@ -902,7 +906,7 @@ async function createAgent() {
         if (typeof showNotification === 'function') {
             showNotification(t('onb_ok_created','¡Agente creado! Desplegando…'), 'success');
             // Telegram: el bot del negocio (para abrirlo y probarlo).
-            if (data.telegramBot) {
+            if (data.telegramBot && !((window.agentData || {}).telegramConnectCode)) {
                 setTimeout(function () {
                     showNotification(t('onb_tg_ready', 'Tu bot de Telegram es') + ' ' + data.telegramBot + ' — t.me/' + String(data.telegramBot).replace(/^@/, ''), 'success');
                 }, 1800);

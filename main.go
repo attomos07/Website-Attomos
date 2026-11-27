@@ -79,6 +79,7 @@ func main() {
 		&models.FoundationPledge{},       // ← Foundation: aportes (suscripción mensual o única)
 		&models.FoundationPayment{},      // ← Foundation: cada cobro exitoso
 		&models.FoundationFile{},         // ← Foundation: foto de perfil en el Drive de la rescatista
+		&models.TelegramConnect{},        // ← "Conectar Telegram" (bots creados por el bot administrador)
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -113,6 +114,7 @@ func main() {
 	}
 
 	log.Println("✅ Base de datos conectada y migrada")
+	handlers.InitTelegramManager()
 
 	// ============================================
 	// INICIALIZAR GOOGLE OAUTH
@@ -299,6 +301,9 @@ func main() {
 		// Agentes
 		protected.POST("/agents", handlers.CreateAgent)
 		protected.GET("/agents", handlers.GetAgents)
+		// "Conectar Telegram" con un toque (onboarding).
+		protected.POST("/telegram/connect", handlers.TelegramConnectStart)
+		protected.GET("/telegram/connect/:code", handlers.TelegramConnectStatus)
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
 		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
@@ -350,6 +355,9 @@ func main() {
 
 		// Bot endpoints (no requieren JWT, usan BOT_API_TOKEN)
 		router.POST("/api/bot/orders", handlers.CreateBotOrder)
+		// Bot administrador de Telegram (Managed Bots): Telegram manda aquí
+		// los avisos; se valida con X-Telegram-Bot-Api-Secret-Token.
+		router.POST("/api/telegram/manager/webhook", handlers.TelegramManagerWebhook)
 		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
 		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
 		// Ópticas: "¿ya están mis lentes?" → en qué paso va su trabajo

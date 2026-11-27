@@ -7,7 +7,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/client/sidebar.css" />
     <link rel="stylesheet" href="/static/css/client/userbar.css" />
-    <link rel="stylesheet" href="/static/css/client/onboarding.css?v=7" />
+    <link rel="stylesheet" href="/static/css/client/onboarding.css?v=8" />
   
     <style>
       /* ── Read-only notice en secciones de negocio ── */
@@ -209,29 +209,51 @@
                     </label>
                   </div>
 
-                  <!-- Campo de Token de Telegram (visible solo cuando se selecciona Telegram) -->
-                  <div id="telegramTokenSection" style="display:none; margin: 1rem 0 0.5rem;">
-                    <div style="background: linear-gradient(135deg, rgba(34,158,217,0.08) 0%, rgba(34,158,217,0.04) 100%); border: 1px solid rgba(34,158,217,0.25); border-radius: 12px; padding: 1.25rem 1.5rem;">
-                      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.75rem;">
-                        <svg viewBox="0 0 24 24" fill="#229ED9" style="width:20px;height:20px;flex-shrink:0">
-                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/>
-                        </svg>
-                        <span style="font-weight:700; font-size:0.95rem; color:#0f172a;" data-translate="onb_tg_token_title">Token de Telegram Bot</span>
+                  <!-- Conectar Telegram (visible solo con Telegram): el cliente crea SU bot
+                       desde el bot administrador de Attomos con un toque — sin @BotFather ni tokens. -->
+                  <div id="telegramTokenSection" class="tg-connect" style="display:none;">
+                    <div class="tg-connect-card">
+                      <div class="tg-connect-head">
+                        <svg viewBox="0 0 24 24" fill="#229ED9" aria-hidden="true"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+                        <div>
+                          <strong data-translate="onb_tg_title">Conecta el bot de Telegram de tu negocio</strong>
+                          <span id="tgConnectSub" data-translate="onb_tg_sub">Se crea en Telegram con un toque. No necesitas nada técnico.</span>
+                        </div>
                       </div>
-                      <p style="font-size:0.82rem; color:#64748b; margin:0 0 0.85rem; line-height:1.5;">
-                        Obtén tu token con <strong>@BotFather</strong> en Telegram → <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:0.8rem;">/newbot</code> → copia el token aquí.
-                      </p>
-                      <input
-                        type="text"
-                        id="telegramBotToken"
-                        class="form-input"
-                        placeholder="123456789:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                        autocomplete="off"
-                        style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.02em;"
-                      />
-                      <p style="font-size:0.76rem; color:#94a3b8; margin:0.4rem 0 0;">
-                        Formato: <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">número:letras</code> — ej: <em>110201543:AAHdqTcvCH...</em>
-                      </p>
+
+                      <!-- 1) Abrir Telegram -->
+                      <div class="tg-connect-step" id="tgStepOpen">
+                        <div class="tg-connect-body">
+                          <ol class="tg-connect-list">
+                            <li data-translate="onb_tg_l1">Toca <b>Abrir Telegram</b> (o escanea el código con tu celular).</li>
+                            <li data-translate="onb_tg_l2">En Telegram toca <b>🤖 Crear mi bot</b> y confirma.</li>
+                            <li data-translate="onb_tg_l3">Regresa aquí: se conecta solo.</li>
+                          </ol>
+                          <a class="btn btn-next tg-connect-btn" id="tgOpenBtn" href="#" target="_blank" rel="noopener" aria-disabled="true">
+                            <span data-translate="onb_tg_open">Abrir Telegram</span>
+                          </a>
+                          <p class="tg-connect-wait" id="tgWait" hidden><span class="tg-dot"></span><span data-translate="onb_tg_waiting">Esperando a que crees tu bot en Telegram…</span></p>
+                        </div>
+                        <div class="tg-connect-qr" id="tgQR" aria-label="Código QR para abrir Telegram"></div>
+                      </div>
+
+                      <!-- 2) Listo -->
+                      <div class="tg-connect-done" id="tgStepDone" hidden>
+                        <span class="tg-done-ico">✓</span>
+                        <div>
+                          <strong id="tgDoneName"></strong>
+                          <a id="tgDoneLink" href="#" target="_blank" rel="noopener"></a>
+                        </div>
+                      </div>
+
+                      <p class="tg-connect-error" id="tgError" hidden></p>
+
+                      <!-- Plan B: ya tienen un bot de @BotFather -->
+                      <button type="button" class="tg-connect-manual-toggle" id="tgManualToggle" data-translate="onb_tg_manual">¿Ya tienes un bot de Telegram? Usa su token</button>
+                      <div class="tg-connect-manual" id="tgManual" hidden>
+                        <input type="text" id="telegramBotToken" class="form-input" placeholder="123456789:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+                        <p data-translate="onb_tg_manual_hint">Te lo da @BotFather (comando /token).</p>
+                      </div>
                     </div>
                   </div>
 

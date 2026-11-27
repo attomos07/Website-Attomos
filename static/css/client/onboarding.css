@@ -4470,3 +4470,48 @@ input:checked + .toggle-slider:before {
   font-family: inherit; font-size: 0.82rem; line-height: 1.5; color: #334155;
   white-space: pre-wrap; word-break: break-word;
 }
+/* =========================================================
+   Conectar Telegram (Managed Bots): botón + QR, sin tokens
+   ========================================================= */
+.tg-connect{ margin:1rem 0 .5rem; }
+.tg-connect-card{
+  background:linear-gradient(135deg, rgba(34,158,217,.08), rgba(34,158,217,.03));
+  border:1px solid rgba(34,158,217,.25); border-radius:16px; padding:1.25rem 1.4rem;
+}
+.tg-connect-head{ display:flex; gap:.75rem; align-items:flex-start; margin-bottom:1rem; }
+.tg-connect-head svg{ width:28px; height:28px; flex:0 0 28px; }
+.tg-connect-head strong{ display:block; font-size:1rem; color:#0f172a; }
+.tg-connect-head span{ display:block; font-size:.82rem; color:#64748b; margin-top:2px; }
+.tg-connect-step{ display:flex; gap:1.25rem; align-items:center; }
+.tg-connect-step[hidden]{ display:none; }
+.tg-connect-body{ flex:1; min-width:0; }
+.tg-connect-list{ margin:0 0 1rem; padding-left:1.2rem; font-size:.86rem; color:#334155; line-height:1.7; }
+.tg-connect-btn{ display:inline-flex !important; align-items:center; gap:.5rem; text-decoration:none; background:#229ED9 !important; border-color:#229ED9 !important; color:#fff !important; }
+.tg-connect-btn[aria-disabled="true"]{ opacity:.55; pointer-events:none; }
+.tg-connect-qr{ flex:0 0 156px; width:156px; height:156px; background:#fff; border-radius:12px; padding:8px; box-shadow:0 6px 18px -10px rgba(15,23,42,.35); display:flex; align-items:center; justify-content:center; }
+.tg-connect-qr img, .tg-connect-qr canvas{ width:140px !important; height:140px !important; }
+.tg-connect-wait{ display:flex; align-items:center; gap:.5rem; margin:.8rem 0 0; font-size:.8rem; color:#0f6f9e; font-weight:600; }
+.tg-connect-wait[hidden]{ display:none; }
+.tg-dot{ width:8px; height:8px; border-radius:50%; background:#229ED9; animation:tgPulse 1.4s ease-in-out infinite; }
+@keyframes tgPulse{ 0%,100%{ opacity:.35; transform:scale(.85); } 50%{ opacity:1; transform:scale(1.15); } }
+.tg-connect-done{ display:flex; align-items:center; gap:.85rem; padding:.85rem 1rem; border-radius:12px; background:#ecfdf5; border:1px solid #a7f3d0; }
+.tg-connect-done[hidden]{ display:none; }
+.tg-done-ico{ width:34px; height:34px; border-radius:50%; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; flex:0 0 34px; }
+.tg-connect-done strong{ display:block; color:#065f46; font-size:.95rem; }
+.tg-connect-done a{ font-size:.82rem; color:#0f6f9e; font-weight:600; text-decoration:none; }
+.tg-connect-done a:hover{ text-decoration:underline; }
+.tg-connect-error{ margin:.8rem 0 0; font-size:.82rem; color:#b91c1c; font-weight:600; }
+.tg-connect-error[hidden]{ display:none; }
+.tg-connect-manual-toggle{ margin-top:1rem; background:none; border:none; padding:0; font:inherit; font-size:.78rem; color:#64748b; text-decoration:underline; cursor:pointer; }
+.tg-connect-manual{ margin-top:.6rem; }
+.tg-connect-manual[hidden]{ display:none; }
+.tg-connect-manual input{ font-family:monospace; font-size:.85rem; }
+.tg-connect-manual p{ font-size:.75rem; color:#94a3b8; margin:.35rem 0 0; }
+@media (max-width:640px){
+  .tg-connect-step{ flex-direction:column; align-items:stretch; }
+  .tg-connect-qr{ display:none; } /* en el celular se abre Telegram directo */
+}
+body.dark .tg-connect-head strong{ color:#f1f5f9; }
+body.dark .tg-connect-list{ color:#cbd5e1; }
+body.dark .tg-connect-done{ background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.35); }
+body.dark .tg-connect-done strong{ color:#6ee7b7; }
