@@ -1162,7 +1162,16 @@ func redeployOrbitalOrTelegram(c *gin.Context, agent *models.Agent, user *models
 	}
 	config.DB.Model(agent).Updates(map[string]interface{}{"deploy_status": "deploying"})
 	ag := *agent
-	geminiAPIKey := user.GetGeminiAPIKey()
+	// El usuario del contexto no trae GoogleCloudProject: sin recargarlo la
+	// clave de Gemini salía vacía y el bot quedaba sin IA después del redeploy.
+	var fullUser models.User
+	geminiAPIKey := ""
+	if err := config.DB.Preload("GoogleCloudProject").First(&fullUser, user.ID).Error; err == nil {
+		geminiAPIKey = fullUser.GetGeminiAPIKey()
+	}
+	if geminiAPIKey == "" {
+		log.Printf("⚠️  [Agent %d] Redeploy sin clave de Gemini (el usuario %d no tiene proyecto de Google Cloud con clave)", agent.ID, user.ID)
+	}
 
 	go func() {
 		var googleCredentials []byte

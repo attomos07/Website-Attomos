@@ -124,6 +124,15 @@ func (s *OrbitalBotDeployService) DeployOrbitalBot(agent *models.Agent, geminiAP
 		return fmt.Errorf("error creando servicio: %w", err)
 	}
 
+	// El webhook de Meta llega a Attomos y Attomos lo reenvía a
+	// http://IP:PUERTO/webhook: el firewall (ufw) tiene que dejar pasar ese
+	// puerto. Antes solo tenía 22/80/443/8080 y los mensajes nunca llegaban.
+	if out, err := s.executeCommand(fmt.Sprintf("if command -v ufw >/dev/null 2>&1; then ufw allow %d/tcp; fi", agent.Port)); err != nil {
+		log.Printf("⚠️  [Agent %d] No se pudo abrir el puerto %d en el firewall: %v %s", agent.ID, agent.Port, err, out)
+	} else {
+		log.Printf("   ✅ Puerto %d abierto en el firewall", agent.Port)
+	}
+
 	// PASO 6: Iniciar bot
 	log.Printf("▶️  [Agent %d] PASO 6/6: Iniciando OrbitalBot...", agent.ID)
 	if err := s.startBot(agent.ID); err != nil {

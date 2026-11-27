@@ -25,10 +25,43 @@ type Personality struct {
 	StyleSample string `json:"styleSample,omitempty"` // ejemplos reales de cómo contesta el negocio
 }
 
-// DaySchedule horario de un día específico
+// DaySchedule horario de un día específico.
+//
+// Attomos manda {"open": true, "start": "09:00", "end": "19:00"} (como los
+// bots de WhatsApp Web y Telegram); el business_config.json viejo traía
+// {"open": "09:00", "close": "19:00"}. Se aceptan los dos: antes el formato
+// de Attomos tronaba el parseo y el bot nunca refrescaba la configuración
+// del negocio (se quedaba con la del despliegue).
 type DaySchedule struct {
-	Open  string `json:"open"`
-	Close string `json:"close"`
+	Open  string `json:"open"`  // hora de abrir ("" = cerrado)
+	Close string `json:"close"` // hora de cerrar
+}
+
+func (d *DaySchedule) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Open  json.RawMessage `json:"open"`
+		Close string          `json:"close"`
+		Start string          `json:"start"`
+		End   string          `json:"end"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	var isOpen bool
+	var openStr string
+	switch {
+	case json.Unmarshal(raw.Open, &isOpen) == nil: // formato de Attomos
+		if isOpen {
+			d.Open, d.Close = raw.Start, raw.End
+		} else {
+			d.Open, d.Close = "", ""
+		}
+	case json.Unmarshal(raw.Open, &openStr) == nil: // formato viejo
+		d.Open, d.Close = openStr, raw.Close
+	default:
+		d.Open, d.Close = raw.Start, raw.End
+	}
+	return nil
 }
 
 // Schedule horario semanal del negocio

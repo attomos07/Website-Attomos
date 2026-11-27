@@ -203,7 +203,7 @@ func MetaDiagnostico(c *gin.Context) {
 	} else {
 		resp, err := (&http.Client{Timeout: 6 * time.Second}).Get(fmt.Sprintf("http://%s:%d/health", agent.ServerIP, agent.Port))
 		if err != nil {
-			checks = append(checks, metaCheck{Paso: "4. Bot", OK: false, Detalle: "El bot no responde desde Attomos: " + err.Error(), Arreglo: "Mira \"servidor\" abajo: si el servicio no está activo, el log dice por qué; si está activo y responde en localhost, el puerto está bloqueado por el firewall."})
+			checks = append(checks, metaCheck{Paso: "4. Bot", OK: false, Detalle: "El bot no responde desde Attomos: " + err.Error(), Arreglo: "Mira \"servidor\" abajo: si el servicio no está activo, el log dice por qué; si está activo y responde en localhost, el puerto está bloqueado por el firewall (con ?arreglar=1 se abre)."})
 			// Qué pasa dentro del servidor (por SSH).
 			if agent.ServerPassword != "" {
 				script := fmt.Sprintf(`echo "== servicio: $(systemctl is-active orbital-bot-%[1]d)"
@@ -211,8 +211,15 @@ echo "== escuchando en :%[2]d:"; ss -ltnp 2>/dev/null | grep ':%[2]d ' || echo "
 echo "== health local: $(curl -s -m 3 -o /dev/null -w '%%{http_code}' http://127.0.0.1:%[2]d/health || echo falla)"
 echo "== firewall:"; (ufw status 2>/dev/null | head -8) || echo "(sin ufw)"
 echo "== últimas líneas del log:"; tail -n 40 /var/log/orbital-bot-%[1]d.log 2>/dev/null || journalctl -u orbital-bot-%[1]d -n 40 --no-pager`, agent.ID, agent.Port)
+				if fix {
+					// Abrir el puerto del bot en el firewall.
+					open := fmt.Sprintf("if command -v ufw >/dev/null 2>&1; then ufw allow %d/tcp; fi", agent.Port)
+					if out, err := executeSSHCommand(agent.ServerIP, agent.ServerPassword, open); err == nil {
+						servidor = "== arreglo: puerto abierto en el firewall → " + strings.TrimSpace(out) + "\n"
+					}
+				}
 				if out, err := executeSSHCommand(agent.ServerIP, agent.ServerPassword, script); err == nil {
-					servidor = out
+					servidor += out
 				} else {
 					servidor = "No se pudo entrar por SSH: " + err.Error()
 				}
@@ -221,6 +228,15 @@ echo "== últimas líneas del log:"; tail -n 40 /var/log/orbital-bot-%[1]d.log 2
 			resp.Body.Close()
 			checks = append(checks, metaCheck{Paso: "4. Bot", OK: resp.StatusCode == http.StatusOK, Detalle: fmt.Sprintf("El bot responde (%d).", resp.StatusCode)})
 		}
+	}
+
+	// 5. IA (Gemini)
+	var fu models.User
+	if config.DB.Preload("GoogleCloudProject").First(&fu, user.ID).Error == nil && fu.GetGeminiAPIKey() != "" {
+		checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: true, Detalle: "El negocio tiene clave de Gemini. Si el log del bot dice \"Gemini AI: ❌\", haz Redeploy para que la tome."})
+	} else {
+		checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: false, Detalle: "El negocio no tiene clave de Gemini: el bot no puede contestar con IA.",
+			Arreglo: "Revisa el proyecto de Google Cloud del usuario (tabla google_cloud_projects) o crea la clave."})
 	}
 
 	todo := true
