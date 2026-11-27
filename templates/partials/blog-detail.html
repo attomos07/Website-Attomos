@@ -37,7 +37,7 @@
     <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/partials/navbar.css?v=10">
     <link rel="stylesheet" href="/static/css/partials/footer.css?v=3">
-    <link rel="stylesheet" href="/static/css/partials/blog-detail.css?v=2">
+    <link rel="stylesheet" href="/static/css/partials/blog-detail.css?v=3">
 </head>
 <body>
     <!-- Navbar -->
@@ -187,19 +187,6 @@
                             <div class="bd-author-role">{{.Post.AuthorRole}}</div>
                         </div>
                     </div>
-
-                    <div class="bd-newsletter">
-                        <div class="bd-newsletter-text">
-                            <div class="bd-endcard-title">Recibe los nuevos artículos</div>
-                            <div class="bd-endcard-sub">Te avisamos por correo cuando publiquemos algo nuevo. Sin spam.</div>
-                        </div>
-                        <form class="newsletter-form bd-newsletter-form" data-source="articulo" novalidate>
-                            <input type="text" name="website" class="nl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-                            <input type="email" name="email" class="newsletter-input" placeholder="tu@correo.com" aria-label="Correo electrónico" required>
-                            <button type="submit" class="newsletter-btn">Suscribirme</button>
-                            <p class="newsletter-msg" aria-live="polite"></p>
-                        </form>
-                    </div>
                 </div>
             </div>
         </article>
@@ -253,8 +240,7 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="/static/js/partials/newsletter.js?v=1"></script>
-    <script src="/static/js/partials/blog-detail.js?v=2"></script>
+    <script src="/static/js/partials/blog-detail.js?v=3"></script>
 </body>
 </html>
 {{end}}

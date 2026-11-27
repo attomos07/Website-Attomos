@@ -1500,11 +1500,6 @@ a.blog-link { text-decoration: none; }
 .pagination-btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
 .pagination-gap { display: grid; place-items: center; width: 28px; color: #94a3b8; font-weight: 600; }
 
-.nl-hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
-.newsletter-form.is-loading { opacity: .7; pointer-events: none; }
-.newsletter-msg { min-height: 22px; margin: 14px 0 0; font-size: 15px; font-weight: 500; text-align: center; }
-.newsletter-msg.is-ok { color: #059669; }
-.newsletter-msg.is-error { color: #dc2626; }
 
 @media (max-width: 600px) {
     .blog-search { margin-top: -24px; height: 50px; }

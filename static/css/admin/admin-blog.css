@@ -1,6 +1,6 @@
 /* ===========================================================
-   Attomos — Admin — Blog y Newsletter
-   Lista de artículos, editor y suscriptores. Mismo lenguaje visual
+   Attomos — Admin — Blog
+   Lista de artículos y editor. Mismo lenguaje visual
    que Prospectos/Métricas (cian, tarjetas redondeadas, topbar).
    =========================================================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -145,7 +145,6 @@ tbody td { padding: 14px 20px; font-size: 14px; color: var(--ink2); vertical-ali
 .bp-star { color: var(--amber); font-size: 13px; }
 .bp-cat { display: inline-flex; padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: rgba(6,182,212,.08); color: var(--accent2); border: 1px solid rgba(6,182,212,.2); white-space: nowrap; }
 .bp-muted { color: var(--muted); font-size: 13px; white-space: nowrap; }
-.bp-nl { font-size: 11px; color: var(--green); font-weight: 600; }
 
 /* Categorías y etiquetas */
 .bp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }

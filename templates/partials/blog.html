@@ -162,7 +162,7 @@
             <div class="blog-empty">
                 <i class="lni lni-search-alt"></i>
                 <h3>{{if .Filtered}}No encontramos artículos{{else}}Muy pronto, nuevos artículos{{end}}</h3>
-                <p>{{if .Filtered}}Prueba con otra palabra o revisa todas las categorías.{{else}}Estamos preparando contenido. Suscríbete abajo y te avisamos.{{end}}</p>
+                <p>{{if .Filtered}}Prueba con otra palabra o revisa todas las categorías.{{else}}Estamos preparando contenido. Vuelve pronto.{{end}}</p>
                 {{if .Filtered}}<a class="read-more-btn" href="/blog">Ver todos los artículos</a>{{end}}
             </div>
             {{end}}
@@ -183,29 +183,6 @@
         </div>
     </section>
 
-    <!-- Newsletter Section -->
-    <section class="newsletter-section" id="newsletter">
-        <div class="container">
-            <div class="newsletter-content">
-                <div class="newsletter-icon">
-                    <i class="lni lni-envelope"></i>
-                </div>
-                <h2 class="newsletter-title" data-translate="newsletter_title">Suscríbete a nuestro newsletter</h2>
-                <p class="newsletter-subtitle">
-                    Recibe los mejores artículos sobre IA, automatización y chatbots directamente en tu inbox.
-                </p>
-                <form class="newsletter-form" data-source="blog" novalidate>
-                    <input type="email" class="newsletter-input" name="email" placeholder="tu@email.com" autocomplete="email" required>
-                    <input type="text" name="website" class="nl-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-                    <button type="submit" class="newsletter-btn">
-                        <i class="lni lni-telegram-original"></i>
-                        <span data-translate="newsletter_btn">Suscribirme</span>
-                    </button>
-                </form>
-                <p class="newsletter-msg" role="status" aria-live="polite"></p>
-            </div>
-        </div>
-    </section>
 
     <!-- Footer -->
     {{template "partials/footer.html" .}}
@@ -217,7 +194,6 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="/static/js/partials/newsletter.js?v=1"></script>
     <script src="/static/js/partials/blog.js?v=4"></script>
 </body>
 </html>

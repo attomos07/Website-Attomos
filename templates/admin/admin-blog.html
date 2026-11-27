@@ -41,10 +41,6 @@
                     <div class="stat-icon amber"><i class="lni lni-pencil-alt"></i></div>
                     <div><div class="stat-value">{{.Borradores}}</div><div class="stat-label">Borradores</div></div>
                 </button>
-                <a class="stat-card" href="/admin/newsletter">
-                    <div class="stat-icon red"><i class="lni lni-envelope"></i></div>
-                    <div><div class="stat-value">{{.Subscribers}}</div><div class="stat-label">Suscriptores</div></div>
-                </a>
             </div>
 
             <div class="toolbar">
@@ -84,7 +80,6 @@
                                             <div class="bp-sub">
                                                 {{if .Featured}}<span class="bp-star" title="Destacado"><i class="lni lni-star-filled"></i></span>{{end}}
                                                 <span>{{.Author}}</span>
-                                                {{if .NewsletterAt}}<span class="bp-nl"><i class="lni lni-envelope"></i> Enviado {{.NewsletterAt}}</span>{{end}}
                                             </div>
                                         </div>
                                     </div>
@@ -97,7 +92,6 @@
                                     <div class="actions">
                                         <a class="btn-icon" href="{{.URL}}" target="_blank" rel="noopener" title="{{if eq .Status "publicado"}}Ver artículo{{else}}Vista previa{{end}}"><i class="lni lni-eye"></i></a>
                                         <a class="btn-icon" href="/admin/blog/{{.ID}}/editar" title="Editar"><i class="lni lni-pencil"></i></a>
-                                        <button type="button" class="btn-icon" data-action="newsletter" data-title="{{.Title}}" data-sent="{{.NewsletterAt}}" title="Enviar a suscriptores" {{if ne .Status "publicado"}}disabled{{end}}><i class="lni lni-telegram-original"></i></button>
                                         <button type="button" class="btn-icon danger" data-action="delete" data-title="{{.Title}}" title="Eliminar"><i class="lni lni-trash-can"></i></button>
                                     </div>
                                 </td>

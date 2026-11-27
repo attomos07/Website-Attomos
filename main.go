@@ -114,10 +114,9 @@ func main() {
 	}
 
 	log.Println("✅ Base de datos conectada y migrada")
-	// Blog (attomos.com/blog) y newsletter: artículos que se escriben desde
+	// Blog (attomos.com/blog): artículos que se escriben desde
 	// /admin/blog. La primera vez se cargan los artículos que antes eran fijos.
-	if err := config.DB.AutoMigrate(&models.BlogCategory{}, &models.BlogTag{}, &models.BlogPost{},
-		&models.NewsletterSubscriber{}); err != nil {
+	if err := config.DB.AutoMigrate(&models.BlogCategory{}, &models.BlogTag{}, &models.BlogPost{}); err != nil {
 		log.Fatal("❌ Error en migración del blog:", err)
 	}
 	handlers.EnsureBlogSeed()
@@ -757,12 +756,10 @@ func main() {
 		})
 	})
 
-	// Blog: lista, artículo (y /blog/feed.xml), imágenes, newsletter, SEO.
+	// Blog: lista, artículo (y /blog/feed.xml), imágenes y SEO.
 	router.GET("/blog", handlers.BlogList)
 	router.GET("/blog/:slug", handlers.BlogDetail)
 	router.GET("/media/blog/:key", handlers.ServeBlogImage)
-	router.POST("/api/newsletter/subscribe", handlers.NewsletterSubscribe)
-	router.GET("/newsletter/baja", handlers.NewsletterUnsubscribe)
 	router.GET("/sitemap.xml", handlers.Sitemap)
 	router.GET("/robots.txt", handlers.RobotsTxt)
 
@@ -900,22 +897,18 @@ func main() {
 		adminGroup.GET("/metrics", func(c *gin.Context) {
 			c.HTML(200, "admin-metrics", nil)
 		})
-		// Blog y newsletter
+		// Blog
 		adminGroup.GET("/blog", handlers.AdminBlogPage)
 		adminGroup.GET("/blog/nuevo", handlers.AdminBlogForm)
 		adminGroup.GET("/blog/:id/editar", handlers.AdminBlogForm)
 		adminGroup.POST("/api/blog", handlers.AdminBlogSave)
 		adminGroup.PUT("/api/blog/:id", handlers.AdminBlogSave)
 		adminGroup.DELETE("/api/blog/:id", handlers.AdminBlogDelete)
-		adminGroup.POST("/api/blog/:id/newsletter", handlers.AdminBlogNewsletter)
 		adminGroup.POST("/api/blog-imagen", handlers.AdminBlogUploadImage)
 		adminGroup.POST("/api/blog-categorias", handlers.AdminBlogCategoryCreate)
 		adminGroup.DELETE("/api/blog-categorias/:id", handlers.AdminBlogCategoryDelete)
 		adminGroup.POST("/api/blog-etiquetas", handlers.AdminBlogTagCreate)
 		adminGroup.DELETE("/api/blog-etiquetas/:id", handlers.AdminBlogTagDelete)
-		adminGroup.GET("/newsletter", handlers.AdminNewsletterPage)
-		adminGroup.GET("/api/newsletter.csv", handlers.AdminNewsletterCSV)
-		adminGroup.DELETE("/api/newsletter/:id", handlers.AdminNewsletterDelete)
 
 		adminGroup.GET("/api/metrics", admin.GetAdminMetrics)
 		adminGroup.GET("/api/invoices", handlers.AdminGetInvoices)

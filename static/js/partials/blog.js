@@ -7,54 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar todas las funcionalidades
     initParticles();
-    initCategoryFilters();
     initIOSSegments('.category-filters', '.category-btn');
-    initSectionFadeIn('.featured-post-section, .blog-categories-section, .blog-grid-section, .newsletter-section');
-    initPagination();
-    initNewsletter();
+    initSectionFadeIn('.featured-post-section, .blog-categories-section, .blog-grid-section');
     initPostLinks();
     
     console.log('✅ Todas las funcionalidades de blog inicializadas');
 });
-
-// ============================================
-// CATEGORY FILTERS
-// ============================================
-function initCategoryFilters() {
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    const blogCards = document.querySelectorAll('.blog-card');
-
-    categoryBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const category = this.getAttribute('data-category');
-            
-            // Update active button
-            categoryBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Filter cards
-            blogCards.forEach(card => {
-                const cardCategory = card.getAttribute('data-category');
-                
-                if (category === 'all' || cardCategory === category) {
-                    card.style.display = 'block';
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, 10);
-                } else {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(30px)';
-                    setTimeout(() => {
-                        card.style.display = 'none';
-                    }, 300);
-                }
-            });
-            
-            console.log(`🔍 Categoría filtrada: ${category}`);
-        });
-    });
-}
 
 // ============================================
 // POST LINKS → /blog/<slug>
@@ -75,6 +33,8 @@ function initPostLinks() {
         if (titleEl) item.setAttribute('aria-label', titleEl.textContent.trim());
 
         item.addEventListener('click', (e) => {
+            // Los títulos y botones ya son enlaces: que el navegador los abra
+            if (e.target.closest('a')) return;
             // Ctrl/Cmd + clic abre en otra pestaña, como un enlace normal
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
                 window.open(url, '_blank');
@@ -119,52 +79,6 @@ function initPostLinks() {
             if (item.getAnimations) item.getAnimations().forEach(a => a.cancel());
         });
     });
-}
-
-// ============================================
-// PAGINATION
-// ============================================
-function initPagination() {
-    const paginationBtns = document.querySelectorAll('.pagination-btn');
-    
-    paginationBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (this.disabled) return;
-            
-            paginationBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Scroll suave al inicio de los posts
-            const blogGrid = document.querySelector('.blog-grid-section');
-            if (blogGrid) {
-                blogGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            
-            console.log('📄 Página cambiada');
-        });
-    });
-}
-
-// ============================================
-// NEWSLETTER FORM
-// ============================================
-function initNewsletter() {
-    const newsletterForm = document.querySelector('.newsletter-form');
-    
-    if (newsletterForm) {
-        newsletterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const emailInput = this.querySelector('.newsletter-input');
-            const email = emailInput.value;
-            
-            console.log('📧 Suscripción newsletter:', email);
-            
-            // Aquí puedes agregar la lógica para enviar el email al backend
-            alert('¡Gracias por suscribirte! Te enviaremos los mejores contenidos.');
-            emailInput.value = '';
-        });
-    }
 }
 
 // ============================================

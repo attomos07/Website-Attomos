@@ -222,7 +222,6 @@ func BlogList(c *gin.Context) {
 		"BaseURL":    baseURL,
 		"Filtered":   cat != "" || q != "",
 		"ClearURL":   "/blog",
-		"Newsletter": c.Query("newsletter"),
 	})
 }
 

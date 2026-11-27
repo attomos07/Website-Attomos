@@ -1,13 +1,11 @@
 package handlers
 
-// blog_admin.go — panel admin del blog (/admin/blog) y del newsletter
-// (/admin/newsletter): crear, editar, programar y borrar artículos,
+// blog_admin.go — panel admin del blog (/admin/blog): crear, editar, programar y borrar artículos,
 // categorías y etiquetas; subir portadas e imágenes; mandar un artículo a
 // los suscriptores y exportar la lista.
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,7 +30,6 @@ type blogAdminRow struct {
 	Author                                  string
 	Views                                   int
 	Featured                                bool
-	NewsletterAt                            string
 }
 
 var blogStatusLabel = map[string]string{"publicado": "Publicado", "programado": "Programado", "borrador": "Borrador"}
@@ -56,21 +53,16 @@ func AdminBlogPage(c *gin.Context) {
 		if p.Category != nil {
 			r.CategoryName, r.CategorySlug = p.Category.Name, p.Category.Slug
 		}
-		if p.NewsletterAt != nil {
-			r.NewsletterAt = blogDateLabel(*p.NewsletterAt)
-		}
 		rows = append(rows, r)
 	}
 	var cats []models.BlogCategory
 	config.DB.Order("sort_order, name").Find(&cats)
 	var tags []models.BlogTag
 	config.DB.Order("name").Find(&tags)
-	var subs int64
-	config.DB.Model(&models.NewsletterSubscriber{}).Where("status = ?", "activo").Count(&subs)
 
 	c.HTML(http.StatusOK, "admin-blog", gin.H{
 		"Posts": rows, "Total": len(rows), "Publicados": counts["publicado"], "Programados": counts["programado"],
-		"Borradores": counts["borrador"], "Categories": cats, "Tags": tags, "Subscribers": subs,
+		"Borradores": counts["borrador"], "Categories": cats, "Tags": tags,
 	})
 }
 
@@ -322,25 +314,6 @@ func AdminBlogUploadImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": "/media/blog/" + key})
 }
 
-// AdminBlogNewsletter — POST /admin/api/blog/:id/newsletter
-func AdminBlogNewsletter(c *gin.Context) {
-	var p models.BlogPost
-	if err := config.DB.Preload("Category").First(&p, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Artículo no encontrado"})
-		return
-	}
-	if p.DisplayStatus() != "publicado" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Publica el artículo antes de mandarlo."})
-		return
-	}
-	n, err := sendPostToSubscribers(bookingBaseURL(c), p)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"ok": true, "count": n})
-}
-
 // ── Categorías y etiquetas ──────────────────────────────────────────────
 
 // AdminBlogCategoryCreate — POST /admin/api/blog-categorias {name, icon}
@@ -399,52 +372,5 @@ func AdminBlogTagDelete(c *gin.Context) {
 	id := c.Param("id")
 	config.DB.Exec("DELETE FROM blog_post_tags WHERE blog_tag_id = ?", id)
 	config.DB.Delete(&models.BlogTag{}, id)
-	c.JSON(http.StatusOK, gin.H{"ok": true})
-}
-
-// ── Newsletter ──────────────────────────────────────────────────────────
-
-type nlRow struct {
-	ID                          uint
-	Email, Status, Source, Date string
-}
-
-// AdminNewsletterPage — GET /admin/newsletter
-func AdminNewsletterPage(c *gin.Context) {
-	var subs []models.NewsletterSubscriber
-	config.DB.Order("created_at DESC").Find(&subs)
-	rows := make([]nlRow, 0, len(subs))
-	act := 0
-	for _, s := range subs {
-		if s.Status == "activo" {
-			act++
-		}
-		src := s.Source
-		if src == "" {
-			src = "blog"
-		}
-		rows = append(rows, nlRow{ID: s.ID, Email: s.Email, Status: s.Status, Source: src, Date: blogDateLabel(s.CreatedAt)})
-	}
-	c.HTML(http.StatusOK, "admin-newsletter", gin.H{"Subs": rows, "Total": len(rows), "Activos": act, "Bajas": len(rows) - act})
-}
-
-// AdminNewsletterCSV — GET /admin/api/newsletter.csv
-func AdminNewsletterCSV(c *gin.Context) {
-	var subs []models.NewsletterSubscriber
-	config.DB.Order("created_at DESC").Find(&subs)
-	c.Header("Content-Type", "text/csv; charset=utf-8")
-	c.Header("Content-Disposition", `attachment; filename="newsletter-attomos.csv"`)
-	c.Writer.Write([]byte("\xEF\xBB\xBF")) // BOM para que Excel lea acentos
-	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"correo", "estado", "origen", "fecha"})
-	for _, s := range subs {
-		_ = w.Write([]string{s.Email, s.Status, s.Source, s.CreatedAt.In(blogLoc).Format("2006-01-02 15:04")})
-	}
-	w.Flush()
-}
-
-// AdminNewsletterDelete — DELETE /admin/api/newsletter/:id
-func AdminNewsletterDelete(c *gin.Context) {
-	config.DB.Delete(&models.NewsletterSubscriber{}, c.Param("id"))
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
