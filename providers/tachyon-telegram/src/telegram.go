@@ -79,6 +79,25 @@ func HandleTelegramUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 	}
 
+	// ── CRM: reportar lo que llegó y respetar "Tomar control" ────────────
+	chatKey := fmt.Sprintf("%d", chatID)
+	crmIn := extractMessageText(msg)
+	switch {
+	case msg.Voice != nil:
+		crmIn = "🎙️ Nota de voz"
+	case msg.Audio != nil:
+		crmIn = "🎵 Audio"
+	case len(msg.Photo) > 0:
+		crmIn = strings.TrimSpace("🖼️ Imagen " + msg.Caption)
+	}
+	if crmIn != "" {
+		NotifyCRM("in", chatKey, userName, crmIn, "customer")
+	}
+	if IsHumanControlled(chatKey) {
+		log.Printf("⏸️  Chat %s atendido por una persona desde el CRM — el bot no contesta", chatKey)
+		return
+	}
+
 	// ── Nota de voz: transcribir con Gemini y procesar como si fuera texto ───
 	if msg.Voice != nil {
 		handleTelegramVoice(bot, msg, chatID, userID, userName)
@@ -333,6 +352,9 @@ func sendTelegramMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
 
+	// CRM: lo que contesta el bot (sin etiquetas HTML).
+	NotifyCRM("out", fmt.Sprintf("%d", chatID), "", stripHTML(text), "bot")
+
 	_, err := bot.Send(msg)
 	if err != nil {
 		// Si falla HTML, intentar sin formato
@@ -375,6 +397,7 @@ func handleSendMenu(bot *tgbotapi.BotAPI, chatID int64) {
 			sendTelegramMessage(bot, chatID, "📋 Aquí está nuestro menú: "+menuURL)
 		} else {
 			log.Println("✅ Menú PDF enviado")
+			NotifyCRM("out", fmt.Sprintf("%d", chatID), "", "📎 "+caption, "bot")
 		}
 		return
 	}
@@ -389,6 +412,7 @@ func handleSendMenu(bot *tgbotapi.BotAPI, chatID int64) {
 				sendTelegramMessage(bot, chatID, "🖼️ Aquí está nuestro menú: "+menuURL)
 			} else {
 				log.Println("✅ Menú imagen enviado")
+				NotifyCRM("out", fmt.Sprintf("%d", chatID), "", "🖼️ "+caption, "bot")
 			}
 			return
 		}
@@ -429,6 +453,9 @@ func handleSendPhotos(bot *tgbotapi.BotAPI, chatID int64, serviceTitle string) {
 		sendTelegramMessage(bot, chatID, "No encontré fotos de ese producto. ¿Puedes ser más específico?")
 		return
 	}
+
+	// CRM: un aviso por el envío de fotos del servicio.
+	NotifyCRM("out", fmt.Sprintf("%d", chatID), "", fmt.Sprintf("🖼️ %d foto(s) de %s", len(matched.ImageUrls), matched.Title), "bot")
 
 	sendChatAction(bot, chatID, tgbotapi.ChatUploadPhoto)
 

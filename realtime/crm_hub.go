@@ -441,20 +441,21 @@ func StreamAgentCRM(c *gin.Context) {
 	})
 	c.Writer.Flush()
 
-	// Historial: el que guarda el bot en su servidor (Hetzner); si el bot
-	// no está conectado o no contesta, lo que el backend tiene en memoria.
-	past, fromBot := CRMHub.requestBotHistory(agentID, 1000, 6*time.Second)
-	if !fromBot {
-		past = CRMHub.history(agentID)
-	}
-	for _, evt := range past {
-		if evt.Type == "control" {
-			c.SSEvent("control", evt)
-		} else {
-			c.SSEvent("message", evt)
-		}
+	// Historial en paralelo: primero lo que el backend tiene en memoria (al
+	// instante) y luego, cuando conteste, el que guarda el bot en su servidor
+	// (Hetzner). Antes se esperaba al bot antes de mandar nada y la bandeja
+	// tardaba varios segundos en aparecer. El navegador quita duplicados y
+	// ordena por hora.
+	for _, evt := range CRMHub.history(agentID) {
+		writeCRMEvent(c, evt)
 	}
 	c.Writer.Flush()
+	histCh := make(chan []CRMEvent, 1)
+	go func() {
+		if evs, ok := CRMHub.requestBotHistory(agentID, 1000, 5*time.Second); ok {
+			histCh <- evs
+		}
+	}()
 
 	notify := c.Writer.CloseNotify()
 	ticker := time.NewTicker(25 * time.Second)
@@ -468,19 +469,31 @@ func StreamAgentCRM(c *gin.Context) {
 			if !open {
 				return
 			}
-			if evt.Type == "status" {
-				c.SSEvent("status", evt)
-			} else if evt.Type == "control" {
-				c.SSEvent("control", evt)
-			} else {
-				c.SSEvent("message", evt)
+			writeCRMEvent(c, evt)
+			c.Writer.Flush()
+		case evs := <-histCh:
+			for _, evt := range evs {
+				writeCRMEvent(c, evt)
 			}
+			c.SSEvent("history", gin.H{"count": len(evs), "source": "bot"})
 			c.Writer.Flush()
 		case <-ticker.C:
 			// keep-alive para que proxies (Railway incluido) no cierren la conexión
 			c.SSEvent("ping", gin.H{"t": time.Now().Unix()})
 			c.Writer.Flush()
 		}
+	}
+}
+
+// writeCRMEvent manda un evento al navegador con el nombre SSE que le toca.
+func writeCRMEvent(c *gin.Context, evt CRMEvent) {
+	switch evt.Type {
+	case "status":
+		c.SSEvent("status", evt)
+	case "control":
+		c.SSEvent("control", evt)
+	default:
+		c.SSEvent("message", evt)
 	}
 }
 

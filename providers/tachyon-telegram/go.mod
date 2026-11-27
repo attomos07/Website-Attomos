@@ -1,10 +1,11 @@
-module atomic-telegram
+module tachyon-telegram
 
 go 1.22.7
 
 require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/google/generative-ai-go v0.15.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/text v0.21.0

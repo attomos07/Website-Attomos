@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"atomic-telegram/src"
+	"tachyon-telegram/src"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -112,6 +112,9 @@ func main() {
 
 	bot.Debug = os.Getenv("DEBUG") == "true"
 	log.Printf("✅ Bot de Telegram conectado como @%s", bot.Self.UserName)
+
+	// CRM en vivo + historial en este servidor (crm_bridge.go / crm_store.go)
+	src.InitCRMBridge(bot)
 
 	printFinalStatus(geminiStatus, sheetsStatus, calendarStatus, bot.Self.UserName)
 

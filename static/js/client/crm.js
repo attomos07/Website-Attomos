@@ -267,7 +267,7 @@ function sendMessage(){
   // ── Conversación real de WhatsApp: mandar por el backend, no localmente ──
   // El mensaje aparece en el chat cuando llega de vuelta por el stream (SSE),
   // así todas las pestañas del CRM (y este humano) ven exactamente lo mismo.
-  if(c.channel === "whatsapp" && c.live && text && !pendingAttachment){
+  if(c.live && text && !pendingAttachment){
     sendWhatsAppMessage(c.phone, text, c.agentId);
     textEl.value = "";
     return;
@@ -656,7 +656,7 @@ function toggleAIControl(){
   renderAIControlBar(c);
 
   // Conversación real de WhatsApp → avisar al bot para que pause/reanude de verdad
-  if(c.channel === "whatsapp" && c.live){
+  if(c.live){
     controlWhatsAppConversation(c.phone, goingHuman ? "pause" : "resume", c.agentId);
   }
 }
@@ -692,7 +692,8 @@ function renderAIControlBar(c){
 // Un stream por cada agente de WhatsApp: WhatsApp Web (atomic) y WhatsApp
 // Business (orbital). Antes solo se escuchaba al agente atomic más reciente,
 // así que los mensajes de WhatsApp Business nunca llegaban a la bandeja.
-const CRM_LIVE_TYPES = ["atomic", "orbital"];
+const CRM_LIVE_TYPES = ["atomic", "orbital", "telegram"];
+const crmAgentChannel = {}; // agentId → "whatsapp" | "telegram"
 const crmStreams = {};   // agentId → EventSource
 const crmSeen = new Set(); // evita duplicados (historial + en vivo)
 let crmAgentId = null;   // compatibilidad: primer agente conectado
@@ -706,11 +707,14 @@ async function initWhatsAppCRM(){
     const list = Array.isArray(data) ? data : (data.agents || []);
     const waAgents = list.filter(a => CRM_LIVE_TYPES.includes((a.botType || "").toLowerCase()));
     if(waAgents.length === 0){
-      console.log("[CRM] No hay agentes de WhatsApp (Web o Business) todavía.");
+      console.log("[CRM] No hay agentes de WhatsApp o Telegram todavía.");
       return;
     }
     crmAgentId = waAgents[0].id;
-    waAgents.forEach(a => connectWhatsAppStream(a.id));
+    waAgents.forEach(a => {
+      crmAgentChannel[a.id] = (a.botType || "").toLowerCase() === "telegram" ? "telegram" : "whatsapp";
+      connectWhatsAppStream(a.id);
+    });
     console.log(`[CRM] Escuchando agentes: ${waAgents.map(a => a.id + " (" + a.botType + ")").join(", ")}`);
   }catch(err){
     console.error("[CRM] Error obteniendo agentes:", err);
@@ -750,8 +754,17 @@ function connectWhatsAppStream(agentId){
 }
 
 function findWhatsAppConversation(phone, agentId){
-  return conversations.find(c => c.channel === "whatsapp" && c.live && c.phone === phone
+  return conversations.find(c => c.live && c.phone === phone
     && (agentId === undefined || c.agentId === agentId));
+}
+
+// "11:05 a.m." hoy; "26 nov 11:05 a.m." otros días.
+function crmTimeLabel(ts){
+  const d = new Date(ts);
+  const hour = d.toLocaleTimeString('es-MX', {hour:'numeric', minute:'2-digit'});
+  const now = new Date();
+  if(d.toDateString() === now.toDateString()) return hour;
+  return d.toLocaleDateString('es-MX', {day:'numeric', month:'short'}) + " " + hour;
 }
 
 function initialsFromName(name){
@@ -764,7 +777,8 @@ function upsertWhatsAppMessage(evt, agentId){
   crmSeen.add(key);
 
   let c = findWhatsAppConversation(evt.phone, agentId);
-  const time = new Date(evt.timestamp || Date.now()).toLocaleTimeString('es-MX', {hour:'numeric', minute:'2-digit'});
+  const ts = evt.timestamp || Date.now();
+  const time = crmTimeLabel(ts);
 
   if(!c){
     const name = evt.contactName || evt.phone;
@@ -772,9 +786,10 @@ function upsertWhatsAppMessage(evt, agentId){
       id: nextLocalConvId--,
       agentId,
       name, initials: initialsFromName(name),
-      channel: "whatsapp", scope: "mias", phone: evt.phone,
+      channel: crmAgentChannel[agentId] || "whatsapp", scope: "mias", phone: evt.phone,
       availability: "Disponible", tags: [], time, snippet: "",
       windowRestricted: false, aiControl: true, live: true,
+      lastTs: 0,
       messages: []
     };
     conversations.unshift(c);
@@ -782,21 +797,32 @@ function upsertWhatsAppMessage(evt, agentId){
     // conversaciones), abrimos esta automáticamente en vez de dejar el
     // panel de chat vacío.
     if(state.activeId === null) state.activeId = c.id;
-  } else if(conversations[0] !== c){
-    // La conversación con el mensaje más reciente sube al principio.
-    conversations.splice(conversations.indexOf(c), 1);
-    conversations.unshift(c);
   }
 
-  c.messages.push({ from: evt.direction === "in" ? "in" : "out", text: evt.text, time, _new: true });
-  c.snippet = evt.text;
-  c.time = time;
-  if(evt.contactName && evt.direction === "in") c.name = evt.contactName;
+  // El historial del servidor del bot puede llegar después de mensajes en
+  // vivo: se inserta en su lugar según la hora.
+  const msg = { from: evt.direction === "in" ? "in" : "out", text: evt.text, time, ts, _new: true };
+  let i = c.messages.length;
+  while(i > 0 && (c.messages[i-1].ts || 0) > ts) i--;
+  c.messages.splice(i, 0, msg);
 
-  // Reflejar quién tiene el control sin esperar al evento "control" aparte
-  // (por si esta misma pestaña disparó el envío).
-  if(evt.direction === "out" && evt.from === "human") c.aiControl = false;
-  if(evt.direction === "out" && evt.from === "bot") c.aiControl = true;
+  if(ts >= (c.lastTs || 0)){
+    c.lastTs = ts;
+    c.snippet = evt.text;
+    c.time = time;
+    if(evt.contactName && evt.direction === "in") c.name = evt.contactName;
+
+    // Reflejar quién tiene el control sin esperar al evento "control" aparte
+    // (por si esta misma pestaña disparó el envío).
+    if(evt.direction === "out" && evt.from === "human") c.aiControl = false;
+    if(evt.direction === "out" && evt.from === "bot") c.aiControl = true;
+  }
+
+  // Conversaciones en vivo: la del mensaje más reciente arriba.
+  const live = conversations.filter(x => x.live).sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0));
+  const rest = conversations.filter(x => !x.live);
+  conversations.length = 0;
+  conversations.push(...live, ...rest);
 
   updateCounts();
   renderList();

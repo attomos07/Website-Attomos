@@ -73,28 +73,16 @@ func (s *TelegramBotDeployService) GetSSHClient() *ssh.Client {
 	return s.sshClient
 }
 
-// botDir: carpeta del bot de Telegram de ESTE agente. Antes era una por
-// usuario (/home/user_N/atomic-telegram), así que un negocio con dos bots
-// de Telegram (dos sucursales) se pisaba el .env y el business_config.
-// Los despliegues nuevos van en /home/user_N/atomic-telegram-<agente>; los
-// viejos siguen en la carpeta por usuario hasta que se vuelvan a desplegar.
+// botDir: carpeta del bot de Telegram (Tachyon) de ESTE agente en el
+// servidor: /home/user_N/tachyon-telegram-<agente>. Una por agente, para que
+// dos bots del mismo negocio no se pisen el .env ni el business_config.
 func (s *TelegramBotDeployService) botDir(agentID, userID uint) string {
-	dir := fmt.Sprintf("/home/user_%d/atomic-telegram-%d", userID, agentID)
-	if s.sshClient == nil {
-		return dir
-	}
-	if out, err := s.executeCommand(fmt.Sprintf("test -d %s && echo yes || echo no", dir)); err == nil && strings.TrimSpace(out) == "no" {
-		legacy := fmt.Sprintf("/home/user_%d/atomic-telegram", userID)
-		if out2, err2 := s.executeCommand(fmt.Sprintf("test -f %s/.env && grep -q '^AGENT_ID=%d$' %s/.env && echo yes || echo no", legacy, agentID, legacy)); err2 == nil && strings.TrimSpace(out2) == "yes" {
-			return legacy
-		}
-	}
-	return dir
+	return fmt.Sprintf("/home/user_%d/tachyon-telegram-%d", userID, agentID)
 }
 
-// newBotDir: carpeta para un despliegue nuevo (siempre por agente).
+// newBotDir: carpeta para un despliegue nuevo (la misma que botDir).
 func (s *TelegramBotDeployService) newBotDir(agentID, userID uint) string {
-	return fmt.Sprintf("/home/user_%d/atomic-telegram-%d", userID, agentID)
+	return s.botDir(agentID, userID)
 }
 
 // DeployTelegramBot es el punto de entrada principal.
@@ -246,10 +234,10 @@ echo "NGINX_OK"
 }
 
 // TransferBotFiles sube el código fuente del bot de Telegram desde
-// ./providers/atomic-telegram al servidor Hetzner.
+// ./providers/tachyon-telegram (Tachyon = bot de Telegram) al servidor Hetzner.
 func (s *TelegramBotDeployService) TransferBotFiles(_ uint, dir string) error {
 	// ── Fuente local del bot de Telegram ──────────────────────────────────
-	localBotPath := "./providers/atomic-telegram"
+	localBotPath := "./providers/tachyon-telegram"
 
 	filesToTransfer := []string{
 		"go.mod",
@@ -394,11 +382,11 @@ func (s *TelegramBotDeployService) CompileBotOnServer(dir string) error {
 	go mod tidy 2>&1 || { echo "Error en go mod tidy"; exit 1; }
 
 	echo "Compilando TelegramBot..."
-	go build -o telegram-bot main.go 2>&1 || { echo "Error compilando bot"; exit 1; }
+	go build -o tachyon-bot main.go 2>&1 || { echo "Error compilando bot"; exit 1; }
 
-	chmod +x telegram-bot
+	chmod +x tachyon-bot
 	echo "Compilación exitosa"
-	ls -lh telegram-bot`, dir)
+	ls -lh tachyon-bot`, dir)
 
 	output, err := s.executeCommand(compileCmd)
 	if strings.TrimSpace(output) != "" {
@@ -413,10 +401,10 @@ func (s *TelegramBotDeployService) CompileBotOnServer(dir string) error {
 }
 
 // createSystemdService crea el servicio systemd para el bot de Telegram.
-// El nombre del servicio es telegram-bot-{agentID} para no colisionar con
+// El nombre del servicio es tachyon-bot-{agentID} para no colisionar con
 // los servicios atomic-bot-{agentID} del bot de WhatsApp.
 func (s *TelegramBotDeployService) createSystemdService(agent *models.Agent, dir string) error {
-	serviceName := fmt.Sprintf("telegram-bot-%d", agent.ID)
+	serviceName := fmt.Sprintf("tachyon-bot-%d", agent.ID)
 	serviceContent := fmt.Sprintf(`[Unit]
 Description=TelegramBot - Attomos Agent %d
 After=network.target
@@ -425,11 +413,11 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=%s
-ExecStart=%s/telegram-bot
+ExecStart=%s/tachyon-bot
 Restart=always
 RestartSec=10
-StandardOutput=append:/var/log/telegram-bot-%d.log
-StandardError=append:/var/log/telegram-bot-%d-error.log
+StandardOutput=append:/var/log/tachyon-bot-%d.log
+StandardError=append:/var/log/tachyon-bot-%d-error.log
 Environment="PATH=/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 [Install]
@@ -447,13 +435,13 @@ WantedBy=multi-user.target`,
 	s.executeCommand("systemctl daemon-reload")
 	s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName))
 
-	log.Printf("   ✅ Servicio systemd telegram-bot-%d creado y habilitado", agent.ID)
+	log.Printf("   ✅ Servicio systemd tachyon-bot-%d creado y habilitado", agent.ID)
 	return nil
 }
 
 // startBot inicia el servicio systemd del bot
 func (s *TelegramBotDeployService) startBot(agentID uint) error {
-	serviceName := fmt.Sprintf("telegram-bot-%d", agentID)
+	serviceName := fmt.Sprintf("tachyon-bot-%d", agentID)
 
 	s.executeCommand(fmt.Sprintf("systemctl stop %s 2>/dev/null || true", serviceName))
 	s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName))
@@ -475,7 +463,7 @@ func (s *TelegramBotDeployService) startBot(agentID uint) error {
 
 // StopBot detiene el servicio systemd del bot de Telegram
 func (s *TelegramBotDeployService) StopBot(agentID uint) error {
-	serviceName := fmt.Sprintf("telegram-bot-%d", agentID)
+	serviceName := fmt.Sprintf("tachyon-bot-%d", agentID)
 	s.executeCommand(fmt.Sprintf("systemctl stop %s 2>/dev/null || true", serviceName))
 	s.executeCommand(fmt.Sprintf("systemctl disable %s 2>/dev/null || true", serviceName))
 	log.Printf("✅ [Agent %d] TelegramBot detenido", agentID)
@@ -484,7 +472,7 @@ func (s *TelegramBotDeployService) StopBot(agentID uint) error {
 
 // RestartBot reinicia el bot de Telegram
 func (s *TelegramBotDeployService) RestartBot(agentID uint) error {
-	serviceName := fmt.Sprintf("telegram-bot-%d", agentID)
+	serviceName := fmt.Sprintf("tachyon-bot-%d", agentID)
 	s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName))
 	if _, err := s.executeCommand(fmt.Sprintf("systemctl restart %s", serviceName)); err != nil {
 		return fmt.Errorf("error reiniciando: %w", err)
@@ -636,7 +624,7 @@ func (s *TelegramBotDeployService) updateEnvVar(agent *models.Agent, dir, key, v
 
 // GetBotLogs obtiene los últimos N líneas del log del bot
 func (s *TelegramBotDeployService) GetBotLogs(agentID uint, lines int) (string, error) {
-	output, err := s.executeCommand(fmt.Sprintf("tail -n %d /var/log/telegram-bot-%d.log 2>/dev/null || echo ''", lines, agentID))
+	output, err := s.executeCommand(fmt.Sprintf("tail -n %d /var/log/tachyon-bot-%d.log 2>/dev/null || echo ''", lines, agentID))
 	if err != nil {
 		return "", fmt.Errorf("error leyendo logs: %w", err)
 	}
@@ -658,9 +646,9 @@ func (s *TelegramBotDeployService) DiagnoseBotFailure(agentID uint, userID uint)
 		{"📁 ARCHIVOS", fmt.Sprintf("ls -lh %s", dir)},
 		{"⚙️  .ENV (sin secrets)", fmt.Sprintf("cat %s/.env | grep -v TOKEN | grep -v API_KEY", dir)},
 		{"📋 BUSINESS CONFIG", fmt.Sprintf("cat %s/business_config.json | head -20", dir)},
-		{"🔧 ESTADO SERVICIO", fmt.Sprintf("systemctl status telegram-bot-%d --no-pager -l", agentID)},
-		{"📝 ÚLTIMOS LOGS", fmt.Sprintf("tail -n 50 /var/log/telegram-bot-%d.log 2>&1 || journalctl -u telegram-bot-%d -n 50 --no-pager", agentID, agentID)},
-		{"❌ LOGS DE ERROR", fmt.Sprintf("tail -n 30 /var/log/telegram-bot-%d-error.log 2>&1", agentID)},
+		{"🔧 ESTADO SERVICIO", fmt.Sprintf("systemctl status tachyon-bot-%d --no-pager -l", agentID)},
+		{"📝 ÚLTIMOS LOGS", fmt.Sprintf("tail -n 50 /var/log/tachyon-bot-%d.log 2>&1 || journalctl -u tachyon-bot-%d -n 50 --no-pager", agentID, agentID)},
+		{"❌ LOGS DE ERROR", fmt.Sprintf("tail -n 30 /var/log/tachyon-bot-%d-error.log 2>&1", agentID)},
 	}
 
 	for _, c := range commands {

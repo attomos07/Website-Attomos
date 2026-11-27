@@ -10,21 +10,26 @@ package src
 // con los mensajes recientes. Attomos no guarda conversaciones en su base
 // de datos.
 //
-// Límites: se conservan los últimos crmStoreMax mensajes de los últimos
-// crmStoreDays días; al arrancar se compacta el archivo.
+// crm_history.jsonl solo tiene lo reciente (máx. crmStoreMax mensajes de
+// los últimos crmStoreDays días), para que el bot arranque y conteste
+// rápido. Lo más viejo NO se borra: se mueve a un archivo por mes,
+// crm_history-2026-11.jsonl, crm_history-2026-12.jsonl, etc. Eso pasa al
+// arrancar y cuando el archivo reciente se llena.
 
 import (
 	"bufio"
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	crmStoreMax  = 20000
-	crmStoreDays = 90
+	crmStoreMax   = 20000 // mensajes en el archivo reciente
+	crmStoreDays  = 90    // antigüedad máxima en el archivo reciente
+	crmStoreSlack = 2000  // cuántos de más se toleran antes de archivar
 )
 
 var (
@@ -41,50 +46,36 @@ func crmStorePath() string {
 	return "crm_history.jsonl"
 }
 
-// initCRMStore carga el historial del disco (una sola vez).
+// crmArchivePath: crm_history.jsonl → crm_history-2026-11.jsonl
+func crmArchivePath(ts int64) string {
+	base := strings.TrimSuffix(crmStorePath(), ".jsonl")
+	return base + "-" + time.UnixMilli(ts).Format("2006-01") + ".jsonl"
+}
+
+// initCRMStore carga el historial reciente del disco (una sola vez).
 func initCRMStore() {
 	crmStoreOnce.Do(func() {
 		path := crmStorePath()
-		cut := time.Now().AddDate(0, 0, -crmStoreDays).UnixMilli()
-		loaded, trimmed := 0, false
-
+		dirty := false
 		if f, err := os.Open(path); err == nil {
 			sc := bufio.NewScanner(f)
 			sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 			for sc.Scan() {
 				var e crmEvent
 				if json.Unmarshal(sc.Bytes(), &e) != nil || e.Phone == "" {
-					trimmed = true
-					continue
-				}
-				if e.Timestamp < cut {
-					trimmed = true
+					dirty = true // línea dañada: se descarta al reescribir
 					continue
 				}
 				crmStoreEvents = append(crmStoreEvents, e)
-				loaded++
 			}
 			f.Close()
 		}
-		if len(crmStoreEvents) > crmStoreMax {
-			crmStoreEvents = append([]crmEvent(nil), crmStoreEvents[len(crmStoreEvents)-crmStoreMax:]...)
-			trimmed = true
-		}
 
-		// Compactar: reescribir solo lo que se conserva.
-		if trimmed {
-			tmp := path + ".tmp"
-			if f, err := os.Create(tmp); err == nil {
-				w := bufio.NewWriter(f)
-				enc := json.NewEncoder(w)
-				for _, e := range crmStoreEvents {
-					_ = enc.Encode(e)
-				}
-				w.Flush()
-				f.Close()
-				_ = os.Rename(tmp, path)
-			}
+		crmStoreMu.Lock()
+		if crmArchiveOldLocked() || dirty {
+			crmRewriteLocked()
 		}
+		crmStoreMu.Unlock()
 
 		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 		if err != nil {
@@ -92,8 +83,81 @@ func initCRMStore() {
 			return
 		}
 		crmStoreFile = f
-		log.Printf("💾 [CRM] Historial local: %d mensajes (%s)", len(crmStoreEvents), path)
+		log.Printf("💾 [CRM] Historial local: %d mensajes recientes (%s)", len(crmStoreEvents), path)
 	})
+}
+
+// crmArchiveOldLocked mueve a los archivos por mes lo que ya no va en el
+// reciente. Regresa true si movió algo. Requiere crmStoreMu.
+func crmArchiveOldLocked() bool {
+	cut := time.Now().AddDate(0, 0, -crmStoreDays).UnixMilli()
+	start := 0
+	for start < len(crmStoreEvents) &&
+		(crmStoreEvents[start].Timestamp < cut || len(crmStoreEvents)-start > crmStoreMax) {
+		start++
+	}
+	if start == 0 {
+		return false
+	}
+
+	// Agrupar por mes y agregar al final de cada archivo mensual.
+	byMonth := map[string][]crmEvent{}
+	order := []string{}
+	for _, e := range crmStoreEvents[:start] {
+		p := crmArchivePath(e.Timestamp)
+		if _, ok := byMonth[p]; !ok {
+			order = append(order, p)
+		}
+		byMonth[p] = append(byMonth[p], e)
+	}
+	for _, p := range order {
+		f, err := os.OpenFile(p, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		if err != nil {
+			log.Printf("⚠️  [CRM] No se pudo archivar en %s: %v — se conserva en el reciente", p, err)
+			return false
+		}
+		w := bufio.NewWriter(f)
+		enc := json.NewEncoder(w)
+		for _, e := range byMonth[p] {
+			_ = enc.Encode(e)
+		}
+		err = w.Flush()
+		f.Close()
+		if err != nil {
+			log.Printf("⚠️  [CRM] Error archivando en %s: %v — se conserva en el reciente", p, err)
+			return false
+		}
+		log.Printf("📦 [CRM] %d mensajes archivados en %s", len(byMonth[p]), p)
+	}
+	crmStoreEvents = append([]crmEvent(nil), crmStoreEvents[start:]...)
+	return true
+}
+
+// crmRewriteLocked reescribe el archivo reciente con lo que hay en memoria.
+// Requiere crmStoreMu.
+func crmRewriteLocked() {
+	path := crmStorePath()
+	tmp := path + ".tmp"
+	f, err := os.Create(tmp)
+	if err != nil {
+		log.Printf("⚠️  [CRM] No se pudo reescribir el historial: %v", err)
+		return
+	}
+	w := bufio.NewWriter(f)
+	enc := json.NewEncoder(w)
+	for _, e := range crmStoreEvents {
+		_ = enc.Encode(e)
+	}
+	w.Flush()
+	f.Close()
+
+	if crmStoreFile != nil {
+		crmStoreFile.Close()
+		crmStoreFile = nil
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		log.Printf("⚠️  [CRM] No se pudo reemplazar el historial: %v", err)
+	}
 }
 
 // crmStoreAdd guarda un mensaje de la conversación.
@@ -109,15 +173,23 @@ func crmStoreAdd(e crmEvent) {
 	crmStoreMu.Lock()
 	defer crmStoreMu.Unlock()
 	crmStoreEvents = append(crmStoreEvents, e)
-	if len(crmStoreEvents) > crmStoreMax+crmStoreMax/10 {
-		crmStoreEvents = append([]crmEvent(nil), crmStoreEvents[len(crmStoreEvents)-crmStoreMax:]...)
-	}
 	if crmStoreFile != nil {
 		if b, err := json.Marshal(e); err == nil {
 			if _, err := crmStoreFile.Write(append(b, '\n')); err != nil {
 				log.Printf("⚠️  [CRM] Error guardando historial: %v", err)
 			}
 		}
+	}
+
+	// El reciente se llenó: archivar lo viejo sin esperar a un reinicio.
+	if len(crmStoreEvents) > crmStoreMax+crmStoreSlack && crmArchiveOldLocked() {
+		crmRewriteLocked()
+		f, err := os.OpenFile(crmStorePath(), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		if err != nil {
+			log.Printf("⚠️  [CRM] No se pudo reabrir el historial: %v", err)
+			return
+		}
+		crmStoreFile = f
 	}
 }
 
