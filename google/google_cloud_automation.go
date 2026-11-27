@@ -180,10 +180,10 @@ func (gca *GoogleCloudAutomation) CreateProjectForUser(userID uint, userEmail st
 	// 5. Obtener (o crear) API Key de Gemini (NO BLOQUEANTE)
 	apiKey, err := gca.getOrCreateAPIKey(projectID, userID)
 	if err != nil {
-		log.Printf("⚠️ [User %d] Error creando API Key (NO CRÍTICO): %v", userID, err)
-		log.Printf("ℹ️ [User %d] Puedes crear la API Key manualmente en Google Cloud Console", userID)
-		// NO RETORNAR - CONTINUAR SIN API KEY
-		return projectID, "", nil
+		// Antes regresaba nil: el proyecto quedaba "ready" SIN key y nunca
+		// se volvía a intentar. Ahora es error y se reintenta después.
+		log.Printf("⚠️ [User %d] Error creando API Key: %v", userID, err)
+		return projectID, "", fmt.Errorf("error creando API key: %v", err)
 	}
 
 	log.Printf("🎉 [User %d] Proyecto completo con API Key", userID)
@@ -286,43 +286,62 @@ func (gca *GoogleCloudAutomation) createAPIKey(projectID string, userID uint) (s
 		},
 	}
 
-	// Crear la key
+	// Crear la key. Create regresa una operación que casi nunca viene
+	// terminada: antes se leía op.Response de inmediato (vacío), se
+	// esperaban 3 s y se tomaba "la última key" de la lista — si aún no
+	// existía, no había API key. Ahora se espera a que la operación acabe.
 	op, err := gca.apiKeysService.Projects.Locations.Keys.Create(parent, keyRequest).Do()
 	if err != nil {
-		log.Printf("⚠️ [User %d] Error creando API key (NO CRÍTICO): %v", userID, err)
+		log.Printf("⚠️ [User %d] Error creando API key: %v", userID, err)
 		return "", fmt.Errorf("error creando API key: %v", err)
 	}
+	for i := 0; i < 30 && !op.Done && op.Name != ""; i++ {
+		time.Sleep(2 * time.Second)
+		got, gerr := gca.apiKeysService.Operations.Get(op.Name).Do()
+		if gerr != nil {
+			log.Printf("⚠️ [User %d] Error consultando la operación de la API key: %v", userID, gerr)
+			break
+		}
+		op = got
+	}
+	if op.Error != nil {
+		return "", fmt.Errorf("error creando API key: %s", op.Error.Message)
+	}
 
-	// Obtener el nombre de la key desde los metadatos de la operación
 	var keyName string
 	if len(op.Response) > 0 {
 		var responseData map[string]interface{}
 		if err := json.Unmarshal(op.Response, &responseData); err == nil {
+			if ks, ok := responseData["keyString"].(string); ok && ks != "" {
+				log.Printf("✅ [User %d] API Key creada exitosamente", userID)
+				return ks, nil
+			}
 			if name, ok := responseData["name"].(string); ok {
 				keyName = name
 			}
 		}
 	}
 
-	// Si no pudimos obtener el nombre de la respuesta, intentar construirlo
+	// Sin nombre en la respuesta: buscar la key de Attomos por su nombre
+	// visible (no "la última", que podría ser otra).
 	if keyName == "" {
-		// Listar las keys del proyecto para obtener la más reciente
 		log.Printf("⏳ [User %d] Buscando API Key creada...", userID)
-		time.Sleep(3 * time.Second) // Breve espera para que se cree
-
-		listResp, err := gca.apiKeysService.Projects.Locations.Keys.List(parent).Do()
-		if err != nil {
-			log.Printf("⚠️ [User %d] Error listando API keys (NO CRÍTICO): %v", userID, err)
-			return "", fmt.Errorf("error listando API keys: %v", err)
+		for i := 0; i < 5 && keyName == ""; i++ {
+			time.Sleep(3 * time.Second)
+			listResp, err := gca.apiKeysService.Projects.Locations.Keys.List(parent).Do()
+			if err != nil {
+				log.Printf("⚠️ [User %d] Error listando API keys: %v", userID, err)
+				continue
+			}
+			for _, k := range listResp.Keys {
+				if k.DisplayName == keyRequest.DisplayName && k.DeleteTime == "" {
+					keyName = k.Name
+				}
+			}
 		}
-
-		if len(listResp.Keys) == 0 {
-			log.Printf("⚠️ [User %d] No se encontró ninguna API key después de crearla", userID)
-			return "", fmt.Errorf("no se encontró ninguna API key después de crearla")
+		if keyName == "" {
+			return "", fmt.Errorf("no se encontró la API key después de crearla")
 		}
-
-		// Obtener la última key (la más reciente)
-		keyName = listResp.Keys[len(listResp.Keys)-1].Name
 	}
 
 	log.Printf("🔑 [User %d] Obteniendo KeyString para: %s", userID, keyName)

@@ -80,9 +80,12 @@ type Promotion struct {
 
 // AgentConfig — solo datos propios del agente (sin duplicar negocio)
 type AgentConfig struct {
-	WelcomeMessage      string      `json:"welcomeMessage"`
-	AIPersonality       string      `json:"aiPersonality"`
-	Tone                string      `json:"tone"`
+	WelcomeMessage string `json:"welcomeMessage"`
+	AIPersonality  string `json:"aiPersonality"`
+	Tone           string `json:"tone"`
+	// ResponseMode: "ai" (Gemini) o "buttons" (menú con botones, sin IA).
+	// Vacío = IA si hay API key; si no, botones.
+	ResponseMode        string      `json:"responseMode,omitempty"`
 	CustomTone          string      `json:"customTone"`
 	Languages           []string    `json:"languages"`
 	AdditionalLanguages []string    `json:"additionalLanguages"`

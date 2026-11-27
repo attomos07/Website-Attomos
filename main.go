@@ -362,6 +362,7 @@ func main() {
 		router.GET("/api/bot/business-config/:agent_id", handlers.GetBotBusinessConfig)
 		// Ópticas: "¿ya están mis lentes?" → en qué paso va su trabajo
 		router.GET("/api/bot/lab-status", handlers.BotLabStatus)
+		router.GET("/api/bot/availability", handlers.BotAvailability)
 
 		// CRM en vivo — el bot se conecta aquí y queda enganchado al hub
 		router.GET("/ws/bot/crm", realtime.BotCRMSocket)

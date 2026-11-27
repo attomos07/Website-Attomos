@@ -243,62 +243,20 @@ func processWebhookPayload(payload *MetaWebhookPayload, client *MetaClient, agen
 }
 
 // processMessage procesa un mensaje individual
-func processMessage(message *struct {
-	From      string `json:"from"`
-	ID        string `json:"id"`
-	Timestamp string `json:"timestamp"`
-	Type      string `json:"type"`
-	Text      struct {
-		Body string `json:"body"`
-	} `json:"text"`
-}, value *struct {
-	MessagingProduct string `json:"messaging_product"`
-	Metadata         struct {
-		DisplayPhoneNumber string `json:"display_phone_number"`
-		PhoneNumberID      string `json:"phone_number_id"`
-	} `json:"metadata"`
-	Contacts []struct {
-		Profile struct {
-			Name string `json:"name"`
-		} `json:"profile"`
-		WAID string `json:"wa_id"`
-	} `json:"contacts"`
-	Messages []struct {
-		From      string `json:"from"`
-		ID        string `json:"id"`
-		Timestamp string `json:"timestamp"`
-		Type      string `json:"type"`
-		Text      struct {
-			Body string `json:"body"`
-		} `json:"text"`
-	} `json:"messages"`
-	Statuses []struct {
-		ID           string `json:"id"`
-		Status       string `json:"status"`
-		Timestamp    string `json:"timestamp"`
-		RecipientID  string `json:"recipient_id"`
-		Conversation struct {
-			ID     string `json:"id"`
-			Origin struct {
-				Type string `json:"type"`
-			} `json:"origin"`
-		} `json:"conversation"`
-		Pricing struct {
-			Billable     bool   `json:"billable"`
-			PricingModel string `json:"pricing_model"`
-			Category     string `json:"category"`
-		} `json:"pricing"`
-	} `json:"statuses"`
-}, client *MetaClient, agentID string) {
+func processMessage(message *MetaInboundMessage, value *MetaChangeValue, client *MetaClient, agentID string) {
 
-	// Solo procesar mensajes de texto
-	if message.Type != "text" {
+	// Texto, o la opción que tocó en un botón / lista (modo con botones).
+	replyID, replyTitle := message.Reply()
+	if message.Type != "text" && replyID == "" {
 		log.Printf("ℹ️  Mensaje de tipo '%s' ignorado", message.Type)
 		return
 	}
 
 	phoneNumber := message.From
 	messageText := message.Text.Body
+	if replyID != "" {
+		messageText = replyTitle
+	}
 	messageID := message.ID
 
 	// Obtener nombre del contacto
@@ -335,6 +293,14 @@ func processMessage(message *struct {
 		return
 	}
 
+	// Modo con botones (sin IA): el menú contesta y manda sus propios
+	// mensajes interactivos.
+	if ButtonsModeActive() {
+		HandleMenuMessage(client, phoneNumber, senderName, messageText, replyID)
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
+
 	// Procesar mensaje (usar la misma lógica de AtomicBot)
 	response := ProcessMessage(messageText, phoneNumber, senderName)
 
@@ -356,23 +322,7 @@ func processMessage(message *struct {
 }
 
 // processStatus procesa actualizaciones de estado de mensajes
-func processStatus(status *struct {
-	ID           string `json:"id"`
-	Status       string `json:"status"`
-	Timestamp    string `json:"timestamp"`
-	RecipientID  string `json:"recipient_id"`
-	Conversation struct {
-		ID     string `json:"id"`
-		Origin struct {
-			Type string `json:"type"`
-		} `json:"origin"`
-	} `json:"conversation"`
-	Pricing struct {
-		Billable     bool   `json:"billable"`
-		PricingModel string `json:"pricing_model"`
-		Category     string `json:"category"`
-	} `json:"pricing"`
-}) {
+func processStatus(status *MetaStatus) {
 	statusMap := map[string]string{
 		"sent":      "✓ Enviado",
 		"delivered": "✓✓ Entregado",

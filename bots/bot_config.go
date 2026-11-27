@@ -39,12 +39,14 @@ type BusinessConfig struct {
 	LogoUrl     string      `json:"logoUrl,omitempty"`
 	BannerUrl   string      `json:"bannerUrl,omitempty"`
 	Personality Personality `json:"personality"`
-	Schedule    Schedule    `json:"schedule"`
-	Holidays    []Holiday   `json:"holidays"`
-	Services    []Service   `json:"services"`
-	Workers     []Worker    `json:"workers"`
-	Location    Location    `json:"location"`
-	SocialMedia SocialMedia `json:"socialMedia"`
+	// ResponseMode: "ai" | "buttons" ("" = IA si hay key, si no botones).
+	ResponseMode string      `json:"responseMode,omitempty"`
+	Schedule     Schedule    `json:"schedule"`
+	Holidays     []Holiday   `json:"holidays"`
+	Services     []Service   `json:"services"`
+	Workers      []Worker    `json:"workers"`
+	Location     Location    `json:"location"`
+	SocialMedia  SocialMedia `json:"socialMedia"`
 }
 
 type Personality struct {
@@ -140,6 +142,7 @@ func GenerateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) 
 		AgentName:    agent.Name,
 		BusinessType: agent.BusinessType,
 		PhoneNumber:  agent.PhoneNumber,
+		ResponseMode: agent.Config.ResponseMode,
 		Personality: Personality{
 			Tone:                agent.Config.Tone,
 			CustomTone:          agent.Config.CustomTone,

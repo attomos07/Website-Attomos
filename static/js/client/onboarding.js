@@ -160,23 +160,28 @@ function initializeToneSelection() {
     const customEditor = document.getElementById('customToneEditor');
     if (!options.length) return;
 
-    function applySelection(value) {
+    // Cada grupo (tono / modo de respuesta) marca solo sus opciones.
+    function applySelection(value, name) {
+        name = name || 'tone';
         options.forEach(opt => {
             const input = opt.querySelector('input[type="radio"]');
-            opt.classList.toggle('selected', !!input && input.value === value);
+            if (!input || input.name !== name) return;
+            opt.classList.toggle('selected', input.value === value);
         });
-        if (customEditor) customEditor.classList.toggle('show', value === 'custom');
+        if (name === 'tone' && customEditor) customEditor.classList.toggle('show', value === 'custom');
     }
 
     options.forEach(opt => {
         const input = opt.querySelector('input[type="radio"]');
         if (!input || input.dataset.obWired) return;
         input.dataset.obWired = '1';
-        input.addEventListener('change', () => applySelection(input.value));
+        input.addEventListener('change', () => applySelection(input.value, input.name));
     });
 
     const checked = document.querySelector('input[name="tone"]:checked');
-    applySelection(checked ? checked.value : 'formal');
+    applySelection(checked ? checked.value : 'formal', 'tone');
+    const mode = document.querySelector('input[name="responseMode"]:checked');
+    applySelection(mode ? mode.value : 'ai', 'responseMode');
 
     // Las páginas (dashboard/my-agents/integrations) solo llaman a
     // initializeToneSelection, así que el uploader de estilo se engancha aquí.
@@ -480,6 +485,8 @@ function collectFormData() {
     // Personalidad
     const toneChecked = document.querySelector('input[name="tone"]:checked');
     if (toneChecked) d.config.tone = toneChecked.value;
+    const modeChecked = document.querySelector('input[name="responseMode"]:checked');
+    if (modeChecked) d.config.responseMode = modeChecked.value;
     const editorContent = document.getElementById('editorContent');
     if (editorContent) d.config.customTone = editorContent.innerText.trim();
 
@@ -581,6 +588,7 @@ function generateSummary() {
         <div class="summary-section-title"><i class="lni lni-comments"></i>${t('onb_sec_personality','Personalidad del Agente')}</div>
         ${item(t('onb_pers_tone_label','Tono de Conversación'), TONE_LABELS[cfg.tone] || cfg.tone)}
         ${cfg.tone === 'custom' && cfg.customTone ? item(t('onb_tone_custom_editor_label','Personalizado'), cfg.customTone) : ''}
+        ${item('Modo de respuesta', cfg.responseMode === 'buttons' ? 'Con botones (sin IA)' : 'Con IA')}
         ${cfg.styleSample ? item(t('onb_style_summary','Estilo de respuesta'), cfg.styleSampleName || '.txt') : ''}
     </div>`;
 
@@ -849,6 +857,7 @@ async function createAgent() {
         config: {
             tone: cfg.tone || 'formal',
             customTone: cfg.tone === 'custom' ? (cfg.customTone || '') : '',
+            responseMode: cfg.responseMode || 'ai',
             additionalLanguages: cfg.additionalLanguages || [],
             specialInstructions: cfg.specialInstructions || '',
             styleSample: cfg.styleSample || '',

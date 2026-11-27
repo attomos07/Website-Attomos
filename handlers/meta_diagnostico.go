@@ -234,9 +234,27 @@ echo "== últimas líneas del log:"; tail -n 40 /var/log/orbital-bot-%[1]d.log 2
 	var fu models.User
 	if config.DB.Preload("GoogleCloudProject").First(&fu, user.ID).Error == nil && fu.GetGeminiAPIKey() != "" {
 		checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: true, Detalle: "El negocio tiene clave de Gemini. Si el log del bot dice \"Gemini AI: ❌\", haz Redeploy para que la tome."})
+	} else if fix {
+		// Generar la key (Google Cloud) y ponérsela al bot. Tarda ~1-2 min.
+		key, gerr := ensureUserGeminiKey(user.ID, fu.Email)
+		switch {
+		case gerr != nil:
+			checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: false, Detalle: "No se pudo generar la clave de Gemini: " + gerr.Error(),
+				Arreglo: "Revisa en Railway GCP_ORGANIZATION_ID, GCP_BILLING_ACCOUNT_ID y GCP_SERVICE_ACCOUNT_JSON (la cuenta de servicio necesita crear proyectos, vincular facturación y crear API keys). Mientras, el bot contesta con el menú de botones."})
+		default:
+			if serr := orbitalSetGeminiKey(&agent, key); serr != nil {
+				checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: false, Detalle: "Clave generada, pero no se pudo poner en el bot: " + serr.Error(), Arreglo: "Haz Redeploy del agente."})
+			} else {
+				checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: true, Detalle: "Clave de Gemini generada y puesta en el bot (se reinició)."})
+			}
+		}
 	} else {
-		checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: false, Detalle: "El negocio no tiene clave de Gemini: el bot no puede contestar con IA.",
-			Arreglo: "Revisa el proyecto de Google Cloud del usuario (tabla google_cloud_projects) o crea la clave."})
+		estado := "sin proyecto"
+		if fu.GoogleCloudProject != nil {
+			estado = "proyecto " + fu.GoogleCloudProject.ProjectStatus
+		}
+		checks = append(checks, metaCheck{Paso: "5. IA (Gemini)", OK: false, Detalle: "El negocio no tiene clave de Gemini (" + estado + "): el bot contesta con el menú de botones, sin IA.",
+			Arreglo: "Abre esta URL con ?arreglar=1 para generarla automáticamente (tarda 1-2 min)."})
 	}
 
 	todo := true

@@ -796,6 +796,33 @@
                       </h3>
 
                       <div class="form-group">
+                        <label class="form-label">Modo de respuesta</label>
+                        <div class="tone-radio-group">
+                          <label class="tone-radio-option">
+                            <input type="radio" name="responseMode" value="ai" checked />
+                            <div class="tone-icon-wrapper">
+                              <i class="lni lni-bulb"></i>
+                            </div>
+                            <div class="tone-radio-label">
+                              <strong>Con IA</strong>
+                              <span>Platica natural (usa Gemini)</span>
+                            </div>
+                          </label>
+                          <label class="tone-radio-option">
+                            <input type="radio" name="responseMode" value="buttons" />
+                            <div class="tone-icon-wrapper">
+                              <i class="lni lni-list"></i>
+                            </div>
+                            <div class="tone-radio-label">
+                              <strong>Con botones</strong>
+                              <span>Menú de opciones, sin IA</span>
+                            </div>
+                          </label>
+                        </div>
+                        <span class="form-help">Con botones el cliente elige servicios, horarios, ubicación y agenda su cita tocando opciones. Por ahora solo en WhatsApp Business.</span>
+                      </div>
+
+                      <div class="form-group">
                         <label class="form-label" data-translate="onb_pers_tone_label">Tono de Conversación</label>
                         <div class="tone-radio-group">
                           <label class="tone-radio-option">
@@ -1481,6 +1508,6 @@
 
     <script src="/static/js/translations.js"></script>
     <script src="/static/js/client/ios-pickers.js?v=1"></script>
-    <script src="/static/js/client/onboarding.js?v=9"></script>
+    <script src="/static/js/client/onboarding.js?v=10"></script>
   </body>
 </html>

@@ -73,12 +73,14 @@ type Schedule struct {
 	Friday    *DaySchedule `json:"friday"`
 	Saturday  *DaySchedule `json:"saturday"`
 	Sunday    *DaySchedule `json:"sunday"`
+	Timezone  string       `json:"timezone,omitempty"`
 }
 
 // Holiday día festivo o de cierre especial
 type Holiday struct {
 	Date        string `json:"date"`
 	Description string `json:"description"`
+	Name        string `json:"name,omitempty"` // así lo manda Attomos
 }
 
 // Service representa un servicio ofrecido por el negocio
@@ -103,6 +105,11 @@ type Location struct {
 	City          string `json:"city"`
 	State         string `json:"state"`
 	Instructions  string `json:"instructions"`
+	// Como lo manda Attomos (Mi Negocio)
+	Number         string `json:"number,omitempty"`
+	Neighborhood   string `json:"neighborhood,omitempty"`
+	PostalCode     string `json:"postalCode,omitempty"`
+	BetweenStreets string `json:"betweenStreets,omitempty"`
 }
 
 // SocialMedia redes sociales del negocio
@@ -124,6 +131,9 @@ type BusinessConfig struct {
 
 	// Personalidad del agente
 	Personality Personality `json:"personality"`
+
+	// "ai" | "buttons" — "" = IA si hay API key de Gemini; si no, botones.
+	ResponseMode string `json:"responseMode,omitempty"`
 
 	// Horarios
 	Schedule Schedule  `json:"schedule"`

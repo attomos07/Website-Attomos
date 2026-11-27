@@ -13,7 +13,6 @@ import (
 	"attomos/models"
 
 	"attomos/bots"
-	"attomos/google"
 	"attomos/infrastructure"
 
 	"github.com/gin-gonic/gin"
@@ -241,7 +240,6 @@ func CreateAgent(c *gin.Context) {
 		log.Println(strings.Repeat("═", 80))
 
 		config.DB.Preload("GoogleCloudProject").First(&user, user.ID)
-		isFirstAgent := agentCount == 0
 
 		if agent.IsAtomicBot() {
 			// ────────────────────────────────────────────────────────────────
@@ -494,53 +492,12 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("║ %s ║", centerText("DESPLIEGUE DE ORBITAL BOT (GO + META API)", 76))
 			log.Println(strings.Repeat("═", 80))
 
-			// PASO 1: GCP si primer agente
-			if isFirstAgent {
-				log.Printf("🎉 [User %d] Primer agente — verificando proyecto GCP", user.ID)
-				var gcpProject models.GoogleCloudProject
-				err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
-
-				alreadyUsable := err == nil && (gcpProject.ProjectStatus == "ready" || gcpProject.ProjectStatus == "manual")
-
-				if alreadyUsable {
-					// Ya hay una key utilizable — o bien el usuario indicó
-					// en el modal de Planes que ya tiene su propia API key
-					// (ver select_plan.go, que deja ProjectStatus="manual"
-					// en ese caso), o el proyecto GCP real ya se había
-					// creado antes. En ambos casos NO llamamos a
-					// gca.CreateProjectForUser — eso es justamente lo que
-					// evita que el GCP corra cuando el usuario no lo necesita.
-					log.Printf("✅ [User %d] Ya hay una API key utilizable (status=%s) — se omite creación de proyecto GCP", user.ID, gcpProject.ProjectStatus)
-				} else {
-					if err != nil {
-						gcpProject = models.GoogleCloudProject{UserID: user.ID, ProjectStatus: "creating"}
-						config.DB.Create(&gcpProject)
-					} else {
-						gcpProject.MarkAsCreating()
-						config.DB.Save(&gcpProject)
-					}
-
-					gca, gcaErr := google.NewGoogleCloudAutomation()
-					if gcaErr != nil {
-						log.Printf("⚠️ [User %d] GCP no disponible (NO CRÍTICO): %v", user.ID, gcaErr)
-						gcpProject.MarkAsError()
-						config.DB.Save(&gcpProject)
-					} else {
-						projectID, apiKey, createErr := gca.CreateProjectForUser(user.ID, user.Email)
-						if createErr != nil {
-							log.Printf("⚠️ [User %d] Error creando GCP (NO CRÍTICO): %v", user.ID, createErr)
-							gcpProject.MarkAsError()
-							config.DB.Save(&gcpProject)
-						} else {
-							gcpProject.ProjectID = projectID
-							gcpProject.ProjectName = fmt.Sprintf("Attomos User %d", user.ID)
-							gcpProject.GeminiAPIKey = apiKey
-							gcpProject.MarkAsReady()
-							config.DB.Save(&gcpProject)
-							log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
-						}
-					}
-				}
+			// PASO 1: API key de Gemini automática (proyecto de Google
+			// Cloud del usuario). Antes solo en el primer agente y sin
+			// reintento; ahora siempre que falte (ver gemini_auto.go).
+			orbitalGeminiKey, gerr := ensureUserGeminiKey(user.ID, user.Email)
+			if gerr != nil {
+				log.Printf("⚠️ [User %d] Sin API key de Gemini (NO CRÍTICO, el bot usará el menú con botones): %v", user.ID, gerr)
 			}
 
 			// PASO 2: Obtener o crear servidor del usuario
@@ -629,7 +586,11 @@ func CreateAgent(c *gin.Context) {
 			}
 			defer orbitalService.Close()
 
-			geminiAPIKey := user.GetGeminiAPIKey()
+			// El user se cargó antes de crear la key: usar la que acaba de salir.
+			geminiAPIKey := orbitalGeminiKey
+			if geminiAPIKey == "" {
+				geminiAPIKey = user.GetGeminiAPIKey()
+			}
 			var googleCredentials []byte
 			if agent.GoogleConnected && agent.GoogleToken != "" {
 				googleCredentials = []byte(agent.GoogleToken)
@@ -767,6 +728,10 @@ func UpdateAgent(c *gin.Context) {
 	// El config se guarda completo siempre que venga en el body — antes solo
 	// se guardaba si cambiaba el mensaje de bienvenida o los servicios, lo
 	// que perdía cambios de tono, idiomas, horario, personal, etc.
+	// El modo de respuesta solo se cambia si viene en el body.
+	if req.Config.ResponseMode == "" {
+		req.Config.ResponseMode = agent.Config.ResponseMode
+	}
 	agent.Config = req.Config
 
 	// Updates() parcial (solo estas 3 columnas) en vez de Save() del struct
@@ -1169,11 +1134,17 @@ func redeployOrbitalOrTelegram(c *gin.Context, agent *models.Agent, user *models
 	if err := config.DB.Preload("GoogleCloudProject").First(&fullUser, user.ID).Error; err == nil {
 		geminiAPIKey = fullUser.GetGeminiAPIKey()
 	}
-	if geminiAPIKey == "" {
-		log.Printf("⚠️  [Agent %d] Redeploy sin clave de Gemini (el usuario %d no tiene proyecto de Google Cloud con clave)", agent.ID, user.ID)
-	}
+	userEmail := fullUser.Email
 
 	go func() {
+		// WhatsApp Business sin key: intentar generarla (Google Cloud).
+		if geminiAPIKey == "" && ag.IsOrbitalBot() {
+			if k, err := ensureUserGeminiKey(user.ID, userEmail); err == nil {
+				geminiAPIKey = k
+			} else {
+				log.Printf("⚠️  [Agent %d] Redeploy sin clave de Gemini: %v", ag.ID, err)
+			}
+		}
 		var googleCredentials []byte
 		if ag.GoogleConnected && ag.GoogleToken != "" {
 			googleCredentials = []byte(ag.GoogleToken)
