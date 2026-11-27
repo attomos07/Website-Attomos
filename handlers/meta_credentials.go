@@ -146,6 +146,9 @@ func SaveMetaCredentials(c *gin.Context) {
 
 	log.Printf("✅ [Agent %d] Credenciales de Meta guardadas exitosamente", agent.ID)
 
+	// Sin esta suscripción Meta no manda ningún mensaje al webhook.
+	go metaAutoSubscribe(agent.ID, accessToken, wabaID)
+
 	// 🚀 ACTUALIZAR .ENV EN EL BOT AUTOMÁTICAMENTE (como AtomicBot)
 	if agent.IsOrbitalBot() {
 		log.Printf("🔄 [Agent %d] Actualizando credenciales en bot desplegado", agent.ID)

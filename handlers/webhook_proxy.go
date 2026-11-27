@@ -41,6 +41,10 @@ func WebhookProxy(c *gin.Context) {
 		return
 	}
 
+	if c.Request.Method == http.MethodPost {
+		metaNoteWebhook(agent.ID) // para /api/meta/diagnostico
+	}
+
 	// Verificar que sea un OrbitalBot
 	if agent.BotType != "orbital" {
 		log.Printf("❌ [Webhook Proxy] Agente %d no es OrbitalBot (tipo: %s)", agentID, agent.BotType)

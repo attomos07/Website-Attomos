@@ -184,6 +184,7 @@ func forwardToAgentBot(phoneNumberID, object string, entries []metaAppEntryOut) 
 		"entry":  entries,
 	})
 
+	metaNoteWebhook(agent.ID) // para /api/meta/diagnostico
 	botURL := fmt.Sprintf("http://%s:%d/webhook", agent.ServerIP, agent.Port)
 	req, err := http.NewRequest(http.MethodPost, botURL, bytes.NewReader(out))
 	if err != nil {
